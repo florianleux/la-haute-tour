@@ -32,11 +32,11 @@ la-haute-tour/
 
 ## Vocabulaire du domaine
 
-Le glossaire de [`specs/spec.md`](specs/spec.md) (étage, ascension, tirage, vies, Pool Échecs, rattrapage, contestation) est le **vocabulaire du code**, pas juste de la doc. Nommer variables/fonctions/tables avec ces termes tels quels (`etage`, `tirage`, `viesRestantes`, `poolEchecs`, `rattrapage`), sans les traduire en anglais.
+**Specs en français, code en anglais.** Le glossaire de [`specs/spec.md`](specs/spec.md) porte une colonne **Nom en code** : c'est la seule traduction autorisée de chaque terme du domaine (`étage` → `floor`, `Pool Échecs` → `missedPool`, `rattrapage` → `recovery`, `blocage` → `cooldown`...).
 
-Pourquoi : évite la dérive entre le nom en base/code et le terme dans les specs — un `etage` en base doit rester un `etage` partout, pas devenir `floor` puis re-traduit en tête au moment de lire une spec.
+Un terme du domaine ne s'invente pas au moment de coder : on le lit dans le glossaire. Un concept qui n'y est pas encore s'y ajoute **d'abord**, puis se code.
 
-Le reste du code (structure technique, noms de fichiers, helpers génériques) reste en anglais.
+Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept finit sous trois noms (`retry`, `makeup`, `secondChance`) selon le fichier. Une seule traduction, écrite une fois, à l'endroit où le concept est déjà défini.
 
 ## TypeScript
 
