@@ -1,4 +1,4 @@
-# La Tour — conventions de code
+# La Haute Tour — conventions de code
 
 Projet greenfield, aucun code encore écrit. Specs fonctionnelles dans [`specs/`](specs/spec.md).
 
@@ -14,7 +14,7 @@ Voir [`specs/architecture.md`](specs/architecture.md) pour le détail.
 ## Structure de fichiers
 
 ```
-la-tour/
+la-haute-tour/
 ├── app.vue
 ├── pages/              # routes Nuxt (file-based routing)
 ├── components/         # composants Vue, PascalCase
@@ -73,6 +73,30 @@ Le reste du code (structure technique, noms de fichiers, helpers génériques) r
 
 - Erreurs API via `createError({ statusCode, statusMessage })` de Nitro — pas de `throw` de string brute.
 - Pas de try/catch défensif sur des cas qui ne peuvent pas arriver (ex. pas besoin de vérifier qu'une question existe après l'avoir déjà chargée dans le même handler).
+
+## Tests
+
+- Vitest + `@nuxt/test-utils` — unit/intégration sur les handlers Nitro et les composants.
+- Pas d'E2E (Playwright) pour l'instant — solo dev, poids pas justifié tant qu'il n'y a pas de régression réelle à couvrir.
+
+## Base de données — local vs prod
+
+- Turso (libSQL) en prod, un fichier SQLite local (`file:./local.db`) en dev — même client Drizzle/libSQL des deux côtés, donc même dialecte SQL, zéro divergence.
+- Schema Drizzle unique, migrations (`drizzle-kit generate` puis `migrate`) appliquées identiquement en local et en prod.
+- Env vars : `DATABASE_URL=file:./local.db` en local ; `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` en prod (Netlify env vars).
+- Migrations prod lancées manuellement (`pnpm db:migrate`) tant que le projet est solo — à automatiser (hook de build Netlify) seulement si ça devient pénible.
+
+## CI/CD
+
+- GitHub Actions sur push/PR : install → typecheck (`nuxi typecheck`) → lint → `vitest run`. Pas de build/deploy dans Actions.
+- Netlify branché directement sur le repo GitHub (pas via Actions) : push sur `main` → prod, PR → deploy preview auto.
+- Ces deux éléments (workflow CI, lien Netlify↔repo) dépendent du scaffold Nuxt (package.json, scripts, build command) — à mettre en place dans le ticket qui scaffold le projet, pas avant.
+
+## Setup manuel requis (comptes/credentials tiers, personne d'autre ne peut le faire)
+
+- App Discord OAuth (Discord Developer Portal) → client ID/secret + redirect URI.
+- Base Turso (compte + `turso db create`) → `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN`.
+- Site Netlify lié au repo GitHub `florianleux/la-haute-tour` avec les env vars ci-dessus.
 
 ## Git
 

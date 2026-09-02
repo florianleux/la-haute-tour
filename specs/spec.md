@@ -1,4 +1,4 @@
-# La Tour — Spécification fonctionnelle
+# La Haute Tour — Spécification fonctionnelle
 
 ## Principe général
 
