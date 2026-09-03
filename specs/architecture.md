@@ -20,19 +20,21 @@ Zéro gestion serveur, zéro infrastructure externe (sauf Discord et Turso).
 
 ### Structure d'une question
 
-Champs minimaux :
-- `enonce` (texte) — l'énoncé de la question.
-- `reponse` (texte) — la réponse stricte.
-- `variantes` (tableau de textes) — réponses acceptées à 100%.
-- `etage` (entier 1-6) — l'étage auquel appartient la question.
+- `statement` (texte) — l'énoncé de la question.
+- `answerLabel` (texte) — la réponse affichée au joueur sur échec. Ne sert pas au matching.
+- `acceptedAnswers` (tableau de textes) — toutes les formulations qui valident la question.
+- `floor` (entier 1-6) — l'étage auquel appartient la question. La difficulté s'en dérive (`ceil(floor / 2)`), elle n'est pas stockée.
+- `categories` (relation) — thèmes de la question, zéro ou plusieurs.
 
-Pas de thème, pas de sous-niveau de difficulté, pas de source/référence au lancement. Ajoutable plus tard.
+Pas de source/référence au lancement. Ajoutable plus tard.
 
 ### Import des questions
 
-- **Script CLI** (Node.js) qui charge les questions directement en base.
-- **Format JSON** : `[{ "enonce": "...", "reponse": "...", "variantes": [...] }, ...]` par étage.
-- Pas d'UI d'import dans l'admin — le script suffit pour un import one-shot des 6 étages × 1000.
+- **Script CLI** (Node.js) qui charge le deck directement en base. Un seul run, avant le lancement.
+- **Format JSON** en entrée : `[{ "statement", "answer", "answerLabel", "variants": [...], "categories": [...], "difficulty": 1|2|3 }, ...]` — le deck complet dans un fichier, pas un fichier par étage.
+- Le script fusionne `answer` + `variants` en réponses acceptées, et répartit chaque difficulté sur ses deux étages.
+- Lignes invalides **ignorées**, jamais bloquantes : le script les rapporte en fin de run avec les compteurs par étage.
+- Pas d'UI d'import dans l'admin — le script suffit.
 
 ## Hébergement
 
@@ -42,6 +44,6 @@ Pas de thème, pas de sous-niveau de difficulté, pas de source/référence au l
 
 ## État de jeu (server-side)
 
-- L'état du joueur (étage courant, position dans le tirage, vies, Pool Échecs) est **stocké en base**, pas en session client.
+- L'état du joueur (étage courant, questions déjà vues, vies, Pool Échecs) est **stocké en base**, pas en session client.
 - Chaque request lit l'état courant. Pas de gestion de sessions WebSocket.
 - Multi-appareil : les appareils se sync au prochain request. Pas de verrouillage de session.

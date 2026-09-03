@@ -19,9 +19,9 @@
 
 ## File de contestation
 
-- **Vue minimale** : pour chaque contestation, l'admin voit la réponse du joueur + la réponse stricte.
+- **Vue minimale** : pour chaque contestation, l'admin voit la réponse du joueur + les réponses acceptées de la question.
 - **Actions** : accepter / rejeter.
-- Accepter → la réponse est ajoutée aux variantes pour tous les joueurs + effet sur les vies du joueur (voir [`validation.md`](./validation.md)).
+- Accepter → la réponse est ajoutée aux réponses acceptées pour tous les joueurs + effet sur les vies du joueur (voir [`validation.md`](./validation.md)).
 
 ## Notification des contestations
 
@@ -30,6 +30,6 @@
 
 ## Gestion des questions
 
-- **CRUD complet** : l'admin peut lire, éditer, créer, supprimer des questions et variantes directement depuis `/admin`.
-- **Pas d'UI d'import en masse** : l'import des 6000 questions (6 étages × 1000) se fait via un **script CLI** qui charge les données directement en base. Voir [`architecture.md`](./architecture.md).
-- **Création d'étages** : les étages sont créés via le script d'import. L'admin peut éditer le contenu des étages (questions, variantes) mais la structure (6 étages × 1000) est fixée par le script.
+- **CRUD complet** : l'admin peut lire, éditer, créer, supprimer des questions et leurs réponses acceptées directement depuis `/admin`.
+- **Pas d'UI d'import en masse** : le chargement du deck se fait via un **script CLI** qui écrit directement en base. Voir [`architecture.md`](./architecture.md).
+- **Répartition en étages** : c'est le script d'import qui affecte chaque question à un étage, à partir de sa difficulté. L'admin peut éditer le contenu (questions, réponses acceptées) mais pas la structure en 6 étages.
