@@ -15,6 +15,7 @@ const served: GameState = {
   question: { id: 'q1', statement: 'Capitale de la Gironde ?', expiresAt: '2026-09-03T12:00:20.000Z' },
   verdict: null,
   cooldownUntil: null,
+  recovery: null,
 }
 
 describe('actions du joueur', () => {

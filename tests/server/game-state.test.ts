@@ -9,10 +9,12 @@ installNitroGlobals()
 const { default: stateHandler } = await import('../../server/api/game/state.get')
 const { default: nextHandler } = await import('../../server/api/game/next.post')
 const { default: answerHandler } = await import('../../server/api/game/answer.post')
+const { default: poolHandler } = await import('../../server/api/game/pool.get')
 
 const state = mountHandler('/state', stateHandler)
 const next = mountHandler('/next', nextHandler)
 const answer = mountHandler('/answer', answerHandler)
+const pool = mountHandler('/pool', poolHandler)
 
 function post(path: string, body: unknown, cookie?: string): Request {
   return new Request(`http://test${path}`, {
@@ -40,6 +42,7 @@ describe('endpoints de jeu', () => {
     expect((await state(apiRequest('http://test/state'))).status).toBe(401)
     expect((await next(post('/next', {}))).status).toBe(401)
     expect((await answer(post('/answer', { answer: 'Bordeaux' }))).status).toBe(401)
+    expect((await pool(apiRequest('http://test/pool'))).status).toBe(401)
   })
 
   it('rend l état courant sans rien réserver', async () => {
@@ -70,6 +73,19 @@ describe('endpoints de jeu', () => {
     await next(post('/next', {}, cookie))
 
     const response = await answer(post('/answer', {}, cookie))
+
+    expect(response.status).toBe(400)
+  })
+
+  it('sert le Pool Échecs, page par page et trié', async () => {
+    const response = await pool(apiRequest('http://test/pool?offset=0&order=asc', cookie))
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ entries: [], total: 0 })
+  })
+
+  it('rejette un tri inconnu plutôt que d en inventer un', async () => {
+    const response = await pool(apiRequest('http://test/pool?order=aleatoire', cookie))
 
     expect(response.status).toBe(400)
   })

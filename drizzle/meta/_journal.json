@@ -22,6 +22,13 @@
       "when": 1788456646106,
       "tag": "0002_secret_clint_barton",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788466477023,
+      "tag": "0003_brown_wild_child",
+      "breakpoints": true
     }
   ]
 }

@@ -82,8 +82,11 @@ export function installAppGlobals(): AppStubs {
     useRequestHeaders: () => ({}),
     ref,
     computed,
-    $fetch: vi.fn(async (url: string, options?: { method?: string }) => {
-      calls.push(`fetch ${options?.method ?? 'GET'} ${url}`)
+    $fetch: vi.fn(async (url: string, options?: { method?: string, query?: Record<string, unknown> }) => {
+      const query = options?.query
+        ? `?${new URLSearchParams(Object.entries(options.query).map(([k, v]) => [k, String(v)]))}`
+        : ''
+      calls.push(`fetch ${options?.method ?? 'GET'} ${url}${query}`)
       if (fetchRejection) {
         throw fetchRejection
       }

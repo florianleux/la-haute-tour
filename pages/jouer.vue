@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
 // celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
-const { state, failed: readFailed } = await useGameState()
+const { state, failed: readFailed, refresh } = await useGameState()
 const { next, answer, failed: actionFailed, pending } = usePlay()
 
 const typed = ref('')
@@ -47,6 +47,20 @@ watch(secondsLeft, (left) => {
   }
 }, { immediate: true })
 
+// L'attente qui s'achève pendant que la page est ouverte : on relit l'état plutôt
+// que de laisser le joueur devant un décompte à zéro. La phase est serveur, pas ici.
+const cooldownOver = computed(() => {
+  const deadline = state.value?.cooldownUntil
+  return state.value?.phase === 'cooldown' && deadline !== null && deadline !== undefined
+    && now.value >= new Date(deadline).getTime()
+})
+
+watch(cooldownOver, (over) => {
+  if (over) {
+    refresh()
+  }
+})
+
 async function continueAfterVerdict(): Promise<void> {
   typed.value = ''
   await next()
@@ -54,7 +68,29 @@ async function continueAfterVerdict(): Promise<void> {
 </script>
 
 <template>
-  <BaseCard>
+  <BaseCard v-if="state?.phase === 'cooldown'" wide title="Attente">
+    <template #lead>
+      Tu as perdu ta dernière vie. Reprise dans
+      {{ formatRemaining(state.cooldownUntil ?? '', now) }}.
+    </template>
+
+    <div v-if="state.verdict" class="mt-6">
+      <p class="text-sm text-slate-400">
+        Dernière question ratée — réponse :
+        <span class="font-semibold text-slate-100">{{ state.verdict.answerLabel }}</span>
+      </p>
+    </div>
+
+    <div class="mt-8">
+      <MissedPoolList />
+    </div>
+
+    <BaseButton to="/" variant="ghost" block class="mt-8">
+      Retour à l'accueil
+    </BaseButton>
+  </BaseCard>
+
+  <BaseCard v-else>
     <BaseNotice v-if="readFailed">
       Impossible de lire ta partie. Recharge la page.
     </BaseNotice>
@@ -64,6 +100,12 @@ async function continueAfterVerdict(): Promise<void> {
         <BaseStat label="Étage" :value="state.floor" />
         <BaseStat label="Vies" :value="state.lives" />
       </div>
+
+      <p v-if="state.recovery" class="text-sm text-slate-400">
+        Rattrapage — question {{ Math.min(state.recovery.played + 1, state.recovery.total) }}
+        sur {{ state.recovery.total }},
+        {{ state.recovery.successes }} juste(s).
+      </p>
 
       <!-- Question en cours : aucune action à part répondre. -->
       <form v-if="state.question" class="mt-6" @submit.prevent="submit">
@@ -101,29 +143,37 @@ async function continueAfterVerdict(): Promise<void> {
         <p v-if="state.verdict.lifeLost" class="mt-1 text-sm text-rose-400">
           Tu perds une vie.
         </p>
-        <BaseButton
-          v-if="state.phase === 'ascent'"
-          block
-          class="mt-6"
-          :disabled="pending"
-          @click="continueAfterVerdict"
+
+        <!-- Le résultat du rattrapage s'annonce à la fin, pas question par question. -->
+        <p
+          v-if="state.recovery && state.recovery.played === state.recovery.total"
+          class="mt-3 text-sm"
+          :class="state.recovery.resumes ? 'text-emerald-400' : 'text-amber-400'"
         >
-          Question suivante
+          {{ state.recovery.resumes
+            ? 'Rattrapage réussi : tes vies sont restaurées.'
+            : 'Aucune bonne réponse : une nouvelle attente commence.' }}
+        </p>
+
+        <BaseButton block class="mt-6" :disabled="pending" @click="continueAfterVerdict">
+          {{ state.recovery && state.recovery.played === state.recovery.total
+            ? 'Terminer le rattrapage'
+            : 'Question suivante' }}
         </BaseButton>
       </template>
 
       <BaseButton
-        v-else-if="state.phase === 'ascent'"
+        v-else-if="state.phase === 'ascent' || state.phase === 'recovery'"
         block
         class="mt-6"
         :disabled="pending"
         @click="next"
       >
-        {{ mainActionLabel(state) }}
+        {{ state.phase === 'recovery' ? 'Commencer le rattrapage' : mainActionLabel(state) }}
       </BaseButton>
 
-      <!-- Les autres phases ont leur propre ticket ; la page les reconnaît déjà. -->
-      <template v-if="state.phase !== 'ascent'">
+      <!-- Palier et fin de partie ont leur propre ticket. -->
+      <template v-else>
         <p class="mt-6 text-lg font-semibold">
           {{ phaseMessage(state.phase) }}
         </p>

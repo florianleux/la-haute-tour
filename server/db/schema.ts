@@ -123,6 +123,8 @@ export const reservations = sqliteTable('reservations', {
   questionId: text('question_id')
     .notNull()
     .references(() => questions.id, { onDelete: 'cascade' }),
+  /** Which phase served it: the timer and what a failure costs differ. */
+  mode: text('mode', { enum: ['ascent', 'recovery'] }).notNull().default('ascent'),
   /** Fixed when the question was reserved; the client's countdown only renders it. */
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' })
@@ -154,6 +156,27 @@ export const missedPool = sqliteTable('missed_pool', {
   index('missed_pool_user_floor_idx').on(table.userId, table.floor, table.lastFailedAt),
 ])
 
+/**
+ * The questions drawn for one recovery, in the order they are played. Rows exist
+ * only while a recovery is under way: every question is played, and the run's
+ * outcome — lives back, or a shorter wait — is settled when the last one is.
+ * See specs/mecanique.md#déroulement-du-rattrapage.
+ */
+export const recoveryQuestions = sqliteTable('recovery_questions', {
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  questionId: text('question_id')
+    .notNull()
+    .references(() => questions.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  /** Null until the question has been played. */
+  correct: integer('correct', { mode: 'boolean' }),
+}, table => [
+  primaryKey({ columns: [table.userId, table.questionId] }),
+  index('recovery_questions_user_position_idx').on(table.userId, table.position),
+])
+
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect
 export type Question = typeof questions.$inferSelect
@@ -162,3 +185,4 @@ export type Category = typeof categories.$inferSelect
 export type SeenQuestion = typeof seenQuestions.$inferSelect
 export type Reservation = typeof reservations.$inferSelect
 export type MissedPoolEntry = typeof missedPool.$inferSelect
+export type RecoveryQuestion = typeof recoveryQuestions.$inferSelect

@@ -3,6 +3,7 @@ import {
   createError,
   getQuery,
   defineEventHandler,
+  getValidatedQuery,
   readValidatedBody,
   sendRedirect,
   toWebHandler,
@@ -40,6 +41,7 @@ export function installNitroGlobals(discord: DiscordStubs = refusingDiscordStubs
   Object.assign(globalThis, {
     defineEventHandler,
     getQuery,
+    getValidatedQuery,
     readValidatedBody,
     createError,
     sendRedirect,

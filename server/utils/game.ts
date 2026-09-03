@@ -1,4 +1,4 @@
-import { and, count, eq, notExists, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, isNull, notExists, sql } from 'drizzle-orm'
 import { isAnswerAccepted } from './answers'
 import { rulesForFloor } from './rules'
 import {
@@ -6,6 +6,7 @@ import {
   acceptedAnswers,
   missedPool,
   questions,
+  recoveryQuestions,
   reservations,
   seenQuestions,
   users,
@@ -31,6 +32,14 @@ export interface Verdict {
   lifeLost: boolean
 }
 
+export interface RecoveryProgress {
+  total: number
+  played: number
+  successes: number
+  /** Whether finishing on this tally gives the lives back. */
+  resumes: boolean
+}
+
 export interface GameState {
   phase: Phase
   floor: number
@@ -41,6 +50,8 @@ export interface GameState {
   verdict: Verdict | null
   /** ISO 8601 end of the wait, null outside a wait. */
   cooldownUntil: string | null
+  /** Tally of the recovery under way, null outside one. */
+  recovery: RecoveryProgress | null
 }
 
 async function liveReservation(db: Database, userId: number): Promise<Reservation | undefined> {
@@ -71,6 +82,46 @@ async function floorQuestionCount(db: Database, floor: number): Promise<number> 
   return row.value
 }
 
+async function poolSize(db: Database, user: User): Promise<number> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(missedPool)
+    .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor)))
+
+  return row.value
+}
+
+async function hasRecoveryRun(db: Database, userId: number): Promise<boolean> {
+  const [row] = await db
+    .select({ value: count() })
+    .from(recoveryQuestions)
+    .where(eq(recoveryQuestions.userId, userId))
+
+  return row.value > 0
+}
+
+/** The tally of the recovery under way, or null when none is. */
+async function recoveryProgress(db: Database, user: User): Promise<RecoveryProgress | null> {
+  const drawn = await db
+    .select()
+    .from(recoveryQuestions)
+    .where(eq(recoveryQuestions.userId, user.id))
+
+  if (!drawn.length) {
+    return null
+  }
+
+  const played = drawn.filter(row => row.correct !== null)
+  const successes = played.filter(row => row.correct).length
+
+  return {
+    total: drawn.length,
+    played: played.length,
+    successes,
+    resumes: successes >= rulesForFloor(user.currentFloor).recoverySuccessesToResume,
+  }
+}
+
 async function acceptedFor(db: Database, questionId: string): Promise<string[]> {
   const rows = await db
     .select({ text: acceptedAnswers.text })
@@ -78,6 +129,54 @@ async function acceptedFor(db: Database, questionId: string): Promise<string[]> 
     .where(eq(acceptedAnswers.questionId, questionId))
 
   return rows.map(row => row.text)
+}
+
+/**
+ * A recovery answer costs no life and moves no progress: the question was already
+ * seen. What it moves is the question's own counter — up on a right answer, back to
+ * zero on a wrong one, out of the pool once the threshold is reached.
+ * See specs/mecanique.md#pool-échecs.
+ */
+async function resolveRecovery(
+  db: Database,
+  user: User,
+  questionId: string,
+  correct: boolean,
+  now: Date,
+): Promise<void> {
+  await db
+    .update(recoveryQuestions)
+    .set({ correct })
+    .where(and(
+      eq(recoveryQuestions.userId, user.id),
+      eq(recoveryQuestions.questionId, questionId),
+    ))
+
+  const [entry] = await db
+    .select()
+    .from(missedPool)
+    .where(and(eq(missedPool.userId, user.id), eq(missedPool.questionId, questionId)))
+    .limit(1)
+
+  if (!entry) {
+    return
+  }
+
+  const poolSuccesses = correct ? entry.poolSuccesses + 1 : 0
+  const membership = and(
+    eq(missedPool.userId, user.id),
+    eq(missedPool.questionId, questionId),
+  )
+
+  if (poolSuccesses >= rulesForFloor(user.currentFloor).poolSuccessesToLeave) {
+    await db.delete(missedPool).where(membership)
+    return
+  }
+
+  await db
+    .update(missedPool)
+    .set({ poolSuccesses, lastFailedAt: correct ? entry.lastFailedAt : now })
+    .where(membership)
 }
 
 /**
@@ -115,6 +214,11 @@ async function resolve(
     .update(reservations)
     .set({ resolvedAt: now, correct, submittedAnswer: answer })
     .where(eq(reservations.userId, user.id))
+
+  if (reservation.mode === 'recovery') {
+    await resolveRecovery(db, user, reservation.questionId, correct, now)
+    return
+  }
 
   await db
     .insert(seenQuestions)
@@ -177,6 +281,7 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
     question: null as ServedQuestion | null,
     verdict: null as Verdict | null,
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
+    recovery: await recoveryProgress(db, user),
   }
 
   if (reservation) {
@@ -202,10 +307,14 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
   }
 
   if (user.lives <= 0) {
-    // Once the wait has elapsed the player owes a recovery; what happens there —
-    // including a pool too small to be worth one — belongs to its own ticket.
     const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
-    return { ...base, question: null, phase: waiting ? 'cooldown' : 'recovery' }
+    if (waiting) {
+      // Nothing of the game is served during the wait: the pool is read on its own,
+      // as the revision sheet it is meant to be.
+      return { ...base, question: null, phase: 'cooldown' }
+    }
+
+    return { ...base, phase: 'recovery' }
   }
 
   if (!reservation && seen >= await floorQuestionCount(db, user.currentFloor)) {
@@ -229,7 +338,33 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     await resolve(db, user.id, reservation, '', now)
   }
 
+  await resumeIfPoolTooSmall(db, user.id, now)
+
   return buildState(db, user.id, now)
+}
+
+/**
+ * A wait that ends on a pool too small to draw a recovery from simply gives the
+ * lives back. Nothing is reserved and no clock starts — the phase follows from the
+ * time having passed. See specs/mecanique.md#tentative-attente-et-rattrapage.
+ */
+async function resumeIfPoolTooSmall(db: Database, userId: number, now: Date): Promise<void> {
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+  const elapsed = user.cooldownUntil !== null && now >= user.cooldownUntil
+
+  if (user.lives > 0 || !elapsed || await hasRecoveryRun(db, userId)) {
+    return
+  }
+
+  const rules = rulesForFloor(user.currentFloor)
+  if (await poolSize(db, user) >= rules.poolSizeForRecovery) {
+    return
+  }
+
+  await db
+    .update(users)
+    .set({ lives: rules.lives, cooldownUntil: null })
+    .where(eq(users.id, userId))
 }
 
 /**
@@ -253,7 +388,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // floor is what decides which questions are on the table.
   const [fresh] = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
   if (fresh.lives <= 0) {
-    return buildState(db, user.id, now)
+    return advanceRecovery(db, fresh, now)
   }
 
   // Left to the database: pulling every seen id back to embed it in a NOT IN
@@ -278,11 +413,31 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
     return buildState(db, user.id, now)
   }
 
-  // One reservation per player: this either creates it or replaces the resolved
-  // one the player was reading, verdict included.
+  await reserve(
+    db,
+    user.id,
+    next.id,
+    'ascent',
+    new Date(now.getTime() + rulesForFloor(fresh.currentFloor).ascentTimerMs),
+    now,
+  )
+
+  return buildState(db, user.id, now)
+}
+
+/** Reserves one question for `mode`, replacing whatever the player was holding. */
+async function reserve(
+  db: Database,
+  userId: number,
+  questionId: string,
+  mode: 'ascent' | 'recovery',
+  expiresAt: Date,
+  now: Date,
+): Promise<void> {
   const reserved = {
-    questionId: next.id,
-    expiresAt: new Date(now.getTime() + rulesForFloor(fresh.currentFloor).ascentTimerMs),
+    questionId,
+    mode,
+    expiresAt,
     createdAt: now,
     resolvedAt: null,
     correct: null,
@@ -291,10 +446,147 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
 
   await db
     .insert(reservations)
-    .values({ userId: user.id, ...reserved })
+    .values({ userId, ...reserved })
     .onConflictDoUpdate({ target: reservations.userId, set: reserved })
+}
+
+/**
+ * The player has no lives left. Either the wait is still running — nothing to do —
+ * or a recovery starts, continues, or ends here. Every drawn question is played,
+ * even once the threshold is reached: it is the only place a pooled question moves
+ * towards leaving the pool. See specs/mecanique.md#déroulement-du-rattrapage.
+ */
+async function advanceRecovery(db: Database, user: User, now: Date): Promise<GameState> {
+  const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
+  if (waiting) {
+    return buildState(db, user.id, now)
+  }
+
+  const rules = rulesForFloor(user.currentFloor)
+
+  if (!await hasRecoveryRun(db, user.id)) {
+    const drawn = await db
+      .select()
+      .from(missedPool)
+      .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor)))
+      .orderBy(sql`RANDOM()`)
+      .limit(rules.recoveryQuestions)
+
+    if (drawn.length < rules.recoveryQuestions) {
+      // Too small to draw from: the wait simply ends and the lives come back.
+      await resumeIfPoolTooSmall(db, user.id, now)
+      return buildState(db, user.id, now)
+    }
+
+    await db.insert(recoveryQuestions).values(
+      drawn.map((entry, position) => ({ userId: user.id, questionId: entry.questionId, position })),
+    )
+  }
+
+  const [nextUp] = await db
+    .select()
+    .from(recoveryQuestions)
+    .where(and(eq(recoveryQuestions.userId, user.id), isNull(recoveryQuestions.correct)))
+    .orderBy(recoveryQuestions.position)
+    .limit(1)
+
+  if (!nextUp) {
+    return finishRecovery(db, user, now)
+  }
+
+  await reserve(
+    db,
+    user.id,
+    nextUp.questionId,
+    'recovery',
+    new Date(now.getTime() + rules.recoveryTimerMs),
+    now,
+  )
 
   return buildState(db, user.id, now)
+}
+
+/**
+ * Every drawn question is played: one right answer gives the lives back, none sends
+ * the player into a shorter wait before another recovery.
+ */
+async function finishRecovery(db: Database, user: User, now: Date): Promise<GameState> {
+  const rules = rulesForFloor(user.currentFloor)
+  const progress = await recoveryProgress(db, user)
+
+  await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))
+  await db.delete(reservations).where(eq(reservations.userId, user.id))
+
+  await db
+    .update(users)
+    .set(progress?.resumes
+      ? { lives: rules.lives, cooldownUntil: null }
+      : { cooldownUntil: new Date(now.getTime() + rules.cooldownAfterFailedRecoveryMs) })
+    .where(eq(users.id, user.id))
+
+  return buildState(db, user.id, now)
+}
+
+export interface MissedPoolEntryView {
+  questionId: string
+  statement: string
+  /** Shown here on purpose: the wait screen is a revision sheet, not a punishment. */
+  answerLabel: string
+  poolSuccesses: number
+  lastFailedAt: string
+}
+
+export interface MissedPoolPage {
+  entries: MissedPoolEntryView[]
+  total: number
+}
+
+export interface MissedPoolQuery {
+  limit: number
+  offset: number
+  /** By last failure: newest first by default, reversible. */
+  order: 'asc' | 'desc'
+}
+
+/**
+ * The missed pool of the player's floor, answers included. Read on its own rather
+ * than carried by the game state: it is paged, and the phase doesn't change while
+ * the player scrolls it. See specs/ecrans.md.
+ */
+export async function readMissedPool(
+  db: Database,
+  user: User,
+  query: MissedPoolQuery,
+): Promise<MissedPoolPage> {
+  const onThisFloor = and(
+    eq(missedPool.userId, user.id),
+    eq(missedPool.floor, user.currentFloor),
+  )
+
+  const rows = await db
+    .select({
+      questionId: missedPool.questionId,
+      statement: questions.statement,
+      answerLabel: questions.answerLabel,
+      poolSuccesses: missedPool.poolSuccesses,
+      lastFailedAt: missedPool.lastFailedAt,
+    })
+    .from(missedPool)
+    .innerJoin(questions, eq(questions.id, missedPool.questionId))
+    .where(onThisFloor)
+    .orderBy(query.order === 'asc' ? asc(missedPool.lastFailedAt) : desc(missedPool.lastFailedAt))
+    .limit(query.limit)
+    .offset(query.offset)
+
+  const [{ value: total }] = await db
+    .select({ value: count() })
+    .from(missedPool)
+    .where(onThisFloor)
+
+  return {
+    total,
+    entries: rows.map(row => ({ ...row, lastFailedAt: row.lastFailedAt.toISOString() })),
+  }
 }
 
 /**

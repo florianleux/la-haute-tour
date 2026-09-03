@@ -1,5 +1,9 @@
 <script setup lang="ts">
-defineProps<{ title?: string }>()
+defineProps<{
+  title?: string
+  /** Pour un contenu qui ne tient pas en colonne étroite (une liste, un tableau). */
+  wide?: boolean
+}>()
 
 defineSlots<{
   /** Introductory line under the title. */
@@ -9,7 +13,10 @@ defineSlots<{
 </script>
 
 <template>
-  <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-xl">
+  <div
+    class="w-full rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-xl"
+    :class="wide ? 'max-w-3xl' : 'max-w-md'"
+  >
     <h1 v-if="title" class="text-2xl font-bold">
       {{ title }}
     </h1>
