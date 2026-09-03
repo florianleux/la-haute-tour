@@ -1,15 +1,13 @@
-/**
- * Where the player stands. Single read endpoint of the game state: the identity
- * endpoint carries identity only. Reading has no effect — it draws no question and
- * starts no timer. See specs/architecture.md.
- */
-export interface GameStateResponse {
-  floor: number
-  lives: number
-}
+import { useDatabase } from '~~/server/db/client'
+import { readGameState } from '~~/server/utils/game'
+import type { GameState } from '~~/server/utils/game'
 
-export default defineEventHandler(async (event): Promise<GameStateResponse> => {
+/**
+ * Where the player stands. The single read endpoint of the game state, and it has
+ * no effect: it draws no question and starts no clock. See specs/architecture.md.
+ */
+export default defineEventHandler(async (event): Promise<GameState> => {
   const user = await requireAuth(event)
 
-  return { floor: user.currentFloor, lives: user.lives }
+  return readGameState(useDatabase(), user, new Date())
 })

@@ -11,6 +11,31 @@ export async function createTestDatabase(): Promise<Database> {
   return db
 }
 
+interface QuestionSeed {
+  statement?: string
+  answerLabel?: string
+  floor?: number
+  accepted?: string[]
+}
+
+/** A question of the shared deck, with its accepted answers. */
+export async function createQuestion(db: Database, seed: QuestionSeed = {}): Promise<string> {
+  const [question] = await db
+    .insert(schema.questions)
+    .values({
+      statement: seed.statement ?? 'Capitale de la Gironde ?',
+      answerLabel: seed.answerLabel ?? 'BORDEAUX',
+      floor: seed.floor ?? 1,
+    })
+    .returning()
+
+  await db
+    .insert(schema.acceptedAnswers)
+    .values((seed.accepted ?? ['Bordeaux']).map(text => ({ questionId: question.id, text })))
+
+  return question.id
+}
+
 type PlayerState = Partial<typeof schema.users.$inferInsert>
 
 /** A player in the database, spelling out only what the test looks at. */

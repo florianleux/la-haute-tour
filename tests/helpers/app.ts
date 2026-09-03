@@ -19,6 +19,8 @@ export interface AppStubs {
   reset: () => void
   /** Makes $fetch reject until the next reset(), as a dead network would. */
   breakFetch: () => void
+  /** What $fetch answers until the next reset(). */
+  respondWith: (value: unknown) => void
   signIn: (user: SessionUser) => void
 }
 
@@ -49,6 +51,7 @@ export function installAppGlobals(): AppStubs {
   const calls: string[] = []
   const refresh = vi.fn(async (): Promise<void> => {})
   let fetchRejection: unknown = null
+  let fetchResponse: unknown = { ok: true }
 
   const currentUser = computed<SessionUser | null>(
     () => (payloads.get(CURRENT_USER_KEY) as MeResponse | undefined)?.user ?? null,
@@ -66,6 +69,12 @@ export function installAppGlobals(): AppStubs {
       error: computed(() => errors.get(key) ?? null),
       refresh,
     }),
+    useNuxtData: (key: string) => ({
+      data: computed({
+        get: () => payloads.get(key) ?? null,
+        set: (value: unknown) => payloads.set(key, value),
+      }),
+    }),
     clearNuxtData: (): void => {
       payloads.clear()
       calls.push('clear cache')
@@ -78,7 +87,7 @@ export function installAppGlobals(): AppStubs {
       if (fetchRejection) {
         throw fetchRejection
       }
-      return { ok: true }
+      return fetchResponse
     }),
     navigateTo: (to: string): string => {
       navigations.push(to)
@@ -100,10 +109,14 @@ export function installAppGlobals(): AppStubs {
       calls.length = 0
       refresh.mockClear()
       fetchRejection = null
+      fetchResponse = { ok: true }
       payloads.set(CURRENT_USER_KEY, { user: null } satisfies MeResponse)
     },
     breakFetch: (): void => {
       fetchRejection = new Error('network unreachable')
+    },
+    respondWith: (value: unknown): void => {
+      fetchResponse = value
     },
     signIn: (user: SessionUser): void => {
       payloads.set(CURRENT_USER_KEY, { user } satisfies MeResponse)

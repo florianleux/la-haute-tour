@@ -27,6 +27,8 @@ export const users = sqliteTable('users', {
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
+  /** When the wait ends. Null outside a wait. The phase derives from it. */
+  cooldownUntil: integer('cooldown_until', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -86,8 +88,77 @@ export const questionCategories = sqliteTable('question_categories', {
   index('question_categories_category_idx').on(table.categoryId),
 ])
 
+/**
+ * A question resolved in ascent, right or wrong. The only unit of progress:
+ * it is the count of seen questions that ends a floor and the game.
+ */
+export const seenQuestions = sqliteTable('seen_questions', {
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  questionId: text('question_id')
+    .notNull()
+    .references(() => questions.id, { onDelete: 'cascade' }),
+  /** The floor it was seen on — a floor's progress is read without joining. */
+  floor: integer('floor').notNull(),
+  correct: integer('correct', { mode: 'boolean' }).notNull(),
+  seenAt: integer('seen_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+}, table => [
+  primaryKey({ columns: [table.userId, table.questionId] }),
+  index('seen_questions_user_floor_idx').on(table.userId, table.floor),
+])
+
+/**
+ * The question served to a player, held server-side until it resolves. At most
+ * one per player — hence the primary key. Once resolved it carries the verdict,
+ * which survives a refresh and a change of device, until the player moves on.
+ * See specs/mecanique.md#réservation.
+ */
+export const reservations = sqliteTable('reservations', {
+  userId: integer('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  questionId: text('question_id')
+    .notNull()
+    .references(() => questions.id, { onDelete: 'cascade' }),
+  /** Fixed when the question was reserved; the client's countdown only renders it. */
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  resolvedAt: integer('resolved_at', { mode: 'timestamp' }),
+  /** Verdict, null while the reservation is still live. */
+  correct: integer('correct', { mode: 'boolean' }),
+  submittedAnswer: text('submitted_answer'),
+})
+
+/**
+ * Questions missed on the current floor, waiting for recovery. Persistent: never
+ * reset while the player stays on the floor. See specs/mecanique.md#pool-échecs.
+ */
+export const missedPool = sqliteTable('missed_pool', {
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  questionId: text('question_id')
+    .notNull()
+    .references(() => questions.id, { onDelete: 'cascade' }),
+  floor: integer('floor').notNull(),
+  /** Consecutive recovery successes; a wrong answer puts it back to zero. */
+  poolSuccesses: integer('pool_successes').notNull().default(0),
+  lastFailedAt: integer('last_failed_at', { mode: 'timestamp' }).notNull(),
+}, table => [
+  primaryKey({ columns: [table.userId, table.questionId] }),
+  index('missed_pool_user_floor_idx').on(table.userId, table.floor, table.lastFailedAt),
+])
+
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect
 export type Question = typeof questions.$inferSelect
 export type AcceptedAnswer = typeof acceptedAnswers.$inferSelect
 export type Category = typeof categories.$inferSelect
+export type SeenQuestion = typeof seenQuestions.$inferSelect
+export type Reservation = typeof reservations.$inferSelect
+export type MissedPoolEntry = typeof missedPool.$inferSelect
