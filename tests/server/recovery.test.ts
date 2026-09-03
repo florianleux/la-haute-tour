@@ -206,6 +206,16 @@ describe('attente et rattrapage', () => {
       expect(entry).toMatchObject({ poolSuccesses: 0, lastFailedAt: afterCooldown })
     })
 
+    it('n annonce aucune vie perdue : le rattrapage n en coûte pas', async () => {
+      await serveNextQuestion(db, player, afterCooldown)
+
+      await answerServed(false, afterCooldown)
+      const state = await readGameState(db, await reload(), afterCooldown)
+
+      expect(state.verdict).toMatchObject({ correct: false, lifeLost: false })
+      expect(state.lives).toBe(0)
+    })
+
     it('ne fait avancer aucune progression d étage', async () => {
       const before = await db.select().from(seenQuestions)
 

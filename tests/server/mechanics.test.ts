@@ -1,0 +1,181 @@
+import { describe, expect, it } from 'vitest'
+import { canDrawRecovery, judgeAnswer, judgeRecovery, movePoolCounter, phaseOf } from '../../server/utils/mechanics'
+import { rulesForFloor } from '../../server/utils/rules'
+
+const NOW = new Date('2026-09-03T12:00:00.000Z')
+const rules = rulesForFloor(1)
+
+function player(overrides: Partial<{ lives: number, currentFloor: number, cooldownUntil: Date | null }> = {}) {
+  return { lives: 3, currentFloor: 1, cooldownUntil: null, ...overrides }
+}
+
+describe('phase', () => {
+  const ascent = { user: player(), hasReservation: true, seen: 2, floorTotal: 10 }
+
+  it('est l ascension tant qu il reste des vies et des questions', () => {
+    expect(phaseOf(ascent, NOW)).toBe('ascent')
+  })
+
+  it('est l attente tant que son échéance n est pas atteinte', () => {
+    const waiting = {
+      ...ascent,
+      user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }),
+    }
+
+    expect(phaseOf(waiting, NOW)).toBe('cooldown')
+  })
+
+  it('devient rattrapage à l échéance, sans qu aucune tâche ne tourne', () => {
+    const elapsed = {
+      ...ascent,
+      user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() - 1) }),
+    }
+
+    expect(phaseOf(elapsed, NOW)).toBe('recovery')
+  })
+
+  it('est le palier quand tout l étage est vu, la fin au dernier étage', () => {
+    const done = { user: player(), hasReservation: false, seen: 10, floorTotal: 10 }
+
+    expect(phaseOf(done, NOW)).toBe('floorEnd')
+    expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('gameOver')
+  })
+
+  it('ne conclut pas l étage tant qu une réservation est en cours', () => {
+    const held = { user: player(), hasReservation: true, seen: 10, floorTotal: 10 }
+
+    expect(phaseOf(held, NOW)).toBe('ascent')
+  })
+})
+
+describe('verdict d une réponse', () => {
+  const ascentReservation = {
+    mode: 'ascent' as const,
+    expiresAt: new Date(NOW.getTime() + rules.ascentTimerMs),
+  }
+
+  const input = {
+    user: player(),
+    reservation: ascentReservation,
+    acceptedAnswers: ['Bordeaux'],
+    answer: 'bordaux',
+    rules,
+  }
+
+  it('accepte une faute de frappe sans rien coûter', () => {
+    expect(judgeAnswer(input, NOW)).toMatchObject({
+      correct: true,
+      lifeLost: false,
+      livesAfter: 3,
+      seenDelta: 1,
+      entersPool: false,
+    })
+  })
+
+  it('coûte une vie et verse au Pool Échecs sur une mauvaise réponse', () => {
+    expect(judgeAnswer({ ...input, answer: 'Toulouse' }, NOW)).toMatchObject({
+      correct: false,
+      lifeLost: true,
+      livesAfter: 2,
+      entersPool: true,
+      cooldownUntil: null,
+    })
+  })
+
+  it('démarre l attente quand la dernière vie tombe', () => {
+    const verdict = judgeAnswer({ ...input, user: player({ lives: 1 }), answer: 'Toulouse' }, NOW)
+
+    expect(verdict.livesAfter).toBe(0)
+    expect(verdict.cooldownUntil).toEqual(new Date(NOW.getTime() + rules.cooldownMs))
+  })
+
+  it('traite en timeout une bonne réponse arrivée trop tard', () => {
+    const late = new Date(NOW.getTime() + rules.ascentTimerMs + rules.latencyGraceMs + 1)
+
+    expect(judgeAnswer({ ...input, answer: 'Bordeaux' }, late)).toMatchObject({
+      expired: true,
+      correct: false,
+      lifeLost: true,
+    })
+  })
+
+  it('accepte encore une réponse arrivée dans la marge de latence', () => {
+    const barely = new Date(NOW.getTime() + rules.ascentTimerMs + rules.latencyGraceMs)
+
+    expect(judgeAnswer({ ...input, answer: 'Bordeaux' }, barely)).toMatchObject({
+      expired: false,
+      correct: true,
+    })
+  })
+
+  it('ne coûte ni vie ni progression en rattrapage', () => {
+    const recovery = {
+      ...input,
+      answer: 'Toulouse',
+      reservation: { mode: 'recovery' as const, expiresAt: ascentReservation.expiresAt },
+    }
+
+    expect(judgeAnswer(recovery, NOW)).toMatchObject({
+      correct: false,
+      lifeLost: false,
+      livesAfter: 3,
+      seenDelta: 0,
+      entersPool: false,
+    })
+  })
+})
+
+describe('compteur du Pool Échecs', () => {
+  const entry = { poolSuccesses: 0, lastFailedAt: new Date(NOW.getTime() - 60_000) }
+
+  it('monte d un cran sur une bonne réponse, sans toucher la date d échec', () => {
+    expect(movePoolCounter(entry, true, rules, NOW)).toEqual({
+      leaves: false,
+      poolSuccesses: 1,
+      lastFailedAt: entry.lastFailedAt,
+    })
+  })
+
+  it('fait sortir la question au seuil atteint', () => {
+    const nearly = { ...entry, poolSuccesses: rules.poolSuccessesToLeave - 1 }
+
+    expect(movePoolCounter(nearly, true, rules, NOW)).toEqual({ leaves: true })
+  })
+
+  it('remet à zéro et remonte la date d échec sur une mauvaise réponse', () => {
+    const nearly = { ...entry, poolSuccesses: 1 }
+
+    expect(movePoolCounter(nearly, false, rules, NOW)).toEqual({
+      leaves: false,
+      poolSuccesses: 0,
+      lastFailedAt: NOW,
+    })
+  })
+})
+
+describe('tirage d un rattrapage', () => {
+  it('exige un pool au moins aussi fourni que les deux seuils', () => {
+    const enough = Math.max(rules.poolSizeForRecovery, rules.recoveryQuestions)
+
+    expect(canDrawRecovery(enough, rules)).toBe(true)
+    expect(canDrawRecovery(enough - 1, rules)).toBe(false)
+  })
+})
+
+describe('verdict d un rattrapage', () => {
+  it('rend les vies dès une bonne réponse', () => {
+    expect(judgeRecovery(1, rules, NOW)).toEqual({
+      resumes: true,
+      livesAfter: rules.lives,
+      cooldownUntil: null,
+    })
+  })
+
+  it('relance une attente plus courte quand rien n a été juste', () => {
+    expect(judgeRecovery(0, rules, NOW)).toEqual({
+      resumes: false,
+      livesAfter: 0,
+      cooldownUntil: new Date(NOW.getTime() + rules.cooldownAfterFailedRecoveryMs),
+    })
+  })
+})

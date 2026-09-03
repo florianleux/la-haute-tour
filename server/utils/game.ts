@@ -1,8 +1,15 @@
 import { and, asc, count, desc, eq, isNull, notExists, sql } from 'drizzle-orm'
-import { isAnswerAccepted } from './answers'
+import {
+  canDrawRecovery,
+  isExpired,
+  judgeAnswer,
+  judgeRecovery,
+  movePoolCounter,
+  phaseOf,
+  resumesRecovery,
+} from './mechanics'
 import { rulesForFloor } from './rules'
 import {
-  FLOOR_COUNT,
   acceptedAnswers,
   missedPool,
   questions,
@@ -11,11 +18,9 @@ import {
   seenQuestions,
   users,
 } from '../db/schema'
+import type { Phase } from './mechanics'
 import type { Database } from '../db/client'
 import type { Question, Reservation, User } from '../db/schema'
-
-/** See specs/mecanique.md#machine-à-états — the one definition of where a player stands. */
-export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'gameOver'
 
 export interface ServedQuestion {
   id: string
@@ -138,7 +143,7 @@ async function recoveryProgress(db: Database, user: User): Promise<RecoveryProgr
     total: drawn.length,
     played: played.length,
     successes,
-    resumes: successes >= rulesForFloor(user.currentFloor).recoverySuccessesToResume,
+    resumes: resumesRecovery(successes, rulesForFloor(user.currentFloor)),
   }
 }
 
@@ -182,34 +187,26 @@ async function resolveRecovery(
     return
   }
 
-  const poolSuccesses = correct ? entry.poolSuccesses + 1 : 0
   const membership = and(
     eq(missedPool.userId, user.id),
     eq(missedPool.questionId, questionId),
   )
+  const move = movePoolCounter(entry, correct, rulesForFloor(user.currentFloor), now)
 
-  if (poolSuccesses >= rulesForFloor(user.currentFloor).poolSuccessesToLeave) {
+  if (move.leaves) {
     await db.delete(missedPool).where(membership)
     return
   }
 
   await db
     .update(missedPool)
-    .set({ poolSuccesses, lastFailedAt: correct ? entry.lastFailedAt : now })
+    .set({ poolSuccesses: move.poolSuccesses, lastFailedAt: move.lastFailedAt })
     .where(membership)
 }
 
-/**
- * Past the deadline, plus the grace the rules allow for the trip back. The
- * countdown the player saw hit zero a moment earlier.
- */
-function isExpired(reservation: Reservation, graceMs: number, now: Date): boolean {
-  return now.getTime() > reservation.expiresAt.getTime() + graceMs
-}
-
-/** Same question, read through the rules of the floor the player stands on. */
+/** La même question, lue à travers les règles de l'étage où se tient le joueur. */
 function isExpiredForUser(reservation: Reservation, user: User, now: Date): boolean {
-  return isExpired(reservation, rulesForFloor(user.currentFloor).latencyGraceMs, now)
+  return isExpired(reservation.expiresAt, rulesForFloor(user.currentFloor), now)
 }
 
 /** Ce que la résolution vient d'écrire, pour éviter d'aller le relire. */
@@ -237,8 +234,14 @@ async function resolve(
   // Le joueur vient du snapshot de l'appelant, chargé dans le même aller-retour
   // que la réservation : le relire ici coûterait un hop pour la même ligne.
   const rules = rulesForFloor(user.currentFloor)
-  const expired = isExpired(reservation, rules.latencyGraceMs, now)
-  const correct = !expired && isAnswerAccepted(answer, await acceptedFor(db, reservation.questionId))
+  const judgement = judgeAnswer({
+    user,
+    reservation,
+    acceptedAnswers: await acceptedFor(db, reservation.questionId),
+    answer,
+    rules,
+  }, now)
+  const { correct } = judgement
 
   await db
     .update(reservations)
@@ -256,7 +259,7 @@ async function resolve(
     // Aucune vie perdue, aucune progression : le rattrapage ne joue que sur les
     // compteurs du Pool Échecs.
     await resolveRecovery(db, user, reservation.questionId, correct, now)
-    return { user, reservation: resolved, seenDelta: 0 }
+    return { user, reservation: resolved, seenDelta: judgement.seenDelta }
   }
 
   await db
@@ -269,8 +272,8 @@ async function resolve(
     })
     .onConflictDoNothing()
 
-  if (correct) {
-    return { user, reservation: resolved, seenDelta: 1 }
+  if (!judgement.entersPool) {
+    return { user, reservation: resolved, seenDelta: judgement.seenDelta }
   }
 
   await db
@@ -287,8 +290,7 @@ async function resolve(
       set: { poolSuccesses: 0, lastFailedAt: now },
     })
 
-  const lives = user.lives - 1
-  const cooldownUntil = lives <= 0 ? new Date(now.getTime() + rules.cooldownMs) : null
+  const { livesAfter: lives, cooldownUntil } = judgement
 
   await db
     .update(users)
@@ -298,7 +300,7 @@ async function resolve(
   return {
     user: { ...user, lives, cooldownUntil },
     reservation: resolved,
-    seenDelta: 1,
+    seenDelta: judgement.seenDelta,
   }
 }
 
@@ -340,7 +342,9 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
         correct: reservation.correct ?? false,
         answerLabel: question.answerLabel,
         submittedAnswer: reservation.submittedAnswer ?? '',
-        lifeLost: !reservation.correct,
+        // Le rattrapage ne coûte aucune vie : seule une erreur d'ascension en
+        // fait perdre une.
+        lifeLost: reservation.mode === 'ascent' && !reservation.correct,
       }
     }
     else {
@@ -348,22 +352,11 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     }
   }
 
-  if (user.lives <= 0) {
-    const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
-    if (waiting) {
-      // Nothing of the game is served during the wait: the pool is read on its own,
-      // as the revision sheet it is meant to be.
-      return { ...base, question: null, phase: 'cooldown' }
-    }
+  const phase = phaseOf({ user, hasReservation: reservation !== undefined, seen, floorTotal }, now)
 
-    return { ...base, phase: 'recovery' }
-  }
-
-  if (!reservation && seen >= floorTotal) {
-    return { ...base, phase: user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'floorEnd' }
-  }
-
-  return { ...base, phase: 'ascent' }
+  // Rien du jeu n'est servi pendant l'attente : le pool se lit à part, comme la
+  // fiche de révision qu'il est censé être.
+  return { ...base, phase, question: phase === 'cooldown' ? null : base.question }
 }
 
 async function buildState(db: Database, userId: number, now: Date): Promise<GameState> {
@@ -425,7 +418,7 @@ async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promis
   }
 
   const rules = rulesForFloor(user.currentFloor)
-  if (await poolSize(db, user) >= rules.poolSizeForRecovery) {
+  if (canDrawRecovery(await poolSize(db, user), rules)) {
     return
   }
 
@@ -556,8 +549,8 @@ async function advanceRecovery(db: Database, user: User, now: Date): Promise<Gam
       .orderBy(sql`RANDOM()`)
       .limit(rules.recoveryQuestions)
 
-    if (drawn.length < rules.recoveryQuestions) {
-      // Too small to draw from: the wait simply ends and the lives come back.
+    if (!canDrawRecovery(drawn.length, rules)) {
+      // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
       await resumeIfPoolTooSmall(db, user, now)
       return buildState(db, user.id, now)
     }
@@ -597,15 +590,14 @@ async function advanceRecovery(db: Database, user: User, now: Date): Promise<Gam
 async function finishRecovery(db: Database, user: User, now: Date): Promise<GameState> {
   const rules = rulesForFloor(user.currentFloor)
   const progress = await recoveryProgress(db, user)
+  const verdict = judgeRecovery(progress?.successes ?? 0, rules, now)
 
   await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))
   await db.delete(reservations).where(eq(reservations.userId, user.id))
 
   await db
     .update(users)
-    .set(progress?.resumes
-      ? { lives: rules.lives, cooldownUntil: null }
-      : { cooldownUntil: new Date(now.getTime() + rules.cooldownAfterFailedRecoveryMs) })
+    .set({ lives: verdict.livesAfter, cooldownUntil: verdict.cooldownUntil })
     .where(eq(users.id, user.id))
 
   return buildState(db, user.id, now)

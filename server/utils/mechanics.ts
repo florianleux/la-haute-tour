@@ -1,0 +1,186 @@
+import { isAnswerAccepted } from './answers'
+import { FLOOR_COUNT } from '../db/schema'
+import type { FloorRules } from './rules'
+import type { MissedPoolEntry, Reservation, User } from '../db/schema'
+
+/**
+ * La mécanique du jeu, sans base de données : ce que devient le joueur, dit une
+ * fois, au même endroit que la spec le dit. Les fonctions d'ici ne lisent ni
+ * n'écrivent — elles décident. Voir specs/mecanique.md.
+ */
+
+/** Voir specs/mecanique.md#machine-à-états — la seule définition de « où en est le joueur ». */
+export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'gameOver'
+
+export interface PhaseInput {
+  user: Pick<User, 'lives' | 'currentFloor' | 'cooldownUntil'>
+  /** Une réservation en cours, résolue ou non. */
+  hasReservation: boolean
+  /** Questions vues à l'étage courant. */
+  seen: number
+  /** Questions que l'étage courant contient. */
+  floorTotal: number
+}
+
+/**
+ * Dérivée à chaque lecture, jamais stockée : elle se déduit des vies, de la
+ * réservation, de la fin d'attente et du décompte des questions vues.
+ */
+export function phaseOf(input: PhaseInput, now: Date): Phase {
+  const { user, hasReservation, seen, floorTotal } = input
+
+  if (user.lives <= 0) {
+    const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
+    return waiting ? 'cooldown' : 'recovery'
+  }
+
+  if (!hasReservation && seen >= floorTotal) {
+    return user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'floorEnd'
+  }
+
+  return 'ascent'
+}
+
+/**
+ * Passé l'échéance, plus la marge que les règles laissent au trajet retour. Le
+ * décompte que le joueur voyait est tombé à zéro un instant plus tôt.
+ */
+export function isExpired(expiresAt: Date, rules: FloorRules, now: Date): boolean {
+  return now.getTime() > expiresAt.getTime() + rules.latencyGraceMs
+}
+
+export interface AnswerJudgement {
+  correct: boolean
+  /** Vraie quand l'échéance est passée, marge de latence comprise. */
+  expired: boolean
+  lifeLost: boolean
+  livesAfter: number
+  /** Échéance de l'attente qui démarre, null s'il reste des vies. */
+  cooldownUntil: Date | null
+  /** 1 quand la question entre dans les questions vues — jamais en rattrapage. */
+  seenDelta: number
+  /** Vraie quand la question rejoint le Pool Échecs de l'étage. */
+  entersPool: boolean
+}
+
+export interface AnswerInput {
+  user: Pick<User, 'lives' | 'currentFloor'>
+  reservation: Pick<Reservation, 'mode' | 'expiresAt'>
+  /** Toutes les formulations qui valident la question. */
+  acceptedAnswers: string[]
+  answer: string
+  rules: FloorRules
+}
+
+/**
+ * Ce que coûte une réponse. Le timeout est une erreur ordinaire : vie perdue,
+ * réponse affichée, question versée au Pool Échecs. En rattrapage, aucune vie
+ * n'est en jeu et la progression ne bouge pas — la question était déjà vue.
+ */
+export function judgeAnswer(input: AnswerInput, now: Date): AnswerJudgement {
+  const { user, reservation, acceptedAnswers, answer, rules } = input
+
+  const expired = isExpired(reservation.expiresAt, rules, now)
+  const correct = !expired && isAnswerAccepted(answer, acceptedAnswers)
+
+  if (reservation.mode === 'recovery') {
+    return {
+      correct,
+      expired,
+      lifeLost: false,
+      livesAfter: user.lives,
+      cooldownUntil: null,
+      seenDelta: 0,
+      entersPool: false,
+    }
+  }
+
+  if (correct) {
+    return {
+      correct,
+      expired,
+      lifeLost: false,
+      livesAfter: user.lives,
+      cooldownUntil: null,
+      seenDelta: 1,
+      entersPool: false,
+    }
+  }
+
+  const livesAfter = user.lives - 1
+
+  return {
+    correct,
+    expired,
+    lifeLost: true,
+    livesAfter,
+    cooldownUntil: livesAfter <= 0 ? new Date(now.getTime() + rules.cooldownMs) : null,
+    seenDelta: 1,
+    entersPool: true,
+  }
+}
+
+export type PoolMove =
+  | { leaves: true }
+  | { leaves: false, poolSuccesses: number, lastFailedAt: Date }
+
+/**
+ * Le compteur d'une question du Pool Échecs après une réponse de rattrapage :
+ * incrémenté sur une bonne réponse, remis à zéro sur une mauvaise, et le seuil
+ * atteint fait sortir la question du pool.
+ *
+ * Une mauvaise réponse remonte aussi la date d'échec : ce qui résiste revient en
+ * tête de la fiche de révision.
+ */
+export function movePoolCounter(
+  entry: Pick<MissedPoolEntry, 'poolSuccesses' | 'lastFailedAt'>,
+  correct: boolean,
+  rules: FloorRules,
+  now: Date,
+): PoolMove {
+  const poolSuccesses = correct ? entry.poolSuccesses + 1 : 0
+
+  if (poolSuccesses >= rules.poolSuccessesToLeave) {
+    return { leaves: true }
+  }
+
+  return {
+    leaves: false,
+    poolSuccesses,
+    lastFailedAt: correct ? entry.lastFailedAt : now,
+  }
+}
+
+/**
+ * Le pool permet-il de tirer un rattrapage ? Deux règles chiffrées le disent — la
+ * taille minimale du pool et le nombre de questions à tirer — et il faut les deux :
+ * en dessous, l'attente se termine par une simple reprise.
+ */
+export function canDrawRecovery(poolSize: number, rules: FloorRules): boolean {
+  return poolSize >= rules.poolSizeForRecovery && poolSize >= rules.recoveryQuestions
+}
+
+/** Une seule bonne réponse suffit à repartir — le seuil vit dans les règles. */
+export function resumesRecovery(successes: number, rules: FloorRules): boolean {
+  return successes >= rules.recoverySuccessesToResume
+}
+
+export interface RecoveryVerdict {
+  resumes: boolean
+  livesAfter: number
+  cooldownUntil: Date | null
+}
+
+/**
+ * Ce que vaut un rattrapage une fois toutes ses questions jouées : une seule
+ * bonne réponse rend les vies, aucune relance une attente plus courte.
+ */
+export function judgeRecovery(successes: number, rules: FloorRules, now: Date): RecoveryVerdict {
+  const resumes = resumesRecovery(successes, rules)
+
+  return {
+    resumes,
+    livesAfter: resumes ? rules.lives : 0,
+    cooldownUntil: resumes ? null : new Date(now.getTime() + rules.cooldownAfterFailedRecoveryMs),
+  }
+}
