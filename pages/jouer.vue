@@ -1,77 +1,26 @@
 <script setup lang="ts">
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
 // celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
-const { state, failed: readFailed, loading, refresh } = await useGameState()
-const { next, answer, failed: actionFailed, pending } = usePlay()
-
-const typed = ref('')
-
-// Le décompte n'est qu'un rendu de l'échéance fixée par le serveur ; le trafiquer
-// ne gagne rien, l'arbitrage est serveur. Voir specs/anti-triche.md.
-const now = ref(Date.now())
-let ticker: ReturnType<typeof setInterval> | undefined
-
-onMounted(() => {
-  ticker = setInterval(() => {
-    now.value = Date.now()
-  }, 250)
-})
-
-onUnmounted(() => clearInterval(ticker))
-
-const secondsLeft = computed(() => {
-  const deadline = state.value?.question?.expiresAt
-  if (!deadline) {
-    return null
-  }
-
-  return Math.max(0, Math.ceil((new Date(deadline).getTime() - now.value) / 1000))
-})
-
-async function submit(): Promise<void> {
-  await answer(typed.value)
-
-  // On ne vide le champ qu'une fois la réponse partie : sinon un envoi refusé
-  // effacerait ce que le joueur avait tapé.
-  if (!actionFailed.value) {
-    typed.value = ''
-  }
-}
-
-// À zéro, on envoie ce qui est saisi : le serveur tranchera de toute façon que
-// c'est hors délai. Sans ça l'écran resterait figé sur une question morte —
-// y compris à l'arrivée sur une question déjà expirée, d'où l'immediate.
-watch(secondsLeft, (left) => {
-  if (import.meta.client && left === 0 && !pending.value) {
-    submit()
-  }
-}, { immediate: true })
-
-// L'attente qui s'achève pendant que la page est ouverte : on relit l'état plutôt
-// que de laisser le joueur devant un décompte à zéro. La phase est serveur, pas ici.
-const cooldownOver = computed(() => {
-  const deadline = state.value?.cooldownUntil
-  return state.value?.phase === 'cooldown' && deadline !== null && deadline !== undefined
-    && now.value >= new Date(deadline).getTime()
-})
-
-watch(cooldownOver, (over) => {
-  if (over) {
-    refresh()
-  }
-})
-
-async function continueAfterVerdict(): Promise<void> {
-  typed.value = ''
-  await next()
-}
+// Le temps, les envois et les relectures vivent dans useQuestionRun().
+const {
+  state,
+  typed,
+  secondsLeft,
+  waitRemaining,
+  submit,
+  advance,
+  pending,
+  actionFailed,
+  readFailed,
+  loading,
+} = await useQuestionRun()
 </script>
 
 <template>
   <BaseCard v-if="state?.phase === 'cooldown'" wide title="Attente">
     <template #lead>
       Tu as perdu ta dernière vie. Reprise dans
-      {{ formatRemaining(state.cooldownUntil ?? '', now) }}.
+      {{ waitRemaining }}.
     </template>
 
     <p v-if="loading" class="mt-4 text-sm text-slate-500">
@@ -159,7 +108,7 @@ async function continueAfterVerdict(): Promise<void> {
             : 'Aucune bonne réponse : une nouvelle attente commence.' }}
         </p>
 
-        <BaseButton block class="mt-6" :loading="pending" @click="continueAfterVerdict">
+        <BaseButton block class="mt-6" :loading="pending" @click="advance">
           {{ state.recovery && state.recovery.played === state.recovery.total
             ? 'Terminer le rattrapage'
             : 'Question suivante' }}
@@ -171,7 +120,7 @@ async function continueAfterVerdict(): Promise<void> {
         block
         class="mt-6"
         :loading="pending"
-        @click="next"
+        @click="advance"
       >
         {{ state.phase === 'recovery' ? 'Commencer le rattrapage' : mainActionLabel(state) }}
       </BaseButton>

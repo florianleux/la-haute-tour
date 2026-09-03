@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, reactive, ref, watch } from 'vue'
 import { vi } from 'vitest'
 import type { Mock } from 'vitest'
 import { CURRENT_USER_KEY } from '../../composables/useCurrentUser'
@@ -81,6 +81,9 @@ export function installAppGlobals(): AppStubs {
       calls.push('clear cache')
     },
     useRequestHeaders: () => ({}),
+    getCurrentScope,
+    onScopeDispose,
+    watch,
     ref,
     computed,
     $fetch: vi.fn(async (url: string, options?: { method?: string, query?: Record<string, unknown> }) => {
