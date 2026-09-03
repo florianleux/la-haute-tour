@@ -4,16 +4,7 @@
 const { user } = await useCurrentUser()
 const { logout, failed } = useLogout()
 
-// Explicit time zone: without it the date rendered by the server and the one
-// rendered by the browser can fall on two different days, and hydration diverges.
-const dateFormat = new Intl.DateTimeFormat('fr-FR', {
-  dateStyle: 'long',
-  timeZone: 'Europe/Paris',
-})
-
-const memberSince = computed(() =>
-  user.value ? dateFormat.format(new Date(user.value.createdAt)) : '',
-)
+const memberSince = computed(() => (user.value ? formatDay(user.value.createdAt) : ''))
 </script>
 
 <template>

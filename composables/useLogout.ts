@@ -1,6 +1,4 @@
 import type { Ref } from 'vue'
-import { CURRENT_USER_KEY } from './useCurrentUser'
-import { GAME_STATE_KEY } from './useGameState'
 
 export interface Logout {
   logout: () => Promise<void>
@@ -28,9 +26,11 @@ export function useLogout(): Logout {
       return
     }
 
-    // Both cached reads still describe the player who just left. Without this,
-    // /login reads a signed-in player from the cache and sends them home again.
-    await refreshNuxtData([CURRENT_USER_KEY, GAME_STATE_KEY])
+    // Every cached read still describes the player who just left — identity,
+    // game state, and whatever a later screen caches. Dropping the lot beats
+    // listing keys someone will forget to extend. Without it, /login reads a
+    // signed-in player from the cache and sends them home again.
+    clearNuxtData()
     await navigateTo('/login')
   }
 

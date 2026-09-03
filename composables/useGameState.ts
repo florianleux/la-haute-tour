@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import type { GameStateResponse } from '~~/server/api/game/state.get'
 
-/** Cache key of the game state read, shared with whoever has to drop it. */
+/** Cache key of the game state read: one name, so nobody re-types the string. */
 export const GAME_STATE_KEY = 'game-state'
 
 export interface GameState {

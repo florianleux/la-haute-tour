@@ -4,6 +4,7 @@ import { installAppGlobals, testUser } from '../helpers/app'
 const { navigations, calls, reset, signIn, breakFetch } = installAppGlobals()
 
 const { useLogout } = await import('../../composables/useLogout')
+const { useCurrentUser } = await import('../../composables/useCurrentUser')
 
 describe('déconnexion', () => {
   beforeEach(() => {
@@ -16,14 +17,23 @@ describe('déconnexion', () => {
 
     await logout()
 
-    // L'ordre porte la règle : rafraîchir après avoir navigué laisserait /login
-    // relire un joueur en cache et le renvoyer sur l'accueil.
+    // L'ordre porte la règle : vider le cache après avoir navigué laisserait
+    // /login relire un joueur en cache et le renvoyer sur l'accueil.
     expect(calls).toEqual([
-      'fetch /api/auth/logout',
-      'refresh current-user,game-state',
+      'fetch POST /api/auth/logout',
+      'clear cache',
       'navigate /login',
     ])
     expect(failed.value).toBe(false)
+  })
+
+  it('ne laisse derrière lui aucune lecture du joueur parti', async () => {
+    const { logout } = useLogout()
+
+    await logout()
+
+    const { user } = await useCurrentUser()
+    expect(user.value).toBeNull()
   })
 
   it('reste sur place et le dit quand le serveur refuse', async () => {
@@ -34,6 +44,6 @@ describe('déconnexion', () => {
 
     expect(failed.value).toBe(true)
     expect(navigations).toEqual([])
-    expect(calls).toEqual(['fetch /api/auth/logout'])
+    expect(calls).toEqual(['fetch POST /api/auth/logout'])
   })
 })

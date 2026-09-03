@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { installAppGlobals, testUser } from '../helpers/app'
+import { installAppGlobals, testAdmin, testUser } from '../helpers/app'
 
 const { navigations, reset, signIn } = installAppGlobals()
 
@@ -10,7 +10,7 @@ const { default: authMiddleware } = await import('../../middleware/auth.global')
 const MIDDLEWARE_DIR = fileURLToPath(new URL('../../middleware', import.meta.url))
 
 interface RouteStub {
-  meta: { public?: boolean }
+  meta: { public?: boolean, admin?: boolean }
 }
 
 const middleware = authMiddleware as unknown as (to: RouteStub) => Promise<unknown>
@@ -36,6 +36,28 @@ describe('middleware d authentification', () => {
     await middleware({ meta: {} })
 
     expect(navigations).toEqual([])
+  })
+
+  it('écarte un joueur sans le flag admin d une page admin', async () => {
+    signIn(testUser)
+
+    await middleware({ meta: { admin: true } })
+
+    expect(navigations).toEqual(['/'])
+  })
+
+  it('laisse passer un admin sur une page admin', async () => {
+    signIn(testAdmin)
+
+    await middleware({ meta: { admin: true } })
+
+    expect(navigations).toEqual([])
+  })
+
+  it('renvoie sur la connexion un visiteur anonyme sur une page admin', async () => {
+    await middleware({ meta: { admin: true } })
+
+    expect(navigations).toEqual(['/login'])
   })
 
   it('tourne sur toutes les routes : Nuxt n applique que les fichiers *.global', () => {

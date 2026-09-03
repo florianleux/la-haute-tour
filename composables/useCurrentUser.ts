@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import type { MeResponse, SessionUser } from '~~/server/api/auth/me.get'
 
-/** Cache key of the identity read, shared with whoever has to drop it. */
+/** Cache key of the identity read: one name, so nobody re-types the string. */
 export const CURRENT_USER_KEY = 'current-user'
 
 export interface CurrentUser {

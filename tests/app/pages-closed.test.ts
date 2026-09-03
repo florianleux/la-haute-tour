@@ -14,12 +14,23 @@ function pageFiles(): string[] {
     .filter(file => file.endsWith('.vue'))
 }
 
+function pagesDeclaring(flag: string): string[] {
+  const declaration = new RegExp(`definePageMeta\\(\\s*\\{[^}]*${flag}:\\s*true`)
+
+  return pageFiles()
+    .filter(file => declaration.test(readFileSync(join(PAGES_DIR, file), 'utf8')))
+    .sort()
+}
+
 describe('pages fermées par défaut', () => {
   it('n ouvre que la connexion et le refus d accès', () => {
-    const open = pageFiles().filter(file =>
-      /definePageMeta\(\s*\{[^}]*public:\s*true/.test(readFileSync(join(PAGES_DIR, file), 'utf8')),
-    )
+    expect(pagesDeclaring('public')).toEqual(OPEN_PAGES)
+  })
 
-    expect(open.sort()).toEqual(OPEN_PAGES)
+  it('réserve toute page d administration au flag admin', () => {
+    const adminPages = pageFiles().filter(file => file.startsWith('admin')).sort()
+
+    expect(adminPages.length).toBeGreaterThan(0)
+    expect(pagesDeclaring('admin')).toEqual(adminPages)
   })
 })

@@ -29,6 +29,8 @@ export const testUser: SessionUser = {
   createdAt: '2026-09-01T10:00:00.000Z',
 }
 
+export const testAdmin: SessionUser = { ...testUser, id: 2, username: 'saruman', isAdmin: true }
+
 /**
  * The Nuxt app auto-imports don't exist under plain Vitest — same trick as
  * installNitroGlobals, on the app side. Lets middleware and composables be
@@ -64,14 +66,15 @@ export function installAppGlobals(): AppStubs {
       error: computed(() => errors.get(key) ?? null),
       refresh,
     }),
-    refreshNuxtData: async (keys: string[]): Promise<void> => {
-      calls.push(`refresh ${keys.join(',')}`)
+    clearNuxtData: (): void => {
+      payloads.clear()
+      calls.push('clear cache')
     },
     useRequestHeaders: () => ({}),
     ref,
     computed,
-    $fetch: vi.fn(async (url: string) => {
-      calls.push(`fetch ${url}`)
+    $fetch: vi.fn(async (url: string, options?: { method?: string }) => {
+      calls.push(`fetch ${options?.method ?? 'GET'} ${url}`)
       if (fetchRejection) {
         throw fetchRejection
       }
