@@ -12,7 +12,7 @@ import {
   users,
 } from '../db/schema'
 import type { Database } from '../db/client'
-import type { Reservation, User } from '../db/schema'
+import type { Question, Reservation, User } from '../db/schema'
 
 /** See specs/mecanique.md#machine-à-états — the one definition of where a player stands. */
 export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'gameOver'
@@ -54,32 +54,52 @@ export interface GameState {
   recovery: RecoveryProgress | null
 }
 
-async function liveReservation(db: Database, userId: number): Promise<Reservation | undefined> {
-  const [reservation] = await db
-    .select()
+/**
+ * Everything the phase is derived from, in as few round trips as possible.
+ *
+ * The database is remote and every query is a network hop, so this is deliberately
+ * two of them rather than one per fact: the player and their two counters travel
+ * together, and the reservation brings its question along.
+ */
+export interface PlayerSnapshot {
+  user: User
+  /** Questions seen on the current floor. */
+  seen: number
+  /** Questions the current floor holds. */
+  floorTotal: number
+  reservation?: Reservation
+  /** The reserved question, loaded with the reservation. */
+  question?: Question
+}
+
+async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapshot> {
+  const [row] = await db
+    .select({
+      user: users,
+      seen: sql<number>`(select count(*) from ${seenQuestions}
+        where ${seenQuestions.userId} = ${users.id}
+          and ${seenQuestions.floor} = ${users.currentFloor})`,
+      floorTotal: sql<number>`(select count(*) from ${questions}
+        where ${questions.floor} = ${users.currentFloor})`,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  const [held] = await db
+    .select({ reservation: reservations, question: questions })
     .from(reservations)
+    .innerJoin(questions, eq(questions.id, reservations.questionId))
     .where(eq(reservations.userId, userId))
     .limit(1)
 
-  return reservation
-}
-
-async function seenCount(db: Database, userId: number, floor: number): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(seenQuestions)
-    .where(and(eq(seenQuestions.userId, userId), eq(seenQuestions.floor, floor)))
-
-  return row.value
-}
-
-async function floorQuestionCount(db: Database, floor: number): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(questions)
-    .where(eq(questions.floor, floor))
-
-  return row.value
+  return {
+    user: row.user,
+    seen: row.seen,
+    floorTotal: row.floorTotal,
+    reservation: held?.reservation,
+    question: held?.question,
+  }
 }
 
 async function poolSize(db: Database, user: User): Promise<number> {
@@ -192,20 +212,30 @@ function isExpiredForUser(reservation: Reservation, user: User, now: Date): bool
   return isExpired(reservation, rulesForFloor(user.currentFloor).latencyGraceMs, now)
 }
 
+/** Ce que la résolution vient d'écrire, pour éviter d'aller le relire. */
+interface Resolution {
+  user: User
+  reservation: Reservation
+  /** 1 quand une question vient d'entrer dans les questions vues. */
+  seenDelta: number
+}
+
 /**
  * Records the outcome of a reservation: the question becomes seen, a failure costs
  * a life and joins the missed pool, and losing the last life starts the wait.
+ *
+ * Returns the rows as it left them: the caller rebuilds the state from those rather
+ * than paying a round trip to read back what it just wrote.
  */
 async function resolve(
   db: Database,
-  userId: number,
+  user: User,
   reservation: Reservation,
   answer: string,
   now: Date,
-): Promise<void> {
-  // Read the player back rather than trusting the caller's copy: lives and floor
-  // decide what this costs, and a stale copy would cost the wrong thing.
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+): Promise<Resolution> {
+  // Le joueur vient du snapshot de l'appelant, chargé dans le même aller-retour
+  // que la réservation : le relire ici coûterait un hop pour la même ligne.
   const rules = rulesForFloor(user.currentFloor)
   const expired = isExpired(reservation, rules.latencyGraceMs, now)
   const correct = !expired && isAnswerAccepted(answer, await acceptedFor(db, reservation.questionId))
@@ -215,9 +245,18 @@ async function resolve(
     .set({ resolvedAt: now, correct, submittedAnswer: answer })
     .where(eq(reservations.userId, user.id))
 
+  const resolved: Reservation = {
+    ...reservation,
+    resolvedAt: now,
+    correct,
+    submittedAnswer: answer,
+  }
+
   if (reservation.mode === 'recovery') {
+    // Aucune vie perdue, aucune progression : le rattrapage ne joue que sur les
+    // compteurs du Pool Échecs.
     await resolveRecovery(db, user, reservation.questionId, correct, now)
-    return
+    return { user, reservation: resolved, seenDelta: 0 }
   }
 
   await db
@@ -231,7 +270,7 @@ async function resolve(
     .onConflictDoNothing()
 
   if (correct) {
-    return
+    return { user, reservation: resolved, seenDelta: 1 }
   }
 
   await db
@@ -249,13 +288,18 @@ async function resolve(
     })
 
   const lives = user.lives - 1
+  const cooldownUntil = lives <= 0 ? new Date(now.getTime() + rules.cooldownMs) : null
+
   await db
     .update(users)
-    .set({
-      lives,
-      cooldownUntil: lives <= 0 ? new Date(now.getTime() + rules.cooldownMs) : null,
-    })
+    .set({ lives, cooldownUntil })
     .where(eq(users.id, user.id))
+
+  return {
+    user: { ...user, lives, cooldownUntil },
+    reservation: resolved,
+    seenDelta: 1,
+  }
 }
 
 function servedQuestion(
@@ -269,10 +313,14 @@ function servedQuestion(
   }
 }
 
-async function buildState(db: Database, userId: number, now: Date): Promise<GameState> {
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
-  const reservation = await liveReservation(db, user.id)
-  const seen = await seenCount(db, user.id, user.currentFloor)
+/**
+ * Derives the phase from a snapshot. The only query it may still make is the
+ * recovery tally, and only when the player has no lives left: a recovery run
+ * cannot exist otherwise — it is created with the lives at zero and cleared when
+ * they come back.
+ */
+async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Promise<GameState> {
+  const { user, reservation, question, seen, floorTotal } = snapshot
 
   const base = {
     floor: user.currentFloor,
@@ -281,16 +329,10 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
     question: null as ServedQuestion | null,
     verdict: null as Verdict | null,
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
-    recovery: await recoveryProgress(db, user),
+    recovery: user.lives <= 0 ? await recoveryProgress(db, user) : null,
   }
 
-  if (reservation) {
-    const [question] = await db
-      .select()
-      .from(questions)
-      .where(eq(questions.id, reservation.questionId))
-      .limit(1)
-
+  if (reservation && question) {
     // The verdict is carried whatever the phase: the question that took the last
     // life is precisely the one whose answer the player still has to read.
     if (reservation.resolvedAt) {
@@ -317,11 +359,15 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
     return { ...base, phase: 'recovery' }
   }
 
-  if (!reservation && seen >= await floorQuestionCount(db, user.currentFloor)) {
+  if (!reservation && seen >= floorTotal) {
     return { ...base, phase: user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'floorEnd' }
   }
 
   return { ...base, phase: 'ascent' }
+}
+
+async function buildState(db: Database, userId: number, now: Date): Promise<GameState> {
+  return stateFrom(db, await loadSnapshot(db, userId), now)
 }
 
 /**
@@ -330,15 +376,38 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * whose deadline has passed — resolves it as the failure it already is.
  */
 export async function readGameState(db: Database, user: User, now: Date): Promise<GameState> {
-  const reservation = await liveReservation(db, user.id)
+  const snapshot = await loadSnapshot(db, user.id)
+  const { reservation } = snapshot
 
   // Same grace as an answer gets: a read landing a hair after the deadline must
   // not close a question whose answer is still in flight.
-  if (reservation && !reservation.resolvedAt && isExpiredForUser(reservation, user, now)) {
-    await resolve(db, user.id, reservation, '', now)
+  const expired = reservation !== undefined
+    && !reservation.resolvedAt
+    && isExpiredForUser(reservation, snapshot.user, now)
+
+  if (expired) {
+    const resolution = await resolve(db, snapshot.user, reservation, '', now)
+
+    // Rien d'autre n'a bougé : l'attente ne peut pas s'achever dans la seconde où
+    // elle démarre. On rend ce qui vient d'être écrit.
+    return stateFrom(db, {
+      ...snapshot,
+      user: resolution.user,
+      reservation: resolution.reservation,
+      seen: snapshot.seen + resolution.seenDelta,
+    }, now)
   }
 
-  await resumeIfPoolTooSmall(db, user.id, now)
+  // Only worth a look at the end of a wait — the common read walks past it.
+  const waitOver = snapshot.user.lives <= 0
+    && snapshot.user.cooldownUntil !== null
+    && now >= snapshot.user.cooldownUntil
+
+  if (!waitOver) {
+    return stateFrom(db, snapshot, now)
+  }
+
+  await resumeIfPoolTooSmall(db, snapshot.user, now)
 
   return buildState(db, user.id, now)
 }
@@ -348,11 +417,10 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
  * lives back. Nothing is reserved and no clock starts — the phase follows from the
  * time having passed. See specs/mecanique.md#tentative-attente-et-rattrapage.
  */
-async function resumeIfPoolTooSmall(db: Database, userId: number, now: Date): Promise<void> {
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promise<void> {
   const elapsed = user.cooldownUntil !== null && now >= user.cooldownUntil
 
-  if (user.lives > 0 || !elapsed || await hasRecoveryRun(db, userId)) {
+  if (user.lives > 0 || !elapsed || await hasRecoveryRun(db, user.id)) {
     return
   }
 
@@ -364,7 +432,7 @@ async function resumeIfPoolTooSmall(db: Database, userId: number, now: Date): Pr
   await db
     .update(users)
     .set({ lives: rules.lives, cooldownUntil: null })
-    .where(eq(users.id, userId))
+    .where(eq(users.id, user.id))
 }
 
 /**
@@ -372,21 +440,24 @@ async function resumeIfPoolTooSmall(db: Database, userId: number, now: Date): Pr
  * question drawn at random among those they have not seen on this floor.
  */
 export async function serveNextQuestion(db: Database, user: User, now: Date): Promise<GameState> {
-  const reservation = await liveReservation(db, user.id)
+  const snapshot = await loadSnapshot(db, user.id)
+  const { reservation } = snapshot
+  // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
+  let fresh = snapshot.user
+  let seenDelta = 0
 
   if (reservation && !reservation.resolvedAt) {
     // A live reservation is not replaced: fleeing a question costs what a wrong
     // answer costs. An expired one resolves first, then the next is drawn.
-    if (!isExpiredForUser(reservation, user, now)) {
-      return buildState(db, user.id, now)
+    if (!isExpiredForUser(reservation, snapshot.user, now)) {
+      return stateFrom(db, snapshot, now)
     }
 
-    await resolve(db, user.id, reservation, '', now)
+    const resolution = await resolve(db, snapshot.user, reservation, '', now)
+    fresh = resolution.user
+    seenDelta = resolution.seenDelta
   }
 
-  // Read back: the resolution just above may have taken the last life, and the
-  // floor is what decides which questions are on the table.
-  const [fresh] = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
   if (fresh.lives <= 0) {
     return advanceRecovery(db, fresh, now)
   }
@@ -413,16 +484,29 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
     return buildState(db, user.id, now)
   }
 
-  await reserve(
-    db,
-    user.id,
-    next.id,
-    'ascent',
-    new Date(now.getTime() + rulesForFloor(fresh.currentFloor).ascentTimerMs),
-    now,
-  )
+  const expiresAt = new Date(now.getTime() + rulesForFloor(fresh.currentFloor).ascentTimerMs)
+  await reserve(db, user.id, next.id, 'ascent', expiresAt, now)
 
-  return buildState(db, user.id, now)
+  // L'état renvoyé est exactement ce qu'on vient d'écrire : le relire coûterait
+  // deux allers-retours de plus pour la même réponse.
+  return stateFrom(db, {
+    user: fresh,
+    // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
+    // rattrapage, d'où le delta rendu par resolve() plutôt qu'un « +1 » supposé.
+    seen: snapshot.seen + seenDelta,
+    floorTotal: snapshot.floorTotal,
+    reservation: {
+      userId: user.id,
+      questionId: next.id,
+      mode: 'ascent',
+      expiresAt,
+      createdAt: now,
+      resolvedAt: null,
+      correct: null,
+      submittedAnswer: null,
+    },
+    question: next,
+  }, now)
 }
 
 /** Reserves one question for `mode`, replacing whatever the player was holding. */
@@ -474,7 +558,7 @@ async function advanceRecovery(db: Database, user: User, now: Date): Promise<Gam
 
     if (drawn.length < rules.recoveryQuestions) {
       // Too small to draw from: the wait simply ends and the lives come back.
-      await resumeIfPoolTooSmall(db, user.id, now)
+      await resumeIfPoolTooSmall(db, user, now)
       return buildState(db, user.id, now)
     }
 
@@ -599,11 +683,20 @@ export async function submitAnswer(
   answer: string,
   now: Date,
 ): Promise<GameState> {
-  const reservation = await liveReservation(db, user.id)
+  const snapshot = await loadSnapshot(db, user.id)
+  const { reservation } = snapshot
 
-  if (reservation && !reservation.resolvedAt) {
-    await resolve(db, user.id, reservation, answer, now)
+  if (!reservation || reservation.resolvedAt) {
+    // Rien à résoudre : l'appareil qui a envoyé ça est en retard, pas fautif.
+    return stateFrom(db, snapshot, now)
   }
 
-  return buildState(db, user.id, now)
+  const resolution = await resolve(db, snapshot.user, reservation, answer, now)
+
+  return stateFrom(db, {
+    ...snapshot,
+    user: resolution.user,
+    reservation: resolution.reservation,
+    seen: snapshot.seen + resolution.seenDelta,
+  }, now)
 }
