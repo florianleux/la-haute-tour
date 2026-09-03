@@ -58,7 +58,7 @@ onUnmounted(() => observer?.disconnect())
     <!-- Sentinelle de défilement : la page suivante se charge en arrivant dessus. -->
     <div ref="sentinel" class="h-4" />
     <p v-if="loading" class="mt-2 text-sm text-slate-500">
-      Chargement…
+      <BaseSpinner>Chargement des erreurs…</BaseSpinner>
     </p>
   </section>
 </template>

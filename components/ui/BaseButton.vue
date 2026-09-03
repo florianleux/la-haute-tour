@@ -6,12 +6,15 @@ const props = withDefaults(defineProps<{
   external?: boolean
   /** Occupe toute la largeur disponible. */
   block?: boolean
+  /** Action en cours : le bouton montre un loader et refuse un second clic. */
+  loading?: boolean
   variant?: 'primary' | 'ghost'
   disabled?: boolean
 }>(), {
   to: undefined,
   external: false,
   block: false,
+  loading: false,
   variant: 'primary',
   disabled: false,
 })
@@ -33,7 +36,15 @@ const classes = computed(() => [
   <NuxtLink v-if="to" :to="to" :class="classes" :external="external">
     <slot />
   </NuxtLink>
-  <button v-else type="button" :class="classes" :disabled="disabled" @click="$emit('click', $event)">
+  <button
+    v-else
+    type="button"
+    :class="classes"
+    :disabled="disabled || loading"
+    :aria-busy="loading"
+    @click="$emit('click', $event)"
+  >
+    <BaseSpinner v-if="loading" />
     <slot />
   </button>
 </template>

@@ -3,7 +3,7 @@
 // spares the player a screen the API would refuse to fill. See specs/admin.md.
 definePageMeta({ admin: true, layout: 'admin' })
 
-const { entries, failed, add } = await useWhitelist()
+const { entries, failed, add, adding, loading } = await useWhitelist()
 
 const discordId = ref('')
 const addFailed = ref(false)
@@ -43,7 +43,7 @@ async function submit(): Promise<void> {
           placeholder="123456789012345678"
           class="flex-1"
         />
-        <BaseButton :disabled="!discordId.trim()" @click="submit">
+        <BaseButton :disabled="!discordId.trim()" :loading="adding" @click="submit">
           Ajouter
         </BaseButton>
       </form>
@@ -54,6 +54,10 @@ async function submit(): Promise<void> {
       <BaseNotice v-if="failed">
         Impossible de lire la whitelist. Recharge la page.
       </BaseNotice>
+
+      <p v-if="loading" class="mt-6 text-sm text-slate-500">
+        <BaseSpinner>Mise à jour de la liste…</BaseSpinner>
+      </p>
 
       <ul class="mt-6 divide-y divide-slate-800 rounded-xl border border-slate-800">
         <li

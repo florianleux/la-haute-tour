@@ -2,6 +2,8 @@ import type { Ref } from 'vue'
 
 export interface Logout {
   logout: () => Promise<void>
+  /** True while the request is in flight, so the button can say so. */
+  pending: Ref<boolean>
   /** True when the server refused to close the session: the page says so. */
   failed: Ref<boolean>
 }
@@ -12,9 +14,11 @@ export interface Logout {
  */
 export function useLogout(): Logout {
   const failed = ref(false)
+  const pending = ref(false)
 
   async function logout(): Promise<void> {
     failed.value = false
+    pending.value = true
 
     try {
       await $fetch('/api/auth/logout', { method: 'POST' })
@@ -23,6 +27,7 @@ export function useLogout(): Logout {
       // Still signed in as far as the server is concerned: say it rather than
       // navigate to a login page that would bounce straight back.
       failed.value = true
+      pending.value = false
       return
     }
 
@@ -32,7 +37,10 @@ export function useLogout(): Logout {
     // signed-in player from the cache and sends them home again.
     clearNuxtData()
     await navigateTo('/login')
+
+    // Relâché seulement ici : le bouton reste occupé jusqu'à la page suivante.
+    pending.value = false
   }
 
-  return { logout, failed }
+  return { logout, pending, failed }
 }

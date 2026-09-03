@@ -67,6 +67,7 @@ export function installAppGlobals(): AppStubs {
     ) => ({
       data: computed(() => (payloads.has(key) ? payloads.get(key) : options?.default?.() ?? null)),
       error: computed(() => errors.get(key) ?? null),
+      status: ref('idle'),
       refresh,
     }),
     useNuxtData: (key: string) => ({

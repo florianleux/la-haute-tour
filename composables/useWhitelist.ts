@@ -10,6 +10,10 @@ export interface AdminWhitelist {
   failed: Ref<boolean>
   /** Adds one Discord ID; answers whether the list now holds it. */
   add: (discordId: string) => Promise<boolean>
+  /** True from the moment the ID is sent until the list has been read back. */
+  adding: Ref<boolean>
+  /** True while a page of the list is on its way. */
+  loading: Ref<boolean>
   refresh: () => Promise<void>
 }
 
@@ -18,23 +22,31 @@ export interface AdminWhitelist {
  * protects it, this just reads and writes it back. See specs/admin.md.
  */
 export async function useWhitelist(): Promise<AdminWhitelist> {
-  const { data, error, refresh } = await useAsyncData<WhitelistResponse>(
+  const { data, error, status, refresh } = await useAsyncData<WhitelistResponse>(
     WHITELIST_KEY,
     () => $fetch<WhitelistResponse>('/api/admin/whitelist', useApiFetchOptions()),
     { default: (): WhitelistResponse => ({ entries: [] }) },
   )
 
+  const adding = ref(false)
+
   async function add(discordId: string): Promise<boolean> {
+    adding.value = true
+
     try {
       await $fetch('/api/admin/whitelist', { method: 'POST', body: { discordId } })
     }
     catch {
       // The caller decides what to say: a refused write and an unreadable list
       // are two different pieces of news.
+      adding.value = false
       return false
     }
 
+    // Relâché après la relecture : la liste n'est à jour qu'ensuite.
     await refresh()
+    adding.value = false
+
     return true
   }
 
@@ -42,6 +54,8 @@ export async function useWhitelist(): Promise<AdminWhitelist> {
     entries: computed<WhitelistEntry[]>(() => data.value?.entries ?? []),
     failed: computed<boolean>(() => Boolean(error.value)),
     add,
+    adding,
+    loading: computed<boolean>(() => status.value === 'pending'),
     refresh,
   }
 }

@@ -36,6 +36,16 @@ describe('déconnexion', () => {
     expect(user.value).toBeNull()
   })
 
+  it('marque le bouton occupé le temps de la déconnexion', async () => {
+    const { logout, pending } = useLogout()
+
+    const inFlight = logout()
+    expect(pending.value).toBe(true)
+    await inFlight
+
+    expect(pending.value).toBe(false)
+  })
+
   it('reste sur place et le dit quand le serveur refuse', async () => {
     breakFetch()
     const { logout, failed } = useLogout()

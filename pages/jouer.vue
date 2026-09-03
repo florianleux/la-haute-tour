@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
 // celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
-const { state, failed: readFailed, refresh } = await useGameState()
+const { state, failed: readFailed, loading, refresh } = await useGameState()
 const { next, answer, failed: actionFailed, pending } = usePlay()
 
 const typed = ref('')
@@ -74,6 +74,10 @@ async function continueAfterVerdict(): Promise<void> {
       {{ formatRemaining(state.cooldownUntil ?? '', now) }}.
     </template>
 
+    <p v-if="loading" class="mt-4 text-sm text-slate-500">
+      <BaseSpinner>Mise à jour de ta partie…</BaseSpinner>
+    </p>
+
     <div v-if="state.verdict" class="mt-6">
       <p class="text-sm text-slate-400">
         Dernière question ratée — réponse :
@@ -120,7 +124,7 @@ async function continueAfterVerdict(): Promise<void> {
           label="Ta réponse"
           class="mt-4"
         />
-        <BaseButton block class="mt-4" :disabled="pending" @click="submit">
+        <BaseButton block class="mt-4" :loading="pending" @click="submit">
           Répondre
         </BaseButton>
       </form>
@@ -155,7 +159,7 @@ async function continueAfterVerdict(): Promise<void> {
             : 'Aucune bonne réponse : une nouvelle attente commence.' }}
         </p>
 
-        <BaseButton block class="mt-6" :disabled="pending" @click="continueAfterVerdict">
+        <BaseButton block class="mt-6" :loading="pending" @click="continueAfterVerdict">
           {{ state.recovery && state.recovery.played === state.recovery.total
             ? 'Terminer le rattrapage'
             : 'Question suivante' }}
@@ -166,7 +170,7 @@ async function continueAfterVerdict(): Promise<void> {
         v-else-if="state.phase === 'ascent' || state.phase === 'recovery'"
         block
         class="mt-6"
-        :disabled="pending"
+        :loading="pending"
         @click="next"
       >
         {{ state.phase === 'recovery' ? 'Commencer le rattrapage' : mainActionLabel(state) }}

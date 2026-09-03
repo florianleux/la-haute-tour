@@ -30,6 +30,17 @@ describe('whitelist côté admin', () => {
     expect(refresh).toHaveBeenCalledOnce()
   })
 
+  it('reste occupé jusqu à ce que la liste soit relue, pas seulement postée', async () => {
+    const { add, adding } = await useWhitelist()
+
+    const inFlight = add('111')
+    expect(adding.value).toBe(true)
+    await inFlight
+
+    expect(adding.value).toBe(false)
+    expect(refresh).toHaveBeenCalledOnce()
+  })
+
   it('signale un ajout refusé sans relire, et sans se dire illisible', async () => {
     breakFetch()
     const { add, failed } = await useWhitelist()

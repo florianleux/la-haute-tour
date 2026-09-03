@@ -8,6 +8,8 @@ export interface GameStateRead {
   state: Ref<GameState | null>
   /** True when the server said nothing usable: the page shows it, never invents it. */
   failed: Ref<boolean>
+  /** True while the state is being read back. */
+  loading: Ref<boolean>
   refresh: () => Promise<void>
 }
 
@@ -19,7 +21,7 @@ export interface GameStateRead {
  * visitors. Reading has no effect on the game.
  */
 export async function useGameState(): Promise<GameStateRead> {
-  const { data, error, refresh } = await useAsyncData<GameState | null>(
+  const { data, error, status, refresh } = await useAsyncData<GameState | null>(
     GAME_STATE_KEY,
     () => $fetch<GameState>('/api/game/state', useApiFetchOptions()),
     { default: (): GameState | null => null },
@@ -28,6 +30,7 @@ export async function useGameState(): Promise<GameStateRead> {
   return {
     state: data,
     failed: computed<boolean>(() => Boolean(error.value)),
+    loading: computed<boolean>(() => status.value === 'pending'),
     refresh,
   }
 }
