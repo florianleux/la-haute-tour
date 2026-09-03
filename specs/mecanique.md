@@ -2,8 +2,8 @@
 
 ## Ascension
 
-- Progression **linéaire stricte** : le joueur doit voir toutes les 1000 questions de l'étage 1 avant de passer à l'étage 2, etc.
-- Chaque étage a un **tirage** : ordre aléatoire des 1000 questions, propre à chaque joueur, généré à l'entrée dans l'étage.
+- Progression **linéaire stricte** : le joueur doit voir toutes les questions de l'étage 1 avant de passer à l'étage 2, etc.
+- Chaque étage a un **tirage** : la question suivante est tirée au hasard parmi celles que le joueur n'a pas encore vues dans l'étage. L'ordre est propre à chaque joueur et se décide question par question — il n'est pas calculé à l'avance.
 - **3 vies par cycle**. Chaque mauvaise réponse consomme une vie.
 - La **bonne réponse est affichée sur échec** (apprentissage immédiat).
 - À la 3e erreur → **blocage**. Position sauvegardée.
@@ -37,12 +37,11 @@ Le joueur peut jouer sur plusieurs appareils simultanément. Le serveur garde l'
 
 ## Fin d'étage
 
-- Le joueur passe à l'étage suivant après avoir **vu** les 1000 questions de l'étage courant (tirage épuisé).
-- Un nouveau tirage est généré pour l'étage suivant.
+- Le joueur passe à l'étage suivant après avoir **vu** toutes les questions de l'étage courant.
 - Le Pool Échecs peut être non-vide — les ratées non rattrapées sont abandonnées.
 
 ## Fin de partie
 
-- 6000 questions toutes **vues** en ascension (tous étages confondus) → message de félicitations.
+- Toutes les questions du deck **vues** en ascension (tous étages confondus) → message de félicitations.
 - Pas de classement.
 - Le Pool Échecs de l'étage 6 peut être non-vide.

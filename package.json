@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:import": "tsx --env-file-if-exists=.env scripts/import-questions.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -38,6 +39,7 @@
     "h3": "1.15.11",
     "happy-dom": "^18.0.1",
     "tailwindcss": "^4.1.12",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "vue-tsc": "^2.2.10"

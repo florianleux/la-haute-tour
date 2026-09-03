@@ -6,14 +6,14 @@
 
 ## Tolérance aux fautes
 
-- **Distance de Levenshtein ≤ 2** par rapport à la réponse stricte ou à une variante.
+- **Distance de Levenshtein ≤ 2** par rapport à une des réponses acceptées.
 - **Normalisation** avant calcul : trimming, lowercase, suppression des accents, articles, ponctuation.
 
-## Variantes explicites
+## Réponses acceptées
 
-- Chaque question a un **dictionnaire de variantes** : réponses acceptées à 100%.
-- La tolérance typo (Levenshtein ≤ 2) s'applique à la réponse stricte **et** à chaque variante.
-- Ex. "Bordeaux" (stricte) + "la ville de Bordeaux" (variante) → "Bordaux" (Levenshtein 1 sur "Bordeaux") validé, "la ville de Bordeaux" validé, "la ville de Bordaux" (Levenshtein 1 sur la variante) validé.
+- Chaque question porte une ou plusieurs **réponses acceptées**. Aucune n'est privilégiée : la tolérance typo s'applique à chacune, un seul cas à traiter.
+- Ex. réponses acceptées "Bordeaux" et "la ville de Bordeaux" → "Bordaux" (Levenshtein 1 sur la première) validé, "la ville de Bordeaux" validé, "la ville de Bordaux" (Levenshtein 1 sur la seconde) validé.
+- La **réponse affichée** (`answerLabel`) est montrée au joueur sur échec. Elle ne sert jamais au matching : elle peut être plus riche que ce qu'on attend en saisie.
 
 ## Contestation
 
@@ -29,7 +29,7 @@
 - Admin valide **après 12h** (délai dépassé) → 1 vie bonus pour le prochain essai.
 - **Contestation prioritaire** sur le rattrapage : si l'admin valide dans les 12h, le rattrapage n'a pas lieu.
 
-### Effet sur les variantes
+### Effet sur les réponses acceptées
 
-- Si l'admin **accepte** une contestation, la réponse contestée est **ajoutée aux variantes** de la question pour **tous les joueurs**.
+- Si l'admin **accepte** une contestation, la réponse contestée est **ajoutée aux réponses acceptées** de la question pour **tous les joueurs**.
 - Si l'admin **rejette**, la contestation est clôturée sans effet.
