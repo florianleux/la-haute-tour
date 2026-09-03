@@ -4,24 +4,32 @@ import type { Mock } from 'vitest'
 import { CURRENT_USER_KEY } from '../../composables/useCurrentUser'
 import type { MeResponse, SessionUser } from '../../server/api/auth/me.get'
 
-export interface AppStubs {
-  /** What useAsyncData resolves to, per key. */
-  payloads: Map<string, unknown>
-  /** What useAsyncData exposes as `error`, per key. */
-  errors: Map<string, unknown>
-  /** Every route navigateTo() was asked for, in order. */
-  navigations: string[]
-  /** Fetches, cache drops and navigations in the one order they happened. */
-  calls: string[]
-  /** Stands in for the useAsyncData refresh. */
-  refresh: Mock<() => Promise<void>>
-  /** Back to a signed-out player, no recorded call, a working network. */
-  reset: () => void
-  /** Makes $fetch reject until the next reset(), as a dead network would. */
-  breakFetch: () => void
-  /** What $fetch answers until the next reset(). */
-  respondWith: (value: unknown) => void
+/**
+ * Le faux Nuxt vu par un test : ce que le serveur répond, ce que le client a fait.
+ * Aucun test ne nomme useAsyncData, useNuxtData ou $fetch — c'est justement ce
+ * que ce seam cache.
+ */
+export interface FakeNuxt {
+  /** Ce que le serveur renvoie pour une lecture, par clé. */
+  serve: (key: string, payload: unknown) => void
+  /** Ce que le serveur renvoie à la prochaine action. */
+  answerWith: (value: unknown) => void
+  /** La lecture de cette clé échoue. */
+  breakRead: (key: string) => void
+  /** Le réseau est mort : toute action est refusée. */
+  breakNetwork: () => void
   signIn: (user: SessionUser) => void
+  signOut: () => void
+  /** Ce que la lecture d'une clé rend maintenant — le client a pu l'écrire. */
+  cached: (key: string) => unknown
+  /** Appels réseau, vidages de cache et navigations, dans l'ordre où ils ont eu lieu. */
+  calls: () => string[]
+  /** Les routes demandées, dans l'ordre. */
+  navigations: () => string[]
+  /** Tient lieu du refresh de useAsyncData. */
+  refresh: Mock<() => Promise<void>>
+  /** Joueur déconnecté, aucun appel enregistré, réseau qui marche. */
+  reset: () => void
 }
 
 export const testUser: SessionUser = {
@@ -34,17 +42,16 @@ export const testUser: SessionUser = {
 export const testAdmin: SessionUser = { ...testUser, id: 2, username: 'saruman', isAdmin: true }
 
 /**
- * The Nuxt app auto-imports don't exist under plain Vitest — same trick as
- * installNitroGlobals, on the app side. Lets middleware and composables be
- * imported and driven directly, without booting a Nuxt instance.
+ * Les auto-imports de Nuxt n'existent pas sous Vitest — même procédé que
+ * installNitroGlobals, côté application. Middlewares et composables s'importent
+ * et se pilotent directement, sans démarrer d'instance Nuxt.
  *
- * The useAsyncData stub is keyed like the real one, so a test says what a given
- * key resolves to and the composable under test reads its own key — no stub is
- * wired to one payload shape.
+ * Le stub de useAsyncData est indexé par clé comme le vrai : un test dit ce que
+ * telle clé rend, et le composable testé lit la sienne.
  */
-export function installAppGlobals(): AppStubs {
-  // Reactive: the composables under test read these through computed(), which
-  // tracks a reactive Map's get/has but never a plain one's.
+export function installAppGlobals(): FakeNuxt {
+  // Réactifs : les composables testés les lisent à travers computed(), qui suit
+  // un Map réactif mais jamais un Map ordinaire.
   const payloads = reactive(new Map<string, unknown>())
   const errors = reactive(new Map<string, unknown>())
   const navigations: string[] = []
@@ -103,11 +110,24 @@ export function installAppGlobals(): AppStubs {
     },
   })
 
+  const signOut = (): void => {
+    payloads.set(CURRENT_USER_KEY, { user: null } satisfies MeResponse)
+  }
+
   return {
-    payloads,
-    errors,
-    navigations,
-    calls,
+    serve: (key, payload) => payloads.set(key, payload),
+    answerWith: (value) => {
+      fetchResponse = value
+    },
+    breakRead: (key) => errors.set(key, new Error('lecture impossible')),
+    breakNetwork: () => {
+      fetchRejection = new Error('network unreachable')
+    },
+    signIn: user => payloads.set(CURRENT_USER_KEY, { user } satisfies MeResponse),
+    signOut,
+    cached: key => payloads.get(key) ?? null,
+    calls: () => [...calls],
+    navigations: () => [...navigations],
     refresh,
     reset: (): void => {
       payloads.clear()
@@ -117,16 +137,7 @@ export function installAppGlobals(): AppStubs {
       refresh.mockClear()
       fetchRejection = null
       fetchResponse = { ok: true }
-      payloads.set(CURRENT_USER_KEY, { user: null } satisfies MeResponse)
-    },
-    breakFetch: (): void => {
-      fetchRejection = new Error('network unreachable')
-    },
-    respondWith: (value: unknown): void => {
-      fetchResponse = value
-    },
-    signIn: (user: SessionUser): void => {
-      payloads.set(CURRENT_USER_KEY, { user } satisfies MeResponse)
+      signOut()
     },
   }
 }

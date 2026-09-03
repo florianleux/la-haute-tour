@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testAdmin, testUser } from '../helpers/app'
 
-const { navigations, reset, signIn } = installAppGlobals()
+const { signIn, navigations, reset } = installAppGlobals()
 
 const { default: authMiddleware } = await import('../../middleware/auth.global')
 
@@ -21,13 +21,13 @@ describe('middleware d authentification', () => {
   it('renvoie sur la connexion quand une page fermée est atteinte sans session', async () => {
     await middleware({ meta: {} })
 
-    expect(navigations).toEqual(['/login'])
+    expect(navigations()).toEqual(['/login'])
   })
 
   it('laisse passer une page ouverte sans session', async () => {
     await middleware({ meta: { public: true } })
 
-    expect(navigations).toEqual([])
+    expect(navigations()).toEqual([])
   })
 
   it('laisse passer un joueur connecté sur une page fermée', async () => {
@@ -35,7 +35,7 @@ describe('middleware d authentification', () => {
 
     await middleware({ meta: {} })
 
-    expect(navigations).toEqual([])
+    expect(navigations()).toEqual([])
   })
 
   it('écarte un joueur sans le flag admin d une page admin', async () => {
@@ -43,7 +43,7 @@ describe('middleware d authentification', () => {
 
     await middleware({ meta: { admin: true } })
 
-    expect(navigations).toEqual(['/'])
+    expect(navigations()).toEqual(['/'])
   })
 
   it('laisse passer un admin sur une page admin', async () => {
@@ -51,13 +51,13 @@ describe('middleware d authentification', () => {
 
     await middleware({ meta: { admin: true } })
 
-    expect(navigations).toEqual([])
+    expect(navigations()).toEqual([])
   })
 
   it('renvoie sur la connexion un visiteur anonyme sur une page admin', async () => {
     await middleware({ meta: { admin: true } })
 
-    expect(navigations).toEqual(['/login'])
+    expect(navigations()).toEqual(['/login'])
   })
 
   it('tourne sur toutes les routes : Nuxt n applique que les fichiers *.global', () => {

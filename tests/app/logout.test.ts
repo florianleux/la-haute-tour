@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
 
-const { navigations, calls, reset, signIn, breakFetch } = installAppGlobals()
+const { breakNetwork, signIn, calls, navigations, reset } = installAppGlobals()
 
 const { useLogout } = await import('../../composables/useLogout')
 const { useCurrentUser } = await import('../../composables/useCurrentUser')
@@ -19,7 +19,7 @@ describe('déconnexion', () => {
 
     // L'ordre porte la règle : vider le cache après avoir navigué laisserait
     // /login relire un joueur en cache et le renvoyer sur l'accueil.
-    expect(calls).toEqual([
+    expect(calls()).toEqual([
       'fetch POST /api/auth/logout',
       'clear cache',
       'navigate /login',
@@ -47,13 +47,13 @@ describe('déconnexion', () => {
   })
 
   it('reste sur place et le dit quand le serveur refuse', async () => {
-    breakFetch()
+    breakNetwork()
     const { logout, failed } = useLogout()
 
     await logout()
 
     expect(failed.value).toBe(true)
-    expect(navigations).toEqual([])
-    expect(calls).toEqual(['fetch POST /api/auth/logout'])
+    expect(navigations()).toEqual([])
+    expect(calls()).toEqual(['fetch POST /api/auth/logout'])
   })
 })

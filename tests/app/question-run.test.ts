@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
 import type { GameState } from '../../server/utils/game'
 
-const { payloads, calls, refresh, reset, signIn, breakFetch, respondWith } = installAppGlobals()
+const { serve, answerWith, breakNetwork, signIn, calls, refresh, reset } = installAppGlobals()
 
 const { GAME_STATE_KEY } = await import('../../composables/useGameState')
 const { useQuestionRun } = await import('../../composables/useQuestionRun')
@@ -60,7 +60,7 @@ describe('déroulé d une question', () => {
   })
 
   it('décompte les secondes qui restent sur l échéance du serveur', async () => {
-    payloads.set(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(20_000))
     const now = ref(NOW)
 
     const { secondsLeft } = await run({ now })
@@ -71,7 +71,7 @@ describe('déroulé d une question', () => {
   })
 
   it('ne décompte rien hors question', async () => {
-    payloads.set(GAME_STATE_KEY, gameState({ verdict: { correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false } }))
+    serve(GAME_STATE_KEY, gameState({ verdict: { correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false } }))
 
     const { secondsLeft } = await run({ now: ref(NOW) })
 
@@ -79,7 +79,7 @@ describe('déroulé d une question', () => {
   })
 
   it('envoie ce qui est saisi quand le chrono tombe à zéro', async () => {
-    payloads.set(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(20_000))
     const now = ref(NOW)
     const { typed } = await run({ now })
     typed.value = 'bordeaux'
@@ -87,11 +87,11 @@ describe('déroulé d une question', () => {
     now.value = NOW + 20_000
     await nextTick()
 
-    expect(calls).toEqual(['fetch POST /api/game/answer'])
+    expect(calls()).toEqual(['fetch POST /api/game/answer'])
   })
 
   it('envoie dès l arrivée sur une question déjà expirée', async () => {
-    payloads.set(GAME_STATE_KEY, servedAt(-5_000))
+    serve(GAME_STATE_KEY, servedAt(-5_000))
 
     console.log('AVANT run, calls =', JSON.stringify(calls))
     await run({ now: ref(NOW) })
@@ -99,12 +99,12 @@ describe('déroulé d une question', () => {
     await nextTick()
     console.log('APRES tick, calls =', JSON.stringify(calls))
 
-    expect(calls).toEqual(['fetch POST /api/game/answer'])
+    expect(calls()).toEqual(['fetch POST /api/game/answer'])
   })
 
   it('vide le champ une fois la réponse partie', async () => {
-    payloads.set(GAME_STATE_KEY, servedAt(20_000))
-    respondWith(gameState())
+    serve(GAME_STATE_KEY, servedAt(20_000))
+    answerWith(gameState())
     const { typed, submit } = await run({ now: ref(NOW) })
     typed.value = 'bordeaux'
 
@@ -114,8 +114,8 @@ describe('déroulé d une question', () => {
   })
 
   it('garde la saisie quand l envoi est refusé', async () => {
-    payloads.set(GAME_STATE_KEY, servedAt(20_000))
-    breakFetch()
+    serve(GAME_STATE_KEY, servedAt(20_000))
+    breakNetwork()
     const { typed, submit, actionFailed } = await run({ now: ref(NOW) })
     typed.value = 'bordeaux'
 
@@ -126,7 +126,7 @@ describe('déroulé d une question', () => {
   })
 
   it('relit l état quand l attente s achève sous les yeux du joueur', async () => {
-    payloads.set(GAME_STATE_KEY, gameState({
+    serve(GAME_STATE_KEY, gameState({
       phase: 'cooldown',
       lives: 0,
       cooldownUntil: new Date(NOW + 60_000).toISOString(),
@@ -142,7 +142,7 @@ describe('déroulé d une question', () => {
   })
 
   it('rend ses effets à la portée qui l a appelé', async () => {
-    payloads.set(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(20_000))
     const now = ref(NOW)
     await run({ now })
 
@@ -151,11 +151,11 @@ describe('déroulé d une question', () => {
     await nextTick()
 
     // Le chrono est tombé à zéro, mais plus personne n'écoute.
-    expect(calls).toEqual([])
+    expect(calls()).toEqual([])
   })
 
   it('rend le temps d attente tel qu on le lit', async () => {
-    payloads.set(GAME_STATE_KEY, gameState({
+    serve(GAME_STATE_KEY, gameState({
       phase: 'cooldown',
       lives: 0,
       cooldownUntil: new Date(NOW + 90 * 60_000).toISOString(),
