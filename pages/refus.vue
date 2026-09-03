@@ -8,7 +8,7 @@ definePageMeta({ public: true })
       Ton compte Discord n'est pas sur la liste des joueurs autorisés.
       Aucun compte n'a été créé. Demande un accès à l'administrateur.
     </template>
-    <BaseButton to="/login" variant="ghost" class="mt-8 w-full">
+    <BaseButton to="/login" variant="ghost" block class="mt-8">
       Retour
     </BaseButton>
   </BaseCard>

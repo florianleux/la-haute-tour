@@ -1,26 +1,29 @@
 import type { Ref } from 'vue'
 import type { MeResponse, SessionUser } from '~~/server/api/auth/me.get'
 
+/** Cache key of the identity read, shared with whoever has to drop it. */
+export const CURRENT_USER_KEY = 'current-user'
+
 export interface CurrentUser {
   user: Ref<SessionUser | null>
   refresh: () => Promise<void>
 }
 
 /**
- * The current player, always read back from the server — the client never keeps
- * game state (lives/floor) of its own. See specs/architecture.md.
+ * Who the player is, always read back from the server. Identity only: floor and
+ * lives come from useGameState(). See specs/architecture.md.
  *
  * Backed by useAsyncData so route middleware can await it and share the one
  * request with the page that renders right after.
+ *
+ * The useAsyncData/$fetch shape is repeated in useGameState() on purpose: hiding
+ * it behind a generic wrapper loses the typed route inference and the call stops
+ * type-checking. Only the cookie forwarding is shared, via useApiFetchOptions().
  */
 export async function useCurrentUser(): Promise<CurrentUser> {
   const { data, refresh } = await useAsyncData<MeResponse>(
-    'current-user',
-    () => $fetch<MeResponse>('/api/auth/me', {
-      // On SSR the internal call carries no cookie of its own: without this the
-      // middleware sees an anonymous visitor and bounces a signed-in player.
-      headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
-    }),
+    CURRENT_USER_KEY,
+    () => $fetch<MeResponse>('/api/auth/me', useApiFetchOptions()),
     { default: (): MeResponse => ({ user: null }) },
   )
 

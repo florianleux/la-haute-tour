@@ -17,7 +17,7 @@ watchEffect(() => {
     <template #lead>
       L'accès se fait par Discord, sur invitation.
     </template>
-    <BaseButton to="/api/auth/discord" class="mt-8 w-full">
+    <BaseButton to="/api/auth/discord" external block class="mt-8">
       Se connecter avec Discord
     </BaseButton>
   </BaseCard>

@@ -20,11 +20,22 @@ export interface DiscordStubs {
 }
 
 /**
+ * Default stubs for a test that never goes near Discord: calling them is a bug in
+ * the test, not a network round-trip.
+ */
+function refusingDiscordStubs(): DiscordStubs {
+  const refuse = (): never => {
+    throw new Error('Discord not stubbed in this test')
+  }
+  return { exchangeCodeForToken: refuse, fetchDiscordProfile: refuse }
+}
+
+/**
  * Nitro handlers rely on auto-imports, which don't exist under plain Vitest.
  * Install them on globalThis so a handler module can be imported and driven
  * directly, without booting a server or touching the network.
  */
-export function installNitroGlobals(discord: DiscordStubs): void {
+export function installNitroGlobals(discord: DiscordStubs = refusingDiscordStubs()): void {
   Object.assign(globalThis, {
     defineEventHandler,
     getQuery,
@@ -59,4 +70,24 @@ export function mountHandler(
   const app = createApp()
   app.use(path, handler)
   return toWebHandler(app)
+}
+
+/** A GET on a mounted handler, signed in when a cookie is passed. */
+export function apiRequest(url: string, cookie?: string): Request {
+  return new Request(url, { headers: cookie ? { cookie } : {} })
+}
+
+/**
+ * A session cookie for a signed-in player, without replaying the OAuth flow —
+ * the flow itself is covered by callback.test.ts.
+ */
+export async function sessionCookieFor(userId: number): Promise<string> {
+  const setSession = mountHandler('/session', defineEventHandler(async (event) => {
+    const session = await useAuthSession(event)
+    await session.update({ userId })
+    return { ok: true }
+  }))
+
+  const response = await setSession(new Request('http://test/session'))
+  return (response.headers.get('set-cookie') ?? '').split(';')[0]
 }
