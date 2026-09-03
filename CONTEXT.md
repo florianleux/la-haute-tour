@@ -1,0 +1,31 @@
+# Contexte du projet
+
+Carte d'orientation. Ce fichier ne redéfinit rien : il dit où chaque chose est
+définie, une seule fois.
+
+## Vocabulaire du domaine
+
+Le glossaire fait foi : [`specs/spec.md`](specs/spec.md#glossaire). Sa colonne
+**Nom en code** est la seule traduction autorisée d'un terme du domaine — `étage`
+→ `floor`, `Pool Échecs` → `missedPool`, `rattrapage` → `recovery`, `attente` →
+`cooldown`, `réservation` → `reservation`, `verdict` → `lastAnswer`.
+
+Un concept absent du glossaire s'y ajoute **avant** d'être codé.
+
+## Où vit quoi
+
+| Question | Réponse |
+|---|---|
+| Que dit la règle ? | [`specs/`](specs/spec.md) — mécanique, validation, anti-triche, écrans, admin |
+| Combien vaut-elle ? | [`server/utils/rules.ts`](server/utils/rules.ts) — le jeu de règles, consultable par étage |
+| Que devient le joueur ? | [`server/utils/mechanics.ts`](server/utils/mechanics.ts) — les décisions, sans base de données |
+| Comment est-ce lu et écrit ? | [`server/utils/game.ts`](server/utils/game.ts) — lectures, écritures, réservation |
+| Ce qu'affiche l'écran de jeu | [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) — décompte, envoi, passage à la suite |
+| Pourquoi ce choix ? | [`docs/adr/`](docs/adr/) |
+| Comment on écrit le code | [`CLAUDE.md`](CLAUDE.md) |
+
+## Séparation qui porte le reste
+
+L'arbitrage est **serveur**. Le client ne calcule ni phase, ni vie, ni échéance :
+il réaffiche ce que l'API renvoie. Le décompte visible n'est qu'un rendu de
+l'échéance fixée à la réservation — le trafiquer ne gagne rien.

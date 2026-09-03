@@ -16,9 +16,9 @@ export interface CurrentUser {
  * Backed by useAsyncData so route middleware can await it and share the one
  * request with the page that renders right after.
  *
- * The useAsyncData/$fetch shape is repeated in useGameState() on purpose: hiding
- * it behind a generic wrapper loses the typed route inference and the call stops
- * type-checking. Only the cookie forwarding is shared, via useApiFetchOptions().
+ * La forme useAsyncData/$fetch est répétée dans les autres lectures à dessein :
+ * la cacher derrière un module générique tue l'inférence des routes typées.
+ * Voir docs/adr/0001-pas-de-wrapper-generique-autour-de-useasyncdata.md.
  */
 export async function useCurrentUser(): Promise<CurrentUser> {
   const { data, refresh } = await useAsyncData<MeResponse>(
