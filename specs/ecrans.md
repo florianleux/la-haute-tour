@@ -2,11 +2,11 @@
 
 ## Principes
 
-- **Pas de barre de navigation.** Aucun bandeau permanent, aucun menu global. Chaque écran porte les seules actions qui ont un sens à cet endroit.
-- **L'accueil est le hub.** C'est la page d'atterrissage par défaut, celle qu'on retrouve en rechargeant, et le seul point de départ vers le jeu et vers le profil.
+- **Trois icônes, pas un menu.** En haut à droite de chaque écran : une tour vers le jeu, un bouclier vers l'administration — pour l'admin seulement —, un buste vers le profil. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
+- **L'accueil reste le hub.** C'est la page d'atterrissage par défaut, celle qu'on retrouve en rechargeant, et le point de départ que suit un joueur qui ne cherche rien de précis. Les trois icônes ne le remplacent pas : elles évitent d'y repasser pour aller ailleurs.
 - **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, fin — vit sur la même page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
 - **Étage et vies s'affichent à deux endroits seulement** : sur l'accueil, pour savoir où l'on en est avant de reprendre, et pendant le jeu, là où ils bougent. Nulle part ailleurs.
-- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller.
+- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Les trois icônes disparaissent sur `/jouer`, phases d'attente comprises.
 
 ## Inventaire
 
