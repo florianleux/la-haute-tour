@@ -3,8 +3,10 @@ import type { PlayerCard } from '~~/server/utils/players'
 
 const props = defineProps<{
   player: PlayerCard
-  /** Un geste est en vol : les deux boutons attendent la relecture. */
+  /** Un geste est en vol, ici ou sur une autre fiche : tout attend la relecture. */
   busy: boolean
+  /** Le geste lancé depuis cette fiche — lui seul montre son loader. */
+  running: 'skipCooldown' | 'grantLife' | null
   /** L'horloge de la liste, pour que le délai restant descende tout seul. */
   now: number
 }>()
@@ -67,12 +69,18 @@ const remaining = computed(() =>
     <div class="mt-4 flex flex-wrap gap-2">
       <BaseButton
         variant="ghost"
+        :loading="running === 'skipCooldown'"
         :disabled="!waiting || busy"
         @click="$emit('skipCooldown')"
       >
         Passer l'attente
       </BaseButton>
-      <BaseButton variant="ghost" :disabled="busy" @click="$emit('grantLife')">
+      <BaseButton
+        variant="ghost"
+        :loading="running === 'grantLife'"
+        :disabled="busy"
+        @click="$emit('grantLife')"
+      >
         Rendre une vie
       </BaseButton>
     </div>

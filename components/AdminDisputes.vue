@@ -3,13 +3,33 @@ import type { DisputeVerdict } from '~~/server/utils/disputes'
 
 // La file d'arbitrage, en tête du dashboard : l'admin la voit dès sa connexion.
 // Voir specs/admin.md#notification-des-contestations.
-const { disputes, failed, loading, settling, settle } = await useAdminDisputes()
+const { disputes, failed, loading, settle } = await useAdminDisputes()
 
 const settleFailed = ref(false)
+// Le bouton exact sur lequel on vient de cliquer : lui seul montre son loader,
+// sinon toute la file se met à tourner pour un seul arbitrage.
+const deciding = ref<string | null>(null)
+
+function isDeciding(id: number, verdict: DisputeVerdict): boolean {
+  return deciding.value === `${id}:${verdict}`
+}
 
 async function decide(id: number, verdict: DisputeVerdict): Promise<void> {
+  deciding.value = `${id}:${verdict}`
   settleFailed.value = !(await settle(id, verdict))
+  deciding.value = null
 }
+
+// La première lecture n'a encore rien à montrer : on montre la forme de la file.
+// Une relecture garde la file en place — le bouton cliqué porte son loader.
+const firstLoad = computed(() => loading.value && disputes.value.length === 0)
+const SKELETONS = 3
+
+const empty = computed(
+  () => (disputes.value.length || failed.value || firstLoad.value
+    ? null
+    : 'Aucune contestation en attente.'),
+)
 </script>
 
 <template>
@@ -26,11 +46,17 @@ async function decide(id: number, verdict: DisputeVerdict): Promise<void> {
       Impossible de lire les contestations. Recharge la page.
     </BaseNotice>
 
-    <BaseLoading v-if="loading" class="mt-6">
-      Mise à jour de la file…
-    </BaseLoading>
+    <BaseList :empty="empty" class="mt-6">
+      <li
+        v-for="index in (firstLoad ? SKELETONS : 0)"
+        :key="`skeleton-${index}`"
+        class="space-y-2 px-4 py-3"
+      >
+        <BaseSkeleton height="h-4" width="w-2/3" />
+        <BaseSkeleton height="h-3" width="w-1/2" />
+        <BaseSkeleton height="h-3" width="w-3/5" />
+      </li>
 
-    <BaseList :empty="disputes.length || failed ? null : 'Aucune contestation en attente.'" class="mt-6">
       <li
         v-for="dispute in disputes"
         :key="dispute.id"
@@ -50,10 +76,19 @@ async function decide(id: number, verdict: DisputeVerdict): Promise<void> {
         </div>
 
         <div class="flex shrink-0 gap-2">
-          <BaseButton :loading="settling" @click="decide(dispute.id, 'accepted')">
+          <BaseButton
+            :loading="isDeciding(dispute.id, 'accepted')"
+            :disabled="Boolean(deciding)"
+            @click="decide(dispute.id, 'accepted')"
+          >
             Accepter
           </BaseButton>
-          <BaseButton variant="ghost" :loading="settling" @click="decide(dispute.id, 'rejected')">
+          <BaseButton
+            variant="ghost"
+            :loading="isDeciding(dispute.id, 'rejected')"
+            :disabled="Boolean(deciding)"
+            @click="decide(dispute.id, 'rejected')"
+          >
             Rejeter
           </BaseButton>
         </div>

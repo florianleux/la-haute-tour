@@ -26,7 +26,7 @@ const tab = ref<AdminTab>('disputes')
         v-for="item in tabs"
         :key="item.id"
         type="button"
-        class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors"
+        class="-mb-px cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors"
         :class="tab === item.id
           ? 'border-indigo-400 text-slate-100'
           : 'border-transparent text-slate-400 hover:text-slate-100'"

@@ -22,7 +22,9 @@ const props = withDefaults(defineProps<{
 defineEmits<{ click: [MouseEvent] }>()
 
 const classes = computed(() => [
-  'inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold',
+  // `relative` : le loader se pose par-dessus le libellé plutôt qu'à côté, pour
+  // que le bouton garde sa largeur pendant l'attente.
+  'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold',
   'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
   'disabled:cursor-not-allowed disabled:opacity-50',
   props.block ? 'w-full' : '',
@@ -44,7 +46,11 @@ const classes = computed(() => [
     :aria-busy="loading"
     @click="$emit('click', $event)"
   >
-    <BaseSpinner v-if="loading" />
-    <slot />
+    <!-- Le libellé reste en place, invisible : il tient la largeur du bouton, et
+         le loader prend sa place au lieu de s'ajouter à côté. -->
+    <span class="contents" :class="loading ? 'invisible' : ''">
+      <slot />
+    </span>
+    <BaseSpinner v-if="loading" class="absolute inset-0 justify-center" />
   </button>
 </template>

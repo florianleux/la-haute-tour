@@ -24,6 +24,27 @@ const { user } = await useCurrentUser()
 // fait que projeter cette décision. Voir utils/phase.ts.
 const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 
+// Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
+// la page, il ferait tourner « Commencer le rattrapage » pendant qu'un admin
+// passe l'attente juste au-dessus.
+type PlayAction = 'submit' | 'advance' | 'skipCooldown'
+const running = ref<PlayAction | null>(null)
+
+function isRunning(action: PlayAction): boolean {
+  return pending.value && running.value === action
+}
+
+async function run(action: PlayAction, move: () => Promise<void>): Promise<void> {
+  running.value = action
+  await move()
+  running.value = null
+}
+
+// Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
+// suivant. Jamais pendant qu'une question tourne — là, Entrée répond.
+const canAdvance = computed(() => Boolean(screen.value?.action) && !screen.value?.question && !pending.value)
+useAdvanceOnEnter(canAdvance, () => run('advance', advance))
+
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
 // désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
 const { isContestable, contest, contestingId, refresh: refreshDisputes } = useDisputes()
@@ -61,7 +82,7 @@ const waiting = computed(() =>
     <template #lead>
       Tes vies sont restaurées. Tu peux reprendre l'ascension.
     </template>
-    <BaseButton block class="mt-8" :loading="pending" @click="advance">
+    <BaseButton block class="mt-8" :loading="isRunning('advance')" @click="run('advance', advance)">
       Reprendre l'ascension
     </BaseButton>
     <BaseButton to="/" variant="ghost" block class="mt-3">
@@ -91,8 +112,8 @@ const waiting = computed(() =>
       v-if="user?.isAdmin && state?.phase === 'cooldown'"
       variant="ghost"
       class="mt-4"
-      :loading="pending"
-      @click="skipCooldown"
+      :loading="isRunning('skipCooldown')"
+      @click="run('skipCooldown', skipCooldown)"
     >
       Passer l'attente
     </BaseButton>
@@ -110,8 +131,8 @@ const waiting = computed(() =>
       v-if="state?.phase === 'recovery'"
       block
       class="mt-8"
-      :loading="pending"
-      @click="advance"
+      :loading="isRunning('advance')"
+      @click="run('advance', advance)"
     >
       Commencer le rattrapage
     </BaseButton>
@@ -144,7 +165,7 @@ const waiting = computed(() =>
       </BaseHint>
 
       <!-- Question en cours : aucune action à part répondre. -->
-      <form v-if="screen.question" class="mt-6" @submit.prevent="submit">
+      <form v-if="screen.question" class="mt-6" @submit.prevent="run('submit', submit)">
         <BaseHeadline weight="light">{{ screen.question.statement }}</BaseHeadline>
         <BaseHint class="mt-2">
           {{ secondsLeft }} s
@@ -154,7 +175,7 @@ const waiting = computed(() =>
           label="Ta réponse"
           class="mt-4"
         />
-        <BaseButton block class="mt-4" :loading="pending" @click="submit">
+        <BaseButton block class="mt-4" :loading="isRunning('submit')" @click="run('submit', submit)">
           Répondre
         </BaseButton>
       </form>
@@ -236,8 +257,8 @@ const waiting = computed(() =>
         v-if="screen.action"
         block
         class="mt-6"
-        :loading="pending"
-        @click="advance"
+        :loading="isRunning('advance')"
+        @click="run('advance', advance)"
       >
         {{ screen.action }}
       </BaseButton>

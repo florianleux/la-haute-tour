@@ -13,7 +13,6 @@ const {
   limit,
   failed,
   loading,
-  saving,
   create,
   edit,
   remove,
@@ -22,6 +21,13 @@ const {
 /** La question en cours d'édition, et celle dont la suppression attend un oui. */
 const editing = ref<string | null>(null)
 const confirming = ref<string | null>(null)
+/**
+ * Le formulaire ou le bouton exact sur lequel on vient de cliquer : lui seul
+ * montre son loader. Le `saving` du composable, lui, est vrai pour tout le deck :
+ * il ferait tourner la création pendant qu'on supprime une question plus bas.
+ */
+const submitting = ref<'create' | string | null>(null)
+const removing = ref<string | null>(null)
 const writeFailed = ref(false)
 // Remet le formulaire de création à blanc : il tient ses champs, pas le parent.
 const formKey = ref(0)
@@ -53,8 +59,13 @@ function goToNext(): void {
   }
 }
 
+// La première lecture n'a encore aucune question à montrer : on montre leur
+// forme. Une relecture garde la liste — le bouton cliqué porte déjà son loader.
+const firstLoad = computed(() => loading.value && questions.value.length === 0)
+const SKELETONS = 5
+
 const emptyMessage = computed(() => {
-  if (questions.value.length || failed.value) {
+  if (questions.value.length || failed.value || firstLoad.value) {
     return null
   }
 
@@ -68,7 +79,9 @@ const emptyMessage = computed(() => {
 })
 
 async function onCreate(draft: QuestionDraft): Promise<void> {
+  submitting.value = 'create'
   const created = await create(draft)
+  submitting.value = null
 
   writeFailed.value = !created
   if (created) {
@@ -77,7 +90,9 @@ async function onCreate(draft: QuestionDraft): Promise<void> {
 }
 
 async function onSave(id: string, content: QuestionEdit): Promise<void> {
+  submitting.value = id
   const saved = await edit(id, content)
+  submitting.value = null
 
   writeFailed.value = !saved
   if (saved) {
@@ -86,7 +101,9 @@ async function onSave(id: string, content: QuestionEdit): Promise<void> {
 }
 
 async function onRemove(id: string): Promise<void> {
+  removing.value = id
   const removed = await remove(id)
+  removing.value = null
 
   writeFailed.value = !removed
   confirming.value = null
@@ -115,7 +132,7 @@ async function onRemove(id: string): Promise<void> {
       <AdminQuestionForm
         :key="formKey"
         submit-label="Créer"
-        :pending="saving"
+        :pending="submitting === 'create'"
         @create="onCreate"
       />
     </div>
@@ -127,17 +144,23 @@ async function onRemove(id: string): Promise<void> {
       Impossible de lire les questions. Recharge la page.
     </BaseNotice>
 
-    <BaseLoading v-if="loading" class="mt-6">
-      Mise à jour du deck…
-    </BaseLoading>
-
     <BaseList :empty="emptyMessage" class="mt-6">
+      <li
+        v-for="index in (firstLoad ? SKELETONS : 0)"
+        :key="`skeleton-${index}`"
+        class="space-y-2 px-4 py-3"
+      >
+        <BaseSkeleton height="h-4" width="w-3/4" />
+        <BaseSkeleton height="h-3" width="w-1/2" />
+        <BaseSkeleton height="h-3" width="w-2/5" />
+      </li>
+
       <li v-for="question in questions" :key="question.id" class="px-4 py-3 text-sm">
         <AdminQuestionForm
           v-if="editing === question.id"
           :question="question"
           submit-label="Enregistrer"
-          :pending="saving"
+          :pending="submitting === question.id"
           @save="content => onSave(question.id, content)"
           @cancel="editing = null"
         />
@@ -158,7 +181,7 @@ async function onRemove(id: string): Promise<void> {
 
           <div class="flex shrink-0 gap-2">
             <template v-if="confirming === question.id">
-              <BaseButton :loading="saving" @click="onRemove(question.id)">
+              <BaseButton :loading="removing === question.id" @click="onRemove(question.id)">
                 Confirmer
               </BaseButton>
               <BaseButton variant="ghost" @click="confirming = null">
