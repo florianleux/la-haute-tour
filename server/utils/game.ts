@@ -8,6 +8,7 @@ import {
   phaseOf,
   resumesRecovery,
 } from './mechanics'
+import { closeAttempt } from './journey'
 import { rulesForFloor } from './rules'
 import {
   acceptedAnswers,
@@ -490,6 +491,7 @@ async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promis
 
   // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
   // contestable. Voir specs/validation.md#contestation.
+  await closeAttempt(db, user, now)
   await db
     .update(users)
     .set({ lives: rules.lives, cooldownUntil: null, attemptStartedAt: now })
@@ -733,6 +735,12 @@ async function finishRecovery(db: Database, user: User, now: Date): Promise<Game
 
   await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))
   await db.delete(reservations).where(eq(reservations.userId, user.id))
+
+  // La tentative ne se clôt qu'au moment où la suivante s'ouvre : une attente de
+  // plus prolonge celle qui court.
+  if (verdict.resumes) {
+    await closeAttempt(db, user, now)
+  }
 
   await db
     .update(users)

@@ -43,6 +43,13 @@
       "when": 1788534912018,
       "tag": "0005_nostalgic_goblin_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1788537940479,
+      "tag": "0006_wild_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { missedPool, recoveryQuestions, seenQuestions } from '../../server/db/schema'
+import { attempts, missedPool, recoveryQuestions, seenQuestions } from '../../server/db/schema'
 import { readGameState, readMissedPool, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
@@ -74,6 +74,10 @@ describe('attente et rattrapage', () => {
       expect(state.phase).toBe('ascent')
       expect(state.lives).toBe(rules.lives)
       expect((await reload()).cooldownUntil).toBeNull()
+      // La reprise ouvre une tentative, donc elle en clôt une : sa longueur est
+      // inscrite pour le parcours. Voir specs/ecrans.md#profil.
+      expect(await db.select().from(attempts))
+        .toMatchObject([{ seen: rules.poolSizeForRecovery - 1 }])
     })
 
     it('passe au rattrapage quand le pool est assez fourni', async () => {
@@ -249,6 +253,7 @@ describe('attente et rattrapage', () => {
       expect(state.phase).toBe('ascent')
       expect(state.lives).toBe(rules.lives)
       expect(await db.select().from(recoveryQuestions)).toHaveLength(0)
+      expect(await db.select().from(attempts)).toHaveLength(1)
     })
 
     it('relance une attente plus courte quand rien n a été juste', async () => {
@@ -267,6 +272,8 @@ describe('attente et rattrapage', () => {
         new Date(afterCooldown.getTime() + rules.cooldownAfterFailedRecoveryMs).toISOString(),
       )
       expect(await db.select().from(recoveryQuestions)).toHaveLength(0)
+      // Une attente de plus prolonge la tentative : aucune n'est close.
+      expect(await db.select().from(attempts)).toHaveLength(0)
     })
   })
 })

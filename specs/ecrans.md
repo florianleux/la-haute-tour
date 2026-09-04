@@ -48,9 +48,20 @@ Toutes mènent à la page de jeu. Le libellé annonce ce qu'on va y trouver — 
 
 ## Profil
 
-Pseudo Discord, date d'inscription, bouton de déconnexion, retour à l'accueil.
+Pseudo Discord, date d'inscription, **parcours**, bouton de déconnexion, retour à l'accueil.
 
-Aucune statistique pour l'instant, aucun état de jeu (il est sur l'accueil), et **jamais** de donnée de triche : les flags sont réservés à l'administration. C'est ici que viendront les statistiques quand elles seront spécifiées.
+Le parcours dit le chemin déjà fait, jamais l'état de l'instant :
+
+- **Étage** atteint sur les 6, et questions vues dans cet étage sur ce qu'il contient.
+- **Questions vues** depuis le début, **bonnes réponses**, et le taux qui en découle.
+- **Meilleure série** de bonnes réponses d'affilée. Elle traverse les étages : un palier n'interrompt rien.
+- **Tentatives achevées**, avec la **plus longue** et la **plus courte**.
+
+Une tentative se mesure en **questions vues**, l'unité de progression du jeu, et non en heures — une soirée entrecoupée de pauses ne vaut pas une longue ascension. Elle ne s'inscrit qu'une fois **achevée**, c'est-à-dire au moment où la suivante s'ouvre : entre la perte de la dernière vie et la reprise, une contestation acceptée peut rendre une vie et faire repartir la même tentative. Les tentatives closes avant que le profil existe ne sont pas reconstituées : le décompte part de zéro.
+
+S'y ajoute, en une phrase, le nombre de **contestations acceptées** sur celles ouvertes.
+
+Ce que le profil ne montre toujours pas : ni phase, ni vies, ni attente — l'état de l'instant vit sur l'accueil et dans le jeu — et **jamais** de donnée de triche, les flags étant réservés à l'administration.
 
 ## Jeu
 
@@ -105,5 +116,5 @@ Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
 
 - **Aucun classement**, nulle part — le jeu n'en a pas.
 - **Aucun compteur de triche** : les flags existent, ils sont réservés à l'administration.
-- **Aucun état de jeu sur le profil** : il vit sur l'accueil et dans le jeu.
+- **Aucun état de jeu sur le profil** : il y montre son parcours, pas sa phase, ses vies ni son attente — celles-là vivent sur l'accueil et dans le jeu.
 - **Aucune question à venir** : l'accueil n'annonce jamais l'énoncé suivant.

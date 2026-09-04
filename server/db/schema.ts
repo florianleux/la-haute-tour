@@ -228,6 +228,28 @@ export const disputes = sqliteTable('disputes', {
 ])
 
 /**
+ * Une tentative achevée : de la reprise à vies pleines jusqu'à la suivante.
+ * Écrite au moment où la tentative d'après s'ouvre — pas à la perte de la
+ * dernière vie, qu'une contestation acceptée peut annuler.
+ *
+ * La longueur d'une tentative se compte en questions vues, l'unité de
+ * progression du jeu, et non en heures : une soirée entrecoupée de pauses ne
+ * vaut pas une longue ascension. Voir specs/ecrans.md#profil.
+ */
+export const attempts = sqliteTable('attempts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  startedAt: integer('started_at', { mode: 'timestamp' }).notNull(),
+  endedAt: integer('ended_at', { mode: 'timestamp' }).notNull(),
+  /** Questions vues pendant la tentative — sa longueur. */
+  seen: integer('seen').notNull(),
+  /** L'étage où elle s'est achevée. */
+  floor: integer('floor').notNull(),
+}, table => [index('attempts_user_idx').on(table.userId, table.endedAt)])
+
+/**
  * Une réponse soumise parce que le joueur a quitté la page pendant qu'un timer
  * tournait. Réservé à l'administration : le profil joueur n'en porte aucune
  * trace, et une question résolue ainsi n'est pas contestable.
@@ -256,4 +278,5 @@ export type Reservation = typeof reservations.$inferSelect
 export type MissedPoolEntry = typeof missedPool.$inferSelect
 export type RecoveryQuestion = typeof recoveryQuestions.$inferSelect
 export type Dispute = typeof disputes.$inferSelect
+export type Attempt = typeof attempts.$inferSelect
 export type FocusLoss = typeof focusLosses.$inferSelect
