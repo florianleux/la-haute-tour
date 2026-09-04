@@ -18,7 +18,7 @@
 
 - **Le serveur arbitre.** La question est servie avec une échéance ; toute réponse arrivant après est traitée comme un timeout, à une marge de latence près, quoi qu'affiche le client.
 - Le **compte à rebours visible** n'est qu'un rendu de cette échéance. Le trafiquer ne gagne rien.
-- Durées par défaut : 20 s en ascension, 60 s en rattrapage. Ces valeurs, comme toutes les autres, viennent du jeu de règles (voir [`mecanique.md`](./mecanique.md#règles-chiffrées)).
+- Durées par défaut : 60 s en ascension, 60 s en rattrapage. Ces valeurs, comme toutes les autres, viennent du jeu de règles (voir [`mecanique.md`](./mecanique.md#règles-chiffrées)).
 - **Le timeout est une erreur ordinaire** : vie perdue, bonne réponse affichée, question versée au Pool Échecs.
 - L'échéance ne dépend d'aucun signal du client : elle est fixée au moment où la question est réservée, c'est-à-dire sur une action explicite du joueur.
 

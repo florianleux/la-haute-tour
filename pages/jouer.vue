@@ -27,12 +27,21 @@ const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
 // désaccord naît, et sur l'attente, pour qui est passé trop vite.
 // Voir specs/validation.md#contestation.
-const { errors, isContestable, contest, contesting } = await useDisputes()
+const { errors, isContestable, contest, contesting, refresh: refreshDisputes } = await useDisputes()
 const contestFailed = ref(false)
 
 async function dispute(questionId: string): Promise<void> {
   contestFailed.value = !(await contest(questionId))
 }
+
+// Un verdict qui vient d'arriver n'est pas encore dans la liste des contestables
+// — celle-ci a été lue avant la réponse. On la relit dès qu'un verdict faux
+// apparaît, pour que le bouton « Contester » soit visible immédiatement.
+watch(() => state.value?.verdict, (verdict) => {
+  if (verdict && !verdict.correct) {
+    refreshDisputes()
+  }
+})
 
 // L'écran d'attente sert aussi au rattrapage prêt à démarrer : même fiche de
 // révision, même file de contestation, mais le compteur cède la place au
@@ -118,10 +127,15 @@ const waiting = computed(() =>
     </BaseNotice>
 
     <template v-if="state && screen">
-      <div v-if="state.phase === 'ascent'" class="grid grid-cols-2 gap-3">
+      <div v-if="state.phase === 'ascent'" class="grid grid-cols-3 gap-3">
         <BaseStat label="Étage" :value="state.floor" />
         <BaseStat label="Vies" :value="state.lives" />
+        <BaseStat label="Tentative" :value="state.attemptSeen" />
       </div>
+
+      <BaseHint v-if="state.phase === 'ascent'" class="mt-2">
+        Étage {{ state.floor }} — question {{ state.question ? state.floorSeen + 1 : state.floorSeen }} / {{ state.floorTotal }}
+      </BaseHint>
 
       <BaseHint v-if="screen.recovery">
         Rattrapage — question {{ screen.recovery.position }}

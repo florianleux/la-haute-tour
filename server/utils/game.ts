@@ -73,6 +73,12 @@ export interface GameState {
    * (succès) ou ne voie sa nouvelle attente (échec). Effacé au clic suivant.
    */
   recoveryResult: 'resumed' | 'failed' | null
+  /** Questions vues à l'étage courant. */
+  floorSeen: number
+  /** Questions que l'étage courant contient. */
+  floorTotal: number
+  /** Questions vues depuis le début de la tentative en cours. */
+  attemptSeen: number
 }
 
 /**
@@ -88,6 +94,8 @@ export interface PlayerSnapshot {
   seen: number
   /** Questions the current floor holds. */
   floorTotal: number
+  /** Questions seen since the current attempt started. */
+  attemptSeen: number
   reservation?: Reservation
   /** The reserved question, loaded with the reservation. */
   question?: Question
@@ -121,6 +129,9 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
           and ${seenQuestions.floor} = ${users.currentFloor})`,
       floorTotal: sql<number>`(select count(*) from ${questions}
         where ${questions.floor} = ${users.currentFloor})`,
+      attemptSeen: sql<number>`(select count(*) from ${seenQuestions}
+        where ${seenQuestions.userId} = ${users.id}
+          and ${seenQuestions.seenAt} >= ${users.attemptStartedAt})`,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -137,6 +148,7 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
     user: row.user,
     seen: row.seen,
     floorTotal: row.floorTotal,
+    attemptSeen: row.attemptSeen,
     reservation: held?.reservation,
     question: held?.question,
   }
@@ -378,6 +390,9 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
     recovery: user.lives <= 0 ? await recoveryProgress(db, user) : null,
     recoveryResult: null as 'resumed' | 'failed' | null,
+    floorSeen: seen,
+    floorTotal: snapshot.floorTotal,
+    attemptSeen: snapshot.attemptSeen,
   }
 
   if (reservation && question) {
@@ -437,6 +452,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
       user: resolution.user,
       reservation: resolution.reservation,
       seen: snapshot.seen + resolution.seenDelta,
+      attemptSeen: snapshot.attemptSeen + resolution.seenDelta,
     }, now)
   }
 
@@ -504,7 +520,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
 
   // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
   // rattrapage, d'où le delta rendu par resolve() plutôt qu'un « +1 » supposé.
-  const current: PlayerSnapshot = { ...snapshot, user: fresh, seen: snapshot.seen + seenDelta }
+  const current: PlayerSnapshot = { ...snapshot, user: fresh, seen: snapshot.seen + seenDelta, attemptSeen: snapshot.attemptSeen + seenDelta }
 
   // Le joueur vient de cliquer : plus aucune question n'est en jeu, celle qu'il
   // tenait est résolue.
@@ -832,5 +848,6 @@ export async function submitAnswer(
     user: resolution.user,
     reservation: resolution.reservation,
     seen: snapshot.seen + resolution.seenDelta,
+    attemptSeen: snapshot.attemptSeen + resolution.seenDelta,
   }, now)
 }

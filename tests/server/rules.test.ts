@@ -6,7 +6,7 @@ describe('jeu de règles', () => {
   it('sert les valeurs par défaut du premier étage', () => {
     expect(rulesForFloor(1)).toMatchObject({
       lives: 3,
-      ascentTimerMs: 20_000,
+      ascentTimerMs: 60_000,
       recoveryTimerMs: 60_000,
       recoveryQuestions: 3,
       recoverySuccessesToResume: 1,

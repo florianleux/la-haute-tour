@@ -96,7 +96,7 @@ Valeurs par défaut, identiques aux 6 étages :
 | Règle | Défaut |
 |---|---|
 | Vies par tentative | 3 |
-| Timer d'une question d'ascension | 20 s |
+| Timer d'une question d'ascension | 60 s |
 | Timer d'une question de rattrapage | 60 s |
 | Questions tirées au rattrapage | 3 |
 | Bonnes réponses pour se débloquer | 1 |

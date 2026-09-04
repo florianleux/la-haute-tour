@@ -13,6 +13,7 @@ type QuestionRunOptions = Parameters<typeof useQuestionRun>[0]
 
 const NOW = new Date('2026-09-03T12:00:00.000Z').getTime()
 const FOCUS_GRACE_MS = 1_000
+const ASCENT_TIMER_MS = 60_000
 
 /**
  * Dans une page, le composant possède la portée du composable et la libère en se
@@ -36,6 +37,9 @@ function gameState(overrides: Partial<GameState> = {}): GameState {
     cooldownUntil: null,
     recovery: null,
     recoveryResult: null,
+    floorSeen: 0,
+    floorTotal: 0,
+    attemptSeen: 0,
     ...overrides,
   }
 }
@@ -63,14 +67,14 @@ describe('déroulé d une question', () => {
   })
 
   it('décompte les secondes qui restent sur l échéance du serveur', async () => {
-    serve(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     const now = ref(NOW)
 
     const { secondsLeft } = await run({ now })
 
-    expect(secondsLeft.value).toBe(20)
+    expect(secondsLeft.value).toBe(60)
     now.value = NOW + 12_500
-    expect(secondsLeft.value).toBe(8)
+    expect(secondsLeft.value).toBe(48)
   })
 
   it('ne décompte rien hors question', async () => {
@@ -82,12 +86,12 @@ describe('déroulé d une question', () => {
   })
 
   it('envoie ce qui est saisi quand le chrono tombe à zéro', async () => {
-    serve(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     const now = ref(NOW)
     const { typed } = await run({ now })
     typed.value = 'bordeaux'
 
-    now.value = NOW + 20_000
+    now.value = NOW + ASCENT_TIMER_MS
     await nextTick()
 
     expect(calls()).toEqual(['fetch POST /api/game/answer'])
@@ -103,7 +107,7 @@ describe('déroulé d une question', () => {
   })
 
   it('vide le champ une fois la réponse partie', async () => {
-    serve(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     answerWith(gameState())
     const { typed, submit } = await run({ now: ref(NOW) })
     typed.value = 'bordeaux'
@@ -114,7 +118,7 @@ describe('déroulé d une question', () => {
   })
 
   it('garde la saisie quand l envoi est refusé', async () => {
-    serve(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     breakNetwork()
     const { typed, submit, actionFailed } = await run({ now: ref(NOW) })
     typed.value = 'bordeaux'
@@ -142,12 +146,12 @@ describe('déroulé d une question', () => {
   })
 
   it('rend ses effets à la portée qui l a appelé', async () => {
-    serve(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     const now = ref(NOW)
     await run({ now })
 
     scope.stop()
-    now.value = NOW + 20_000
+    now.value = NOW + ASCENT_TIMER_MS
     await nextTick()
 
     // Le chrono est tombé à zéro, mais plus personne n'écoute.
@@ -155,7 +159,7 @@ describe('déroulé d une question', () => {
   })
 
   it('envoie la réponse en l état quand le joueur quitte la page trop longtemps', async () => {
-    serve(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     const now = ref(NOW)
     const visible = ref(true)
     const { typed, leftThePage } = await run({ now, visible })
@@ -172,7 +176,7 @@ describe('déroulé d une question', () => {
   })
 
   it('ignore une absence plus courte que la tolérance', async () => {
-    serve(GAME_STATE_KEY, servedAt(20_000))
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     const now = ref(NOW)
     const visible = ref(true)
     const { leftThePage } = await run({ now, visible })

@@ -22,6 +22,9 @@ const served: GameState = {
   cooldownUntil: null,
   recovery: null,
   recoveryResult: null,
+  floorSeen: 0,
+  floorTotal: 0,
+  attemptSeen: 0,
 }
 
 describe('actions du joueur', () => {

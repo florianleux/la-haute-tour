@@ -39,7 +39,7 @@ const HOUR_MS = 60 * 60 * 1000
 
 const DEFAULT_RULES: FloorRules = {
   lives: 3,
-  ascentTimerMs: 20_000,
+  ascentTimerMs: 60_000,
   recoveryTimerMs: 60_000,
   recoveryQuestions: 3,
   recoverySuccessesToResume: 1,
