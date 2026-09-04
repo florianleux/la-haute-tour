@@ -60,12 +60,15 @@ export interface SessionData {
 }
 
 const SESSION_NAME = 'lht_session'
+/** Un an : La Haute Tour est un jeu qu'on peut revenir jouer bien plus tard. */
+const SESSION_MAX_AGE = 365 * 24 * 60 * 60
 
 export async function useAuthSession(event: H3Event): Promise<SessionManager<SessionData>> {
   const { sessionPassword } = useRuntimeConfig(event)
   return await useSession<SessionData>(event, {
     name: SESSION_NAME,
     password: sessionPassword,
+    cookie: { maxAge: SESSION_MAX_AGE },
   })
 }
 
