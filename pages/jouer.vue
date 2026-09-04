@@ -145,7 +145,7 @@ const waiting = computed(() =>
 
       <!-- Question en cours : aucune action à part répondre. -->
       <form v-if="screen.question" class="mt-6" @submit.prevent="submit">
-        <BaseHeadline>{{ screen.question.statement }}</BaseHeadline>
+        <BaseHeadline weight="light">{{ screen.question.statement }}</BaseHeadline>
         <BaseHint class="mt-2">
           {{ secondsLeft }} s
         </BaseHint>

@@ -5,5 +5,5 @@ defineProps<{ label: string }>()
 </script>
 
 <template>
-  <span class="font-semibold text-slate-100">{{ label }}</span>
+  <span class="font-bold text-slate-100">{{ label }}</span>
 </template>

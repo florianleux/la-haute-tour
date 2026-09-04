@@ -1,1 +1,5 @@
 @import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Chivo', ui-sans-serif, system-ui, sans-serif;
+}
