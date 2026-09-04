@@ -77,6 +77,25 @@ export interface PlayerSnapshot {
   question?: Question
 }
 
+/**
+ * La phase d'un instantané. `hasLiveReservation` reste un argument : après un
+ * clic, la question que le joueur tenait n'est plus en jeu alors qu'elle est
+ * encore dans l'instantané, avec son verdict.
+ */
+function phaseOfSnapshot(snapshot: PlayerSnapshot, hasLiveReservation: boolean, now: Date): Phase {
+  return phaseOf({
+    user: snapshot.user,
+    hasLiveReservation,
+    seen: snapshot.seen,
+    floorTotal: snapshot.floorTotal,
+  }, now)
+}
+
+/** Une question encore en jeu, c'est-à-dire réservée et non résolue. */
+function holdsQuestion(snapshot: PlayerSnapshot): boolean {
+  return snapshot.reservation !== undefined && snapshot.reservation.resolvedAt === null
+}
+
 async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapshot> {
   const [row] = await db
     .select({
@@ -269,6 +288,12 @@ async function resolve(
       questionId: reservation.questionId,
       floor: user.currentFloor,
       correct,
+      // L'heure du jeu, pas celle de la base : c'est elle qui dit si l'erreur
+      // appartient à la tentative en cours.
+      seenAt: now,
+      // Gardé au-delà de la réservation : c'est la pièce qu'une contestation
+      // soumet à l'admin. Voir specs/validation.md#contestation.
+      submittedAnswer: answer,
     })
     .onConflictDoNothing()
 
@@ -322,7 +347,7 @@ function servedQuestion(
  * they come back.
  */
 async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Promise<GameState> {
-  const { user, reservation, question, seen, floorTotal } = snapshot
+  const { user, reservation, question, seen } = snapshot
 
   const base = {
     floor: user.currentFloor,
@@ -352,7 +377,9 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     }
   }
 
-  const phase = phaseOf({ user, hasReservation: reservation !== undefined, seen, floorTotal }, now)
+  // Un verdict encore à l'écran ne retient pas le joueur à l'étage : il se lit
+  // aussi bien sur le palier ou sur l'attente qui suivent.
+  const phase = phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now)
 
   // Rien du jeu n'est servi pendant l'attente : le pool se lit à part, comme la
   // fiche de révision qu'il est censé être.
@@ -391,10 +418,10 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     }, now)
   }
 
-  // Only worth a look at the end of a wait — the common read walks past it.
-  const waitOver = snapshot.user.lives <= 0
-    && snapshot.user.cooldownUntil !== null
-    && now >= snapshot.user.cooldownUntil
+  // Une attente qui vient de s'achever est le seul cas où une lecture a quelque
+  // chose à écrire. Un palier ou une fin de partie n'en font pas partie : il n'y
+  // a plus de vies à y rendre.
+  const waitOver = phaseOfSnapshot(snapshot, false, now) === 'recovery'
 
   if (!waitOver) {
     return stateFrom(db, snapshot, now)
@@ -422,9 +449,11 @@ async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promis
     return
   }
 
+  // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
+  // contestable. Voir specs/validation.md#contestation.
   await db
     .update(users)
-    .set({ lives: rules.lives, cooldownUntil: null })
+    .set({ lives: rules.lives, cooldownUntil: null, attemptStartedAt: now })
     .where(eq(users.id, user.id))
 }
 
@@ -451,10 +480,101 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
     seenDelta = resolution.seenDelta
   }
 
+  // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
+  // rattrapage, d'où le delta rendu par resolve() plutôt qu'un « +1 » supposé.
+  const current: PlayerSnapshot = { ...snapshot, user: fresh, seen: snapshot.seen + seenDelta }
+
+  // Le joueur vient de cliquer : plus aucune question n'est en jeu, celle qu'il
+  // tenait est résolue.
+  const phase = phaseOfSnapshot(current, false, now)
+
+  // La tour est finie : phase terminale, rien à tirer, rien à franchir.
+  if (phase === 'gameOver') {
+    return stateFrom(db, current, now)
+  }
+
+  if (phase === 'floorEnd') {
+    await crossFloor(db, fresh, now)
+
+    // L'étage a changé, donc le décompte des questions vues et le total de
+    // l'étage avec lui : on relit plutôt que de rapiécer un instantané qui ne
+    // décrit plus le joueur. Cinq fois par partie, pas par question.
+    return buildState(db, user.id, now)
+  }
+
   if (fresh.lives <= 0) {
     return advanceRecovery(db, fresh, now)
   }
 
+  const drawn = await drawAndReserve(db, fresh, now)
+
+  if (!drawn) {
+    // L'étage se compte des questions non vues qu'il n'a plus : le deck a bougé
+    // sous le joueur. On efface le verdict qu'il vient de lire et on rend l'état
+    // tel qu'il est — inventer un palier ici le ferait monter sans avoir joué.
+    await db.delete(reservations).where(eq(reservations.userId, user.id))
+    return buildState(db, user.id, now)
+  }
+
+  // L'état renvoyé est exactement ce qu'on vient d'écrire : le relire coûterait
+  // deux allers-retours de plus pour la même réponse.
+  return stateFrom(db, {
+    ...current,
+    reservation: {
+      userId: user.id,
+      questionId: drawn.question.id,
+      mode: 'ascent',
+      expiresAt: drawn.expiresAt,
+      createdAt: now,
+      resolvedAt: null,
+      correct: null,
+      submittedAnswer: null,
+    },
+    question: drawn.question,
+  }, now)
+}
+
+/**
+ * Franchir le palier : l'étage monte d'un cran, le Pool Échecs de celui qu'on
+ * quitte est abandonné — les ratées non rattrapées ne suivent pas le joueur — et
+ * la question qu'il tenait reste en bas avec son verdict.
+ * Appelée sur la phase `floorEnd`, qui garantit qu'un étage suivant existe.
+ * Voir specs/mecanique.md#fin-détage.
+ */
+async function crossFloor(db: Database, user: User, now: Date): Promise<void> {
+  const currentFloor = user.currentFloor + 1
+
+  // Franchir est un seul acte : en trois écritures séparées, une interruption
+  // au milieu abandonnerait le Pool Échecs d'un étage que le joueur n'a pas
+  // quitté. Un batch plutôt qu'une transaction : sur Turso, le HTTP n'en porte
+  // pas.
+  await db.batch([
+    db.delete(reservations).where(eq(reservations.userId, user.id)),
+    db
+      .delete(missedPool)
+      .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor))),
+    db.update(users).set({ currentFloor }).where(eq(users.id, user.id)),
+  ])
+
+  // Sans vie, on ne réserve rien : l'attente gagnée à l'étage d'en dessous
+  // attend le joueur au nouveau, et un chrono qui tournerait pendant cette
+  // attente lui coûterait une vie qu'il n'a pas.
+  if (user.lives > 0) {
+    await drawAndReserve(db, { ...user, currentFloor }, now)
+  }
+}
+
+/** Ce qu'un tirage vient d'écrire, pour éviter d'aller le relire. */
+interface DrawnQuestion {
+  question: Question
+  expiresAt: Date
+}
+
+/**
+ * Tire au hasard une question que le joueur n'a pas vue à son étage et la réserve.
+ * Rend null quand l'étage est épuisé — c'est ce qui fait le palier.
+ */
+async function drawAndReserve(db: Database, user: User, now: Date): Promise<DrawnQuestion | null> {
   // Left to the database: pulling every seen id back to embed it in a NOT IN
   // grows with the deck, and the deck is the thing meant to grow.
   const alreadySeen = db
@@ -465,41 +585,21 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
       eq(seenQuestions.questionId, questions.id),
     ))
 
-  const [next] = await db
+  const [question] = await db
     .select()
     .from(questions)
-    .where(and(eq(questions.floor, fresh.currentFloor), notExists(alreadySeen)))
+    .where(and(eq(questions.floor, user.currentFloor), notExists(alreadySeen)))
     .orderBy(sql`RANDOM()`)
     .limit(1)
 
-  if (!next) {
-    await db.delete(reservations).where(eq(reservations.userId, user.id))
-    return buildState(db, user.id, now)
+  if (!question) {
+    return null
   }
 
-  const expiresAt = new Date(now.getTime() + rulesForFloor(fresh.currentFloor).ascentTimerMs)
-  await reserve(db, user.id, next.id, 'ascent', expiresAt, now)
+  const expiresAt = new Date(now.getTime() + rulesForFloor(user.currentFloor).ascentTimerMs)
+  await reserve(db, user.id, question.id, 'ascent', expiresAt, now)
 
-  // L'état renvoyé est exactement ce qu'on vient d'écrire : le relire coûterait
-  // deux allers-retours de plus pour la même réponse.
-  return stateFrom(db, {
-    user: fresh,
-    // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
-    // rattrapage, d'où le delta rendu par resolve() plutôt qu'un « +1 » supposé.
-    seen: snapshot.seen + seenDelta,
-    floorTotal: snapshot.floorTotal,
-    reservation: {
-      userId: user.id,
-      questionId: next.id,
-      mode: 'ascent',
-      expiresAt,
-      createdAt: now,
-      resolvedAt: null,
-      correct: null,
-      submittedAnswer: null,
-    },
-    question: next,
-  }, now)
+  return { question, expiresAt }
 }
 
 /** Reserves one question for `mode`, replacing whatever the player was holding. */
@@ -597,7 +697,12 @@ async function finishRecovery(db: Database, user: User, now: Date): Promise<Game
 
   await db
     .update(users)
-    .set({ lives: verdict.livesAfter, cooldownUntil: verdict.cooldownUntil })
+    .set({
+      lives: verdict.livesAfter,
+      cooldownUntil: verdict.cooldownUntil,
+      // Une reprise ouvre une tentative ; une attente de plus la prolonge.
+      attemptStartedAt: verdict.resumes ? now : user.attemptStartedAt,
+    })
     .where(eq(users.id, user.id))
 
   return buildState(db, user.id, now)

@@ -86,11 +86,11 @@ Le résultat s'annonce à la fin : vies restaurées et reprise, ou nouvelle atte
 
 ### `floorEnd` — palier
 
-L'étage est terminé. Une action pour continuer vers le suivant. Contenu exact encore à spécifier.
+L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet écran qui suit la question, l'étage n'ayant plus rien à servir — puis une action pour continuer vers le suivant. Version sobre ; le reste du contenu est encore à spécifier.
 
 ### `gameOver` — fin de partie
 
-Message de félicitations. Phase terminale, sans classement.
+Message de félicitations, précédé du verdict de la dernière question. Phase terminale, sans classement : la seule sortie est l'accueil.
 
 ## Écrans d'administration
 

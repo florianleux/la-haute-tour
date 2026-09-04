@@ -1,0 +1,188 @@
+import { eq } from 'drizzle-orm'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { missedPool, reservations, seenQuestions, users } from '../../server/db/schema'
+import { FLOOR_COUNT } from '../../shared/utils/floors'
+import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import type { Database } from '../../server/db/client'
+import type { User } from '../../server/db/schema'
+
+const NOW = new Date('2026-09-03T12:00:00.000Z')
+
+describe('palier et fin de partie', () => {
+  let db: Database
+  let player: User
+
+  beforeEach(async () => {
+    db = await createTestDatabase()
+    const id = await createPlayer(db)
+    player = await loadPlayer(db, id)
+  })
+
+  const reload = (): Promise<User> => loadPlayer(db, player.id)
+
+  /** Une question de l'étage, déjà vue : c'est le décompte qui fait le palier. */
+  async function seeQuestion(floor: number): Promise<string> {
+    const questionId = await createQuestion(db, { floor, statement: `Question de l étage ${floor} ?` })
+    await db.insert(seenQuestions).values({ userId: player.id, questionId, floor, correct: true })
+    return questionId
+  }
+
+  async function standOn(floor: number): Promise<void> {
+    await db.update(users).set({ currentFloor: floor }).where(eq(users.id, player.id))
+    player = await reload()
+  }
+
+  describe('palier', () => {
+    beforeEach(async () => {
+      await seeQuestion(1)
+      await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
+    })
+
+    it('annonce le palier quand toutes les questions de l étage sont vues', async () => {
+      const state = await readGameState(db, player, NOW)
+
+      expect(state).toMatchObject({ phase: 'floorEnd', floor: 1 })
+      expect(state.question).toBeNull()
+    })
+
+    it('franchit le palier : l étage suivant, sa première question réservée', async () => {
+      const state = await serveNextQuestion(db, player, NOW)
+
+      expect(state).toMatchObject({ phase: 'ascent', floor: 2 })
+      expect(state.question?.statement).toBe('Question de l étage 2 ?')
+      expect((await reload()).currentFloor).toBe(2)
+    })
+
+    it('réaffiche le palier au rafraîchissement, sans le franchir ni le sauter', async () => {
+      await readGameState(db, player, NOW)
+      const again = await readGameState(db, await reload(), new Date(NOW.getTime() + 60_000))
+
+      expect(again).toMatchObject({ phase: 'floorEnd', floor: 1 })
+      expect((await reload()).currentFloor).toBe(1)
+      expect(await db.select().from(reservations)).toHaveLength(0)
+    })
+
+    it('abandonne le Pool Échecs de l étage quitté', async () => {
+      // Une question du pool est toujours une question vue : elle y est entrée en
+      // se résolvant.
+      const missedId = await seeQuestion(1)
+      await db.insert(missedPool).values({
+        userId: player.id,
+        questionId: missedId,
+        floor: 1,
+        lastFailedAt: NOW,
+      })
+
+      await serveNextQuestion(db, player, NOW)
+
+      expect(await db.select().from(missedPool)).toHaveLength(0)
+    })
+  })
+
+  describe('étage épuisé sans vie', () => {
+    /** Plus de vies, une attente en cours, et un Pool Échecs bien fourni. */
+    async function outOfLivesWithPool(floor: number): Promise<void> {
+      for (let i = 0; i < 3; i++) {
+        const questionId = await seeQuestion(floor)
+        await db.insert(missedPool).values({
+          userId: player.id,
+          questionId,
+          floor,
+          lastFailedAt: NOW,
+        })
+      }
+
+      await db
+        .update(users)
+        .set({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 60_000) })
+        .where(eq(users.id, player.id))
+      player = await reload()
+    }
+
+    it('mène au palier, pas à l attente : le pool part avec l étage', async () => {
+      await outOfLivesWithPool(1)
+      await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
+
+      const state = await readGameState(db, player, NOW)
+
+      expect(state.phase).toBe('floorEnd')
+    })
+
+    it('franchit le palier sans réserver de question : l attente reste due', async () => {
+      await outOfLivesWithPool(1)
+      await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
+
+      const state = await serveNextQuestion(db, player, NOW)
+
+      expect(state).toMatchObject({ phase: 'cooldown', floor: 2, lives: 0 })
+      expect(await db.select().from(reservations)).toHaveLength(0)
+      expect(await db.select().from(missedPool)).toHaveLength(0)
+    })
+
+    it('mène au palier dès le verdict de la dernière question, jamais au rattrapage', async () => {
+      await createQuestion(db, { floor: 1, statement: 'Dernière de l étage ?' })
+      await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
+      await db.update(users).set({ lives: 1 }).where(eq(users.id, player.id))
+      await serveNextQuestion(db, await reload(), NOW)
+
+      const state = await submitAnswer(db, await reload(), 'Toulouse', new Date(NOW.getTime() + 1_000))
+
+      // La dernière vie est perdue, mais l'étage est fini : il n'y a plus rien à
+      // rattraper à un étage qu'on quitte.
+      expect(state).toMatchObject({ phase: 'floorEnd', floor: 1, lives: 0 })
+      expect(state.verdict).toMatchObject({ correct: false, lifeLost: true })
+    })
+
+    it('mène à la fin de partie au dernier étage, sans attente ni rattrapage', async () => {
+      await standOn(FLOOR_COUNT)
+      await outOfLivesWithPool(FLOOR_COUNT)
+
+      const state = await readGameState(db, player, NOW)
+
+      expect(state.phase).toBe('gameOver')
+    })
+  })
+
+  describe('fin de partie', () => {
+    beforeEach(async () => {
+      await standOn(FLOOR_COUNT)
+      await seeQuestion(FLOOR_COUNT)
+    })
+
+    it('annonce la fin quand le dernier étage est épuisé', async () => {
+      const state = await readGameState(db, player, NOW)
+
+      expect(state).toMatchObject({ phase: 'gameOver', floor: FLOOR_COUNT })
+    })
+
+    it('est terminale : rien à franchir, rien à réserver', async () => {
+      const state = await serveNextQuestion(db, player, NOW)
+
+      expect(state).toMatchObject({ phase: 'gameOver', floor: FLOOR_COUNT })
+      expect(state.question).toBeNull()
+      expect((await reload()).currentFloor).toBe(FLOOR_COUNT)
+      expect(await db.select().from(reservations)).toHaveLength(0)
+    })
+
+    it('n empêche pas la fin quand le Pool Échecs du dernier étage n est pas vide', async () => {
+      const missedId = await createQuestion(db, { floor: FLOOR_COUNT, statement: 'Ratée au sommet ?' })
+      await db.insert(seenQuestions).values({
+        userId: player.id,
+        questionId: missedId,
+        floor: FLOOR_COUNT,
+        correct: false,
+      })
+      await db.insert(missedPool).values({
+        userId: player.id,
+        questionId: missedId,
+        floor: FLOOR_COUNT,
+        lastFailedAt: NOW,
+      })
+
+      const state = await readGameState(db, player, NOW)
+
+      expect(state.phase).toBe('gameOver')
+    })
+  })
+})

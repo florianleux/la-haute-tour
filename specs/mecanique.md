@@ -44,6 +44,8 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 - La phase est **dérivée à chaque lecture**, jamais stockée : elle se déduit des vies, de la réservation, de la fin d'attente et du décompte des questions vues. Une attente échue devient donc `recovery` (ou `ascent`) sans qu'aucune tâche de fond ne s'exécute.
 - **Aucune lecture ne réserve de question.** Le tirage naît d'une action explicite du joueur : commencer, passer à la question suivante, franchir un palier. Une lecture ne fait que rendre ce qui existe — réservation vivante, réservation expirée résolue en échec, ou verdict en attente.
 - `floorEnd` et `gameOver` ne coûtent aucun stockage : elles se déduisent du nombre de questions vues à l'étage courant. Franchir le palier est l'action qui incrémente l'étage.
+- **L'étage épuisé prime sur les vies** : perdre sa dernière vie sur la dernière question de l'étage mène au palier, pas à l'attente. Le Pool Échecs de cet étage est sur le point d'être abandonné — il n'y a plus rien à y rattraper. L'attente due, elle, reste due : elle attend le joueur à l'étage suivant. Au dernier étage, c'est la fin de partie qui prime, sans attente ni rattrapage.
+- Un **verdict** ne retient pas le joueur à sa phase : il se lit sur l'écran de celle qui suit — palier, attente ou fin. Seule une question **non résolue** maintient l'ascension.
 
 ## Tentative, attente et rattrapage
 

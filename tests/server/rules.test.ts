@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FLOOR_COUNT } from '../../server/db/schema'
+import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { rulesForFloor } from '../../server/utils/rules'
 
 describe('jeu de règles', () => {

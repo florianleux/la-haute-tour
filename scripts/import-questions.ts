@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { createDatabase, type Database } from '../server/db/client'
+import { FLOOR_COUNT } from '../shared/utils/floors'
 import {
-  FLOOR_COUNT,
   acceptedAnswers,
   categories,
   questionCategories,

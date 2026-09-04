@@ -1,5 +1,5 @@
 import { isAnswerAccepted } from './answers'
-import { FLOOR_COUNT } from '../db/schema'
+import { FLOOR_COUNT } from '../../shared/utils/floors'
 import type { FloorRules } from './rules'
 import type { MissedPoolEntry, Reservation, User } from '../db/schema'
 
@@ -14,8 +14,11 @@ export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'gameOver'
 
 export interface PhaseInput {
   user: Pick<User, 'lives' | 'currentFloor' | 'cooldownUntil'>
-  /** Une réservation en cours, résolue ou non. */
-  hasReservation: boolean
+  /**
+   * Une question encore en jeu, c'est-à-dire une réservation non résolue. Un
+   * verdict, lui, n'en est plus une : il se lit sur l'écran de la phase suivante.
+   */
+  hasLiveReservation: boolean
   /** Questions vues à l'étage courant. */
   seen: number
   /** Questions que l'étage courant contient. */
@@ -27,15 +30,18 @@ export interface PhaseInput {
  * réservation, de la fin d'attente et du décompte des questions vues.
  */
 export function phaseOf(input: PhaseInput, now: Date): Phase {
-  const { user, hasReservation, seen, floorTotal } = input
+  const { user, hasLiveReservation, seen, floorTotal } = input
+
+  // L'étage épuisé prime sur les vies : le Pool Échecs de cet étage est sur le
+  // point d'être abandonné, donc il n'y a plus rien à y rattraper — et un joueur
+  // qui n'a plus rien à monter n'a plus de vies à récupérer.
+  if (!hasLiveReservation && seen >= floorTotal) {
+    return user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'floorEnd'
+  }
 
   if (user.lives <= 0) {
     const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
     return waiting ? 'cooldown' : 'recovery'
-  }
-
-  if (!hasReservation && seen >= floorTotal) {
-    return user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'floorEnd'
   }
 
   return 'ascent'

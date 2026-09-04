@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { missedPool, reservations, seenQuestions, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -17,12 +17,10 @@ describe('boucle d ascension', () => {
   beforeEach(async () => {
     db = await createTestDatabase()
     const id = await createPlayer(db)
-    player = (await db.select().from(users).where(eq(users.id, id)))[0]
+    player = await loadPlayer(db, id)
   })
 
-  async function reload(): Promise<User> {
-    return (await db.select().from(users).where(eq(users.id, player.id)))[0]
-  }
+  const reload = (): Promise<User> => loadPlayer(db, player.id)
 
   describe('lecture', () => {
     it('ne réserve rien : sans action du joueur, aucune question n est servie', async () => {
@@ -188,7 +186,7 @@ describe('boucle d ascension', () => {
 
     it('ignore une réponse sans réservation du tout', async () => {
       const fresh = await createPlayer(db, { discordId: '987', username: 'frodo' })
-      const other = (await db.select().from(users).where(eq(users.id, fresh)))[0]
+      const other = await loadPlayer(db, fresh)
 
       const state = await submitAnswer(db, other, 'Bordeaux', NOW)
 
@@ -217,6 +215,9 @@ describe('boucle d ascension', () => {
   describe('fin de vies et fin d étage', () => {
     it('bascule en attente à la perte de la dernière vie', async () => {
       await createQuestion(db)
+      // Une deuxième question à l'étage : sans elle, l'étage serait fini et le
+      // palier passerait devant l'attente.
+      await createQuestion(db, { statement: 'Autre' })
       await db.update(users).set({ lives: 1 }).where(eq(users.id, player.id))
       await serveNextQuestion(db, await reload(), NOW)
 

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { missedPool, recoveryQuestions, seenQuestions, users } from '../../server/db/schema'
+import { missedPool, recoveryQuestions, seenQuestions } from '../../server/db/schema'
 import { readGameState, readMissedPool, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -17,12 +17,10 @@ describe('attente et rattrapage', () => {
   beforeEach(async () => {
     db = await createTestDatabase()
     const id = await createPlayer(db, { lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) })
-    player = (await db.select().from(users).where(eq(users.id, id)))[0]
+    player = await loadPlayer(db, id)
   })
 
-  async function reload(): Promise<User> {
-    return (await db.select().from(users).where(eq(users.id, player.id)))[0]
-  }
+  const reload = (): Promise<User> => loadPlayer(db, player.id)
 
   /** Fills the missed pool of floor 1 with `size` questions, oldest failure first. */
   async function fillPool(size: number): Promise<string[]> {

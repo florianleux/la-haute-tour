@@ -10,7 +10,7 @@ function player(overrides: Partial<{ lives: number, currentFloor: number, cooldo
 }
 
 describe('phase', () => {
-  const ascent = { user: player(), hasReservation: true, seen: 2, floorTotal: 10 }
+  const ascent = { user: player(), hasLiveReservation: true, seen: 2, floorTotal: 10 }
 
   it('est l ascension tant qu il reste des vies et des questions', () => {
     expect(phaseOf(ascent, NOW)).toBe('ascent')
@@ -35,16 +35,28 @@ describe('phase', () => {
   })
 
   it('est le palier quand tout l étage est vu, la fin au dernier étage', () => {
-    const done = { user: player(), hasReservation: false, seen: 10, floorTotal: 10 }
+    const done = { user: player(), hasLiveReservation: false, seen: 10, floorTotal: 10 }
 
     expect(phaseOf(done, NOW)).toBe('floorEnd')
     expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('gameOver')
   })
 
-  it('ne conclut pas l étage tant qu une réservation est en cours', () => {
-    const held = { user: player(), hasReservation: true, seen: 10, floorTotal: 10 }
+  it('ne conclut pas l étage tant qu une question est en jeu', () => {
+    const held = { user: player(), hasLiveReservation: true, seen: 10, floorTotal: 10 }
 
     expect(phaseOf(held, NOW)).toBe('ascent')
+  })
+
+  it('conclut l étage même sans vie : il n y a plus rien à y rattraper', () => {
+    const done = {
+      user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }),
+      hasLiveReservation: false,
+      seen: 10,
+      floorTotal: 10,
+    }
+
+    expect(phaseOf(done, NOW)).toBe('floorEnd')
+    expect(phaseOf({ ...done, user: player({ lives: 0, currentFloor: 6 }) }, NOW)).toBe('gameOver')
   })
 })
 

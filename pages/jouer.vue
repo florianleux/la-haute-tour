@@ -14,6 +14,10 @@ const {
   readFailed,
   loading,
 } = await useQuestionRun()
+
+// Ce que la carte montre se décide en un seul endroit, testable : la page ne
+// fait que projeter cette décision. Voir utils/phase.ts.
+const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 </script>
 
 <template>
@@ -23,16 +27,14 @@ const {
       {{ waitRemaining }}.
     </template>
 
-    <p v-if="loading" class="mt-4 text-sm text-slate-500">
-      <BaseSpinner>Mise à jour de ta partie…</BaseSpinner>
-    </p>
+    <BaseLoading v-if="loading" class="mt-4">
+      Mise à jour de ta partie…
+    </BaseLoading>
 
-    <div v-if="state.verdict" class="mt-6">
-      <p class="text-sm text-slate-400">
-        Dernière question ratée — réponse :
-        <span class="font-semibold text-slate-100">{{ state.verdict.answerLabel }}</span>
-      </p>
-    </div>
+    <BaseHint v-if="screen?.verdict" class="mt-6">
+      Dernière question ratée — réponse :
+      <AnswerLabel :label="screen.verdict.answerLabel" />
+    </BaseHint>
 
     <div class="mt-8">
       <MissedPoolList />
@@ -48,26 +50,24 @@ const {
       Impossible de lire ta partie. Recharge la page.
     </BaseNotice>
 
-    <template v-if="state">
+    <template v-if="state && screen">
       <div v-if="state.phase === 'ascent'" class="grid grid-cols-2 gap-3">
         <BaseStat label="Étage" :value="state.floor" />
         <BaseStat label="Vies" :value="state.lives" />
       </div>
 
-      <p v-if="state.recovery" class="text-sm text-slate-400">
-        Rattrapage — question {{ Math.min(state.recovery.played + 1, state.recovery.total) }}
-        sur {{ state.recovery.total }},
-        {{ state.recovery.successes }} juste(s).
-      </p>
+      <BaseHint v-if="screen.recovery">
+        Rattrapage — question {{ screen.recovery.position }}
+        sur {{ screen.recovery.total }},
+        {{ screen.recovery.successes }} juste(s).
+      </BaseHint>
 
       <!-- Question en cours : aucune action à part répondre. -->
-      <form v-if="state.question" class="mt-6" @submit.prevent="submit">
-        <p class="text-lg font-semibold">
-          {{ state.question.statement }}
-        </p>
-        <p class="mt-2 text-sm text-slate-400">
+      <form v-if="screen.question" class="mt-6" @submit.prevent="submit">
+        <BaseHeadline>{{ screen.question.statement }}</BaseHeadline>
+        <BaseHint class="mt-2">
           {{ secondsLeft }} s
-        </p>
+        </BaseHint>
         <BaseInput
           v-model="typed"
           label="Ta réponse"
@@ -78,62 +78,76 @@ const {
         </BaseButton>
       </form>
 
-      <!-- Le verdict se lit dans toutes les phases : la question qui a coûté la
-           dernière vie est celle dont la réponse reste à découvrir. -->
-      <template v-else-if="state.verdict">
-        <p
-          class="mt-6 text-lg font-semibold"
-          :class="state.verdict.correct ? 'text-emerald-400' : 'text-rose-400'"
-        >
-          {{ state.verdict.correct ? 'Juste !' : 'Faux.' }}
-        </p>
-        <p class="mt-2 text-sm text-slate-400">
-          Réponse : <span class="font-semibold text-slate-100">{{ state.verdict.answerLabel }}</span>
-        </p>
-        <p class="mt-1 text-sm text-slate-400">
-          Ta réponse : {{ state.verdict.submittedAnswer || '(rien)' }}
-        </p>
-        <p v-if="state.verdict.lifeLost" class="mt-1 text-sm text-rose-400">
+      <!-- Le verdict se lit dans toutes les phases : la question qui a fini
+           l'étage ou coûté la dernière vie est celle dont la réponse reste à
+           découvrir. Le palier et la fin s'affichent par-dessus, pas à sa place. -->
+      <template v-if="screen.verdict">
+        <BaseHeadline class="mt-6" :tone="screen.verdict.correct ? 'success' : 'danger'">
+          {{ screen.verdict.correct ? 'Juste !' : 'Faux.' }}
+        </BaseHeadline>
+        <BaseHint class="mt-2">
+          Réponse : <AnswerLabel :label="screen.verdict.answerLabel" />
+        </BaseHint>
+        <BaseHint class="mt-1">
+          Ta réponse : {{ screen.verdict.submittedAnswer || '(rien)' }}
+        </BaseHint>
+        <BaseHint v-if="screen.verdict.lifeLost" class="mt-1" tone="danger">
           Tu perds une vie.
-        </p>
+        </BaseHint>
 
         <!-- Le résultat du rattrapage s'annonce à la fin, pas question par question. -->
-        <p
-          v-if="state.recovery && state.recovery.played === state.recovery.total"
-          class="mt-3 text-sm"
-          :class="state.recovery.resumes ? 'text-emerald-400' : 'text-amber-400'"
+        <BaseHint
+          v-if="screen.recovery?.result"
+          class="mt-3"
+          :tone="screen.recovery.result === 'resumed' ? 'success' : 'warning'"
         >
-          {{ state.recovery.resumes
+          {{ screen.recovery.result === 'resumed'
             ? 'Rattrapage réussi : tes vies sont restaurées.'
             : 'Aucune bonne réponse : une nouvelle attente commence.' }}
-        </p>
+        </BaseHint>
+      </template>
 
-        <BaseButton block class="mt-6" :loading="pending" @click="advance">
-          {{ state.recovery && state.recovery.played === state.recovery.total
-            ? 'Terminer le rattrapage'
-            : 'Question suivante' }}
-        </BaseButton>
+      <!-- Palier : l'étage est bouclé. Le franchir est ce qui incrémente
+           l'étage, donc un rafraîchissement rejoue cet écran au lieu de le
+           sauter. Voir specs/mecanique.md#fin-détage. -->
+      <template v-if="screen.phase === 'floorEnd'">
+        <BaseHeadline class="mt-6">
+          Étage {{ state.floor }} terminé.
+        </BaseHeadline>
+        <BaseHint class="mt-2">
+          Tu as vu toutes ses questions. Ce que tu y as raté reste à cet étage :
+          le suivant repart d'une fiche vierge.
+        </BaseHint>
+      </template>
+
+      <!-- Fin de partie : phase terminale, sans classement. -->
+      <template v-else-if="screen.phase === 'gameOver'">
+        <BaseHeadline class="mt-6" tone="success">
+          Tu as fini La Haute Tour.
+        </BaseHeadline>
+        <BaseHint class="mt-2">
+          Tous les étages sont derrière toi. Bravo.
+        </BaseHint>
       </template>
 
       <BaseButton
-        v-else-if="state.phase === 'ascent' || state.phase === 'recovery'"
+        v-if="screen.action"
         block
         class="mt-6"
         :loading="pending"
         @click="advance"
       >
-        {{ state.phase === 'recovery' ? 'Commencer le rattrapage' : mainActionLabel(state) }}
+        {{ screen.action }}
       </BaseButton>
-
-      <!-- Palier et fin de partie ont leur propre ticket. -->
-      <template v-else>
-        <p class="mt-6 text-lg font-semibold">
-          {{ phaseMessage(state.phase) }}
-        </p>
-        <BaseButton to="/" variant="ghost" block class="mt-6">
-          Retour à l'accueil
-        </BaseButton>
-      </template>
+      <BaseButton
+        v-else-if="screen.phase === 'gameOver'"
+        to="/"
+        variant="ghost"
+        block
+        class="mt-6"
+      >
+        Retour à l'accueil
+      </BaseButton>
     </template>
 
     <BaseNotice v-if="actionFailed">

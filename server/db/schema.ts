@@ -1,8 +1,6 @@
 import { sql } from 'drizzle-orm'
-import { check, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-
-/** Étages 1-2 = difficulté 1, 3-4 = difficulté 2, 5-6 = difficulté 3. */
-export const FLOOR_COUNT = 6
+import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { FLOOR_COUNT } from '../../shared/utils/floors'
 
 /**
  * Discord IDs allowed to sign up. Filled manually (admin UI or raw SQL).
@@ -29,6 +27,14 @@ export const users = sqliteTable('users', {
   lives: integer('lives').notNull().default(3),
   /** When the wait ends. Null outside a wait. The phase derives from it. */
   cooldownUntil: integer('cooldown_until', { mode: 'timestamp' }),
+  /**
+   * Début de la tentative en cours — repoussé chaque fois que les vies
+   * reviennent. C'est lui qui dit quelles erreurs sont encore contestables.
+   * Voir specs/validation.md#contestation.
+   */
+  attemptStartedAt: integer('attempt_started_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -102,6 +108,12 @@ export const seenQuestions = sqliteTable('seen_questions', {
   /** The floor it was seen on — a floor's progress is read without joining. */
   floor: integer('floor').notNull(),
   correct: integer('correct', { mode: 'boolean' }).notNull(),
+  /**
+   * Ce que le joueur avait répondu. Conservé au-delà de la réservation : c'est
+   * la pièce que l'admin arbitre quand la question est contestée, et elle doit
+   * survivre au passage à la question suivante.
+   */
+  submittedAnswer: text('submitted_answer'),
   seenAt: integer('seen_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -177,6 +189,33 @@ export const recoveryQuestions = sqliteTable('recovery_questions', {
   index('recovery_questions_user_position_idx').on(table.userId, table.position),
 ])
 
+/**
+ * Une contestation : le joueur affirme que sa réponse valait la bonne, l'admin
+ * tranche. Une seule par question et par joueur — contester deux fois n'ajoute
+ * rien à arbitrer. La réponse contestée n'est pas recopiée ici : elle vit dans
+ * la question vue, qui ne change plus. Voir specs/validation.md#contestation.
+ */
+export const disputes = sqliteTable('disputes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  questionId: text('question_id')
+    .notNull()
+    .references(() => questions.id, { onDelete: 'cascade' }),
+  status: text('status', { enum: ['pending', 'accepted', 'rejected'] })
+    .notNull()
+    .default('pending'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  /** Quand l'admin a tranché. Null tant que la contestation attend. */
+  settledAt: integer('settled_at', { mode: 'timestamp' }),
+}, table => [
+  unique('disputes_user_question_unique').on(table.userId, table.questionId),
+  index('disputes_status_idx').on(table.status, table.createdAt),
+])
+
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect
 export type Question = typeof questions.$inferSelect
@@ -186,3 +225,4 @@ export type SeenQuestion = typeof seenQuestions.$inferSelect
 export type Reservation = typeof reservations.$inferSelect
 export type MissedPoolEntry = typeof missedPool.$inferSelect
 export type RecoveryQuestion = typeof recoveryQuestions.$inferSelect
+export type Dispute = typeof disputes.$inferSelect

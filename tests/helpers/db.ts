@@ -1,8 +1,10 @@
 import { createClient } from '@libsql/client'
+import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../../server/db/schema'
 import type { Database } from '../../server/db/client'
+import type { User } from '../../server/db/schema'
 
 /** In-memory SQLite with the migrations applied — one per test. */
 export async function createTestDatabase(): Promise<Database> {
@@ -42,8 +44,26 @@ type PlayerState = Partial<typeof schema.users.$inferInsert>
 export async function createPlayer(db: Database, state: PlayerState = {}): Promise<number> {
   const [user] = await db
     .insert(schema.users)
-    .values({ discordId: '123456789', username: 'gandalf', ...state })
+    .values({
+      discordId: '123456789',
+      username: 'gandalf',
+      // Une tentative ouverte depuis toujours : les tests jouent à une heure
+      // qu'ils choisissent, et l'horloge de la base ne la connaît pas.
+      attemptStartedAt: new Date(0),
+      ...state,
+    })
     .returning()
 
   return user.id
+}
+
+/**
+ * Le joueur tel que la base le porte maintenant. Les fonctions du jeu prennent
+ * le joueur en argument : un test qui vient d'en écrire un le relit avant de
+ * rejouer, sinon il pilote une copie périmée.
+ */
+export async function loadPlayer(db: Database, userId: number): Promise<User> {
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId))
+
+  return user
 }

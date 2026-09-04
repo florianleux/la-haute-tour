@@ -1,8 +1,6 @@
-import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -48,7 +46,7 @@ describe('budget de requêtes des chemins chauds', () => {
     for (let i = 0; i < 5; i++) {
       await createQuestion(db, { statement: `Question ${i} ?`, accepted: ['Bordeaux'] })
     }
-    player = (await db.select().from(users).where(eq(users.id, id)))[0]
+    player = await loadPlayer(db, id)
     queries = countQueries(db)
   })
 

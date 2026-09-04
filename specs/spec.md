@@ -23,12 +23,13 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Réservation** | `reservation` | La question servie au joueur, horodatée, en attente de résolution. Une seule à la fois. Se résout par une réponse ou par l'expiration du timer. |
 | **État de jeu** | `gameState` | Ce que le serveur répond à « où en est le joueur » : phase, étage, vies, et ce que la phase contient. Servi par un seul endpoint de lecture, sans effet. |
 | **Phase** | `phase` | État de jeu déterminé par le serveur, qui décide seul de l'écran affiché : `ascent`, `cooldown`, `recovery`, `floorEnd`, `gameOver`. Voir [`mecanique.md`](./mecanique.md). |
-| **Verdict** | `lastAnswer` | Résultat d'une question résolue — juste ou faux, réponse affichée, vie perdue — conservé côté serveur jusqu'à ce que le joueur passe à la suite. |
+| **Verdict** | `verdict` | Résultat d'une question résolue — juste ou faux, réponse affichée, vie perdue — conservé côté serveur jusqu'à ce que le joueur passe à la suite. |
 | **Pool Échecs** | `missedPool` | Questions ratées de l'étage courant, en attente de rattrapage. Persistant, jamais remis à zéro tant qu'on reste à l'étage. |
 | **Réussites** | `poolSuccesses` | Nombre de bonnes réponses consécutives obtenues en rattrapage sur une question du Pool Échecs. Une mauvaise réponse le remet à zéro ; le seuil atteint fait sortir la question du pool. |
 | **Rattrapage** | `recovery` | Retest de quelques questions du Pool Échecs, à l'issue de l'attente, pour retrouver ses vies. |
 | **Attente** | `cooldown` | Délai forcé après la perte de la dernière vie, avant de pouvoir reprendre ou rattraper. |
 | **Palier** | `floorEnd` | Fin d'étage : toutes les questions de l'étage sont vues, le joueur s'apprête à monter au suivant. |
+| **Franchir le palier** | `crossFloor` | L'action qui fait monter d'un étage : elle incrémente l'étage, abandonne le Pool Échecs de celui qu'on quitte et réserve la première question du suivant. |
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
 | **Whitelist** | `whitelist` | Discord IDs autorisés à s'inscrire, alimentée manuellement. |
 | **Énoncé** | `statement` | Le texte de la question posée au joueur. |

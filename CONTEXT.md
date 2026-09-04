@@ -8,7 +8,7 @@ définie, une seule fois.
 Le glossaire fait foi : [`specs/spec.md`](specs/spec.md#glossaire). Sa colonne
 **Nom en code** est la seule traduction autorisée d'un terme du domaine — `étage`
 → `floor`, `Pool Échecs` → `missedPool`, `rattrapage` → `recovery`, `attente` →
-`cooldown`, `réservation` → `reservation`, `verdict` → `lastAnswer`.
+`cooldown`, `réservation` → `reservation`, `verdict` → `verdict`.
 
 Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 
@@ -20,7 +20,8 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Combien vaut-elle ? | [`server/utils/rules.ts`](server/utils/rules.ts) — le jeu de règles, consultable par étage |
 | Que devient le joueur ? | [`server/utils/mechanics.ts`](server/utils/mechanics.ts) — les décisions, sans base de données |
 | Comment est-ce lu et écrit ? | [`server/utils/game.ts`](server/utils/game.ts) — lectures, écritures, réservation |
-| Ce qu'affiche l'écran de jeu | [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) — décompte, envoi, passage à la suite |
+| Ce qu'affiche l'écran de jeu | [`utils/phase.ts`](utils/phase.ts) — `gameScreen()` : ce que la carte montre pour un état donné |
+| Le temps et les envois du jeu | [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) — décompte, envoi, passage à la suite |
 | Pourquoi ce choix ? | [`docs/adr/`](docs/adr/) |
 | Comment on écrit le code | [`CLAUDE.md`](CLAUDE.md) |
 
