@@ -11,8 +11,10 @@ function entry(index: number): MissedPoolEntryView {
     questionId: `q${index}`,
     statement: `Question ${index} ?`,
     answerLabel: `RÉPONSE ${index}`,
+    submittedAnswer: `réponse ${index}`,
     poolSuccesses: 0,
     lastFailedAt: '2026-09-03T12:00:00.000Z',
+    disputeStatus: 'none',
   }
 }
 

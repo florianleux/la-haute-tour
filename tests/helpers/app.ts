@@ -67,6 +67,16 @@ export function installAppGlobals(): FakeNuxt {
   Object.assign(globalThis, {
     defineNuxtRouteMiddleware: <T>(middleware: T): T => middleware,
     useCurrentUser: async () => ({ user: currentUser, refresh }),
+    useApiFetchOptions: () => ({ headers: undefined }),
+    useState: <T>(key: string, init: () => T) => {
+      if (!payloads.has(key)) {
+        payloads.set(key, init())
+      }
+      return computed<T>({
+        get: () => payloads.get(key) as T,
+        set: (value: T) => { payloads.set(key, value) },
+      })
+    },
     useAsyncData: async (
       key: string,
       _handler: unknown,

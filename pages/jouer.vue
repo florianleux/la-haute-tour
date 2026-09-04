@@ -25,14 +25,18 @@ const { user } = await useCurrentUser()
 const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
-// désaccord naît, et sur l'attente, pour qui est passé trop vite.
-// Voir specs/validation.md#contestation.
-const { errors, isContestable, contest, contesting, refresh: refreshDisputes } = await useDisputes()
+// désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
+const { isContestable, contest, contestingId, refresh: refreshDisputes } = useDisputes()
 const contestFailed = ref(false)
 
 async function dispute(questionId: string): Promise<void> {
   contestFailed.value = !(await contest(questionId))
 }
+
+// Les contestables se chargent au montage : useDisputes ne fetch plus à la
+// création (plus de useAsyncData), il faut relire explicitement pour que les
+// boutons « Contester » soient visibles dès l'arrivée sur la page.
+refreshDisputes()
 
 // Un verdict qui vient d'arriver n'est pas encore dans la liste des contestables
 // — celle-ci a été lue avant la réponse. On la relit dès qu'un verdict faux
@@ -100,10 +104,6 @@ const waiting = computed(() =>
 
     <div class="mt-8">
       <MissedPoolList />
-    </div>
-
-    <div class="mt-8">
-      <ContestableErrors :errors="errors" :pending="contesting" @contest="dispute" />
     </div>
 
     <BaseButton
@@ -188,9 +188,12 @@ const waiting = computed(() =>
           v-if="isContestable(screen.verdict.questionId)"
           variant="ghost"
           class="mt-3"
-          :loading="contesting"
+          :loading="contestingId === screen.verdict.questionId"
           @click="dispute(screen.verdict.questionId)"
         >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+            <path d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1Zm10.5-4.5a1 1 0 0 0-1.4 0l-.6.6a1 1 0 0 0 0 1.4 5 5 0 0 1 0 7l.6.6a1 1 0 0 0 1.4 0l.6-.6a1 1 0 0 0 0-1.4 3 3 0 0 1 0-4.2l-.6-.6a1 1 0 0 0 0-1.4Z" />
+          </svg>
           Contester cette question
         </BaseButton>
 

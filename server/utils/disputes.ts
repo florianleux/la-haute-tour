@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, ne, notInArray } from 'drizzle-orm'
+import { and, asc, eq, ne, notInArray } from 'drizzle-orm'
 import {
   acceptedAnswers,
   disputes,
@@ -28,9 +28,8 @@ export interface ContestableError {
 }
 
 /**
- * Les erreurs que le joueur peut encore contester : celles de sa tentative en
- * cours — donc aussi celles de la tentative qui vient de s'achever tant qu'il
- * est en attente, puisque la suivante n'a pas commencé.
+ * Les erreurs que le joueur peut encore contester : toutes celles de son Pool
+ * Échecs sur l'étage courant, une seule fois par question.
  *
  * Une réponse vide n'en fait jamais partie : l'accepter ajouterait la chaîne
  * vide aux réponses acceptées, et validerait le vide pour tout le monde. Une
@@ -51,22 +50,25 @@ export async function contestableErrors(db: Database, user: User): Promise<Conte
 
   const rows = await db
     .select({
-      questionId: seenQuestions.questionId,
+      questionId: missedPool.questionId,
       statement: questions.statement,
       answerLabel: questions.answerLabel,
       submittedAnswer: seenQuestions.submittedAnswer,
     })
-    .from(seenQuestions)
-    .innerJoin(questions, eq(questions.id, seenQuestions.questionId))
-    .where(and(
-      eq(seenQuestions.userId, user.id),
-      eq(seenQuestions.correct, false),
-      gte(seenQuestions.seenAt, user.attemptStartedAt),
-      ne(seenQuestions.submittedAnswer, ''),
-      notInArray(seenQuestions.questionId, alreadyDisputed),
-      notInArray(seenQuestions.questionId, lostFocus),
+    .from(missedPool)
+    .innerJoin(questions, eq(questions.id, missedPool.questionId))
+    .leftJoin(seenQuestions, and(
+      eq(seenQuestions.userId, missedPool.userId),
+      eq(seenQuestions.questionId, missedPool.questionId),
     ))
-    .orderBy(asc(seenQuestions.seenAt))
+    .where(and(
+      eq(missedPool.userId, user.id),
+      eq(missedPool.floor, user.currentFloor),
+      ne(seenQuestions.submittedAnswer, ''),
+      notInArray(missedPool.questionId, alreadyDisputed),
+      notInArray(missedPool.questionId, lostFocus),
+    ))
+    .orderBy(asc(missedPool.lastFailedAt))
 
   return rows
     .filter((row): row is ContestableError => row.submittedAnswer !== null)

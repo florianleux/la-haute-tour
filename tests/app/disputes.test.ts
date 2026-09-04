@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testAdmin, testUser } from '../helpers/app'
 import type { ContestableError, PendingDispute } from '../../server/utils/disputes'
 
-const { serve, breakRead, breakNetwork, signIn, calls, refresh, reset } = installAppGlobals()
+const { serve, answerWith, breakNetwork, signIn, calls, refresh, reset } = installAppGlobals()
 
-const { CONTESTABLE_KEY, useDisputes } = await import('../../composables/useDisputes')
+const { useDisputes } = await import('../../composables/useDisputes')
 const { ADMIN_DISPUTES_KEY, useAdminDisputes } = await import('../../composables/useAdminDisputes')
 
 const ERROR: ContestableError = {
@@ -31,9 +31,9 @@ describe('contestation côté joueur', () => {
   })
 
   it('ne propose de contester que ce que le serveur dit contestable', async () => {
-    serve(CONTESTABLE_KEY, { errors: [ERROR] })
-
-    const { errors, isContestable } = await useDisputes()
+    answerWith({ errors: [ERROR] })
+    const { errors, isContestable, refresh } = useDisputes()
+    await refresh()
 
     expect(errors.value).toEqual([ERROR])
     expect(isContestable('q1')).toBe(true)
@@ -41,28 +41,36 @@ describe('contestation côté joueur', () => {
   })
 
   it('conteste puis relit la liste : le bouton disparaît de lui-même', async () => {
-    const { contest } = await useDisputes()
+    const { contest } = useDisputes()
 
     const sent = await contest('q1')
 
     expect(sent).toBe(true)
-    expect(calls()).toEqual(['fetch POST /api/game/disputes'])
-    expect(refresh).toHaveBeenCalledOnce()
+    expect(calls()).toEqual(['fetch POST /api/game/disputes', 'fetch GET /api/game/contestable'])
+  })
+
+  it('pose contestingId pendant l envoi puis le relâche', async () => {
+    const { contest, contestingId } = useDisputes()
+
+    const inFlight = contest('q1')
+    expect(contestingId.value).toBe('q1')
+    await inFlight
+
+    expect(contestingId.value).toBeNull()
   })
 
   it('signale une contestation refusée sans se dire illisible', async () => {
     breakNetwork()
-    const { contest, failed } = await useDisputes()
+    const { contest, failed } = useDisputes()
 
     expect(await contest('q1')).toBe(false)
-    expect(refresh).not.toHaveBeenCalled()
     expect(failed.value).toBe(false)
   })
 
   it('signale une lecture impossible', async () => {
-    breakRead(CONTESTABLE_KEY)
-
-    const { failed } = await useDisputes()
+    breakNetwork()
+    const { failed, refresh } = useDisputes()
+    await refresh()
 
     expect(failed.value).toBe(true)
   })

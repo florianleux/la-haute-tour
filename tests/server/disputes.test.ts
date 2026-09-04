@@ -82,16 +82,16 @@ describe('contestation', () => {
       expect(await contestableErrors(db, await reload())).toEqual([])
     })
 
-    it('oublie les erreurs des tentatives précédentes', async () => {
+    it('garde les erreurs des tentatives précédentes tant qu elles sont au pool', async () => {
       const questionId = await play('Toulouse')
-      // Une reprise commence une tentative : ce qui précède n'est plus contestable.
+      // Une reprise commence une tentative : l'erreur reste au pool et donc
+      // contestable — c'est la fusion des écrans qui le veut.
       await db
         .update(users)
         .set({ attemptStartedAt: new Date(NOW.getTime() + 60_000) })
         .where(eq(users.id, player.id))
 
-      expect(await contestableErrors(db, await reload())).toEqual([])
-      await expect(openDispute(db, await reload(), questionId, NOW)).rejects.toThrow()
+      expect(await contestableErrors(db, await reload())).toMatchObject([{ questionId }])
     })
   })
 

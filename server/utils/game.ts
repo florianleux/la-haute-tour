@@ -11,6 +11,7 @@ import {
 import { rulesForFloor } from './rules'
 import {
   acceptedAnswers,
+  disputes,
   missedPool,
   questions,
   recoveryQuestions,
@@ -753,8 +754,12 @@ export interface MissedPoolEntryView {
   statement: string
   /** Shown here on purpose: the wait screen is a revision sheet, not a punishment. */
   answerLabel: string
+  /** What the player answered — justifies contesting. Null on timeout. */
+  submittedAnswer: string | null
   poolSuccesses: number
   lastFailedAt: string
+  /** Statut de la contestation : none si pas disputée, pending en attente d'arbitrage, rejected si refusée. */
+  disputeStatus: 'none' | 'pending' | 'rejected'
 }
 
 export interface MissedPoolPage {
@@ -789,11 +794,21 @@ export async function readMissedPool(
       questionId: missedPool.questionId,
       statement: questions.statement,
       answerLabel: questions.answerLabel,
+      submittedAnswer: seenQuestions.submittedAnswer,
       poolSuccesses: missedPool.poolSuccesses,
       lastFailedAt: missedPool.lastFailedAt,
+      disputeStatus: disputes.status,
     })
     .from(missedPool)
     .innerJoin(questions, eq(questions.id, missedPool.questionId))
+    .leftJoin(seenQuestions, and(
+      eq(seenQuestions.userId, missedPool.userId),
+      eq(seenQuestions.questionId, missedPool.questionId),
+    ))
+    .leftJoin(disputes, and(
+      eq(disputes.userId, missedPool.userId),
+      eq(disputes.questionId, missedPool.questionId),
+    ))
     .where(onThisFloor)
     .orderBy(query.order === 'asc' ? asc(missedPool.lastFailedAt) : desc(missedPool.lastFailedAt))
     .limit(query.limit)
@@ -806,7 +821,21 @@ export async function readMissedPool(
 
   return {
     total,
-    entries: rows.map(row => ({ ...row, lastFailedAt: row.lastFailedAt.toISOString() })),
+    entries: rows.map((row) => {
+      const disputeStatus: MissedPoolEntryView['disputeStatus']
+        = row.disputeStatus === 'pending' ? 'pending'
+          : row.disputeStatus === 'rejected' ? 'rejected' : 'none'
+
+      return {
+        questionId: row.questionId,
+        statement: row.statement,
+        answerLabel: row.answerLabel,
+        submittedAnswer: row.submittedAnswer,
+        poolSuccesses: row.poolSuccesses,
+        lastFailedAt: row.lastFailedAt.toISOString(),
+        disputeStatus,
+      }
+    }),
   }
 }
 

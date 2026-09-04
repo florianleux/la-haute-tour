@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { disputes, seenQuestions, users } from '../../server/db/schema'
+import { disputes, missedPool, seenQuestions, users } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import {
   apiRequest,
@@ -52,6 +52,12 @@ describe('contestation par l API', () => {
       correct: false,
       submittedAnswer: 'Bordo',
       seenAt: NOW,
+    })
+    await db.insert(missedPool).values({
+      userId: playerId,
+      questionId,
+      floor: 1,
+      lastFailedAt: NOW,
     })
   })
 
