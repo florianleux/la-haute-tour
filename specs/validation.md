@@ -32,8 +32,9 @@ Une réponse vide n'est **pas contestable** : accepter une telle contestation aj
 
 ### Effet sur le joueur
 
-- Acceptée **pendant l'attente** → l'attente est annulée comme si elle n'avait jamais commencé. Le joueur reprend **la même tentative** avec une vie ; les autres pertes de la tentative restent acquises. Le rattrapage n'a pas lieu.
-- Acceptée **après** que le joueur a lancé son rattrapage ou entamé une nouvelle tentative → une vie s'ajoute à la tentative en cours, ou à la suivante.
+- Acceptée **alors que le joueur n'a plus de vie** — en attente, ou dans le rattrapage que cette attente a ouvert → l'attente est annulée comme si elle n'avait jamais commencé et le rattrapage en cours est abandonné. Le joueur reprend **la même tentative** avec une vie ; les autres pertes de la tentative restent acquises.
+  - Le rattrapage n'a pas lieu, ou s'arrête : il n'existait que pour rendre les vies que l'arbitrage vient de rendre. Les questions déjà jouées gardent ce qu'elles ont fait bouger dans le Pool Échecs.
+- Acceptée **après** que le joueur a repris → une vie s'ajoute à la tentative en cours.
 - **Aucun plafond** : une vie rendue par contestation peut porter le total au-delà du nombre de vies d'une tentative. Ce n'est pas une récompense, c'est une réparation — la plafonner l'annulerait précisément dans le cas où le joueur a le plus attendu.
 - Rejetée → contestation clôturée, aucun effet.
 

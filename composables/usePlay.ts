@@ -1,12 +1,16 @@
 import { GAME_STATE_KEY } from './useGameState'
 import type { Ref } from 'vue'
+import type { AnswerSource } from '~~/server/utils/mechanics'
 import type { GameState } from '~~/server/utils/game'
 
 export interface Play {
   /** Start, or move on to the next question. The only thing that reserves one. */
   next: () => Promise<void>
-  /** Submit an answer. An empty one is a legitimate, wrong, answer. */
-  answer: (text: string) => Promise<void>
+  /**
+   * Submit an answer. An empty one is a legitimate, wrong, answer.
+   * `source` dit qui l'envoie : le joueur, ou son départ de la page.
+   */
+  answer: (text: string, source?: AnswerSource) => Promise<void>
   /** True when the last action came back empty-handed. */
   failed: Ref<boolean>
   pending: Ref<boolean>
@@ -39,7 +43,7 @@ export function usePlay(): Play {
 
   return {
     next: () => act('/api/game/next'),
-    answer: (text: string) => act('/api/game/answer', { answer: text }),
+    answer: (text, source = 'player') => act('/api/game/answer', { answer: text, source }),
     failed,
     pending,
   }

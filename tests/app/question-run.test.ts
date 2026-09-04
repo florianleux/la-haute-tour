@@ -12,6 +12,7 @@ type QuestionRun = Awaited<ReturnType<typeof useQuestionRun>>
 type QuestionRunOptions = Parameters<typeof useQuestionRun>[0]
 
 const NOW = new Date('2026-09-03T12:00:00.000Z').getTime()
+const FOCUS_GRACE_MS = 1_000
 
 /**
  * Dans une page, le composant possède la portée du composable et la libère en se
@@ -44,6 +45,7 @@ function servedAt(msFromNow: number): GameState {
       id: 'q1',
       statement: 'Capitale de la Gironde ?',
       expiresAt: new Date(NOW + msFromNow).toISOString(),
+      focusGraceMs: FOCUS_GRACE_MS,
     },
   })
 }
@@ -71,7 +73,7 @@ describe('déroulé d une question', () => {
   })
 
   it('ne décompte rien hors question', async () => {
-    serve(GAME_STATE_KEY, gameState({ verdict: { correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false } }))
+    serve(GAME_STATE_KEY, gameState({ verdict: { questionId: 'q1', correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false } }))
 
     const { secondsLeft } = await run({ now: ref(NOW) })
 
@@ -93,11 +95,8 @@ describe('déroulé d une question', () => {
   it('envoie dès l arrivée sur une question déjà expirée', async () => {
     serve(GAME_STATE_KEY, servedAt(-5_000))
 
-    console.log('AVANT run, calls =', JSON.stringify(calls))
     await run({ now: ref(NOW) })
-    console.log('APRES run, calls =', JSON.stringify(calls))
     await nextTick()
-    console.log('APRES tick, calls =', JSON.stringify(calls))
 
     expect(calls()).toEqual(['fetch POST /api/game/answer'])
   })
@@ -151,6 +150,57 @@ describe('déroulé d une question', () => {
     await nextTick()
 
     // Le chrono est tombé à zéro, mais plus personne n'écoute.
+    expect(calls()).toEqual([])
+  })
+
+  it('envoie la réponse en l état quand le joueur quitte la page trop longtemps', async () => {
+    serve(GAME_STATE_KEY, servedAt(20_000))
+    const now = ref(NOW)
+    const visible = ref(true)
+    const { typed, leftThePage } = await run({ now, visible })
+    typed.value = 'bordeaux'
+
+    visible.value = false
+    await nextTick()
+    now.value = NOW + FOCUS_GRACE_MS
+    await nextTick()
+
+    expect(calls()).toEqual(['fetch POST /api/game/answer'])
+    // Le joueur doit pouvoir comprendre, plutôt que de croire à un bug.
+    expect(leftThePage.value).toBe(true)
+  })
+
+  it('ignore une absence plus courte que la tolérance', async () => {
+    serve(GAME_STATE_KEY, servedAt(20_000))
+    const now = ref(NOW)
+    const visible = ref(true)
+    const { leftThePage } = await run({ now, visible })
+
+    visible.value = false
+    await nextTick()
+    now.value = NOW + FOCUS_GRACE_MS - 1
+    await nextTick()
+    visible.value = true
+    now.value = NOW + 5_000
+    await nextTick()
+
+    expect(calls()).toEqual([])
+    expect(leftThePage.value).toBe(false)
+  })
+
+  it('ne surveille rien hors question : verdict, attente, accueil', async () => {
+    serve(GAME_STATE_KEY, gameState({
+      verdict: { questionId: 'q1', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true },
+    }))
+    const now = ref(NOW)
+    const visible = ref(true)
+    await run({ now, visible })
+
+    visible.value = false
+    await nextTick()
+    now.value = NOW + 60_000
+    await nextTick()
+
     expect(calls()).toEqual([])
   })
 

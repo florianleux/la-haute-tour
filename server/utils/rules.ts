@@ -27,6 +27,12 @@ export interface FloorRules {
    * but the trip back is the network's. See specs/anti-triche.md#timer.
    */
   latencyGraceMs: number
+  /**
+   * Combien de temps le joueur peut quitter la page sans conséquence, pendant
+   * qu'un timer tourne. Un alt-tab rattrapé n'est pas de la triche.
+   * Voir specs/anti-triche.md#perte-de-focus.
+   */
+  focusGraceMs: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -42,6 +48,7 @@ const DEFAULT_RULES: FloorRules = {
   cooldownMs: 12 * HOUR_MS,
   cooldownAfterFailedRecoveryMs: 4 * HOUR_MS,
   latencyGraceMs: 1_000,
+  focusGraceMs: 1_000,
 }
 
 /**

@@ -10,6 +10,7 @@ const {
   submit,
   advance,
   pending,
+  leftThePage,
   actionFailed,
   readFailed,
   loading,
@@ -18,6 +19,16 @@ const {
 // Ce que la carte montre se décide en un seul endroit, testable : la page ne
 // fait que projeter cette décision. Voir utils/phase.ts.
 const screen = computed(() => (state.value ? gameScreen(state.value) : null))
+
+// La contestation se propose à deux endroits : sur le verdict, au moment où le
+// désaccord naît, et sur l'attente, pour qui est passé trop vite.
+// Voir specs/validation.md#contestation.
+const { errors, isContestable, contest, contesting } = await useDisputes()
+const contestFailed = ref(false)
+
+async function dispute(questionId: string): Promise<void> {
+  contestFailed.value = !(await contest(questionId))
+}
 </script>
 
 <template>
@@ -38,6 +49,10 @@ const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 
     <div class="mt-8">
       <MissedPoolList />
+    </div>
+
+    <div class="mt-8">
+      <ContestableErrors :errors="errors" :pending="contesting" @contest="dispute" />
     </div>
 
     <BaseButton to="/" variant="ghost" block class="mt-8">
@@ -95,6 +110,24 @@ const screen = computed(() => (state.value ? gameScreen(state.value) : null))
           Tu perds une vie.
         </BaseHint>
 
+        <!-- Un joueur honnête doit pouvoir comprendre, plutôt que de croire à un
+             bug. Voir specs/anti-triche.md#perte-de-focus. -->
+        <BaseHint v-if="leftThePage" class="mt-3" tone="warning">
+          Tu as quitté la page : ta réponse a été envoyée en l'état.
+        </BaseHint>
+
+        <!-- Le désaccord se dit ici, au moment où il naît. L'écran de verdict
+             n'est pas chronométré : contester n'ouvre aucune brèche. -->
+        <BaseButton
+          v-if="isContestable(screen.verdict.questionId)"
+          variant="ghost"
+          class="mt-3"
+          :loading="contesting"
+          @click="dispute(screen.verdict.questionId)"
+        >
+          Contester cette question
+        </BaseButton>
+
         <!-- Le résultat du rattrapage s'annonce à la fin, pas question par question. -->
         <BaseHint
           v-if="screen.recovery?.result"
@@ -150,6 +183,9 @@ const screen = computed(() => (state.value ? gameScreen(state.value) : null))
       </BaseButton>
     </template>
 
+    <BaseNotice v-if="contestFailed">
+      La contestation n'est pas partie. Réessaie.
+    </BaseNotice>
     <BaseNotice v-if="actionFailed">
       L'action a échoué. Réessaie.
     </BaseNotice>

@@ -33,10 +33,15 @@ describe('action principale de l accueil', () => {
   })
 })
 
-const verdict = { correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true }
+const verdict = { questionId: 'q1', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true }
 
 describe('écran de jeu', () => {
-  const question = { id: 'q1', statement: 'Capitale de la Gironde ?', expiresAt: '2026-09-03T12:00:20.000Z' }
+  const question = {
+    id: 'q1',
+    statement: 'Capitale de la Gironde ?',
+    expiresAt: '2026-09-03T12:00:20.000Z',
+    focusGraceMs: 1_000,
+  }
 
   it('ne montre que la question tant qu elle est servie', () => {
     expect(gameScreen(state({ question, verdict }))).toMatchObject({

@@ -69,6 +69,7 @@ describe('verdict d une réponse', () => {
   const input = {
     user: player(),
     reservation: ascentReservation,
+    source: 'player' as const,
     acceptedAnswers: ['Bordeaux'],
     answer: 'bordaux',
     rules,
@@ -118,6 +119,27 @@ describe('verdict d une réponse', () => {
       expired: false,
       correct: true,
     })
+  })
+
+  it('valide une bonne réponse déjà saisie quand le joueur quitte la page en ascension', () => {
+    // La sanction est de perdre la main sur la question, pas la réponse.
+    expect(judgeAnswer({ ...input, answer: 'Bordeaux', source: 'focusLoss' }, NOW)).toMatchObject({
+      correct: true,
+      lifeLost: false,
+    })
+  })
+
+  it('compte faux un départ de page en rattrapage, quoi qu il y ait eu dans le champ', () => {
+    const recovery = {
+      ...input,
+      answer: 'Bordeaux',
+      source: 'focusLoss' as const,
+      reservation: { mode: 'recovery' as const, expiresAt: ascentReservation.expiresAt },
+    }
+
+    // Aucune vie à prendre en rattrapage : la sanction est la question comptée
+    // fausse, donc son compteur de réussites qui repart de zéro.
+    expect(judgeAnswer(recovery, NOW)).toMatchObject({ correct: false, lifeLost: false })
   })
 
   it('ne coûte ni vie ni progression en rattrapage', () => {

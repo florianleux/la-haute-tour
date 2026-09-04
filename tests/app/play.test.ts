@@ -12,7 +12,12 @@ const served: GameState = {
   floor: 1,
   lives: 3,
   started: true,
-  question: { id: 'q1', statement: 'Capitale de la Gironde ?', expiresAt: '2026-09-03T12:00:20.000Z' },
+  question: {
+    id: 'q1',
+    statement: 'Capitale de la Gironde ?',
+    expiresAt: '2026-09-03T12:00:20.000Z',
+    focusGraceMs: 1_000,
+  },
   verdict: null,
   cooldownUntil: null,
   recovery: null,

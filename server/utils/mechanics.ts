@@ -9,6 +9,13 @@ import type { MissedPoolEntry, Reservation, User } from '../db/schema'
  * n'écrivent — elles décident. Voir specs/mecanique.md.
  */
 
+/**
+ * Qui a envoyé la réponse : le joueur, ou son départ de la page. Nommé plutôt
+ * que booléen — un `true` en dernier argument ne dit pas ce qu'il affirme.
+ * Voir specs/anti-triche.md#perte-de-focus.
+ */
+export type AnswerSource = 'player' | 'focusLoss'
+
 /** Voir specs/mecanique.md#machine-à-états — la seule définition de « où en est le joueur ». */
 export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'gameOver'
 
@@ -75,6 +82,7 @@ export interface AnswerInput {
   /** Toutes les formulations qui valident la question. */
   acceptedAnswers: string[]
   answer: string
+  source: AnswerSource
   rules: FloorRules
 }
 
@@ -84,10 +92,15 @@ export interface AnswerInput {
  * n'est en jeu et la progression ne bouge pas — la question était déjà vue.
  */
 export function judgeAnswer(input: AnswerInput, now: Date): AnswerJudgement {
-  const { user, reservation, acceptedAnswers, answer, rules } = input
+  const { user, reservation, acceptedAnswers, answer, source, rules } = input
 
   const expired = isExpired(reservation.expiresAt, rules, now)
-  const correct = !expired && isAnswerAccepted(answer, acceptedAnswers)
+  // En rattrapage, il n'y a pas de vie à prendre : quitter la page y compte faux
+  // quoi qu'il y ait eu dans le champ, et le compteur de la question repart de
+  // zéro. En ascension, la sanction est de perdre la main sur la question, pas
+  // la bonne réponse déjà saisie. Voir specs/anti-triche.md#perte-de-focus.
+  const leftRecovery = source === 'focusLoss' && reservation.mode === 'recovery'
+  const correct = !expired && !leftRecovery && isAnswerAccepted(answer, acceptedAnswers)
 
   if (reservation.mode === 'recovery') {
     return {

@@ -104,5 +104,6 @@ Valeurs par défaut, identiques aux 6 étages :
 | Réussites consécutives pour sortir du pool | 2 |
 | Attente après la dernière vie perdue | 12 h |
 | Attente après un rattrapage entièrement manqué | 4 h |
+| Tolérance de perte de focus | 1 s |
 
 Faire diverger un étage revient à surcharger une de ces valeurs pour cet étage ; aucun autre code ne change. Aucune divergence n'est décidée aujourd'hui.

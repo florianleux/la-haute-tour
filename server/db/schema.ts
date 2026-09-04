@@ -216,6 +216,25 @@ export const disputes = sqliteTable('disputes', {
   index('disputes_status_idx').on(table.status, table.createdAt),
 ])
 
+/**
+ * Une réponse soumise parce que le joueur a quitté la page pendant qu'un timer
+ * tournait. Réservé à l'administration : le profil joueur n'en porte aucune
+ * trace, et une question résolue ainsi n'est pas contestable.
+ * Voir specs/anti-triche.md#perte-de-focus.
+ */
+export const focusLosses = sqliteTable('focus_losses', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  questionId: text('question_id')
+    .notNull()
+    .references(() => questions.id, { onDelete: 'cascade' }),
+  /** La phase qui servait la question : l'ascension coûte une vie, le rattrapage non. */
+  mode: text('mode', { enum: ['ascent', 'recovery'] }).notNull(),
+  lostAt: integer('lost_at', { mode: 'timestamp' }).notNull(),
+}, table => [index('focus_losses_user_idx').on(table.userId, table.lostAt)])
+
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect
 export type Question = typeof questions.$inferSelect
@@ -226,3 +245,4 @@ export type Reservation = typeof reservations.$inferSelect
 export type MissedPoolEntry = typeof missedPool.$inferSelect
 export type RecoveryQuestion = typeof recoveryQuestions.$inferSelect
 export type Dispute = typeof disputes.$inferSelect
+export type FocusLoss = typeof focusLosses.$inferSelect

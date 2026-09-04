@@ -31,6 +31,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Palier** | `floorEnd` | Fin d'étage : toutes les questions de l'étage sont vues, le joueur s'apprête à monter au suivant. |
 | **Franchir le palier** | `crossFloor` | L'action qui fait monter d'un étage : elle incrémente l'étage, abandonne le Pool Échecs de celui qu'on quitte et réserve la première question du suivant. |
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
+| **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Visible de l'administration seulement, et non contestable. |
 | **Whitelist** | `whitelist` | Discord IDs autorisés à s'inscrire, alimentée manuellement. |
 | **Énoncé** | `statement` | Le texte de la question posée au joueur. |
 | **Réponses acceptées** | `acceptedAnswers` | Toutes les formulations qui valident la question. Aucune n'est privilégiée : la tolérance typo s'applique à chacune. L'admin en ajoute une quand il accepte une contestation. |

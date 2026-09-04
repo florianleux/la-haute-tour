@@ -14,11 +14,13 @@ import {
   missedPool,
   questions,
   recoveryQuestions,
+  focusLosses,
   reservations,
   seenQuestions,
   users,
 } from '../db/schema'
-import type { Phase } from './mechanics'
+import type { AnswerSource, Phase } from './mechanics'
+import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { Question, Reservation, User } from '../db/schema'
 
@@ -27,9 +29,17 @@ export interface ServedQuestion {
   statement: string
   /** ISO 8601, fixed when the question was reserved. The countdown only renders it. */
   expiresAt: string
+  /**
+   * Combien de temps le joueur peut quitter la page sans que sa réponse parte.
+   * Servi avec la question parce que c'est une règle du jeu, pas une constante
+   * du client. Voir specs/anti-triche.md#perte-de-focus.
+   */
+  focusGraceMs: number
 }
 
 export interface Verdict {
+  /** La question jugée — c'est elle que le joueur conteste, s'il conteste. */
+  questionId: string
   correct: boolean
   /** What the player is shown on failure; never used for matching. */
   answerLabel: string
@@ -249,6 +259,7 @@ async function resolve(
   reservation: Reservation,
   answer: string,
   now: Date,
+  source: AnswerSource = 'player',
 ): Promise<Resolution> {
   // Le joueur vient du snapshot de l'appelant, chargé dans le même aller-retour
   // que la réservation : le relire ici coûterait un hop pour la même ligne.
@@ -258,6 +269,7 @@ async function resolve(
     reservation,
     acceptedAnswers: await acceptedFor(db, reservation.questionId),
     answer,
+    source,
     rules,
   }, now)
   const { correct } = judgement
@@ -332,11 +344,13 @@ async function resolve(
 function servedQuestion(
   reservation: Reservation,
   statement: string,
+  rules: FloorRules,
 ): ServedQuestion {
   return {
     id: reservation.questionId,
     statement,
     expiresAt: reservation.expiresAt.toISOString(),
+    focusGraceMs: rules.focusGraceMs,
   }
 }
 
@@ -364,6 +378,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     // life is precisely the one whose answer the player still has to read.
     if (reservation.resolvedAt) {
       base.verdict = {
+        questionId: reservation.questionId,
         correct: reservation.correct ?? false,
         answerLabel: question.answerLabel,
         submittedAnswer: reservation.submittedAnswer ?? '',
@@ -373,7 +388,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
       }
     }
     else {
-      base.question = servedQuestion(reservation, question.statement)
+      base.question = servedQuestion(reservation, question.statement, rulesForFloor(user.currentFloor))
     }
   }
 
@@ -779,6 +794,7 @@ export async function submitAnswer(
   user: User,
   answer: string,
   now: Date,
+  source: AnswerSource = 'player',
 ): Promise<GameState> {
   const snapshot = await loadSnapshot(db, user.id)
   const { reservation } = snapshot
@@ -788,7 +804,19 @@ export async function submitAnswer(
     return stateFrom(db, snapshot, now)
   }
 
-  const resolution = await resolve(db, snapshot.user, reservation, answer, now)
+  if (source === 'focusLoss') {
+    // La sanction est de perdre la main sur la question — la réponse part en
+    // l'état, bonne ou vide — et d'être marqué pour l'administration.
+    // Voir specs/anti-triche.md#perte-de-focus.
+    await db.insert(focusLosses).values({
+      userId: user.id,
+      questionId: reservation.questionId,
+      mode: reservation.mode,
+      lostAt: now,
+    })
+  }
+
+  const resolution = await resolve(db, snapshot.user, reservation, answer, now, source)
 
   return stateFrom(db, {
     ...snapshot,

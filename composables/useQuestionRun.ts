@@ -2,6 +2,7 @@ import { useGameState } from './useGameState'
 import { usePlay } from './usePlay'
 import { formatRemaining } from '../utils/date'
 import type { Ref } from 'vue'
+import type { AnswerSource } from '~~/server/utils/mechanics'
 import type { GameState } from '~~/server/utils/game'
 
 export interface QuestionRun {
@@ -18,6 +19,12 @@ export interface QuestionRun {
   /** Passe à la suite : commencer, question suivante, démarrer un rattrapage. */
   advance: () => Promise<void>
   pending: Ref<boolean>
+  /**
+   * Vrai quand c'est le départ de la page qui a envoyé la dernière réponse. Le
+   * joueur doit le lire : sinon il croit à un bug.
+   * Voir specs/anti-triche.md#perte-de-focus.
+   */
+  leftThePage: Ref<boolean>
   /** Une action a échoué. */
   actionFailed: Ref<boolean>
   /** L'état n'a pas pu être lu. */
@@ -32,6 +39,11 @@ export interface QuestionRunOptions {
    * sinon la page en démarre une, côté client seulement.
    */
   now?: Ref<number>
+  /**
+   * La page est-elle sous les yeux du joueur ? Fournie par un test ; sinon la
+   * page écoute la fenêtre, côté client seulement.
+   */
+  visible?: Ref<boolean>
 }
 
 /** Cadence du décompte affiché : assez fine pour que la seconde ne saute pas. */
@@ -56,6 +68,8 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
 
   const typed = ref('')
   const now = options.now ?? ref(Date.now())
+  const visible = options.visible ?? ref(true)
+  const leftThePage = ref(false)
 
   const secondsLeft = computed<number | null>(() => {
     const deadline = state.value?.question?.expiresAt
@@ -78,8 +92,8 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
       && now.value >= new Date(deadline).getTime()
   })
 
-  async function submit(): Promise<void> {
-    await answer(typed.value)
+  async function send(source: AnswerSource): Promise<void> {
+    await answer(typed.value, source)
 
     // Le champ n'est vidé qu'une fois la réponse partie : un envoi refusé
     // effacerait ce que le joueur avait tapé.
@@ -88,8 +102,14 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     }
   }
 
+  /** L'envoi du joueur. Le départ de la page a le sien, plus bas. */
+  async function submit(): Promise<void> {
+    await send('player')
+  }
+
   async function advance(): Promise<void> {
     typed.value = ''
+    leftThePage.value = false
     await next()
   }
 
@@ -113,13 +133,46 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     // franchir avant que la première réponse soit partie.
     let autoSubmitted: string | null = null
 
-    watch(secondsLeft, (left) => {
+    /** Envoie ce qui est saisi, une fois pour la question servie. */
+    function sendOnce(source: AnswerSource): void {
       const served = state.value?.question?.id
-      if (left === 0 && served && autoSubmitted !== served) {
-        autoSubmitted = served
-        submit()
+      if (!served || autoSubmitted === served) {
+        return
+      }
+
+      autoSubmitted = served
+      leftThePage.value = source === 'focusLoss'
+      send(source)
+    }
+
+    watch(secondsLeft, (left) => {
+      if (left === 0) {
+        sendOnce('player')
       }
     }, { immediate: true })
+
+    // La détection ne tourne que pendant qu'un timer tourne : jamais sur un
+    // verdict, pendant l'attente, sur l'accueil ou le profil.
+    // Voir specs/anti-triche.md#perte-de-focus.
+    const leftAt = ref<number | null>(null)
+
+    watch([visible, () => state.value?.question?.id], ([seen, served]) => {
+      leftAt.value = seen || !served ? null : now.value
+    })
+
+    // Passé la tolérance, la réponse part en l'état. En deçà, il ne s'est rien
+    // passé : un alt-tab rattrapé n'est pas de la triche.
+    watch([now, leftAt], () => {
+      const since = leftAt.value
+      const grace = state.value?.question?.focusGraceMs
+
+      if (since === null || grace === undefined || now.value - since < grace) {
+        return
+      }
+
+      leftAt.value = null
+      sendOnce('focusLoss')
+    })
 
     // L'attente qui s'achève pendant que la page est ouverte : on relit l'état
     // plutôt que de laisser le joueur devant un décompte à zéro.
@@ -127,6 +180,32 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
       if (over) {
         refresh()
       }
+    })
+
+    watchTheWindow()
+  }
+
+  /** La fenêtre elle-même, quand personne ne pilote la visibilité à sa place. */
+  function watchTheWindow(): void {
+    if (options.visible || !import.meta.client) {
+      return
+    }
+
+    const leave = (): void => {
+      visible.value = false
+    }
+    const comeBack = (): void => {
+      visible.value = document.visibilityState === 'visible'
+    }
+
+    window.addEventListener('blur', leave)
+    window.addEventListener('focus', comeBack)
+    document.addEventListener('visibilitychange', comeBack)
+
+    onScopeDispose(() => {
+      window.removeEventListener('blur', leave)
+      window.removeEventListener('focus', comeBack)
+      document.removeEventListener('visibilitychange', comeBack)
     })
   }
 
@@ -147,6 +226,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     submit,
     advance,
     pending,
+    leftThePage,
     actionFailed,
     readFailed,
     loading,
