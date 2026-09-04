@@ -30,11 +30,16 @@ export const users = sqliteTable('users', {
   /**
    * Début de la tentative en cours — repoussé chaque fois que les vies
    * reviennent. C'est lui qui dit quelles erreurs sont encore contestables.
-   * Voir specs/validation.md#contestation.
+   *
+   * Défaut à l'époque zéro, et non à maintenant : SQLite refuse d'ajouter une
+   * colonne NOT NULL dont le défaut n'est pas constant, donc la migration ne
+   * s'appliquerait sur aucune base existante. Une tentative ouverte « depuis
+   * toujours » dit la même chose pour un joueur qui commence — il n'a pas
+   * d'erreur antérieure. Voir specs/validation.md#contestation.
    */
   attemptStartedAt: integer('attempt_started_at', { mode: 'timestamp' })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .default(sql`0`),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
