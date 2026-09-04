@@ -46,3 +46,11 @@ Accepter une contestation, c'est établir que le joueur avait raison. Par consé
 - le **verdict du joueur est corrigé** : la question devient juste ;
 - la question **sort du Pool Échecs**. La garder ferait payer deux fois une erreur d'arbitrage — une fois en vie, une fois en rattrapage ;
 - la progression ne bouge pas : la question reste vue.
+
+### Effet sur les Sorts — aucun
+
+La contestation répare le joueur, elle ne rembobine pas les Sorts. Voir [`bonus.md`](./bonus.md#contestation).
+
+- Les sorts lancés pendant une attente ensuite annulée **restent lancés**. Leurs effets sont déjà chez d'autres joueurs ; les défaire créerait des états inexplicables pour les victimes, et rendre les objets ferait de la contestation un moyen de récupérer ses sorts.
+- Un Répit posé sur une attente qui n'existe plus est **gaspillé**.
+- Le **coffre d'une question loot ratée puis contestée est perdu** : le statut loot est attaché au passage, et le passage est fini. C'est la seule entorse au principe « ne pas faire payer deux fois une erreur d'arbitrage », assumée pour ne pas avoir à rouvrir un coffre hors du flux d'ascension.

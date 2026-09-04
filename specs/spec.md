@@ -42,6 +42,18 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Rendre une vie** | `grantLife` | Rendre une vie à un joueur — contestation acceptée, ou geste d'admin. Sans plafond : c'est une réparation, pas une récompense. S'il n'en avait plus, l'attente et le rattrapage en cours sont annulés et la tentative se poursuit. |
 | **Passer l'attente** | `skipCooldown` | Geste d'admin qui fait échoir immédiatement l'attente d'un joueur. La suite se déroule comme si le délai s'était écoulé : rattrapage si le Pool Échecs le permet, reprise sinon. |
 | **Fiche joueur** | `playerCard` | Ce que l'admin voit d'un joueur d'un seul coup d'œil : identité, étage, progression, phase, vies, attente en cours et contestations en attente. Lecture pure, sans effet sur la partie. |
+| **Sort** | `spell` | Le seul objet qu'on obtient en jouant. Se lance pendant l'attente, sur soi, un allié ou un ennemi. Voir [`bonus.md`](./bonus.md). |
+| **Lancer** | `cast` | L'action de consommer un sort de son inventaire vers une catégorie de cible. |
+| **Cible** | `target` | Le joueur que le tirage désigne. Jamais choisi nominativement. |
+| **Catégorie de cible** | `targetKind` | Ce que le lanceur choisit, faute de choisir une personne : `self`, `ally` ou `foe`. |
+| **Magie blanche** | `boon` | La face positive d'un sort, appliquée sur soi ou un allié. |
+| **Magie noire** | `curse` | La face négative, appliquée sur un ennemi. Miroir systématique de la face blanche. |
+| **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non. |
+| **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable en attente seulement. |
+| **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 20e question résolue de l'étage ouvre un coffre si elle est juste. |
+| **Coffre** | `chest` | Ce qui s'ouvre au verdict d'une question loot réussie. Donne un sort, ou un Mimic. |
+| **Mimic** | `mimic` | Le coffre piégé : aucun objet, et toutes les vies de la tentative retirées d'un coup. |
+| **Talisman** | `talisman` | Passif équipé en continu, qui module les Sorts. Hors périmètre. |
 
 Le mot **session** n'appartient pas au vocabulaire du domaine : il désigne uniquement la session d'authentification (cookie signé, `SessionData`). La période de jeu qui finit en attente s'appelle une **tentative**.
 
@@ -53,6 +65,7 @@ Le mot **session** n'appartient pas au vocabulaire du domaine : il désigne uniq
 - [`anti-triche.md`](./anti-triche.md) — Timer arbitré par le serveur, perte de focus, whitelist, flags admin.
 - [`admin.md`](./admin.md) — Administration : flag admin, dashboard, file de contestation, CRUD questions.
 - [`architecture.md`](./architecture.md) — Stack technique, données, authentification, forme de l'API, hébergement.
+- [`bonus.md`](./bonus.md) — Sorts, question loot, coffres et Mimic. Le seul système qui fasse communiquer deux parties entre elles.
 
 ## Règles chiffrées
 

@@ -73,6 +73,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
   - mauvaise réponse → compteur **remis à zéro** ;
   - seuil atteint → la question **sort** du pool.
 - Une contestation acceptée fait aussi sortir la question, immédiatement : l'admin vient d'établir que la réponse était bonne. Voir [`validation.md`](./validation.md).
+- Le sort **Purge** en fait sortir une au hasard, sans qu'elle ait jamais été rejouée. C'est le seul moyen de quitter le pool sans y répondre, et il peut faire passer le pool sous le seuil de déclenchement du rattrapage. Voir [`bonus.md`](./bonus.md#catalogue).
 - Conséquence assumée du retour à zéro : le pool dégonfle lentement, donc le rattrapage devient la norme passé les premières attentes. C'est pourquoi l'écran d'attente sert de fiche de révision (voir [`ecrans.md`](./ecrans.md)).
 - Les Pools Échecs des étages précédents sont **abandonnés** quand le joueur monte.
 
@@ -80,6 +81,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 
 - Le joueur atteint le palier quand toutes les questions de l'étage courant sont vues. Le Pool Échecs peut être non vide : les ratées non rattrapées sont abandonnées.
 - Franchir le palier incrémente l'étage et réserve la première question du suivant.
+- La **dernière question restante de l'étage n'est jamais une question loot**. Sans cette règle, un Mimic sur cette question opposerait le palier à l'attente, alors que la règle « l'étage épuisé prime sur les vies » a déjà tranché. Voir [`bonus.md`](./bonus.md#question-loot).
 
 ## Fin de partie
 
@@ -105,5 +107,24 @@ Valeurs par défaut, identiques aux 6 étages :
 | Attente après la dernière vie perdue | 12 h |
 | Attente après un rattrapage entièrement manqué | 4 h |
 | Tolérance de perte de focus | 1 s |
+| Questions résolues entre deux coffres | 20 |
+| Chance de Mimic à l'ouverture d'un coffre | 5 % |
+| Effets négatifs simultanés par joueur | 2 |
+| Vitalité — vies ajoutées ou retirées | 1 |
+| Chronomancie — facteur sur le timer | 2 |
+| Indulgence — facteur sur les questions tirées au rattrapage | 2 |
+| Répit — facteur sur la durée d'attente | 2 |
 
 Faire diverger un étage revient à surcharger une de ces valeurs pour cet étage ; aucun autre code ne change. Aucune divergence n'est décidée aujourd'hui.
+
+### Ce que les Sorts modifient
+
+Les quatre dernières valeurs ne sont pas des constantes de jeu mais des **facteurs
+appliqués à celles du dessus** : un effet actif ne remplace jamais une règle, il la
+module. Un timer de 60 s frappé de deux Chronomancie noires vaut 15 s, une attente
+de 12 h allégée par deux Répit blancs vaut 3 h. Les modes de cumul diffèrent d'un
+sort à l'autre — voir [`bonus.md`](./bonus.md#cumul).
+
+Aucun de ces facteurs ne peut réduire un timer ou une attente à zéro : ils sont
+multiplicatifs. Les vies, elles, s'additionnent, mais la limite de deux effets
+négatifs garantit qu'une tentative démarre toujours avec au moins une vie.

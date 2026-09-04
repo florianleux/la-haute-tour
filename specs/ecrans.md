@@ -8,6 +8,7 @@
 - **Étage et vies s'affichent à deux endroits seulement** : sur l'accueil, pour savoir où l'on en est avant de reprendre, et pendant le jeu, là où ils bougent. Nulle part ailleurs.
 - **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Les trois icônes disparaissent sur `/jouer`, phases d'attente comprises.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
+- **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'en attente, où aucun timer ne tourne et où il n'y a donc rien à détourner. L'accès se fait par une **icône baguette magique**, qui suit la règle inverse des trois autres : elles s'effacent sur `/jouer`, elle n'y paraît que pendant l'attente.
 
 ## Inventaire
 
@@ -18,6 +19,7 @@
 | Accueil | `/` | non |
 | Profil | `/profil` | non |
 | Jeu | `/jouer` — 5 phases | non |
+| Sorts | `/sorts` — en attente seulement | non |
 | Dashboard admin | `/admin` | non, réservé admin |
 | File de contestation | `/admin` | non, réservé admin |
 | Questions | `/admin` | non, réservé admin |
@@ -72,6 +74,10 @@ Une page, cinq phases. Le serveur décide, la page affiche.
 
 Étage et vies, l'énoncé, un champ de réponse libre, et le **compte à rebours**. Le décompte n'est qu'un affichage de l'échéance fixée par le serveur ; le modifier ne change rien à l'arbitrage.
 
+Une **icône par effet actif**, sur les questions concernées. Un joueur dont le timer démarre à 30 s trois jours après avoir lu l'avertissement doit pouvoir comprendre pourquoi plutôt que de croire à un bug. C'est un état, comme les vies — pas une action.
+
+Un **indicateur de question loot** avant de répondre, quand le passage en est une.
+
 Aucune autre action que répondre.
 
 **Entrée envoie la réponse, puis enchaîne.** Sur le verdict, le palier, la fin de rattrapage, la même touche passe à la suite : on joue au clavier sans en sortir. Elle est rendue à l'élément qui a le focus quand il en fait déjà quelque chose — un champ de saisie, un bouton, un lien —, sinon un seul appui déclencherait deux choses.
@@ -80,6 +86,8 @@ Aucune autre action que répondre.
 
 Après résolution, l'écran montre le résultat : juste ou faux, la **réponse affichée** de la question, la réponse saisie par le joueur, et la vie perdue le cas échéant.
 
+Sur une question loot réussie, un **coffre** — que le joueur doit ouvrir par un clic distinct de « suivant » avant de pouvoir continuer. Son résultat, sort obtenu ou Mimic, s'affiche en bas de l'écran. Rien ne force l'ouverture : le joueur qui ne clique jamais reste là, et ne joue plus.
+
 Deux actions : **contester** cette question, et passer à la suivante. Cet écran n'est pas chronométré.
 
 Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre appareil, le retrouve intact. La bonne réponse ne peut pas être escamotée par un rafraîchissement.
@@ -87,10 +95,12 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 ### `cooldown` — attente
 
 - Le **temps restant** avant reprise ou rattrapage.
-- Le **Pool Échecs de l'étage**, avec les réponses : c'est une fiche de révision, pas une punition. Le jeu est solo et sans classement ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable.
+- Le **Pool Échecs de l'étage**, avec les réponses : c'est une fiche de révision, pas une punition. Il n'y a ni classement ni score à défendre ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable.
   - Affichage par pages de dix, chargées à la demande en faisant défiler.
   - Trié par **dernier échec**, du plus récent au plus ancien par défaut, inversable. Une question ratée à nouveau en rattrapage remonte en tête : ce qui résiste est ce qu'on veut relire.
 - Les **erreurs de la tentative** qui vient de s'achever, chacune avec un bouton de contestation, sauf celles déjà contestées.
+- Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur — et ceux qui frappent l'attente elle-même. Tous les effets s'ancrant sur la tentative suivante, le joueur a tout lu avant de reprendre.
+- L'accès à la page **Sorts**, par l'icône baguette.
 
 ### `recovery` — rattrapage
 
@@ -106,6 +116,16 @@ L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet
 
 Message de félicitations, précédé du verdict de la dernière question. Phase terminale, sans classement : la seule sortie est l'accueil.
 
+## Sorts
+
+Atteignable **en attente seulement**, par l'icône baguette. Trois choses :
+
+- L'**inventaire** — ce que le joueur possède, avec les doublons.
+- Le **lancer** — un sort, une catégorie de cible (soi, allié, ennemi). La cible réelle n'est pas annoncée avant : le tirage est pondéré mais imprévisible. Elle l'est après. Un même sort ne se lance qu'une fois par attente.
+- Le **journal** — les sorts reçus et lancés, horodatés, nominatifs des deux côtés. C'est là que le lanceur apprend qui il a touché.
+
+Hors attente, la page n'est pas atteignable et l'inventaire n'est donc pas consultable : le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
+
 ## Écrans d'administration
 
 Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
@@ -117,7 +137,9 @@ Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
 
 ## Ce qu'aucun écran joueur ne montre
 
-- **Aucun classement**, nulle part — le jeu n'en a pas.
+- **Aucun classement**, nulle part. Le serveur classe bien les joueurs par progression pour pondérer le tirage des Sorts, mais ce classement ne sort jamais du serveur et n'est montré à personne.
+- **Aucun inventaire hors attente** : la page Sorts n'existe que pendant l'attente.
+- **Aucune cible avant le lancer** : le joueur choisit une catégorie, jamais une personne.
 - **Aucun compteur de triche** : les flags existent, ils sont réservés à l'administration.
 - **Aucun état de jeu sur le profil** : il y montre son parcours, pas sa phase, ses vies ni son attente — celles-là vivent sur l'accueil et dans le jeu.
 - **Aucune question à venir** : l'accueil n'annonce jamais l'énoncé suivant.
