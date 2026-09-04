@@ -20,13 +20,21 @@ describe('temps restant', () => {
     return new Date(now + minutes * 60_000).toISOString()
   }
 
-  it('compte en heures et minutes sur une longue attente', () => {
-    expect(formatRemaining(inMinutes(12 * 60), now)).toBe('12 h')
-    expect(formatRemaining(inMinutes(11 * 60 + 58), now)).toBe('11 h 58 min')
+  function inSeconds(seconds: number): string {
+    return new Date(now + seconds * 1000).toISOString()
+  }
+
+  it('compte en heures, minutes et secondes sur une longue attente', () => {
+    expect(formatRemaining(inSeconds(12 * 3600), now)).toBe('12 h 0 min 0 s')
+    expect(formatRemaining(inSeconds(11 * 3600 + 58 * 60 + 12), now)).toBe('11 h 58 min 12 s')
   })
 
-  it('compte en minutes sur la dernière heure', () => {
-    expect(formatRemaining(inMinutes(4), now)).toBe('4 min')
+  it('compte en minutes et secondes sur la dernière heure', () => {
+    expect(formatRemaining(inSeconds(4 * 60 + 32), now)).toBe('4 min 32 s')
+  })
+
+  it('compte en secondes sous la minute', () => {
+    expect(formatRemaining(inSeconds(32), now)).toBe('32 s')
   })
 
   it('ne compte jamais à l envers une fois l échéance passée', () => {

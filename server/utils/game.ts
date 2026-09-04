@@ -67,6 +67,12 @@ export interface GameState {
   cooldownUntil: string | null
   /** Tally of the recovery under way, null outside one. */
   recovery: RecoveryProgress | null
+  /**
+   * Le sort du dernier rattrapage, posé une fois toutes ses questions jouées.
+   * Un écran intermédiaire le lit avant que le joueur ne reprenne l'ascension
+   * (succès) ou ne voie sa nouvelle attente (échec). Effacé au clic suivant.
+   */
+  recoveryResult: 'resumed' | 'failed' | null
 }
 
 /**
@@ -371,6 +377,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     verdict: null as Verdict | null,
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
     recovery: user.lives <= 0 ? await recoveryProgress(db, user) : null,
+    recoveryResult: null as 'resumed' | 'failed' | null,
   }
 
   if (reservation && question) {
@@ -720,7 +727,9 @@ async function finishRecovery(db: Database, user: User, now: Date): Promise<Game
     })
     .where(eq(users.id, user.id))
 
-  return buildState(db, user.id, now)
+  // Le verdict du rattrapage se lit sur un écran à part, pas sur la dernière
+  // question : il voyage avec l'état jusqu'à ce que le joueur reprenne.
+  return { ...await buildState(db, user.id, now), recoveryResult: verdict.resumes ? 'resumed' : 'failed' }
 }
 
 export interface MissedPoolEntryView {

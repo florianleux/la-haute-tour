@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, like } from 'drizzle-orm'
 import { z } from 'zod'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { acceptedAnswers, questions } from '../db/schema'
@@ -40,55 +40,99 @@ export const questionDraftSchema = questionEditSchema.extend({
   floor: floorSchema(),
 }) satisfies z.ZodType<QuestionDraft>
 
-/** Le filtre de la liste : un étage de la tour, ou rien — tout le deck. */
-export const floorFilterSchema = z.object({
+/** Le filtre de la liste : un étage de la tour, une recherche, et la page. */
+export const questionsQuerySchema = z.object({
   // La query arrive en chaîne : la coercition est ce qui la rend comparable.
   floor: z.coerce.number().pipe(floorSchema()).optional(),
+  // Recherche en texte libre sur l'énoncé : un fragment suffit, insensible à la
+  // casse. Vide signifie « toutes ».
+  search: z.string().trim().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
 })
+
+export interface QuestionsQuery {
+  floor?: number
+  search?: string
+  limit: number
+  offset: number
+}
 
 function floorSchema(): z.ZodNumber {
   return z.number().int().min(1).max(FLOOR_COUNT)
 }
 
 /**
- * Les questions de l'étage demandé, ou tout le deck. Une seule requête : les
- * réponses acceptées arrivent avec leur question plutôt qu'en N+1.
+ * Les questions de la page demandée, avec leurs réponses acceptées et le total
+ * au-dessus du filtre. La pagination se fait sur les questions, pas sur la
+ * jointure : les réponses acceptées d'une question peuvent être nombreuses sans
+ * repousser les questions suivantes hors de la page.
  */
-export async function listQuestions(db: Database, floor?: number): Promise<AdminQuestion[]> {
+export async function listQuestions(
+  db: Database,
+  query: QuestionsQuery,
+): Promise<{ questions: AdminQuestion[]; total: number }> {
+  // `LIKE` est insensible à la casse en SQLite pour l'ASCII : un fragment
+  // d'énoncé suffit, sans distinguer majuscules et minuscules.
+  const conditions = [
+    query.floor === undefined ? undefined : eq(questions.floor, query.floor),
+    query.search ? like(questions.statement, `%${query.search}%`) : undefined,
+  ].filter((clause): clause is NonNullable<typeof clause> => clause !== undefined)
+  const where = conditions.length ? and(...conditions) : undefined
+
+  const [totalRow] = await db.select({ value: count() }).from(questions).where(where)
+
+  // Paginer sur les questions : on tire d'abord les ids de la page, puis on
+  // ramène leurs réponses acceptées — sinon une question à plusieurs réponses
+  // pousserait la suivante hors de la page.
+  const idRows = await db
+    .select({ id: questions.id })
+    .from(questions)
+    .where(where)
+    .orderBy(asc(questions.floor), asc(questions.createdAt), asc(questions.id))
+    .limit(query.limit)
+    .offset(query.offset)
+
+  const ids = idRows.map(row => row.id)
+
+  if (!ids.length) {
+    return { questions: [], total: totalRow.value }
+  }
+
   const rows = await db
     .select({
       id: questions.id,
       statement: questions.statement,
       answerLabel: questions.answerLabel,
       floor: questions.floor,
-      // Une question sans réponse acceptée existe en base ; l'admin doit pouvoir
-      // la voir pour la réparer, d'où la jointure externe.
       accepted: acceptedAnswers.text,
     })
     .from(questions)
     .leftJoin(acceptedAnswers, eq(acceptedAnswers.questionId, questions.id))
-    .where(floor === undefined ? undefined : eq(questions.floor, floor))
-    .orderBy(asc(questions.floor), asc(questions.createdAt), asc(acceptedAnswers.id))
+    .where(inArray(questions.id, ids))
+    .orderBy(asc(questions.floor), asc(questions.createdAt), asc(questions.id), asc(acceptedAnswers.id))
 
+  // Une question sans réponse acceptée existe en base ; l'admin doit pouvoir
+  // la voir pour la réparer, d'où la jointure externe. L'ordre des ids de la
+  // page est préservé.
   const listed = new Map<string, AdminQuestion>()
 
+  for (const id of ids) {
+    listed.set(id, { id, statement: '', answerLabel: '', floor: 0, acceptedAnswers: [] })
+  }
+
   for (const row of rows) {
-    const question = listed.get(row.id) ?? {
-      id: row.id,
-      statement: row.statement,
-      answerLabel: row.answerLabel,
-      floor: row.floor,
-      acceptedAnswers: [],
-    }
+    const question = listed.get(row.id)!
+    question.statement = row.statement
+    question.answerLabel = row.answerLabel
+    question.floor = row.floor
 
     if (row.accepted !== null) {
       question.acceptedAnswers.push(row.accepted)
     }
-
-    listed.set(row.id, question)
   }
 
-  return [...listed.values()]
+  return { questions: ids.map(id => listed.get(id)!), total: totalRow.value }
 }
 
 export async function addQuestion(db: Database, draft: QuestionDraft): Promise<AdminQuestion> {

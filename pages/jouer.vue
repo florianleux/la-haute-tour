@@ -9,12 +9,16 @@ const {
   waitRemaining,
   submit,
   advance,
+  skipCooldown,
   pending,
   leftThePage,
   actionFailed,
   readFailed,
   loading,
 } = await useQuestionRun()
+
+// L'admin peut passer sa propre attente : le bouton ne se montre qu'à lui.
+const { user } = await useCurrentUser()
 
 // Ce que la carte montre se décide en un seul endroit, testable : la page ne
 // fait que projeter cette décision. Voir utils/phase.ts.
@@ -29,18 +33,56 @@ const contestFailed = ref(false)
 async function dispute(questionId: string): Promise<void> {
   contestFailed.value = !(await contest(questionId))
 }
+
+// L'écran d'attente sert aussi au rattrapage prêt à démarrer : même fiche de
+// révision, même file de contestation, mais le compteur cède la place au
+// bouton « Commencer le rattrapage ». Voir specs/ecrans.md#cooldown--attente.
+const waiting = computed(() =>
+  state.value?.phase === 'cooldown'
+  || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
+)
 </script>
 
 <template>
-  <BaseCard v-if="state?.phase === 'cooldown'" wide title="Attente">
+  <BaseCard v-if="state?.recoveryResult === 'resumed'" title="Rattrapage réussi">
     <template #lead>
-      Tu as perdu ta dernière vie. Reprise dans
-      {{ waitRemaining }}.
+      Tes vies sont restaurées. Tu peux reprendre l'ascension.
     </template>
+    <BaseButton block class="mt-8" :loading="pending" @click="advance">
+      Reprendre l'ascension
+    </BaseButton>
+    <BaseButton to="/" variant="ghost" block class="mt-3">
+      Retour à l'accueil
+    </BaseButton>
+  </BaseCard>
+
+  <BaseCard v-else-if="waiting" wide :title="state?.phase === 'cooldown' ? 'Attente' : 'Rattrapage'">
+    <template #lead>
+      <template v-if="state?.phase === 'cooldown'">
+        Tu as perdu ta dernière vie. Reprise dans {{ waitRemaining }}.
+      </template>
+      <template v-else>
+        Ton attente est terminée. Tu peux lancer ton rattrapage.
+      </template>
+    </template>
+
+    <BaseHint v-if="state?.recoveryResult === 'failed'" class="mt-3" tone="warning">
+      Rattrapage raté : aucune bonne réponse. Une nouvelle attente commence.
+    </BaseHint>
 
     <BaseLoading v-if="loading" class="mt-4">
       Mise à jour de ta partie…
     </BaseLoading>
+
+    <BaseButton
+      v-if="user?.isAdmin && state?.phase === 'cooldown'"
+      variant="ghost"
+      class="mt-4"
+      :loading="pending"
+      @click="skipCooldown"
+    >
+      Passer l'attente
+    </BaseButton>
 
     <BaseHint v-if="screen?.verdict" class="mt-6">
       Dernière question ratée — réponse :
@@ -55,7 +97,17 @@ async function dispute(questionId: string): Promise<void> {
       <ContestableErrors :errors="errors" :pending="contesting" @contest="dispute" />
     </div>
 
-    <BaseButton to="/" variant="ghost" block class="mt-8">
+    <BaseButton
+      v-if="state?.phase === 'recovery'"
+      block
+      class="mt-8"
+      :loading="pending"
+      @click="advance"
+    >
+      Commencer le rattrapage
+    </BaseButton>
+
+    <BaseButton to="/" variant="ghost" block class="mt-3">
       Retour à l'accueil
     </BaseButton>
   </BaseCard>

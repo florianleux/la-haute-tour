@@ -21,6 +21,7 @@ const served: GameState = {
   verdict: null,
   cooldownUntil: null,
   recovery: null,
+  recoveryResult: null,
 }
 
 describe('actions du joueur', () => {

@@ -4,7 +4,20 @@ import type { QuestionDraft, QuestionEdit } from '~~/server/utils/questions'
 
 // L'écran de gestion du deck. La garde serveur est ce qui protège les données ;
 // cet écran n'existe que pour les rendre éditables. Voir specs/admin.md.
-const { questions, floor, failed, loading, saving, create, edit, remove } = await useAdminQuestions()
+const {
+  questions,
+  floor,
+  search,
+  total,
+  page,
+  limit,
+  failed,
+  loading,
+  saving,
+  create,
+  edit,
+  remove,
+} = await useAdminQuestions()
 
 /** La question en cours d'édition, et celle dont la suppression attend un oui. */
 const editing = ref<string | null>(null)
@@ -24,9 +37,29 @@ watch(selected, (value) => {
   floor.value = value === NO_FILTER ? null : Number(value)
 })
 
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
+const canPrev = computed(() => page.value > 1)
+const canNext = computed(() => page.value < totalPages.value)
+
+function goToPrev(): void {
+  if (canPrev.value) {
+    page.value -= 1
+  }
+}
+
+function goToNext(): void {
+  if (canNext.value) {
+    page.value += 1
+  }
+}
+
 const emptyMessage = computed(() => {
   if (questions.value.length || failed.value) {
     return null
+  }
+
+  if (search.value) {
+    return `Aucune question ne contient « ${search.value} ».`
   }
 
   return floor.value === null
@@ -66,8 +99,13 @@ async function onRemove(id: string): Promise<void> {
       Le contenu du deck. La répartition en étages, elle, appartient au script d'import.
     </template>
 
-    <div class="mt-4 max-w-xs">
-      <BaseSelect v-model="selected" label="Filtrer" :options="filterOptions" />
+    <div class="mt-4 flex flex-wrap items-end gap-3">
+      <div class="max-w-xs flex-1">
+        <BaseSelect v-model="selected" label="Filtrer" :options="filterOptions" />
+      </div>
+      <div class="flex-1">
+        <BaseInput v-model="search" label="Recherche" placeholder="Capitale de la Gironde ?" />
+      </div>
     </div>
 
     <div class="mt-6 rounded-xl border border-slate-800 p-4">
@@ -139,5 +177,17 @@ async function onRemove(id: string): Promise<void> {
         </div>
       </li>
     </BaseList>
+
+    <div class="mt-4 flex items-center justify-between text-sm">
+      <BaseButton variant="ghost" :disabled="!canPrev" @click="goToPrev">
+        Précédent
+      </BaseButton>
+      <BaseHint>
+        Page {{ page }} sur {{ totalPages }}
+      </BaseHint>
+      <BaseButton variant="ghost" :disabled="!canNext" @click="goToNext">
+        Suivant
+      </BaseButton>
+    </div>
   </BaseSection>
 </template>

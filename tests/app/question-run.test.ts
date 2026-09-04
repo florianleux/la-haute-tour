@@ -35,6 +35,7 @@ function gameState(overrides: Partial<GameState> = {}): GameState {
     verdict: null,
     cooldownUntil: null,
     recovery: null,
+    recoveryResult: null,
     ...overrides,
   }
 }
@@ -213,6 +214,6 @@ describe('déroulé d une question', () => {
 
     const { waitRemaining } = await run({ now: ref(NOW) })
 
-    expect(waitRemaining.value).toBe('1 h 30 min')
+    expect(waitRemaining.value).toBe('1 h 30 min 0 s')
   })
 })

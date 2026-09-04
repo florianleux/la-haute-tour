@@ -12,6 +12,7 @@ function state(overrides: Partial<GameState>): GameState {
     verdict: null,
     cooldownUntil: null,
     recovery: null,
+    recoveryResult: null,
     ...overrides,
   }
 }

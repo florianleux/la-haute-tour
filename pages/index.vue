@@ -3,6 +3,14 @@
 // and the phase from the game state. See specs/ecrans.md.
 const { user } = await useCurrentUser()
 const { state, failed } = await useGameState()
+
+// En attente, on tombe directement sur l'écran d'attente : l'accueil ne sert
+// qu'à choisir de jouer, pas à revoir un compteur. Voir specs/ecrans.md.
+watchEffect(() => {
+  if (state.value?.phase === 'cooldown') {
+    navigateTo('/jouer')
+  }
+})
 </script>
 
 <template>
@@ -19,10 +27,6 @@ const { state, failed } = await useGameState()
          renvoyée par le serveur, jamais d'une déduction du client. -->
     <BaseButton v-if="state" to="/jouer" block class="mt-8">
       {{ mainActionLabel(state) }}
-    </BaseButton>
-
-    <BaseButton to="/profil" variant="ghost" block class="mt-3">
-      Mon profil
     </BaseButton>
   </BaseCard>
 </template>

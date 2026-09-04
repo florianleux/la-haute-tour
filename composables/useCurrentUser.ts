@@ -24,7 +24,12 @@ export async function useCurrentUser(): Promise<CurrentUser> {
   const { data, refresh } = await useAsyncData<MeResponse>(
     CURRENT_USER_KEY,
     () => $fetch<MeResponse>('/api/auth/me', useApiFetchOptions()),
-    { default: (): MeResponse => ({ user: null }) },
+    {
+      default: (): MeResponse => ({ user: null }),
+      // L'identité ne bouge entre deux navigations client ; la relire ne ferait
+      // que ralentir l'accueil sans rien apprendre de neuf.
+      getCachedData: (_key, nuxtApp) => nuxtApp.payload.data[CURRENT_USER_KEY] as MeResponse | undefined,
+    },
   )
 
   return {

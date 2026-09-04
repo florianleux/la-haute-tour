@@ -103,6 +103,71 @@ describe('questions admin', () => {
       expect(listed.map((question: { id: string }) => question.id)).toEqual([wanted])
     })
 
+    it('rend le total au-dessus du filtre', async () => {
+      await createQuestion(db, { statement: 'Une ?', floor: 1 })
+      await createQuestion(db, { statement: 'Deux ?', floor: 2 })
+
+      const response = await list(apiRequest('http://test/questions?floor=1', adminCookie))
+
+      const body = await response.json()
+      expect(body.questions).toHaveLength(1)
+      expect(body.total).toBe(1)
+    })
+
+    it('pagine par dix', async () => {
+      for (let i = 0; i < 12; i++) {
+        await createQuestion(db, { statement: `Question ${i} ?`, floor: 1 })
+      }
+
+      const first = await list(apiRequest('http://test/questions?page=1', adminCookie))
+      const second = await list(apiRequest('http://test/questions?page=2', adminCookie))
+
+      const firstBody = await first.json()
+      const secondBody = await second.json()
+      expect(firstBody.questions).toHaveLength(10)
+      expect(firstBody.total).toBe(12)
+      expect(secondBody.questions).toHaveLength(2)
+      expect(secondBody.total).toBe(12)
+    })
+
+    it('ne se chevauche pas entre les pages', async () => {
+      for (let i = 0; i < 15; i++) {
+        await createQuestion(db, { statement: `Question ${i} ?`, floor: 1 })
+      }
+
+      const first = await (await list(apiRequest('http://test/questions?page=1', adminCookie))).json()
+      const second = await (await list(apiRequest('http://test/questions?page=2', adminCookie))).json()
+
+      const firstIds = new Set(first.questions.map((q: { id: string }) => q.id))
+      for (const q of second.questions) {
+        expect(firstIds.has(q.id)).toBe(false)
+      }
+      expect(first.questions.length + second.questions.length).toBe(15)
+    })
+
+    it('cherche par fragment d énoncé, insensible à la casse', async () => {
+      await createQuestion(db, { statement: 'Capitale de la Gironde ?', floor: 1 })
+      await createQuestion(db, { statement: 'Capitale de la Vendée ?', floor: 1 })
+      await createQuestion(db, { statement: 'Préfecture du Finistère ?', floor: 1 })
+
+      const response = await list(apiRequest('http://test/questions?search=capitale', adminCookie))
+
+      const body = await response.json()
+      expect(body.questions).toHaveLength(2)
+      expect(body.total).toBe(2)
+    })
+
+    it('combines filtre d étage et recherche', async () => {
+      await createQuestion(db, { statement: 'Capitale de la Gironde ?', floor: 1 })
+      await createQuestion(db, { statement: 'Capitale de la Vendée ?', floor: 2 })
+
+      const response = await list(apiRequest('http://test/questions?floor=1&search=capitale', adminCookie))
+
+      const body = await response.json()
+      expect(body.questions).toHaveLength(1)
+      expect(body.total).toBe(1)
+    })
+
     it('rejette un étage qui n existe pas', async () => {
       const response = await list(apiRequest('http://test/questions?floor=9', adminCookie))
 

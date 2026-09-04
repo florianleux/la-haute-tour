@@ -11,6 +11,8 @@ export interface Play {
    * `source` dit qui l'envoie : le joueur, ou son départ de la page.
    */
   answer: (text: string, source?: AnswerSource) => Promise<void>
+  /** L'admin passe sa propre attente. Sans effet pour un joueur non admin. */
+  skipCooldown: () => Promise<void>
   /** True when the last action came back empty-handed. */
   failed: Ref<boolean>
   pending: Ref<boolean>
@@ -44,6 +46,7 @@ export function usePlay(): Play {
   return {
     next: () => act('/api/game/next'),
     answer: (text, source = 'player') => act('/api/game/answer', { answer: text, source }),
+    skipCooldown: () => act('/api/game/skip-cooldown'),
     failed,
     pending,
   }

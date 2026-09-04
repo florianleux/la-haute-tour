@@ -24,7 +24,12 @@ export async function useGameState(): Promise<GameStateRead> {
   const { data, error, status, refresh } = await useAsyncData<GameState | null>(
     GAME_STATE_KEY,
     () => $fetch<GameState>('/api/game/state', useApiFetchOptions()),
-    { default: (): GameState | null => null },
+    {
+      default: (): GameState | null => null,
+      // Sur navigation client, l'état serti par /jouer est déjà en cache —
+      // l'accueil se lit instantanément, sans re-demander l'état au serveur.
+      getCachedData: (_key, nuxtApp) => nuxtApp.payload.data[GAME_STATE_KEY] as GameState | null | undefined,
+    },
   )
 
   return {

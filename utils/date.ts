@@ -13,24 +13,30 @@ export function formatDay(iso: string): string {
 }
 
 /**
- * How long is left, as a player reads a wait: "11 h 58 min", "4 min", "moins d'une
- * minute". Past the deadline it is over, not negative.
+ * How long is left, as a player reads a wait — détaillé à la seconde, parce que
+ * l'attente se compte à la seconde près. "11 h 58 min 12 s", "4 min 32 s", "32 s".
+ * Past the deadline it is over, not negative.
  */
 export function formatRemaining(iso: string, now: number): string {
-  const minutes = Math.ceil((new Date(iso).getTime() - now) / 60_000)
+  const seconds = Math.ceil((new Date(iso).getTime() - now) / 1000)
 
   // Une échéance absente ou illisible n'est pas une attente : mieux vaut le dire
   // que rendre « NaN h NaN min ».
-  if (!Number.isFinite(minutes) || minutes <= 0) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
     return 'terminée'
   }
 
-  if (minutes < 60) {
-    return `${minutes} min`
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+
+  if (hours > 0) {
+    return `${hours} h ${minutes} min ${secs} s`
   }
 
-  const hours = Math.floor(minutes / 60)
-  const rest = minutes % 60
+  if (minutes > 0) {
+    return `${minutes} min ${secs} s`
+  }
 
-  return rest ? `${hours} h ${rest} min` : `${hours} h`
+  return `${secs} s`
 }
