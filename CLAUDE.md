@@ -19,6 +19,8 @@ la-haute-tour/
 ├── pages/              # routes Nuxt (file-based routing)
 ├── components/         # composants Vue, PascalCase
 ├── composables/        # logique réutilisable côté client (useXxx.ts)
+├── utils/              # helpers client auto-importés (dates, libellés, styles)
+├── shared/utils/       # le peu qui doit être identique des deux côtés (forme de la tour)
 ├── server/
 │   ├── api/            # routes Nitro, un fichier par endpoint
 │   ├── db/

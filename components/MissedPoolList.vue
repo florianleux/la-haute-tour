@@ -3,6 +3,14 @@
 // rend le seuil de sortie du pool atteignable. Voir specs/mecanique.md.
 const { entries, total, order, loading, hasMore, loaded, failed, loadMore, toggleOrder } = useMissedPool()
 
+// Rien à dire tant que la première page n'est pas revenue, ni quand la lecture a
+// échoué : « aucune erreur » et « je ne sais pas » ne sont pas la même nouvelle.
+const emptyMessage = computed(
+  () => (loaded.value && !entries.value.length && !failed.value
+    ? 'Aucune erreur à réviser sur cet étage.'
+    : null),
+)
+
 const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | undefined
 
@@ -24,21 +32,18 @@ onUnmounted(() => observer?.disconnect())
 </script>
 
 <template>
-  <section>
-    <div class="flex items-baseline justify-between">
-      <h2 class="text-lg font-semibold">
-        Tes erreurs de l'étage ({{ total }})
-      </h2>
+  <BaseSection :title="`Tes erreurs de l'étage (${total})`">
+    <template #aside>
       <BaseButton variant="ghost" @click="toggleOrder">
         {{ order === 'desc' ? 'Plus récentes d\'abord' : 'Plus anciennes d\'abord' }}
       </BaseButton>
-    </div>
+    </template>
 
     <BaseNotice v-if="failed">
       Impossible de charger tes erreurs. Recharge la page.
     </BaseNotice>
 
-    <ul class="mt-4 divide-y divide-slate-800 rounded-xl border border-slate-800">
+    <BaseList :empty="emptyMessage" class="mt-4">
       <li v-for="entry in entries" :key="entry.questionId" class="px-4 py-3">
         <p class="text-sm">
           {{ entry.statement }}
@@ -50,15 +55,12 @@ onUnmounted(() => observer?.disconnect())
           Dernier échec le {{ formatDay(entry.lastFailedAt) }}
         </p>
       </li>
-      <li v-if="loaded && !entries.length && !failed" class="px-4 py-3 text-sm text-slate-500">
-        Aucune erreur à réviser sur cet étage.
-      </li>
-    </ul>
+    </BaseList>
 
     <!-- Sentinelle de défilement : la page suivante se charge en arrivant dessus. -->
     <div ref="sentinel" class="h-4" />
-    <p v-if="loading" class="mt-2 text-sm text-slate-500">
-      <BaseSpinner>Chargement des erreurs…</BaseSpinner>
-    </p>
-  </section>
+    <BaseLoading v-if="loading" class="mt-2">
+      Chargement des erreurs…
+    </BaseLoading>
+  </BaseSection>
 </template>

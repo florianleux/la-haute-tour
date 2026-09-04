@@ -1,7 +1,9 @@
 import {
   createApp,
   createError,
+  createRouter,
   getQuery,
+  getRouterParam,
   defineEventHandler,
   getValidatedQuery,
   readValidatedBody,
@@ -41,6 +43,7 @@ export function installNitroGlobals(discord: DiscordStubs = refusingDiscordStubs
   Object.assign(globalThis, {
     defineEventHandler,
     getQuery,
+    getRouterParam,
     getValidatedQuery,
     readValidatedBody,
     createError,
@@ -76,9 +79,44 @@ export function mountHandler(
   return toWebHandler(app)
 }
 
+/**
+ * Wraps a handler on a parameterised route (`/questions/:id`), so the handler can
+ * read its route params the way Nitro's file-based routing gives them.
+ */
+export function mountRoute(
+  method: 'get' | 'post' | 'put' | 'delete',
+  path: string,
+  handler: EventHandler,
+): (request: Request) => Promise<Response> {
+  const router = createRouter()
+  router[method](path, handler)
+
+  const app = createApp()
+  app.use(router)
+
+  return toWebHandler(app)
+}
+
 /** A GET on a mounted handler, signed in when a cookie is passed. */
 export function apiRequest(url: string, cookie?: string): Request {
   return new Request(url, { headers: cookie ? { cookie } : {} })
+}
+
+/** A request carrying a JSON body, signed in when a cookie is passed. */
+export function jsonRequest(
+  url: string,
+  method: 'POST' | 'PUT' | 'DELETE',
+  body?: unknown,
+  cookie?: string,
+): Request {
+  return new Request(url, {
+    method,
+    headers: {
+      'content-type': 'application/json',
+      ...(cookie ? { cookie } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
 }
 
 /**

@@ -1,3 +1,4 @@
+import { useWriteThenRead } from './useWriteThenRead'
 import type { Ref } from 'vue'
 import type { WhitelistEntry, WhitelistResponse } from '~~/server/api/admin/whitelist.get'
 
@@ -28,32 +29,12 @@ export async function useWhitelist(): Promise<AdminWhitelist> {
     { default: (): WhitelistResponse => ({ entries: [] }) },
   )
 
-  const adding = ref(false)
-
-  async function add(discordId: string): Promise<boolean> {
-    adding.value = true
-
-    try {
-      await $fetch('/api/admin/whitelist', { method: 'POST', body: { discordId } })
-    }
-    catch {
-      // The caller decides what to say: a refused write and an unreadable list
-      // are two different pieces of news.
-      adding.value = false
-      return false
-    }
-
-    // Relâché après la relecture : la liste n'est à jour qu'ensuite.
-    await refresh()
-    adding.value = false
-
-    return true
-  }
+  const { pending: adding, send } = useWriteThenRead(refresh)
 
   return {
     entries: computed<WhitelistEntry[]>(() => data.value?.entries ?? []),
     failed: computed<boolean>(() => Boolean(error.value)),
-    add,
+    add: discordId => send('/api/admin/whitelist', 'POST', { discordId }),
     adding,
     loading: computed<boolean>(() => status.value === 'pending'),
     refresh,
