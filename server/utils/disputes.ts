@@ -1,11 +1,11 @@
 import { and, asc, eq, ne, notInArray } from 'drizzle-orm'
+import { grantLife } from './lives'
 import {
   acceptedAnswers,
   disputes,
   focusLosses,
   missedPool,
   questions,
-  recoveryQuestions,
   reservations,
   seenQuestions,
   users,
@@ -229,40 +229,7 @@ export async function settleDispute(
     )),
   ])
 
-  await repairLives(db, player)
-}
-
-/**
- * La vie que l'arbitrage rend. Sans plafond : c'est une réparation, pas une
- * récompense — la plafonner l'annulerait précisément là où le joueur a le plus
- * attendu.
- *
- * Sans vie, le joueur attendait ou rattrapait à cause de cette erreur : l'attente
- * est annulée comme si elle n'avait jamais commencé, le rattrapage tiré avec
- * elle, et il reprend **la même tentative** avec une vie — les autres pertes
- * restent acquises, donc `attemptStartedAt` ne bouge pas.
- */
-async function repairLives(db: Database, player: User): Promise<void> {
-  if (player.lives > 0) {
-    await db
-      .update(users)
-      .set({ lives: player.lives + 1 })
-      .where(eq(users.id, player.id))
-
-    return
-  }
-
-  await db.batch([
-    db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),
-    // La question de rattrapage en cours n'a plus lieu d'être ; un verdict
-    // d'ascension, lui, reste à lire.
-    db.delete(reservations).where(and(
-      eq(reservations.userId, player.id),
-      eq(reservations.mode, 'recovery'),
-    )),
-    db
-      .update(users)
-      .set({ lives: 1, cooldownUntil: null })
-      .where(eq(users.id, player.id)),
-  ])
+  // La vie rendue est le même geste que celui de l'administration : une seule
+  // définition, dans lives.ts.
+  await grantLife(db, player)
 }

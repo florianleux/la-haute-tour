@@ -9,6 +9,7 @@ const profile = {
   discordId: '123456789',
   username: 'gandalf',
   email: 'gandalf@example.com',
+  avatar: 'abc123',
 }
 
 describe('loginWithDiscord', () => {

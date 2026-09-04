@@ -12,6 +12,7 @@ const profile: DiscordProfile = {
   discordId: DISCORD_ID,
   username: 'gandalf',
   email: 'gandalf@example.com',
+  avatar: 'abc123',
 }
 
 const fetchDiscordProfile = vi.fn(async () => profile)

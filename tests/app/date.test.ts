@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, formatRemaining } from '../../utils/date'
+import { formatDay, formatRemaining, formatWait } from '../../utils/date'
 
 describe('date lisible', () => {
   it('rend le jour en français', () => {
@@ -43,5 +43,30 @@ describe('temps restant', () => {
 
   it('ne rend pas « NaN h » sur une échéance absente', () => {
     expect(formatRemaining('', now)).toBe('terminée')
+  })
+})
+
+describe('attente à la minute', () => {
+  const now = new Date('2026-09-03T12:00:00.000Z').getTime()
+
+  function inSeconds(seconds: number): string {
+    return new Date(now + seconds * 1000).toISOString()
+  }
+
+  it('compte en heures et minutes sur une longue attente', () => {
+    expect(formatWait(inSeconds(11 * 3600 + 58 * 60 + 12), now)).toBe('11 h 59 min')
+  })
+
+  it('compte en minutes sous l heure', () => {
+    expect(formatWait(inSeconds(4 * 60), now)).toBe('4 min')
+  })
+
+  it('arrondit au-dessus : ce qui reste reste', () => {
+    expect(formatWait(inSeconds(30), now)).toBe('1 min')
+  })
+
+  it('ne compte jamais à l envers une fois l échéance passée', () => {
+    expect(formatWait(inSeconds(-30), now)).toBe('terminée')
+    expect(formatWait('', now)).toBe('terminée')
   })
 })

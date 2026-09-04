@@ -39,9 +39,9 @@ const tab = ref<AdminTab>('disputes')
     <div class="mt-8">
       <AdminDisputes v-if="tab === 'disputes'" />
       <AdminQuestions v-else-if="tab === 'questions'" />
-      <div v-else-if="tab === 'players'" class="rounded-xl border border-slate-800 p-6 text-sm text-slate-400">
-        La gestion des joueurs arrive ici : liste, état, et éventuellement la
-        whitelist. Pour l'instant, rien à administrer.
+      <div v-else-if="tab === 'players'" class="space-y-12">
+        <AdminPlayers />
+        <AdminWhitelist />
       </div>
       <AdminFocusLosses v-else-if="tab === 'cheat'" />
     </div>

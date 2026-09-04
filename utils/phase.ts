@@ -1,4 +1,25 @@
 import type { GameState } from '~~/server/utils/game'
+import type { Phase } from '~~/server/utils/mechanics'
+
+/**
+ * La phase, dite en français. L'onglet Joueurs de l'administration l'affiche
+ * telle quelle : on y lit où en est un joueur, on ne lui propose rien.
+ * Voir specs/admin.md#gestion-des-joueurs.
+ */
+export function phaseLabel(phase: Phase): string {
+  switch (phase) {
+    case 'ascent':
+      return 'En ascension'
+    case 'cooldown':
+      return 'En attente'
+    case 'recovery':
+      return 'En rattrapage'
+    case 'floorEnd':
+      return 'Au palier'
+    case 'gameOver':
+      return 'Partie terminée'
+  }
+}
 
 /**
  * Ce que l'accueil propose de faire ensuite, nommé d'après la phase renvoyée par

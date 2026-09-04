@@ -29,6 +29,7 @@ const discordUserSchema = z.object({
   id: z.string(),
   username: z.string(),
   email: z.string().nullish(),
+  avatar: z.string().nullish(),
 })
 
 export function toDiscordProfile(raw: unknown): DiscordProfile {
@@ -37,6 +38,7 @@ export function toDiscordProfile(raw: unknown): DiscordProfile {
     discordId: user.id,
     username: user.username,
     email: user.email ?? null,
+    avatar: user.avatar ?? null,
   }
 }
 

@@ -25,6 +25,7 @@ describe('toDiscordProfile', () => {
       id: '123456789',
       username: 'gandalf',
       email: 'gandalf@example.com',
+      avatar: 'a1b2c3',
       global_name: 'Gandalf le Gris',
     })
 
@@ -32,6 +33,7 @@ describe('toDiscordProfile', () => {
       discordId: '123456789',
       username: 'gandalf',
       email: 'gandalf@example.com',
+      avatar: 'a1b2c3',
     })
   })
 
@@ -39,6 +41,12 @@ describe('toDiscordProfile', () => {
     const profile = toDiscordProfile({ id: '1', username: 'radagast', email: null })
 
     expect(profile.email).toBeNull()
+  })
+
+  it('accepte un compte sans avatar', () => {
+    const profile = toDiscordProfile({ id: '1', username: 'radagast', avatar: null })
+
+    expect(profile.avatar).toBeNull()
   })
 
   it('rejette une réponse Discord malformée', () => {

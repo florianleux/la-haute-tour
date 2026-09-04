@@ -36,6 +36,13 @@
       "when": 1788518865669,
       "tag": "0004_wide_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1788534912018,
+      "tag": "0005_nostalgic_goblin_queen",
+      "breakpoints": true
     }
   ]
 }

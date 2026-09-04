@@ -22,6 +22,12 @@ export const users = sqliteTable('users', {
   discordId: text('discord_id').notNull().unique(),
   username: text('username').notNull(),
   email: text('email'),
+  /**
+   * Le hash d'avatar Discord, resynchronisé à chaque connexion. Null tant que le
+   * joueur ne s'est pas reconnecté depuis l'ajout de la colonne, ou s'il n'a pas
+   * d'avatar : l'affichage retombe alors sur l'avatar Discord par défaut.
+   */
+  avatar: text('avatar'),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),

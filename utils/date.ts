@@ -40,3 +40,21 @@ export function formatRemaining(iso: string, now: number): string {
 
   return `${secs} s`
 }
+
+/**
+ * La même attente, à la minute près : ce que l'administration lit d'un joueur
+ * qu'elle n'est pas en train de faire patienter. « 11 h 58 min », « 4 min ».
+ * Arrondie au-dessus : trente secondes restantes se lisent « 1 min », parce
+ * qu'une attente qui reste est une attente.
+ */
+export function formatWait(iso: string, now: number): string {
+  const minutes = Math.ceil((new Date(iso).getTime() - now) / 60_000)
+
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return 'terminée'
+  }
+
+  const hours = Math.floor(minutes / 60)
+
+  return hours > 0 ? `${hours} h ${minutes % 60} min` : `${minutes} min`
+}

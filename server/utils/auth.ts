@@ -9,6 +9,8 @@ export interface DiscordProfile {
   discordId: string
   username: string
   email: string | null
+  /** Hash d'avatar Discord, null quand le compte n'en a pas. */
+  avatar: string | null
 }
 
 export type LoginResult =
@@ -18,7 +20,7 @@ export type LoginResult =
 /**
  * Whitelist first: a Discord ID that isn't whitelisted creates no account.
  * Otherwise create the player (floor 1, 3 lives, not admin) or re-sync their
- * username/email without ever touching their game state.
+ * username/email/avatar without ever touching their game state.
  */
 export async function loginWithDiscord(
   db: Database,
@@ -40,13 +42,18 @@ export async function loginWithDiscord(
       discordId: profile.discordId,
       username: profile.username,
       email: profile.email,
+      avatar: profile.avatar,
       isAdmin: false,
       currentFloor: 1,
       lives: 3,
     })
     .onConflictDoUpdate({
       target: users.discordId,
-      set: { username: profile.username, email: profile.email },
+      set: {
+        username: profile.username,
+        email: profile.email,
+        avatar: profile.avatar,
+      },
     })
     .returning()
 

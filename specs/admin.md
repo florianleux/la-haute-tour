@@ -35,6 +35,13 @@
 - Ces flags ne sont exposés nulle part côté joueur.
 - Voir [`anti-triche.md`](./anti-triche.md).
 
+## Gestion des joueurs
+
+- **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
+- **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
+- **Deux gestes** : *passer l'attente* et *rendre une vie*. Ils appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
+- L'avatar est le hash renvoyé par Discord à la connexion, resynchronisé à chaque login. Faute de hash, l'avatar par défaut du compte.
+
 ## Gestion des questions
 
 - **CRUD complet** : lire, créer, éditer, supprimer des questions et leurs réponses acceptées depuis `/admin`, avec filtrage par étage.
