@@ -90,7 +90,8 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 
 ## CI/CD
 
-- GitHub Actions sur push/PR : install → typecheck (`nuxi typecheck`) → lint → `vitest run`. Pas de build/deploy dans Actions.
+- GitHub Actions sur push/PR : install → typecheck (`nuxi typecheck`) → lint → `vitest run` → `nuxt build`. Pas de deploy dans Actions.
+- Le build est dans la CI parce qu'il attrape ce que les trois autres ne voient pas : un composant Vue vide passe typecheck **et** lint, une page renommée ne casse aucun test, et une route attrape-tout qui avale `/api/**` ne se voit qu'à l'exécution. Netlify construit de son côté, mais trop tard — l'erreur est déjà sur `main`.
 - Netlify branché directement sur le repo GitHub (pas via Actions) : push sur `main` → prod, PR → deploy preview auto.
 - Ces deux éléments (workflow CI, lien Netlify↔repo) dépendent du scaffold Nuxt (package.json, scripts, build command) — à mettre en place dans le ticket qui scaffold le projet, pas avant.
 

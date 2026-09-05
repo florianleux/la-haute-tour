@@ -19,3 +19,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      # Le build attrape ce que les trois précédents laissent passer : un
+      # composant Vue vide, une route qui a changé de nom, un attrape-tout qui
+      # avale une route d'API. Vu trois fois en une journée.
+      - run: pnpm build
