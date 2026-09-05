@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { canDrawRecovery, judgeAnswer, judgeRecovery, movePoolCounter, phaseOf } from '../../server/utils/mechanics'
+import { canDrawRecovery, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, phaseOf } from '../../server/utils/mechanics'
 import { rulesForFloor } from '../../server/utils/rules'
+import type { LootQuestionInput } from '../../server/utils/mechanics'
 
 const NOW = new Date('2026-09-03T12:00:00.000Z')
 const rules = rulesForFloor(1)
@@ -211,5 +212,32 @@ describe('verdict d un rattrapage', () => {
       livesAfter: 0,
       cooldownUntil: new Date(NOW.getTime() + rules.cooldownAfterFailedRecoveryMs),
     })
+  })
+})
+
+describe('question loot', () => {
+  const step = rules.questionsPerChest
+  const floorTotal = 10 * step
+
+  const at = (position: number, overrides: Partial<LootQuestionInput> = {}) =>
+    isLootQuestion({ position, floorTotal, mode: 'ascent', ...overrides }, rules)
+
+  it('marque la question qui tombe sur le seuil, et elle seule', () => {
+    expect(at(step)).toBe(true)
+    expect(at(2 * step)).toBe(true)
+    expect(at(step - 1)).toBe(false)
+    expect(at(step + 1)).toBe(false)
+  })
+
+  it('ne marque jamais la première question de l étage', () => {
+    expect(at(1)).toBe(false)
+  })
+
+  it('épargne la dernière question restante de l étage, seuil ou non', () => {
+    expect(at(step, { floorTotal: step })).toBe(false)
+  })
+
+  it('ignore le rattrapage : ses questions sont déjà vues', () => {
+    expect(at(step, { mode: 'recovery' })).toBe(false)
   })
 })

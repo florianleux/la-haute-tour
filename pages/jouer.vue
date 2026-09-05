@@ -166,6 +166,14 @@ const waiting = computed(() =>
 
       <!-- Question en cours : aucune action à part répondre. -->
       <form v-if="screen.question" class="mt-6" @submit.prevent="run('submit', submit)">
+        <!-- Le joueur sait avant de répondre que ce passage vaut un coffre.
+             Voir specs/bonus.md#question-loot. -->
+        <BaseHint v-if="screen.question.lootQuestion" class="mb-3" tone="success">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="mr-1 inline h-4 w-4 align-text-bottom" aria-hidden="true">
+            <path d="M20 7h-2.2a3 3 0 0 0-4.3-4A3 3 0 0 0 12 4.2 3 3 0 0 0 10.5 3a3 3 0 0 0-4.3 4H4a1 1 0 0 0-1 1v3h8V7h2v4h8V8a1 1 0 0 0-1-1ZM9 5a1 1 0 1 1 0 2H8.4L9 5Zm6 0 .6 2H15a1 1 0 1 1 0-2ZM4 13h7v8H5a1 1 0 0 1-1-1v-7Zm9 8v-8h7v7a1 1 0 0 1-1 1h-6Z" />
+          </svg>
+          Question loot — réponds juste et tu ouvres un coffre.
+        </BaseHint>
         <BaseHeadline weight="light">{{ screen.question.statement }}</BaseHeadline>
         <BaseHint class="mt-2">
           {{ secondsLeft }} s

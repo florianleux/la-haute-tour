@@ -17,6 +17,7 @@ const served: GameState = {
     statement: 'Capitale de la Gironde ?',
     expiresAt: '2026-09-03T12:00:20.000Z',
     focusGraceMs: 1_000,
+    lootQuestion: false,
   },
   verdict: null,
   cooldownUntil: null,

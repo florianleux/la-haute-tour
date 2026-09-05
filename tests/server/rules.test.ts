@@ -15,6 +15,7 @@ describe('jeu de règles', () => {
       cooldownMs: 12 * 60 * 60 * 1000,
       cooldownAfterFailedRecoveryMs: 4 * 60 * 60 * 1000,
       latencyGraceMs: 1_000,
+      questionsPerChest: 20,
     })
   })
 

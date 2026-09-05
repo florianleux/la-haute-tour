@@ -139,6 +139,40 @@ export function judgeAnswer(input: AnswerInput, now: Date): AnswerJudgement {
   }
 }
 
+export interface LootQuestionInput {
+  /** Le rang de la question dans les questions résolues de l'étage, à partir de 1. */
+  position: number
+  /** Questions que l'étage courant contient. */
+  floorTotal: number
+  mode: Reservation['mode']
+}
+
+/**
+ * Une question loot ne se stocke pas : elle se déduit du rang qu'occupera la
+ * question dans les questions résolues de l'étage. Le statut est donc attaché au
+ * passage, pas à la question — repêchée plus tard, elle ne redonne rien.
+ * Voir specs/bonus.md#question-loot.
+ */
+export function isLootQuestion(input: LootQuestionInput, rules: FloorRules): boolean {
+  const { position, floorTotal, mode } = input
+
+  // Le rattrapage ne fait pas avancer la progression : ses questions sont déjà
+  // vues, elles ne comptent dans aucun rang.
+  if (mode === 'recovery') {
+    return false
+  }
+
+  // Jamais la dernière question restante de l'étage : un Mimic y opposerait le
+  // palier à l'attente, alors que l'étage épuisé prime déjà sur les vies. Le
+  // coffre est perdu quand le seuil tombe pile dessus, et c'est assumé.
+  // Voir specs/mecanique.md#fin-détage.
+  if (position >= floorTotal) {
+    return false
+  }
+
+  return position % rules.questionsPerChest === 0
+}
+
 export type PoolMove =
   | { leaves: true }
   | { leaves: false, poolSuccesses: number, lastFailedAt: Date }

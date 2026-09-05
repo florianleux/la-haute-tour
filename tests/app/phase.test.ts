@@ -45,6 +45,7 @@ describe('écran de jeu', () => {
     statement: 'Capitale de la Gironde ?',
     expiresAt: '2026-09-03T12:00:20.000Z',
     focusGraceMs: 1_000,
+    lootQuestion: false,
   }
 
   it('ne montre que la question tant qu elle est servie', () => {

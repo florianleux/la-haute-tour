@@ -2,6 +2,7 @@ import { and, asc, count, desc, eq, isNull, notExists, sql } from 'drizzle-orm'
 import {
   canDrawRecovery,
   isExpired,
+  isLootQuestion,
   judgeAnswer,
   judgeRecovery,
   movePoolCounter,
@@ -37,6 +38,15 @@ export interface ServedQuestion {
    * du client. Voir specs/anti-triche.md#perte-de-focus.
    */
   focusGraceMs: number
+  /**
+   * Ce passage-là vaut un coffre s'il est juste. Dérivé à la lecture du rang
+   * qu'occupera la question dans les questions résolues de l'étage, jamais
+   * stocké — comme la phase. Le statut est donc stable tant que l'étage l'est :
+   * une question ajoutée ou retirée du deck par l'admin sous une réservation
+   * vivante peut le faire basculer, au même titre qu'elle déplace le palier.
+   * Voir specs/bonus.md#question-loot.
+   */
+  lootQuestion: boolean
 }
 
 export interface Verdict {
@@ -365,12 +375,14 @@ function servedQuestion(
   reservation: Reservation,
   statement: string,
   rules: FloorRules,
+  lootQuestion: boolean,
 ): ServedQuestion {
   return {
     id: reservation.questionId,
     statement,
     expiresAt: reservation.expiresAt.toISOString(),
     focusGraceMs: rules.focusGraceMs,
+    lootQuestion,
   }
 }
 
@@ -412,7 +424,16 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
       }
     }
     else {
-      base.question = servedQuestion(reservation, question.statement, rulesForFloor(user.currentFloor))
+      const rules = rulesForFloor(user.currentFloor)
+      // La question en jeu n'est pas encore résolue : c'est le rang suivant
+      // qu'elle occupera dans les questions vues de l'étage.
+      const lootQuestion = isLootQuestion({
+        position: seen + 1,
+        floorTotal: snapshot.floorTotal,
+        mode: reservation.mode,
+      }, rules)
+
+      base.question = servedQuestion(reservation, question.statement, rules, lootQuestion)
     }
   }
 

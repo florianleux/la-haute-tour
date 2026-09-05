@@ -33,6 +33,12 @@ export interface FloorRules {
    * Voir specs/anti-triche.md#perte-de-focus.
    */
   focusGraceMs: number
+  /**
+   * Questions résolues entre deux coffres. La 20e question résolue de l'étage
+   * en ouvre un si elle est juste — le statut se dérive de ce décompte, rien
+   * n'est stocké. Voir specs/bonus.md#question-loot.
+   */
+  questionsPerChest: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -49,6 +55,7 @@ const DEFAULT_RULES: FloorRules = {
   cooldownAfterFailedRecoveryMs: 4 * HOUR_MS,
   latencyGraceMs: 1_000,
   focusGraceMs: 1_000,
+  questionsPerChest: 20,
 }
 
 /**

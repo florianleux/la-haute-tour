@@ -51,6 +51,7 @@ function servedAt(msFromNow: number): GameState {
       statement: 'Capitale de la Gironde ?',
       expiresAt: new Date(NOW + msFromNow).toISOString(),
       focusGraceMs: FOCUS_GRACE_MS,
+      lootQuestion: false,
     },
   })
 }
