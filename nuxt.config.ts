@@ -3,6 +3,11 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-09-02',
   devtools: { enabled: true },
+  // `.claude/` porte l'outillage de l'assistant, et parfois des worktrees git —
+  // des copies complètes du dépôt, `node_modules` compris. Sans cette ligne, le
+  // serveur de dev les surveille : des dizaines de milliers de descripteurs, un
+  // `EMFILE`, et un serveur qui écoute sans jamais répondre.
+  ignore: ['**/.claude/**'],
   modules: ['@nuxt/eslint'],
   // Les primitives de components/ui/ s'utilisent sans préfixe de dossier :
   // <BaseButton>, pas <UiBaseButton>.
@@ -13,6 +18,17 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      // pnpm range les dépendances dans une forêt de liens symboliques sous
+      // `node_modules/.pnpm`. Le watcher les suit, ouvre un descripteur par
+      // dossier et fait tomber le serveur de dev sur `EMFILE: too many open
+      // files` — il écoute, mais ne répond plus. On ne surveille que le code
+      // du projet, seul à changer sous les doigts.
+      watch: {
+        followSymlinks: false,
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.output/**', '**/.claude/**', '**/local.db*'],
+      },
+    },
   },
   typescript: {
     strict: true,
