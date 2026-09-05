@@ -35,6 +35,15 @@ export const users = sqliteTable('users', {
   /** When the wait ends. Null outside a wait. The phase derives from it. */
   cooldownUntil: integer('cooldown_until', { mode: 'timestamp' }),
   /**
+   * Où le joueur en est du deck de son étage : le rang de la dernière question
+   * qui lui a été servie. Remis à zéro en franchissant le palier.
+   *
+   * Porté par le joueur et non déduit de sa réservation : un rattrapage écrase
+   * celle-ci avec une question du Pool Échecs, dont le rang n'a rien à voir avec
+   * l'ascension. Voir specs/mecanique.md#ascension.
+   */
+  floorCursor: integer('floor_cursor').notNull().default(0),
+  /**
    * Début de la tentative en cours — repoussé chaque fois que les vies
    * reviennent. C'est lui qui dit quelles erreurs sont encore contestables.
    *
@@ -67,12 +76,21 @@ export const questions = sqliteTable('questions', {
   statement: text('statement').notNull(),
   answerLabel: text('answer_label').notNull(),
   floor: integer('floor').notNull(),
+  /**
+   * La place de la question dans l'ordre de son étage, écrite une fois à
+   * l'import. Le deck a un ordre, le même pour tous : servir la question
+   * suivante est un saut dans l'index plutôt qu'un parcours de tout l'étage.
+   * Voir specs/mecanique.md#ascension.
+   */
+  rank: integer('rank').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
 }, table => [
   check('questions_floor_range', sql`${table.floor} BETWEEN 1 AND ${sql.raw(String(FLOOR_COUNT))}`),
-  index('questions_floor_idx').on(table.floor),
+  // L'ordre du deck : c'est cet index qui rend le tirage constant, et l'unicité
+  // qui garantit qu'aucun rang ne se dédouble sous les joueurs.
+  unique('questions_floor_rank').on(table.floor, table.rank),
 ])
 
 /**

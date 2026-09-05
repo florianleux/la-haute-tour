@@ -57,6 +57,13 @@
       "when": 1788594933263,
       "tag": "0007_serious_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788602277992,
+      "tag": "0008_quiet_pride",
+      "breakpoints": true
     }
   ]
 }

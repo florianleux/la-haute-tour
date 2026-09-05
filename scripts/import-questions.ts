@@ -124,12 +124,23 @@ export async function importQuestions(
 ): Promise<ImportCounts> {
   const categoryNames = dedupe(parsed.flatMap(question => question.categories))
 
-  const questionRows = parsed.map(question => ({
-    id: crypto.randomUUID(),
-    statement: question.statement,
-    answerLabel: question.answerLabel,
-    floor: question.floor,
-  }))
+  // Le rang fige l'ordre du deck, étage par étage, dans l'ordre du fichier : ce
+  // que le joueur parcourra est ce qui a été écrit ici, une fois pour toutes.
+  // Mélanger le fichier avant l'import suffit donc à mélanger le jeu.
+  // Voir specs/mecanique.md#ascension.
+  const nextRank = new Map<number, number>()
+  const questionRows = parsed.map((question) => {
+    const rank = (nextRank.get(question.floor) ?? 0) + 1
+    nextRank.set(question.floor, rank)
+
+    return {
+      id: crypto.randomUUID(),
+      statement: question.statement,
+      answerLabel: question.answerLabel,
+      floor: question.floor,
+      rank,
+    }
+  })
 
   const answerRows = parsed.flatMap((question, index) =>
     question.acceptedAnswers.map(text => ({ questionId: questionRows[index]!.id, text })),

@@ -1,6 +1,7 @@
-import { and, asc, count, eq, inArray, like } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, like, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
+import { forgetDeckSizes } from './deck'
 import { acceptedAnswers, questions } from '../db/schema'
 import type { Database } from '../db/client'
 
@@ -136,14 +137,26 @@ export async function listQuestions(
 }
 
 export async function addQuestion(db: Database, draft: QuestionDraft): Promise<AdminQuestion> {
+  // Une question ajoutée se range à la fin de son étage : les rangs déjà servis
+  // ne bougent pas, sinon les joueurs en cours sauteraient des questions ou en
+  // reverraient. Voir specs/mecanique.md#ascension.
+  const [{ last }] = await db
+    .select({ last: max(questions.rank) })
+    .from(questions)
+    .where(eq(questions.floor, draft.floor))
+
   const [created] = await db
     .insert(questions)
     .values({
       statement: draft.statement,
       answerLabel: draft.answerLabel,
       floor: draft.floor,
+      rank: (last ?? 0) + 1,
     })
     .returning()
+
+  // L'étage vient de grandir : sa taille mémorisée ne vaut plus rien.
+  forgetDeckSizes()
 
   await replaceAcceptedAnswers(db, created.id, draft.acceptedAnswers)
 
@@ -184,6 +197,10 @@ export async function editQuestion(
  */
 export async function removeQuestion(db: Database, id: string): Promise<boolean> {
   const deleted = await db.delete(questions).where(eq(questions.id, id)).returning()
+
+  // L'étage vient de rétrécir : le palier tomberait au mauvais endroit si on
+  // gardait l'ancienne taille. Voir server/utils/deck.ts.
+  forgetDeckSizes()
 
   return deleted.length > 0
 }

@@ -1,8 +1,9 @@
 import { createClient } from '@libsql/client'
-import { eq } from 'drizzle-orm'
+import { eq, max } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../../server/db/schema'
+import { forgetDeckSizes } from '../../server/utils/deck'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -10,6 +11,9 @@ import type { User } from '../../server/db/schema'
 export async function createTestDatabase(): Promise<Database> {
   const db = drizzle(createClient({ url: ':memory:' }), { schema })
   await migrate(db, { migrationsFolder: './drizzle' })
+  // La taille des étages est mémorisée par processus, pas par base : un test qui
+  // ouvre un monde neuf doit oublier le deck du précédent.
+  forgetDeckSizes()
   return db
 }
 
@@ -22,12 +26,21 @@ interface QuestionSeed {
 
 /** A question of the shared deck, with its accepted answers. */
 export async function createQuestion(db: Database, seed: QuestionSeed = {}): Promise<string> {
+  const floor = seed.floor ?? 1
+  // Le deck a un ordre : une question créée se range à la fin de son étage, comme
+  // l'import et l'administration le font.
+  const [{ last }] = await db
+    .select({ last: max(schema.questions.rank) })
+    .from(schema.questions)
+    .where(eq(schema.questions.floor, floor))
+
   const [question] = await db
     .insert(schema.questions)
     .values({
       statement: seed.statement ?? 'Capitale de la Gironde ?',
       answerLabel: seed.answerLabel ?? 'BORDEAUX',
-      floor: seed.floor ?? 1,
+      floor,
+      rank: (last ?? 0) + 1,
     })
     .returning()
 

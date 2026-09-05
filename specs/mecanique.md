@@ -3,7 +3,9 @@
 ## Ascension
 
 - Progression **linéaire stricte** : le joueur doit avoir vu toutes les questions de l'étage 1 avant de passer à l'étage 2, etc.
-- La question suivante est **tirée au hasard** parmi celles que le joueur n'a pas encore vues dans l'étage. L'ordre est propre à chaque joueur et se décide question par question — il n'est pas calculé à l'avance.
+- Le deck a un **ordre fixe**, le même pour tous : chaque question porte un **rang** dans son étage, écrit une fois à l'import. Le joueur avance dans cet ordre, et la question suivante est simplement la première de rang supérieur à celle qu'il vient de voir.
+- La progression, elle, est **propre à chaque joueur** : c'est son curseur qui avance, pas le deck qui change. Deux joueurs voient la même séquence, à des moments différents.
+- Un ordre partagé se lit sans rien parcourir — la question suivante est un saut dans l'index, quel que soit le nombre de questions de l'étage. Un tirage au hasard obligeait à parcourir puis trier tout l'étage à chaque question, pour un coût qui grandissait avec le deck.
 - Le joueur dispose de 3 vies par **tentative**. Chaque mauvaise réponse en consomme une.
 - La **bonne réponse est affichée sur échec** (apprentissage immédiat), puis le joueur passe à la suivante par un bouton.
 - À la perte de la dernière vie → **attente**. La position est conservée.

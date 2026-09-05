@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNull, notExists, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, isNull, sql } from 'drizzle-orm'
 import {
   canDrawRecovery,
   cooldownFrom,
@@ -11,6 +11,7 @@ import {
   rollChest,
   resumesRecovery,
 } from './mechanics'
+import { floorSize } from './deck'
 import { closeAttempt } from './journey'
 import { rulesForFloor } from './rules'
 import {
@@ -151,15 +152,13 @@ function holdsQuestion(snapshot: PlayerSnapshot): boolean {
   return snapshot.reservation !== undefined && snapshot.reservation.resolvedAt === null
 }
 
-async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapshot> {
+async function loadSnapshot(db: Database, userId: number, now: Date): Promise<PlayerSnapshot> {
   const [row] = await db
     .select({
       user: users,
       seen: sql<number>`(select count(*) from ${seenQuestions}
         where ${seenQuestions.userId} = ${users.id}
           and ${seenQuestions.floor} = ${users.currentFloor})`,
-      floorTotal: sql<number>`(select count(*) from ${questions}
-        where ${questions.floor} = ${users.currentFloor})`,
       attemptSeen: sql<number>`(select count(*) from ${seenQuestions}
         where ${seenQuestions.userId} = ${users.id}
           and ${seenQuestions.seenAt} >= ${users.attemptStartedAt})`,
@@ -178,7 +177,9 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
   return {
     user: row.user,
     seen: row.seen,
-    floorTotal: row.floorTotal,
+    // Lu au deck plutôt que recompté ici : c'est une constante entre deux
+    // éditions de l'administration. Voir server/utils/deck.ts.
+    floorTotal: await floorSize(db, row.user.currentFloor, now),
     attemptSeen: row.attemptSeen,
     reservation: held?.reservation,
     question: held?.question,
@@ -508,7 +509,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
 }
 
 async function buildState(db: Database, userId: number, now: Date): Promise<GameState> {
-  return stateFrom(db, await loadSnapshot(db, userId), now)
+  return stateFrom(db, await loadSnapshot(db, userId, now), now)
 }
 
 /**
@@ -517,7 +518,7 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * whose deadline has passed — resolves it as the failure it already is.
  */
 export async function readGameState(db: Database, user: User, now: Date): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id)
+  const snapshot = await loadSnapshot(db, user.id, now)
   const { reservation } = snapshot
 
   // Same grace as an answer gets: a read landing a hair after the deadline must
@@ -585,7 +586,7 @@ async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promis
  * question drawn at random among those they have not seen on this floor.
  */
 export async function serveNextQuestion(db: Database, user: User, now: Date): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id)
+  const snapshot = await loadSnapshot(db, user.id, now)
   const { reservation } = snapshot
   // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
   let fresh = snapshot.user
@@ -679,7 +680,7 @@ export async function openPlayerChest(
   now: Date,
   random: () => number = Math.random,
 ): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id)
+  const snapshot = await loadSnapshot(db, user.id, now)
   const { reservation } = snapshot
   const rules = rulesForFloor(snapshot.user.currentFloor)
 
@@ -756,7 +757,9 @@ async function crossFloor(db: Database, user: User, now: Date): Promise<void> {
   // attend le joueur au nouveau, et un chrono qui tournerait pendant cette
   // attente lui coûterait une vie qu'il n'a pas.
   if (user.lives > 0) {
-    await drawAndReserve(db, { ...user, currentFloor }, now)
+    // Étage neuf : le curseur repart de zéro, donc la première question de
+    // l'étage est la première de rang supérieur à 0.
+    await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0 }, now)
   }
 }
 
@@ -767,25 +770,18 @@ interface DrawnQuestion {
 }
 
 /**
- * Tire au hasard une question que le joueur n'a pas vue à son étage et la réserve.
+ * Sert la question suivante du deck : la première de l'étage dont le rang dépasse
+ * le curseur du joueur. Un saut dans l'index, **une ligne lue**, quel que soit le
+ * nombre de questions que l'étage contient.
+ *
  * Rend null quand l'étage est épuisé — c'est ce qui fait le palier.
  */
 async function drawAndReserve(db: Database, user: User, now: Date): Promise<DrawnQuestion | null> {
-  // Left to the database: pulling every seen id back to embed it in a NOT IN
-  // grows with the deck, and the deck is the thing meant to grow.
-  const alreadySeen = db
-    .select({ one: sql`1` })
-    .from(seenQuestions)
-    .where(and(
-      eq(seenQuestions.userId, user.id),
-      eq(seenQuestions.questionId, questions.id),
-    ))
-
   const [question] = await db
     .select()
     .from(questions)
-    .where(and(eq(questions.floor, user.currentFloor), notExists(alreadySeen)))
-    .orderBy(sql`RANDOM()`)
+    .where(and(eq(questions.floor, user.currentFloor), gt(questions.rank, user.floorCursor)))
+    .orderBy(asc(questions.rank))
     .limit(1)
 
   if (!question) {
@@ -793,6 +789,11 @@ async function drawAndReserve(db: Database, user: User, now: Date): Promise<Draw
   }
 
   const expiresAt = new Date(now.getTime() + rulesForFloor(user.currentFloor).ascentTimerMs)
+
+  // Le curseur avance avec la question servie. C'est lui qui porte la place du
+  // joueur dans le deck, et non sa réservation : un rattrapage écrase celle-ci
+  // avec une question du Pool Échecs, dont le rang n'a rien à voir.
+  await db.update(users).set({ floorCursor: question.rank }).where(eq(users.id, user.id))
   await reserve(db, user.id, question.id, 'ascent', expiresAt, now)
 
   return { question, expiresAt }
@@ -1014,7 +1015,7 @@ export async function submitAnswer(
   now: Date,
   source: AnswerSource = 'player',
 ): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id)
+  const snapshot = await loadSnapshot(db, user.id, now)
   const { reservation } = snapshot
 
   if (!reservation || reservation.resolvedAt) {

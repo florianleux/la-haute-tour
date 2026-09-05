@@ -57,19 +57,16 @@ describe('boucle d ascension', () => {
       })
     })
 
-    it('ne tire jamais une question déjà vue', async () => {
-      const seenId = await createQuestion(db)
-      const unseenId = await createQuestion(db, { statement: 'Autre' })
-      await db.insert(seenQuestions).values({
-        userId: player.id,
-        questionId: seenId,
-        floor: 1,
-        correct: true,
-      })
+    it('suit l ordre du deck et ne revient jamais en arrière', async () => {
+      const first = await createQuestion(db)
+      const second = await createQuestion(db, { statement: 'Autre' })
 
-      const state = await serveNextQuestion(db, player, NOW)
+      const opened = await serveNextQuestion(db, player, NOW)
+      await submitAnswer(db, await reload(), 'Bordeaux', NOW)
+      const next = await serveNextQuestion(db, await reload(), NOW)
 
-      expect(state.question?.id).toBe(unseenId)
+      expect(opened.question?.id).toBe(first)
+      expect(next.question?.id).toBe(second)
     })
 
     it('ignore une demande alors qu une réservation vit déjà', async () => {

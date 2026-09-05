@@ -36,6 +36,8 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Énoncé** | `statement` | Le texte de la question posée au joueur. |
 | **Réponses acceptées** | `acceptedAnswers` | Toutes les formulations qui valident la question. Aucune n'est privilégiée : la tolérance typo s'applique à chacune. L'admin en ajoute une quand il accepte une contestation. |
 | **Réponse affichée** | `answerLabel` | La formulation montrée au joueur quand il échoue. Souvent plus riche que ce qu'on lui demande de saisir (« FLEMING (Alexander) » pour une réponse acceptée « Fleming »). Ne sert jamais au matching. |
+| **Rang** | `rank` | La place d'une question dans l'ordre de son étage. Fixé une fois à l'import, identique pour tous les joueurs : le deck a un ordre, chacun le parcourt à son rythme. |
+| **Curseur d'étage** | `floorCursor` | Le rang de la dernière question servie au joueur à son étage. C'est lui qui dit où il en est du deck ; remis à zéro au franchissement du palier. |
 | **Catégorie** | `category` | Thème d'une question (Histoire, Musique, Sport…). Une question en porte zéro, une ou plusieurs. |
 | **Profil** | `profile` | Page d'identité du joueur : pseudo, ancienneté, déconnexion. Ne porte ni état de jeu ni donnée de triche. |
 | **Parcours** | `journey` | Ce que le profil montre du chemin déjà fait : étage atteint, questions vues, meilleure série, tentatives achevées. Jamais l'état de l'instant. |
