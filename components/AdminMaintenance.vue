@@ -1,11 +1,3 @@
-<script setup lang="ts">
-// L'interrupteur qui ferme le jeu aux joueurs. Les admins continuent de jouer.
-// Voir specs/admin.md#maintenance.
-const { since, failed, pending, set } = await useMaintenance()
-
-const closed = computed(() => since.value !== null)
-</script>
-
 <template>
   <section>
     <h2 class="text-lg font-semibold">
@@ -34,3 +26,11 @@ const closed = computed(() => since.value !== null)
     </BaseButton>
   </section>
 </template>
+
+<script setup lang="ts">
+// L'interrupteur qui ferme le jeu aux joueurs. Les admins continuent de jouer.
+// Voir specs/admin.md#maintenance.
+const { since, failed, pending, set } = await useMaintenance()
+
+const closed = computed(() => since.value !== null)
+</script>

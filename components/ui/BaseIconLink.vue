@@ -1,3 +1,29 @@
+<template>
+  <!-- Un lien réduit à son icône. Le cadre du dessin vit ici, pas chez
+       l'appelant, qui ne fournit que le tracé : quatre icônes côte à côte qui
+       divergeraient d'un pixel ou d'une teinte se verraient. -->
+  <component
+    :is="tag"
+    :to="state === 'link' ? to : undefined"
+    :aria-label="label"
+    :title="label"
+    :aria-current="state === 'active' ? 'page' : undefined"
+    :aria-disabled="state === 'disabled' ? 'true' : undefined"
+    class="transition-colors"
+    :class="tone"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      class="h-7 w-7"
+      aria-hidden="true"
+    >
+      <slot />
+    </svg>
+  </component>
+</template>
+
 <script setup lang="ts">
 import type { NavIconState } from '~/utils/nav'
 
@@ -28,29 +54,3 @@ const TONES: Record<NavIconState, string> = {
 
 const tone = computed(() => TONES[props.state])
 </script>
-
-<template>
-  <!-- Un lien réduit à son icône. Le cadre du dessin vit ici, pas chez
-       l'appelant, qui ne fournit que le tracé : quatre icônes côte à côte qui
-       divergeraient d'un pixel ou d'une teinte se verraient. -->
-  <component
-    :is="tag"
-    :to="state === 'link' ? to : undefined"
-    :aria-label="label"
-    :title="label"
-    :aria-current="state === 'active' ? 'page' : undefined"
-    :aria-disabled="state === 'disabled' ? 'true' : undefined"
-    class="transition-colors"
-    :class="tone"
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      class="h-7 w-7"
-      aria-hidden="true"
-    >
-      <slot />
-    </svg>
-  </component>
-</template>

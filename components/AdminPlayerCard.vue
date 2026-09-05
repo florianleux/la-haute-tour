@@ -1,21 +1,3 @@
-<script setup lang="ts">
-import type { PlayerCard } from '~~/server/utils/players'
-
-const props = defineProps<{
-  player: PlayerCard
-  /** Un geste est en vol, ici ou sur une autre fiche : tout attend la relecture. */
-  busy: boolean
-  /** Le geste lancé depuis cette fiche — lui seul montre son loader. */
-  running: 'skipCooldown' | 'grantLife' | null
-  /** L'horloge de la liste, pour que le délai restant descende tout seul. */
-  now: number
-}>()
-
-defineEmits<{ skipCooldown: [], grantLife: [] }>()
-
-const { waiting, remaining } = usePlayerWait(toRef(props, 'player'), toRef(props, 'now'))
-</script>
-
 <template>
   <BaseTile>
     <div class="flex items-center gap-3">
@@ -80,3 +62,21 @@ const { waiting, remaining } = usePlayerWait(toRef(props, 'player'), toRef(props
     </div>
   </BaseTile>
 </template>
+
+<script setup lang="ts">
+import type { PlayerCard } from '~~/server/utils/players'
+
+const props = defineProps<{
+  player: PlayerCard
+  /** Un geste est en vol, ici ou sur une autre fiche : tout attend la relecture. */
+  busy: boolean
+  /** Le geste lancé depuis cette fiche — lui seul montre son loader. */
+  running: 'skipCooldown' | 'grantLife' | null
+  /** L'horloge de la liste, pour que le délai restant descende tout seul. */
+  now: number
+}>()
+
+defineEmits<{ skipCooldown: [], grantLife: [] }>()
+
+const { waiting, remaining } = usePlayerWait(toRef(props, 'player'), toRef(props, 'now'))
+</script>

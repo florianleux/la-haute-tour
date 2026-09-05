@@ -1,37 +1,3 @@
-<script setup lang="ts">
-import type { DisputeVerdict } from '~~/server/utils/disputes'
-
-// La file d'arbitrage, en tête du dashboard : l'admin la voit dès sa connexion.
-// Voir specs/admin.md#notification-des-contestations.
-const { disputes, failed, loading, settle } = await useAdminDisputes()
-
-const settleFailed = ref(false)
-// Le bouton exact sur lequel on vient de cliquer : lui seul montre son loader,
-// sinon toute la file se met à tourner pour un seul arbitrage.
-const deciding = ref<string | null>(null)
-
-function isDeciding(id: number, verdict: DisputeVerdict): boolean {
-  return deciding.value === `${id}:${verdict}`
-}
-
-async function decide(id: number, verdict: DisputeVerdict): Promise<void> {
-  deciding.value = `${id}:${verdict}`
-  settleFailed.value = !(await settle(id, verdict))
-  deciding.value = null
-}
-
-// La première lecture n'a encore rien à montrer : on montre la forme de la file.
-// Une relecture garde la file en place — le bouton cliqué porte son loader.
-const firstLoad = computed(() => loading.value && disputes.value.length === 0)
-const SKELETONS = 3
-
-const empty = computed(
-  () => (disputes.value.length || failed.value || firstLoad.value
-    ? null
-    : 'Aucune contestation en attente.'),
-)
-</script>
-
 <template>
   <BaseSection title="Contestations">
     <template #lead>
@@ -96,3 +62,37 @@ const empty = computed(
     </BaseList>
   </BaseSection>
 </template>
+
+<script setup lang="ts">
+import type { DisputeVerdict } from '~~/server/utils/disputes'
+
+// La file d'arbitrage, en tête du dashboard : l'admin la voit dès sa connexion.
+// Voir specs/admin.md#notification-des-contestations.
+const { disputes, failed, loading, settle } = await useAdminDisputes()
+
+const settleFailed = ref(false)
+// Le bouton exact sur lequel on vient de cliquer : lui seul montre son loader,
+// sinon toute la file se met à tourner pour un seul arbitrage.
+const deciding = ref<string | null>(null)
+
+function isDeciding(id: number, verdict: DisputeVerdict): boolean {
+  return deciding.value === `${id}:${verdict}`
+}
+
+async function decide(id: number, verdict: DisputeVerdict): Promise<void> {
+  deciding.value = `${id}:${verdict}`
+  settleFailed.value = !(await settle(id, verdict))
+  deciding.value = null
+}
+
+// La première lecture n'a encore rien à montrer : on montre la forme de la file.
+// Une relecture garde la file en place — le bouton cliqué porte son loader.
+const firstLoad = computed(() => loading.value && disputes.value.length === 0)
+const SKELETONS = 3
+
+const empty = computed(
+  () => (disputes.value.length || failed.value || firstLoad.value
+    ? null
+    : 'Aucune contestation en attente.'),
+)
+</script>

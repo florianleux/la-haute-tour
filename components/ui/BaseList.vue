@@ -1,14 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  /**
-   * La phrase à afficher quand la liste est vide, ou null quand il n'y a rien à
-   * dire — notamment après un échec de lecture : « rien » et « je ne sais pas »
-   * ne sont pas la même nouvelle.
-   */
-  empty?: string | null
-}>()
-</script>
-
 <template>
   <!-- La liste encadrée des écrans : bordure, séparateurs et ligne vide écrits
        une fois. Les `<li>` viennent de l'appelant. -->
@@ -19,3 +8,14 @@ defineProps<{
     </li>
   </ul>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  /**
+   * La phrase à afficher quand la liste est vide, ou null quand il n'y a rien à
+   * dire — notamment après un échec de lecture : « rien » et « je ne sais pas »
+   * ne sont pas la même nouvelle.
+   */
+  empty?: string | null
+}>()
+</script>

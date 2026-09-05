@@ -1,61 +1,3 @@
-<script setup lang="ts">
-// Fiche de révision, pas punition : les réponses sont montrées, et c'est ce qui
-// rend le seuil de sortie du pool atteignable. La contestation fusionne ici :
-// chaque carte porte son statut à droite. Voir specs/mecanique.md.
-const { entries, total, order, loading, hasMore, loaded, failed, loadMore, toggleOrder } = useMissedPool()
-const { isContestable, contest, contestingId } = useDisputes()
-
-// Rien à dire tant que la première page n'est pas revenue, ni quand la lecture
-// a échoué : « aucune erreur » et « je ne sais pas » ne sont pas la même nouvelle.
-const emptyMessage = computed(
-  () => (loaded.value && !entries.value.length && !failed.value
-    ? 'Aucune erreur à réviser sur cet étage.'
-    : null),
-)
-
-const sentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | undefined
-
-onMounted(async () => {
-  await loadMore()
-
-  observer = new IntersectionObserver((records) => {
-    if (records.some(record => record.isIntersecting) && hasMore.value) {
-      loadMore()
-    }
-  })
-
-  if (sentinel.value) {
-    observer.observe(sentinel.value)
-  }
-})
-
-onUnmounted(() => observer?.disconnect())
-
-// Quand une contestation part du verdict (pas d'ici), contestingId passe d'un
-// id à null. Si la question n'est plus contestable, c'est que le POST a réussi :
-// on met à jour l'entrée du pool localement. Voir Q16/D.
-watch(contestingId, (newId, oldId) => {
-  if (oldId && !newId) {
-    const entry = entries.value.find(e => e.questionId === oldId)
-    if (entry && !isContestable(oldId)) {
-      entry.disputeStatus = 'pending'
-    }
-  }
-})
-
-async function onContest(questionId: string): Promise<void> {
-  const entry = entries.value.find(e => e.questionId === questionId)
-  if (entry) {
-    entry.disputeStatus = 'pending'
-  }
-  const success = await contest(questionId)
-  if (!success && entry) {
-    entry.disputeStatus = 'none'
-  }
-}
-</script>
-
 <template>
   <BaseSection :title="`Tes erreurs de l'étage (${total})`">
     <template #aside>
@@ -124,3 +66,61 @@ async function onContest(questionId: string): Promise<void> {
     </BaseLoading>
   </BaseSection>
 </template>
+
+<script setup lang="ts">
+// Fiche de révision, pas punition : les réponses sont montrées, et c'est ce qui
+// rend le seuil de sortie du pool atteignable. La contestation fusionne ici :
+// chaque carte porte son statut à droite. Voir specs/mecanique.md.
+const { entries, total, order, loading, hasMore, loaded, failed, loadMore, toggleOrder } = useMissedPool()
+const { isContestable, contest, contestingId } = useDisputes()
+
+// Rien à dire tant que la première page n'est pas revenue, ni quand la lecture
+// a échoué : « aucune erreur » et « je ne sais pas » ne sont pas la même nouvelle.
+const emptyMessage = computed(
+  () => (loaded.value && !entries.value.length && !failed.value
+    ? 'Aucune erreur à réviser sur cet étage.'
+    : null),
+)
+
+const sentinel = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | undefined
+
+onMounted(async () => {
+  await loadMore()
+
+  observer = new IntersectionObserver((records) => {
+    if (records.some(record => record.isIntersecting) && hasMore.value) {
+      loadMore()
+    }
+  })
+
+  if (sentinel.value) {
+    observer.observe(sentinel.value)
+  }
+})
+
+onUnmounted(() => observer?.disconnect())
+
+// Quand une contestation part du verdict (pas d'ici), contestingId passe d'un
+// id à null. Si la question n'est plus contestable, c'est que le POST a réussi :
+// on met à jour l'entrée du pool localement. Voir Q16/D.
+watch(contestingId, (newId, oldId) => {
+  if (oldId && !newId) {
+    const entry = entries.value.find(e => e.questionId === oldId)
+    if (entry && !isContestable(oldId)) {
+      entry.disputeStatus = 'pending'
+    }
+  }
+})
+
+async function onContest(questionId: string): Promise<void> {
+  const entry = entries.value.find(e => e.questionId === questionId)
+  if (entry) {
+    entry.disputeStatus = 'pending'
+  }
+  const success = await contest(questionId)
+  if (!success && entry) {
+    entry.disputeStatus = 'none'
+  }
+}
+</script>

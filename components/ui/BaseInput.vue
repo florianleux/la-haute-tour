@@ -1,12 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  label: string
-  placeholder?: string
-}>()
-
-const model = defineModel<string>({ required: true })
-</script>
-
 <template>
   <BaseField :label="label">
     <template #default="{ classes }">
@@ -19,3 +10,12 @@ const model = defineModel<string>({ required: true })
     </template>
   </BaseField>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  label: string
+  placeholder?: string
+}>()
+
+const model = defineModel<string>({ required: true })
+</script>

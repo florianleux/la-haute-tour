@@ -1,3 +1,22 @@
+<template>
+  <div class="flex items-center gap-2">
+    <BaseSelect
+      v-model="selected"
+      :options="options"
+      :disabled="pending"
+      aria-label="Jouer en tant que"
+      title="Jouer en tant que"
+      :class="impersonator
+        ? 'border-amber-600 bg-amber-950/60 text-amber-200'
+        : 'border-slate-800 bg-slate-900 text-slate-400'"
+    />
+
+    <BaseHint v-if="failed" tone="danger">
+      Bascule refusée.
+    </BaseHint>
+  </div>
+</template>
+
 <script setup lang="ts">
 // Qui joue : l'admin lui-même, ou l'un des joueurs test. Visible du seul admin,
 // sur toutes les pages, et teinté pendant l'incarnation — on ne doit jamais se
@@ -31,22 +50,3 @@ const selected = computed<string>({
   },
 })
 </script>
-
-<template>
-  <div class="flex items-center gap-2">
-    <BaseSelect
-      v-model="selected"
-      :options="options"
-      :disabled="pending"
-      aria-label="Jouer en tant que"
-      title="Jouer en tant que"
-      :class="impersonator
-        ? 'border-amber-600 bg-amber-950/60 text-amber-200'
-        : 'border-slate-800 bg-slate-900 text-slate-400'"
-    />
-
-    <BaseHint v-if="failed" tone="danger">
-      Bascule refusée.
-    </BaseHint>
-  </div>
-</template>

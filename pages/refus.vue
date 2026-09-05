@@ -1,7 +1,3 @@
-<script setup lang="ts">
-definePageMeta({ public: true })
-</script>
-
 <template>
   <BaseCard title="Accès refusé">
     <template #lead>
@@ -13,3 +9,7 @@ definePageMeta({ public: true })
     </BaseButton>
   </BaseCard>
 </template>
+
+<script setup lang="ts">
+definePageMeta({ public: true })
+</script>

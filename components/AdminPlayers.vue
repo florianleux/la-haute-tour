@@ -1,3 +1,36 @@
+<template>
+  <BaseSection title="Joueurs">
+    <template #lead>
+      Où en est chacun, et les deux gestes qui peuvent le débloquer.
+    </template>
+
+    <BaseNotice v-if="actionFailed">
+      L'action a échoué. Réessaie.
+    </BaseNotice>
+    <BaseNotice v-if="failed">
+      Impossible de lire les joueurs. Recharge la page.
+    </BaseNotice>
+
+    <BaseEmpty v-if="emptyMessage" class="mt-6">
+      {{ emptyMessage }}
+    </BaseEmpty>
+
+    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+      <AdminPlayerCardSkeleton v-for="index in (firstLoad ? SKELETONS : 0)" :key="`skeleton-${index}`" />
+      <AdminPlayerCard
+        v-for="player in players"
+        :key="player.userId"
+        :player="player"
+        :busy="acting"
+        :running="runningOn(player.userId)"
+        :now="now"
+        @skip-cooldown="act('skipCooldown', player.userId)"
+        @grant-life="act('grantLife', player.userId)"
+      />
+    </div>
+  </BaseSection>
+</template>
+
 <script setup lang="ts">
 // Les fiches joueurs. Lecture sans effet : ouvrir l'onglet ne fait avancer
 // aucune partie. Voir specs/admin.md#gestion-des-joueurs.
@@ -36,36 +69,3 @@ async function act(action: PlayerAction, userId: number): Promise<void> {
   running.value = null
 }
 </script>
-
-<template>
-  <BaseSection title="Joueurs">
-    <template #lead>
-      Où en est chacun, et les deux gestes qui peuvent le débloquer.
-    </template>
-
-    <BaseNotice v-if="actionFailed">
-      L'action a échoué. Réessaie.
-    </BaseNotice>
-    <BaseNotice v-if="failed">
-      Impossible de lire les joueurs. Recharge la page.
-    </BaseNotice>
-
-    <BaseEmpty v-if="emptyMessage" class="mt-6">
-      {{ emptyMessage }}
-    </BaseEmpty>
-
-    <div class="mt-6 grid gap-4 sm:grid-cols-2">
-      <AdminPlayerCardSkeleton v-for="index in (firstLoad ? SKELETONS : 0)" :key="`skeleton-${index}`" />
-      <AdminPlayerCard
-        v-for="player in players"
-        :key="player.userId"
-        :player="player"
-        :busy="acting"
-        :running="runningOn(player.userId)"
-        :now="now"
-        @skip-cooldown="act('skipCooldown', player.userId)"
-        @grant-life="act('grantLife', player.userId)"
-      />
-    </div>
-  </BaseSection>
-</template>

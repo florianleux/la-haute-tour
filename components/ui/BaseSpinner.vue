@@ -1,14 +1,3 @@
-<script setup lang="ts">
-withDefaults(defineProps<{
-  /** Taille du trait : dans un bouton (sm) ou seule dans la page (md). */
-  size?: 'sm' | 'md'
-  label?: string
-}>(), {
-  size: 'sm',
-  label: 'Chargement en cours',
-})
-</script>
-
 <template>
   <span class="inline-flex items-center gap-2" role="status">
     <span
@@ -19,3 +8,14 @@ withDefaults(defineProps<{
     <slot />
   </span>
 </template>
+
+<script setup lang="ts">
+withDefaults(defineProps<{
+  /** Taille du trait : dans un bouton (sm) ou seule dans la page (md). */
+  size?: 'sm' | 'md'
+  label?: string
+}>(), {
+  size: 'sm',
+  label: 'Chargement en cours',
+})
+</script>

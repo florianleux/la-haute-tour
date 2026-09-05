@@ -49,6 +49,7 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 ## Composants Vue
 
 - Composition API uniquement, `<script setup lang="ts">`. Pas d'Options API.
+- **`<template>` en premier, `<script setup>` dessous.** On ouvre un composant pour voir ce qu'il affiche ; sa mécanique se lit ensuite, quand on sait de quoi elle parle.
 - Props et emits typés via `defineProps<T>()` / `defineEmits<T>()`.
 - Fichiers de composants en PascalCase (`QuestionCard.vue`), composables en camelCase préfixé `use` (`useAscension.ts`).
 

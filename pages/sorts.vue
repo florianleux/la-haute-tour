@@ -1,30 +1,3 @@
-<script setup lang="ts">
-// L'inventaire, le lancer et le journal — pendant l'attente et là seulement.
-// Le lancer ne vise que soi à ce stade : les catégories Allié et Ennemi arrivent
-// avec les équipes. Voir specs/ecrans.md#sorts.
-import { isCastable } from '~~/shared/utils/spells'
-import type { SpellId } from '~~/shared/utils/spells'
-
-definePageMeta({
-  // Hors attente, la page n'est pas atteignable — URL comprise. Le serveur
-  // refuse déjà la lecture ; la garde épargne au joueur un écran qu'il ne
-  // pourrait pas remplir. Voir middleware/cooldown.ts.
-  middleware: 'cooldown',
-})
-
-const { entries, total, log, failed, casting, castFailed, cast } = await useInventory()
-
-// Le récapitulatif de ce qui attend la prochaine tentative vit sur l'écran de
-// jeu : un sort lancé d'ici doit s'y voir au retour, pas au rechargement
-// suivant.
-const { refresh: refreshGame } = await useGameState()
-
-async function castOnSelf(spell: SpellId): Promise<void> {
-  await cast(spell)
-  await refreshGame()
-}
-</script>
-
 <template>
   <BaseCard wide title="Tes sorts">
     <template #lead>
@@ -91,3 +64,30 @@ async function castOnSelf(spell: SpellId): Promise<void> {
     </template>
   </BaseCard>
 </template>
+
+<script setup lang="ts">
+// L'inventaire, le lancer et le journal — pendant l'attente et là seulement.
+// Le lancer ne vise que soi à ce stade : les catégories Allié et Ennemi arrivent
+// avec les équipes. Voir specs/ecrans.md#sorts.
+import { isCastable } from '~~/shared/utils/spells'
+import type { SpellId } from '~~/shared/utils/spells'
+
+definePageMeta({
+  // Hors attente, la page n'est pas atteignable — URL comprise. Le serveur
+  // refuse déjà la lecture ; la garde épargne au joueur un écran qu'il ne
+  // pourrait pas remplir. Voir middleware/cooldown.ts.
+  middleware: 'cooldown',
+})
+
+const { entries, total, log, failed, casting, castFailed, cast } = await useInventory()
+
+// Le récapitulatif de ce qui attend la prochaine tentative vit sur l'écran de
+// jeu : un sort lancé d'ici doit s'y voir au retour, pas au rechargement
+// suivant.
+const { refresh: refreshGame } = await useGameState()
+
+async function castOnSelf(spell: SpellId): Promise<void> {
+  await cast(spell)
+  await refreshGame()
+}
+</script>

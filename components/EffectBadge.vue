@@ -1,3 +1,19 @@
+<template>
+  <span
+    class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
+    :class="tone"
+    :title="description"
+    :aria-label="description"
+  >
+    <!-- Une étincelle : ce qui vaut pour tout le catalogue tant qu'aucun sort
+         n'a de dessin propre. -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
+      <path d="m12 2 1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2Zm6 11 .9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6Z" />
+    </svg>
+    {{ spellLabel(effect.spell) }}
+  </span>
+</template>
+
 <script setup lang="ts">
 // Un effet posé sur le joueur, dit d'un coup d'œil : le sort, sa face, et qui
 // l'a lancé. Le même badge sert au récapitulatif de l'attente et aux icônes de
@@ -17,19 +33,3 @@ const description = computed(
   () => `${spellLabel(props.effect.spell)}, lancé par ${props.effect.casterName}`,
 )
 </script>
-
-<template>
-  <span
-    class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
-    :class="tone"
-    :title="description"
-    :aria-label="description"
-  >
-    <!-- Une étincelle : ce qui vaut pour tout le catalogue tant qu'aucun sort
-         n'a de dessin propre. -->
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
-      <path d="m12 2 1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2Zm6 11 .9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6Z" />
-    </svg>
-    {{ spellLabel(effect.spell) }}
-  </span>
-</template>

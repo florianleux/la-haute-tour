@@ -1,34 +1,3 @@
-<script setup lang="ts">
-import { FLOOR_COUNT } from '~~/shared/utils/floors'
-
-// Le parcours, pas l'état de l'instant : ni phase, ni vies, ni attente — ceux-là
-// vivent dans le jeu. Aucun flag de triche non plus : ils sont réservés à
-// l'administration. Voir specs/ecrans.md#profil.
-const { user } = await useCurrentUser()
-const { logout, pending, failed } = useLogout()
-const { journey, failed: journeyFailed } = await useJourney()
-
-const memberSince = computed(() => (user.value ? formatDay(user.value.createdAt) : ''))
-
-// Un joueur qui n'a pas encore vu de question n'a pas de parcours : mieux vaut
-// le dire qu'aligner des zéros.
-const started = computed(() => (journey.value?.seen ?? 0) > 0)
-
-const successRate = computed(() => {
-  const stats = journey.value
-  if (!stats || stats.seen === 0) {
-    return '—'
-  }
-
-  return `${Math.round((stats.correct / stats.seen) * 100)} %`
-})
-
-/** Une tentative achevée, ou le tiret qui dit qu'il n'y en a pas encore. */
-function attemptLength(value: number | null | undefined): string {
-  return value === null || value === undefined ? '—' : `${value}`
-}
-</script>
-
 <template>
   <BaseCard v-if="user" wide title="Profil">
     <template #lead>
@@ -81,3 +50,34 @@ function attemptLength(value: number | null | undefined): string {
     </BaseNotice>
   </BaseCard>
 </template>
+
+<script setup lang="ts">
+import { FLOOR_COUNT } from '~~/shared/utils/floors'
+
+// Le parcours, pas l'état de l'instant : ni phase, ni vies, ni attente — ceux-là
+// vivent dans le jeu. Aucun flag de triche non plus : ils sont réservés à
+// l'administration. Voir specs/ecrans.md#profil.
+const { user } = await useCurrentUser()
+const { logout, pending, failed } = useLogout()
+const { journey, failed: journeyFailed } = await useJourney()
+
+const memberSince = computed(() => (user.value ? formatDay(user.value.createdAt) : ''))
+
+// Un joueur qui n'a pas encore vu de question n'a pas de parcours : mieux vaut
+// le dire qu'aligner des zéros.
+const started = computed(() => (journey.value?.seen ?? 0) > 0)
+
+const successRate = computed(() => {
+  const stats = journey.value
+  if (!stats || stats.seen === 0) {
+    return '—'
+  }
+
+  return `${Math.round((stats.correct / stats.seen) * 100)} %`
+})
+
+/** Une tentative achevée, ou le tiret qui dit qu'il n'y en a pas encore. */
+function attemptLength(value: number | null | undefined): string {
+  return value === null || value === undefined ? '—' : `${value}`
+}
+</script>

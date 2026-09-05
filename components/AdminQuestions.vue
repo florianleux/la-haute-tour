@@ -1,3 +1,108 @@
+<template>
+  <BaseSection title="Questions">
+    <template #lead>
+      Le contenu du deck. La répartition en étages, elle, appartient au script d'import.
+    </template>
+
+    <div class="mt-4 flex flex-wrap items-end gap-3">
+      <div class="max-w-xs flex-1">
+        <BaseSelect v-model="selected" label="Filtrer" :options="filterOptions" />
+      </div>
+      <div class="flex-1">
+        <BaseInput v-model="search" label="Recherche" placeholder="Capitale de la Gironde ?" />
+      </div>
+    </div>
+
+    <div class="mt-6 rounded-xl border border-slate-800 p-4">
+      <BaseHint class="mb-4">
+        Nouvelle question
+      </BaseHint>
+      <AdminQuestionForm
+        :key="formKey"
+        submit-label="Créer"
+        :pending="submitting === 'create'"
+        @create="onCreate"
+      />
+    </div>
+
+    <BaseNotice v-if="writeFailed">
+      L'enregistrement a échoué. Réessaie.
+    </BaseNotice>
+    <BaseNotice v-if="failed">
+      Impossible de lire les questions. Recharge la page.
+    </BaseNotice>
+
+    <BaseList :empty="emptyMessage" class="mt-6">
+      <li
+        v-for="index in (firstLoad ? SKELETONS : 0)"
+        :key="`skeleton-${index}`"
+        class="space-y-2 px-4 py-3"
+      >
+        <BaseSkeleton height="h-4" width="w-3/4" />
+        <BaseSkeleton height="h-3" width="w-1/2" />
+        <BaseSkeleton height="h-3" width="w-2/5" />
+      </li>
+
+      <li v-for="question in questions" :key="question.id" class="px-4 py-3 text-sm">
+        <AdminQuestionForm
+          v-if="editing === question.id"
+          :question="question"
+          submit-label="Enregistrer"
+          :pending="submitting === question.id"
+          @save="content => onSave(question.id, content)"
+          @cancel="editing = null"
+        />
+
+        <div v-else class="flex items-start justify-between gap-4">
+          <div>
+            <p class="font-medium text-slate-100">
+              {{ question.statement }}
+            </p>
+            <BaseHint class="mt-1">
+              Étage {{ question.floor }} — réponse affichée :
+              <AnswerLabel :label="question.answerLabel" />
+            </BaseHint>
+            <BaseHint class="mt-1">
+              Acceptées : {{ question.acceptedAnswers.join(' · ') || 'aucune' }}
+            </BaseHint>
+          </div>
+
+          <div class="flex shrink-0 gap-2">
+            <template v-if="confirming === question.id">
+              <BaseButton :loading="removing === question.id" @click="onRemove(question.id)">
+                Confirmer
+              </BaseButton>
+              <BaseButton variant="ghost" @click="confirming = null">
+                Annuler
+              </BaseButton>
+            </template>
+            <template v-else>
+              <BaseButton variant="ghost" @click="editing = question.id">
+                Éditer
+              </BaseButton>
+              <BaseButton variant="ghost" @click="confirming = question.id">
+                Supprimer
+              </BaseButton>
+            </template>
+          </div>
+        </div>
+      </li>
+    </BaseList>
+
+    <div class="mt-4 flex items-center justify-between text-sm">
+      <BaseButton variant="ghost" :disabled="!canPrev" @click="goToPrev">
+        Précédent
+      </BaseButton>
+      <BaseHint>
+        Page {{ page }} sur {{ totalPages }}
+      </BaseHint>
+      <BaseButton variant="ghost" :disabled="!canNext" @click="goToNext">
+        Suivant
+      </BaseButton>
+    </div>
+  </BaseSection>
+</template>
+
 <script setup lang="ts">
 import { floorOptions } from '~~/shared/utils/floors'
 import type { QuestionDraft, QuestionEdit } from '~~/server/utils/questions'
@@ -109,108 +214,3 @@ async function onRemove(id: string): Promise<void> {
   confirming.value = null
 }
 </script>
-
-<template>
-  <BaseSection title="Questions">
-    <template #lead>
-      Le contenu du deck. La répartition en étages, elle, appartient au script d'import.
-    </template>
-
-    <div class="mt-4 flex flex-wrap items-end gap-3">
-      <div class="max-w-xs flex-1">
-        <BaseSelect v-model="selected" label="Filtrer" :options="filterOptions" />
-      </div>
-      <div class="flex-1">
-        <BaseInput v-model="search" label="Recherche" placeholder="Capitale de la Gironde ?" />
-      </div>
-    </div>
-
-    <div class="mt-6 rounded-xl border border-slate-800 p-4">
-      <BaseHint class="mb-4">
-        Nouvelle question
-      </BaseHint>
-      <AdminQuestionForm
-        :key="formKey"
-        submit-label="Créer"
-        :pending="submitting === 'create'"
-        @create="onCreate"
-      />
-    </div>
-
-    <BaseNotice v-if="writeFailed">
-      L'enregistrement a échoué. Réessaie.
-    </BaseNotice>
-    <BaseNotice v-if="failed">
-      Impossible de lire les questions. Recharge la page.
-    </BaseNotice>
-
-    <BaseList :empty="emptyMessage" class="mt-6">
-      <li
-        v-for="index in (firstLoad ? SKELETONS : 0)"
-        :key="`skeleton-${index}`"
-        class="space-y-2 px-4 py-3"
-      >
-        <BaseSkeleton height="h-4" width="w-3/4" />
-        <BaseSkeleton height="h-3" width="w-1/2" />
-        <BaseSkeleton height="h-3" width="w-2/5" />
-      </li>
-
-      <li v-for="question in questions" :key="question.id" class="px-4 py-3 text-sm">
-        <AdminQuestionForm
-          v-if="editing === question.id"
-          :question="question"
-          submit-label="Enregistrer"
-          :pending="submitting === question.id"
-          @save="content => onSave(question.id, content)"
-          @cancel="editing = null"
-        />
-
-        <div v-else class="flex items-start justify-between gap-4">
-          <div>
-            <p class="font-medium text-slate-100">
-              {{ question.statement }}
-            </p>
-            <BaseHint class="mt-1">
-              Étage {{ question.floor }} — réponse affichée :
-              <AnswerLabel :label="question.answerLabel" />
-            </BaseHint>
-            <BaseHint class="mt-1">
-              Acceptées : {{ question.acceptedAnswers.join(' · ') || 'aucune' }}
-            </BaseHint>
-          </div>
-
-          <div class="flex shrink-0 gap-2">
-            <template v-if="confirming === question.id">
-              <BaseButton :loading="removing === question.id" @click="onRemove(question.id)">
-                Confirmer
-              </BaseButton>
-              <BaseButton variant="ghost" @click="confirming = null">
-                Annuler
-              </BaseButton>
-            </template>
-            <template v-else>
-              <BaseButton variant="ghost" @click="editing = question.id">
-                Éditer
-              </BaseButton>
-              <BaseButton variant="ghost" @click="confirming = question.id">
-                Supprimer
-              </BaseButton>
-            </template>
-          </div>
-        </div>
-      </li>
-    </BaseList>
-
-    <div class="mt-4 flex items-center justify-between text-sm">
-      <BaseButton variant="ghost" :disabled="!canPrev" @click="goToPrev">
-        Précédent
-      </BaseButton>
-      <BaseHint>
-        Page {{ page }} sur {{ totalPages }}
-      </BaseHint>
-      <BaseButton variant="ghost" :disabled="!canNext" @click="goToNext">
-        Suivant
-      </BaseButton>
-    </div>
-  </BaseSection>
-</template>

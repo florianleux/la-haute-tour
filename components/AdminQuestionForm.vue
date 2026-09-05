@@ -1,3 +1,41 @@
+<template>
+  <form class="space-y-4" @submit.prevent="submit">
+    <BaseTextarea
+      v-model="statement"
+      label="Énoncé"
+      placeholder="Qui a découvert la pénicilline ?"
+      :rows="2"
+    />
+    <BaseInput
+      v-model="answerLabel"
+      label="Réponse affichée"
+      placeholder="FLEMING (Alexander)"
+    />
+    <BaseTextarea
+      v-model="accepted"
+      label="Réponses acceptées (une par ligne)"
+      placeholder="Fleming"
+    />
+    <!-- L'étage ne se choisit qu'à la création : la répartition du deck
+         appartient au script d'import. Voir specs/admin.md. -->
+    <BaseSelect
+      v-if="!question"
+      v-model="floor"
+      label="Étage"
+      :options="floorOptions()"
+    />
+
+    <div class="flex gap-3">
+      <BaseButton :disabled="!complete" :loading="pending" @click="submit">
+        {{ submitLabel }}
+      </BaseButton>
+      <BaseButton v-if="question" variant="ghost" @click="emit('cancel')">
+        Annuler
+      </BaseButton>
+    </div>
+  </form>
+</template>
+
 <script setup lang="ts">
 // Importé explicitement : `shared/` est partagé avec le serveur, pas
 // auto-importé comme `utils/`.
@@ -58,41 +96,3 @@ function submit(): void {
   emit('create', { ...content, floor: Number(floor.value) })
 }
 </script>
-
-<template>
-  <form class="space-y-4" @submit.prevent="submit">
-    <BaseTextarea
-      v-model="statement"
-      label="Énoncé"
-      placeholder="Qui a découvert la pénicilline ?"
-      :rows="2"
-    />
-    <BaseInput
-      v-model="answerLabel"
-      label="Réponse affichée"
-      placeholder="FLEMING (Alexander)"
-    />
-    <BaseTextarea
-      v-model="accepted"
-      label="Réponses acceptées (une par ligne)"
-      placeholder="Fleming"
-    />
-    <!-- L'étage ne se choisit qu'à la création : la répartition du deck
-         appartient au script d'import. Voir specs/admin.md. -->
-    <BaseSelect
-      v-if="!question"
-      v-model="floor"
-      label="Étage"
-      :options="floorOptions()"
-    />
-
-    <div class="flex gap-3">
-      <BaseButton :disabled="!complete" :loading="pending" @click="submit">
-        {{ submitLabel }}
-      </BaseButton>
-      <BaseButton v-if="question" variant="ghost" @click="emit('cancel')">
-        Annuler
-      </BaseButton>
-    </div>
-  </form>
-</template>

@@ -1,3 +1,24 @@
+<template>
+  <NuxtLink v-if="to" :to="to" :class="classes" :external="external">
+    <slot />
+  </NuxtLink>
+  <button
+    v-else
+    type="button"
+    :class="classes"
+    :disabled="disabled || loading"
+    :aria-busy="loading"
+    @click="$emit('click', $event)"
+  >
+    <!-- Le libellé reste en place, invisible : il tient la largeur du bouton, et
+         le loader prend sa place au lieu de s'ajouter à côté. -->
+    <span class="contents" :class="loading ? 'invisible' : ''">
+      <slot />
+    </span>
+    <BaseSpinner v-if="loading" class="absolute inset-0 justify-center" />
+  </button>
+</template>
+
 <script setup lang="ts">
 const props = withDefaults(defineProps<{
   /** Rend un lien plutôt qu'un bouton. */
@@ -33,24 +54,3 @@ const classes = computed(() => [
     : 'bg-transparent text-slate-300 hover:bg-slate-800',
 ])
 </script>
-
-<template>
-  <NuxtLink v-if="to" :to="to" :class="classes" :external="external">
-    <slot />
-  </NuxtLink>
-  <button
-    v-else
-    type="button"
-    :class="classes"
-    :disabled="disabled || loading"
-    :aria-busy="loading"
-    @click="$emit('click', $event)"
-  >
-    <!-- Le libellé reste en place, invisible : il tient la largeur du bouton, et
-         le loader prend sa place au lieu de s'ajouter à côté. -->
-    <span class="contents" :class="loading ? 'invisible' : ''">
-      <slot />
-    </span>
-    <BaseSpinner v-if="loading" class="absolute inset-0 justify-center" />
-  </button>
-</template>

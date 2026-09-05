@@ -1,17 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  title?: string
-  /** Pour un contenu qui ne tient pas en colonne étroite (une liste, un tableau). */
-  wide?: boolean
-}>()
-
-defineSlots<{
-  /** Introductory line under the title. */
-  lead?: () => unknown
-  default?: () => unknown
-}>()
-</script>
-
 <template>
   <div
     class="w-full rounded-2xl border border-slate-800 bg-slate-900/60 p-8 shadow-xl"
@@ -26,3 +12,17 @@ defineSlots<{
     <slot />
   </div>
 </template>
+
+<script setup lang="ts">
+defineProps<{
+  title?: string
+  /** Pour un contenu qui ne tient pas en colonne étroite (une liste, un tableau). */
+  wide?: boolean
+}>()
+
+defineSlots<{
+  /** Introductory line under the title. */
+  lead?: () => unknown
+  default?: () => unknown
+}>()
+</script>

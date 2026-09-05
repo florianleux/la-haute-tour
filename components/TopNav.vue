@@ -1,3 +1,27 @@
+<template>
+  <!-- Qui joue, à gauche : réservé à l'admin, et sur toutes les pages comme la
+       barre elle-même. Voir specs/admin.md#incarnation. -->
+  <div v-if="isAdmin" class="absolute left-4 top-4">
+    <ImpersonationSelect
+      :acting-as="user"
+      :impersonator="impersonator"
+      :test-players="data?.testPlayers ?? []"
+    />
+  </div>
+
+  <nav v-if="user" class="absolute right-4 top-4 flex items-center gap-3">
+    <BaseIconLink
+      v-for="icon in icons"
+      :key="icon.key"
+      :to="icon.to"
+      :label="icon.label"
+      :state="icon.state"
+    >
+      <path :d="PATHS[icon.key]" />
+    </BaseIconLink>
+  </nav>
+</template>
+
 <script setup lang="ts">
 import { CURRENT_USER_KEY } from '~/composables/useCurrentUser'
 import type { Ref } from 'vue'
@@ -44,27 +68,3 @@ const PATHS: Record<NavIconKey, string> = {
   admin: 'M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z',
 }
 </script>
-
-<template>
-  <!-- Qui joue, à gauche : réservé à l'admin, et sur toutes les pages comme la
-       barre elle-même. Voir specs/admin.md#incarnation. -->
-  <div v-if="isAdmin" class="absolute left-4 top-4">
-    <ImpersonationSelect
-      :acting-as="user"
-      :impersonator="impersonator"
-      :test-players="data?.testPlayers ?? []"
-    />
-  </div>
-
-  <nav v-if="user" class="absolute right-4 top-4 flex items-center gap-3">
-    <BaseIconLink
-      v-for="icon in icons"
-      :key="icon.key"
-      :to="icon.to"
-      :label="icon.label"
-      :state="icon.state"
-    >
-      <path :d="PATHS[icon.key]" />
-    </BaseIconLink>
-  </nav>
-</template>

@@ -1,31 +1,3 @@
-<script setup lang="ts">
-// La liste des Discord IDs autorisés. La garde serveur est ce qui protège ;
-// cet écran ne fait que lire et ajouter. Voir specs/admin.md.
-const { entries, failed, add, adding, loading } = await useWhitelist()
-
-const discordId = ref('')
-const addFailed = ref(false)
-
-// Pas de « liste vide » quand la lecture a échoué : ce serait la même phrase
-// pour « personne n'est autorisé » et « je ne sais pas ».
-const emptyMessage = computed(
-  () => (entries.value.length || failed.value ? null : 'Aucun Discord ID autorisé pour l\'instant.'),
-)
-
-async function submit(): Promise<void> {
-  if (!discordId.value.trim()) {
-    return
-  }
-
-  const added = await add(discordId.value)
-
-  addFailed.value = !added
-  if (added) {
-    discordId.value = ''
-  }
-}
-</script>
-
 <template>
   <BaseSection title="Whitelist Discord">
     <template #lead>
@@ -67,3 +39,31 @@ async function submit(): Promise<void> {
     </BaseList>
   </BaseSection>
 </template>
+
+<script setup lang="ts">
+// La liste des Discord IDs autorisés. La garde serveur est ce qui protège ;
+// cet écran ne fait que lire et ajouter. Voir specs/admin.md.
+const { entries, failed, add, adding, loading } = await useWhitelist()
+
+const discordId = ref('')
+const addFailed = ref(false)
+
+// Pas de « liste vide » quand la lecture a échoué : ce serait la même phrase
+// pour « personne n'est autorisé » et « je ne sais pas ».
+const emptyMessage = computed(
+  () => (entries.value.length || failed.value ? null : 'Aucun Discord ID autorisé pour l\'instant.'),
+)
+
+async function submit(): Promise<void> {
+  if (!discordId.value.trim()) {
+    return
+  }
+
+  const added = await add(discordId.value)
+
+  addFailed.value = !added
+  if (added) {
+    discordId.value = ''
+  }
+}
+</script>

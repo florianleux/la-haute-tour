@@ -1,25 +1,3 @@
-<script setup lang="ts">
-export interface SelectOption {
-  value: string
-  label: string
-}
-
-defineProps<{
-  /**
-   * Le libellé au-dessus du champ. Absent, le select se rend nu — il vit alors
-   * dans une barre plutôt que dans un formulaire, et c'est `aria-label` qui le
-   * nomme. Un `<select>` brut ne s'écrit nulle part ailleurs.
-   */
-  label?: string
-  options: SelectOption[]
-  disabled?: boolean
-}>()
-
-// Une valeur de `<select>` est une chaîne : l'appelant convertit s'il attend
-// autre chose, plutôt que de laisser deux conversions vivre côte à côte.
-const model = defineModel<string>({ required: true })
-</script>
-
 <template>
   <BaseField v-if="label" :label="label">
     <template #default="{ classes }">
@@ -43,3 +21,25 @@ const model = defineModel<string>({ required: true })
     </option>
   </select>
 </template>
+
+<script setup lang="ts">
+export interface SelectOption {
+  value: string
+  label: string
+}
+
+defineProps<{
+  /**
+   * Le libellé au-dessus du champ. Absent, le select se rend nu — il vit alors
+   * dans une barre plutôt que dans un formulaire, et c'est `aria-label` qui le
+   * nomme. Un `<select>` brut ne s'écrit nulle part ailleurs.
+   */
+  label?: string
+  options: SelectOption[]
+  disabled?: boolean
+}>()
+
+// Une valeur de `<select>` est une chaîne : l'appelant convertit s'il attend
+// autre chose, plutôt que de laisser deux conversions vivre côte à côte.
+const model = defineModel<string>({ required: true })
+</script>

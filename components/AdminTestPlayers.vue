@@ -1,43 +1,3 @@
-<script setup lang="ts">
-// Les joueurs test : les créer, les régler, les supprimer. Un monde à part des
-// vraies parties — l'onglet Joueurs n'en montre aucun.
-// Voir specs/admin.md#joueurs-test.
-import type { SpellId } from '~~/shared/utils/spells'
-
-const {
-  testPlayers,
-  failed,
-  loading,
-  acting,
-  create,
-  remove,
-  grantSpell,
-  advance,
-  rewind,
-  sendToCooldown,
-  skipCooldown,
-  grantLife,
-  reset,
-} = await useAdminTestPlayers()
-
-const actionFailed = ref(false)
-
-const now = useClockTick()
-
-// Pas de « aucun » quand la lecture a échoué ou n'est pas finie : ce serait la
-// même phrase pour « aucun joueur test » et « je ne sais pas ».
-const firstLoad = computed(() => loading.value && testPlayers.value.length === 0)
-const emptyMessage = computed(
-  () => (testPlayers.value.length || failed.value || firstLoad.value
-    ? null
-    : 'Aucun joueur test. Crées-en un pour éprouver le jeu de son point de vue.'),
-)
-
-async function act(move: () => Promise<boolean>): Promise<void> {
-  actionFailed.value = !await move()
-}
-</script>
-
 <template>
   <BaseSection title="Joueurs test">
     <template #lead>
@@ -81,3 +41,43 @@ async function act(move: () => Promise<boolean>): Promise<void> {
     </div>
   </BaseSection>
 </template>
+
+<script setup lang="ts">
+// Les joueurs test : les créer, les régler, les supprimer. Un monde à part des
+// vraies parties — l'onglet Joueurs n'en montre aucun.
+// Voir specs/admin.md#joueurs-test.
+import type { SpellId } from '~~/shared/utils/spells'
+
+const {
+  testPlayers,
+  failed,
+  loading,
+  acting,
+  create,
+  remove,
+  grantSpell,
+  advance,
+  rewind,
+  sendToCooldown,
+  skipCooldown,
+  grantLife,
+  reset,
+} = await useAdminTestPlayers()
+
+const actionFailed = ref(false)
+
+const now = useClockTick()
+
+// Pas de « aucun » quand la lecture a échoué ou n'est pas finie : ce serait la
+// même phrase pour « aucun joueur test » et « je ne sais pas ».
+const firstLoad = computed(() => loading.value && testPlayers.value.length === 0)
+const emptyMessage = computed(
+  () => (testPlayers.value.length || failed.value || firstLoad.value
+    ? null
+    : 'Aucun joueur test. Crées-en un pour éprouver le jeu de son point de vue.'),
+)
+
+async function act(move: () => Promise<boolean>): Promise<void> {
+  actionFailed.value = !await move()
+}
+</script>

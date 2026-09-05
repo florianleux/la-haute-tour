@@ -1,92 +1,3 @@
-<script setup lang="ts">
-// Une seule route de jeu : le serveur décide de la phase, la page affiche
-// celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
-// Le temps, les envois et les relectures vivent dans useQuestionRun().
-const {
-  state,
-  typed,
-  secondsLeft,
-  waitRemaining,
-  submit,
-  advance,
-  skipCooldown,
-  openChest,
-  pending,
-  leftThePage,
-  actionFailed,
-  readFailed,
-  loading,
-} = await useQuestionRun()
-
-// L'admin peut passer l'attente de la partie qu'il regarde — la sienne, ou
-// celle du joueur test qu'il incarne. Le bouton ne se montre qu'à lui.
-const { isAdmin } = await useCurrentUser()
-
-// Ce que la carte montre se décide en un seul endroit, testable : la page ne
-// fait que projeter cette décision. Voir utils/phase.ts.
-const screen = computed(() => (state.value ? gameScreen(state.value) : null))
-
-// Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
-// la page, il ferait tourner « Commencer le rattrapage » pendant qu'un admin
-// passe l'attente juste au-dessus.
-type PlayAction = 'submit' | 'advance' | 'skipCooldown' | 'chest'
-const running = ref<PlayAction | null>(null)
-
-function isRunning(action: PlayAction): boolean {
-  return pending.value && running.value === action
-}
-
-async function run(action: PlayAction, move: () => Promise<void>): Promise<void> {
-  running.value = action
-  await move()
-  running.value = null
-}
-
-// Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
-// suivant. Jamais pendant qu'une question tourne — là, Entrée répond.
-const canAdvance = computed(() => Boolean(screen.value?.action) && !screen.value?.question && !pending.value)
-useAdvanceOnEnter(canAdvance, () => run('advance', advance))
-
-// La contestation se propose à deux endroits : sur le verdict, au moment où le
-// désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
-const { isContestable, contest, contestingId, refresh: refreshDisputes } = useDisputes()
-const contestFailed = ref(false)
-
-async function dispute(questionId: string): Promise<void> {
-  contestFailed.value = !(await contest(questionId))
-}
-
-// Les contestables se chargent au montage : useDisputes ne fetch plus à la
-// création (plus de useAsyncData), il faut relire explicitement pour que les
-// boutons « Contester » soient visibles dès l'arrivée sur la page.
-refreshDisputes()
-
-// Un verdict qui vient d'arriver n'est pas encore dans la liste des contestables
-// — celle-ci a été lue avant la réponse. On la relit dès qu'un verdict faux
-// apparaît, pour que le bouton « Contester » soit visible immédiatement.
-watch(() => state.value?.verdict, (verdict) => {
-  if (verdict && !verdict.correct) {
-    refreshDisputes()
-  }
-})
-
-// Le jeu est fermé par l'administration, et ce joueur n'est pas admin. Une
-// question déjà servie et son verdict restent lisibles : c'est le passage à la
-// suite qui n'existe plus. Voir specs/admin.md#maintenance.
-const closed = computed(() =>
-  Boolean(state.value?.maintenance) && !screen.value?.question && !screen.value?.verdict,
-)
-
-// L'écran d'attente sert aussi au rattrapage prêt à démarrer : même fiche de
-// révision, même file de contestation, mais le compteur cède la place au
-// bouton « Commencer le rattrapage ». Voir specs/ecrans.md#cooldown--attente.
-const waiting = computed(() =>
-  state.value?.phase === 'cooldown'
-  || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
-)
-
-</script>
-
 <template>
   <BaseCard v-if="closed" title="Le jeu est fermé">
     <template #lead>
@@ -334,3 +245,92 @@ const waiting = computed(() =>
     </BaseNotice>
   </BaseCard>
 </template>
+
+<script setup lang="ts">
+// Une seule route de jeu : le serveur décide de la phase, la page affiche
+// celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
+// Le temps, les envois et les relectures vivent dans useQuestionRun().
+const {
+  state,
+  typed,
+  secondsLeft,
+  waitRemaining,
+  submit,
+  advance,
+  skipCooldown,
+  openChest,
+  pending,
+  leftThePage,
+  actionFailed,
+  readFailed,
+  loading,
+} = await useQuestionRun()
+
+// L'admin peut passer l'attente de la partie qu'il regarde — la sienne, ou
+// celle du joueur test qu'il incarne. Le bouton ne se montre qu'à lui.
+const { isAdmin } = await useCurrentUser()
+
+// Ce que la carte montre se décide en un seul endroit, testable : la page ne
+// fait que projeter cette décision. Voir utils/phase.ts.
+const screen = computed(() => (state.value ? gameScreen(state.value) : null))
+
+// Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
+// la page, il ferait tourner « Commencer le rattrapage » pendant qu'un admin
+// passe l'attente juste au-dessus.
+type PlayAction = 'submit' | 'advance' | 'skipCooldown' | 'chest'
+const running = ref<PlayAction | null>(null)
+
+function isRunning(action: PlayAction): boolean {
+  return pending.value && running.value === action
+}
+
+async function run(action: PlayAction, move: () => Promise<void>): Promise<void> {
+  running.value = action
+  await move()
+  running.value = null
+}
+
+// Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
+// suivant. Jamais pendant qu'une question tourne — là, Entrée répond.
+const canAdvance = computed(() => Boolean(screen.value?.action) && !screen.value?.question && !pending.value)
+useAdvanceOnEnter(canAdvance, () => run('advance', advance))
+
+// La contestation se propose à deux endroits : sur le verdict, au moment où le
+// désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
+const { isContestable, contest, contestingId, refresh: refreshDisputes } = useDisputes()
+const contestFailed = ref(false)
+
+async function dispute(questionId: string): Promise<void> {
+  contestFailed.value = !(await contest(questionId))
+}
+
+// Les contestables se chargent au montage : useDisputes ne fetch plus à la
+// création (plus de useAsyncData), il faut relire explicitement pour que les
+// boutons « Contester » soient visibles dès l'arrivée sur la page.
+refreshDisputes()
+
+// Un verdict qui vient d'arriver n'est pas encore dans la liste des contestables
+// — celle-ci a été lue avant la réponse. On la relit dès qu'un verdict faux
+// apparaît, pour que le bouton « Contester » soit visible immédiatement.
+watch(() => state.value?.verdict, (verdict) => {
+  if (verdict && !verdict.correct) {
+    refreshDisputes()
+  }
+})
+
+// Le jeu est fermé par l'administration, et ce joueur n'est pas admin. Une
+// question déjà servie et son verdict restent lisibles : c'est le passage à la
+// suite qui n'existe plus. Voir specs/admin.md#maintenance.
+const closed = computed(() =>
+  Boolean(state.value?.maintenance) && !screen.value?.question && !screen.value?.verdict,
+)
+
+// L'écran d'attente sert aussi au rattrapage prêt à démarrer : même fiche de
+// révision, même file de contestation, mais le compteur cède la place au
+// bouton « Commencer le rattrapage ». Voir specs/ecrans.md#cooldown--attente.
+const waiting = computed(() =>
+  state.value?.phase === 'cooldown'
+  || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
+)
+
+</script>

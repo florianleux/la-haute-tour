@@ -1,3 +1,14 @@
+<template>
+  <BaseCard title="La Haute Tour">
+    <template #lead>
+      L'accès se fait par Discord, sur invitation.
+    </template>
+    <BaseButton to="/api/auth/discord" external block class="mt-8">
+      Se connecter avec Discord
+    </BaseButton>
+  </BaseCard>
+</template>
+
 <script setup lang="ts">
 definePageMeta({ public: true })
 
@@ -11,14 +22,3 @@ watchEffect(() => {
   }
 })
 </script>
-
-<template>
-  <BaseCard title="La Haute Tour">
-    <template #lead>
-      L'accès se fait par Discord, sur invitation.
-    </template>
-    <BaseButton to="/api/auth/discord" external block class="mt-8">
-      Se connecter avec Discord
-    </BaseButton>
-  </BaseCard>
-</template>
