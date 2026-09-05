@@ -2,13 +2,14 @@
 
 ## Principes
 
-- **Trois icônes, pas un menu.** En haut à droite de chaque écran : une tour vers le jeu, un bouclier vers l'administration — pour l'admin seulement —, un buste vers le profil. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
-- **L'accueil reste le hub.** C'est la page d'atterrissage par défaut, celle qu'on retrouve en rechargeant, et le point de départ que suit un joueur qui ne cherche rien de précis. Les trois icônes ne le remplacent pas : elles évitent d'y repasser pour aller ailleurs.
+- **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers les Sorts, un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
+- **Chaque icône a trois états.** **Lien** quand la page est atteignable d'ici. **Actif** quand c'est la page qu'on regarde : elle est mise en avant et ne mène nulle part, comme dans un en-tête ordinaire — on ne clique pas vers là où on est déjà. **Désactivé** quand on ne peut pas y aller maintenant : éteinte et inerte. La barre ne disparaît jamais ; ce sont ses liens qui s'éteignent.
+- **L'accueil reste le hub.** C'est la page d'atterrissage par défaut, celle qu'on retrouve en rechargeant, et le point de départ que suit un joueur qui ne cherche rien de précis. Il n'a pas d'icône : la barre ne le remplace pas, elle évite d'y repasser pour aller ailleurs.
 - **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, fin — vit sur la même page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
 - **Étage et vies s'affichent à deux endroits seulement** : sur l'accueil, pour savoir où l'on en est avant de reprendre, et pendant le jeu, là où ils bougent. Nulle part ailleurs.
-- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Les trois icônes disparaissent sur `/jouer`, phases d'attente comprises.
+- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension comme en rattrapage — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente ou le palier, rien ne tourne et la barre redevient vivante.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
-- **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'en attente, où aucun timer ne tourne et où il n'y a donc rien à détourner. L'accès se fait par une **icône baguette magique**, qui suit la règle inverse des trois autres : elles s'effacent sur `/jouer`, elle n'y paraît que pendant l'attente.
+- **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'en attente, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette est donc **désactivée hors attente** — visible partout, cliquable là seulement. Elle annonce ainsi une page qui existe, à un moment qui viendra.
 
 ## Inventaire
 
@@ -124,7 +125,7 @@ Atteignable **en attente seulement**, par l'icône baguette. Trois choses :
 - Le **lancer** — un sort, une catégorie de cible (soi, allié, ennemi). La cible réelle n'est pas annoncée avant : le tirage est pondéré mais imprévisible. Elle l'est après. Un même sort ne se lance qu'une fois par attente.
 - Le **journal** — les sorts reçus et lancés, horodatés, nominatifs des deux côtés. C'est là que le lanceur apprend qui il a touché.
 
-Hors attente, la page n'est pas atteignable et l'inventaire n'est donc pas consultable : le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
+Hors attente, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
 
 ## Écrans d'administration
 

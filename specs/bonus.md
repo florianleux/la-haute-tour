@@ -241,9 +241,9 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 
 ## Écrans
 
-- **Icône baguette magique**, en haut, quatrième de la rangée — mais suivant la règle
-  inverse des trois autres : la tour, le bouclier et le buste s'effacent sur `/jouer`,
-  la baguette n'y paraît **qu'en phase d'attente**, la seule où le lancer existe.
+- **Icône baguette magique**, quatrième de la barre permanente. Visible partout,
+  **cliquable en attente seulement** — la seule phase où le lancer existe. Ailleurs
+  elle est désactivée, comme toute la barre l'est tant qu'un chrono tourne.
 - **Page Sorts** : inventaire, lancer, journal. Accessible en attente uniquement.
   L'inventaire n'est donc pas consultable hors attente — le joueur voit passer son
   objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
