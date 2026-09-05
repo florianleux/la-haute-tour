@@ -22,29 +22,12 @@ export function phaseLabel(phase: Phase): string {
 }
 
 /**
- * Ce que l'accueil propose de faire ensuite, nommé d'après la phase renvoyée par
- * le serveur — un joueur en attente n'a pas à cliquer pour l'apprendre.
- * Voir specs/ecrans.md.
- */
-export function mainActionLabel(state: GameState): string {
-  switch (state.phase) {
-    case 'ascent':
-      return state.started ? 'Reprendre l\'ascension' : 'Commencer l\'ascension'
-    case 'cooldown':
-      return 'Voir l\'attente'
-    case 'recovery':
-      return 'Aller au rattrapage'
-    case 'floorEnd':
-      return 'Continuer vers l\'étage suivant'
-    case 'gameOver':
-      return 'Revoir la fin'
-  }
-}
-
-/**
- * Ce que propose le bouton de la page de jeu quand aucune question n'est servie :
- * lire la suite d'un rattrapage, franchir un palier, ou reprendre l'ascension.
- * Le libellé suit la phase renvoyée par le serveur ; la page n'en déduit aucune.
+ * Ce que propose le bouton qui fait avancer la partie : lire la suite d'un
+ * rattrapage, franchir un palier, ou reprendre l'ascension. Le libellé suit la
+ * phase renvoyée par le serveur ; la page n'en déduit aucune.
+ *
+ * Il nomme un geste, plus une destination : le jeu étant la page d'accueil, il
+ * n'y a plus d'ailleurs à annoncer. Voir specs/ecrans.md.
  */
 export function nextActionLabel(state: GameState): string {
   if (state.phase === 'recovery') {
@@ -57,13 +40,16 @@ export function nextActionLabel(state: GameState): string {
       : 'Terminer le rattrapage'
   }
 
-  // Un verdict lu en pleine ascension : la suite est la question d'après. Sur un
-  // palier, c'est l'étage d'après — et le libellé de l'accueil le dit déjà.
-  if (state.verdict && state.phase === 'ascent') {
+  if (state.phase === 'floorEnd') {
+    return 'Continuer vers l\'étage suivant'
+  }
+
+  // Un verdict lu en pleine ascension : la suite est la question d'après.
+  if (state.verdict) {
     return 'Question suivante'
   }
 
-  return mainActionLabel(state)
+  return state.started ? 'Reprendre l\'ascension' : 'Commencer l\'ascension'
 }
 
 /**
@@ -96,8 +82,17 @@ export interface RecoveryLine {
   result: 'resumed' | 'waiting' | null
 }
 
+/**
+ * Une question tourne : le chrono court, et rien d'autre que répondre n'est
+ * permis. Dit ici plutôt qu'à chaque endroit qui en dépend — l'écran de jeu comme
+ * la barre d'icônes. Voir specs/ecrans.md#principes.
+ */
+export function isAnswering(state: GameState | null): boolean {
+  return Boolean(state?.question)
+}
+
 export function gameScreen(state: GameState): GameScreen {
-  const answering = state.question !== null
+  const answering = isAnswering(state)
   const chest = answering ? null : state.chest
   // Un coffre fermé retient le joueur : l'ouvrir est un clic distinct de
   // « suivant », sinon l'objet se perdrait. Voir specs/bonus.md#coffre-et-mimic.
@@ -109,9 +104,12 @@ export function gameScreen(state: GameState): GameScreen {
     recovery: state.recovery && recoveryLine(state.recovery),
     phase: state.phase,
     chest,
-    // Pendant une question, aucune action à part répondre ; à la fin de partie,
-    // plus aucune. Voir specs/ecrans.md#principes.
-    action: answering || holdsChest || state.phase === 'gameOver' ? null : nextActionLabel(state),
+    // Pendant une question, aucune action à part répondre. L'attente porte les
+    // siennes — passer l'attente, lancer le rattrapage — et la fin de partie n'en
+    // a plus aucune. Voir specs/ecrans.md#principes.
+    action: answering || holdsChest || state.phase === 'cooldown' || state.phase === 'gameOver'
+      ? null
+      : nextActionLabel(state),
   }
 }
 

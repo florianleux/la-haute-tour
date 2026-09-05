@@ -45,9 +45,5 @@ const tab = ref<AdminTab>('disputes')
       </div>
       <AdminFocusLosses v-else-if="tab === 'cheat'" />
     </div>
-
-    <BaseButton to="/" variant="ghost" class="mt-12">
-      Retour à l'accueil
-    </BaseButton>
   </div>
 </template>

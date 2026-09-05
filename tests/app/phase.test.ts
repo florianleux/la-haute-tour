@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gameScreen, mainActionLabel, nextActionLabel } from '../../utils/phase'
+import { gameScreen, isAnswering, nextActionLabel } from '../../utils/phase'
 import type { GameState } from '../../server/utils/game'
 
 function state(overrides: Partial<GameState>): GameState {
@@ -21,20 +21,13 @@ function state(overrides: Partial<GameState>): GameState {
   }
 }
 
-describe('action principale de l accueil', () => {
+describe('entrée dans la partie', () => {
   it('propose de commencer tant que rien n a été joué', () => {
-    expect(mainActionLabel(state({ phase: 'ascent', started: false }))).toBe('Commencer l\'ascension')
+    expect(nextActionLabel(state({ phase: 'ascent', started: false }))).toBe('Commencer l\'ascension')
   })
 
   it('propose de reprendre une ascension entamée', () => {
-    expect(mainActionLabel(state({ phase: 'ascent', started: true }))).toBe('Reprendre l\'ascension')
-  })
-
-  it('annonce ce qui attend le joueur dans les autres phases', () => {
-    expect(mainActionLabel(state({ phase: 'cooldown' }))).toBe('Voir l\'attente')
-    expect(mainActionLabel(state({ phase: 'recovery' }))).toBe('Aller au rattrapage')
-    expect(mainActionLabel(state({ phase: 'floorEnd' }))).toBe('Continuer vers l\'étage suivant')
-    expect(mainActionLabel(state({ phase: 'gameOver' }))).toBe('Revoir la fin')
+    expect(nextActionLabel(state({ phase: 'ascent', started: true }))).toBe('Reprendre l\'ascension')
   })
 })
 
@@ -149,5 +142,27 @@ describe('coffre sur l écran de verdict', () => {
       chest: null,
       action: null,
     })
+  })
+})
+
+describe('phases qui portent leurs propres actions', () => {
+  it('ne propose rien en attente : l écran a ses boutons, et rien n avance', () => {
+    expect(gameScreen(state({ phase: 'cooldown', started: true })).action).toBeNull()
+  })
+
+  it('ne propose rien à la fin de partie', () => {
+    expect(gameScreen(state({ phase: 'gameOver', verdict })).action).toBeNull()
+  })
+})
+
+describe('une question tourne', () => {
+  it('est vrai tant qu une question est servie, faux dès le verdict', () => {
+    expect(isAnswering(state({ question }))).toBe(true)
+    expect(isAnswering(state({ verdict }))).toBe(false)
+  })
+
+  it('est faux quand l état n est pas encore lu', () => {
+    // La barre d'icônes s'en sert : un état absent ne doit pas l'effacer.
+    expect(isAnswering(null)).toBe(false)
   })
 })

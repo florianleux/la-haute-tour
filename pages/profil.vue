@@ -2,8 +2,8 @@
 import { FLOOR_COUNT } from '~~/shared/utils/floors'
 
 // Le parcours, pas l'état de l'instant : ni phase, ni vies, ni attente — ceux-là
-// vivent sur l'accueil et dans le jeu. Aucun flag de triche non plus : ils sont
-// réservés à l'administration. Voir specs/ecrans.md#profil.
+// vivent dans le jeu. Aucun flag de triche non plus : ils sont réservés à
+// l'administration. Voir specs/ecrans.md#profil.
 const { user } = await useCurrentUser()
 const { logout, pending, failed } = useLogout()
 const { journey, failed: journeyFailed } = await useJourney()
@@ -79,8 +79,5 @@ function attemptLength(value: number | null | undefined): string {
     <BaseNotice v-if="failed">
       La déconnexion a échoué. Réessaie.
     </BaseNotice>
-    <BaseButton to="/" variant="ghost" block class="mt-3">
-      Retour à l'accueil
-    </BaseButton>
   </BaseCard>
 </template>
