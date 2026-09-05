@@ -13,6 +13,7 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:prod": "DATABASE_URL= drizzle-kit migrate",
     "db:import": "tsx --env-file-if-exists=.env scripts/import-questions.ts"
   },
   "pnpm": {

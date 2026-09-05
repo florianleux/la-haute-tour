@@ -17,7 +17,7 @@ pnpm dev
 | Variable | Rôle |
 |----------|------|
 | `DATABASE_URL` | Base locale, `file:./local.db` en dev. |
-| `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` | Base Turso en prod (env vars Netlify). Prend le pas sur `DATABASE_URL`. |
+| `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` | Base Turso en prod (env vars Netlify). `DATABASE_URL` prend le pas quand il est défini, pour qu'un poste de dev qui porte les deux reste sur sa base locale. |
 | `NUXT_SESSION_PASSWORD` | Secret de scellement du cookie de session, ≥ 32 caractères. Génère-le (`openssl rand -hex 32`) : le serveur refuse de démarrer sur la valeur d'exemple. |
 | `NUXT_DISCORD_CLIENT_ID` / `NUXT_DISCORD_CLIENT_SECRET` | App Discord OAuth2. |
 | `NUXT_DISCORD_REDIRECT_URI` | Doit correspondre exactement au redirect configuré côté Discord. |

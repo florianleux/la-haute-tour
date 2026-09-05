@@ -85,8 +85,9 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 
 - Turso (libSQL) en prod, un fichier SQLite local (`file:./local.db`) en dev — même client Drizzle/libSQL des deux côtés, donc même dialecte SQL, zéro divergence.
 - Schema Drizzle unique, migrations (`drizzle-kit generate` puis `migrate`) appliquées identiquement en local et en prod.
-- Env vars : `DATABASE_URL=file:./local.db` en local ; `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` en prod (Netlify env vars).
-- Migrations prod lancées manuellement (`pnpm db:migrate`) tant que le projet est solo — à automatiser (hook de build Netlify) seulement si ça devient pénible.
+- Env vars : `DATABASE_URL=file:./local.db` en local ; `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` en prod (Netlify env vars). Les deux peuvent cohabiter dans le `.env` du poste : `DATABASE_URL` gagne, donc `pnpm dev` reste toujours sur la base locale.
+- `pnpm db:migrate` migre le local, `pnpm db:migrate:prod` la prod (il vide `DATABASE_URL` pour laisser passer Turso). Viser la prod est un geste nommé, jamais un défaut.
+- Migrations prod lancées manuellement, dans la foulée du push, tant que le projet est solo — à automatiser (hook de build Netlify) seulement si ça devient pénible.
 
 ## CI/CD
 

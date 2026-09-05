@@ -8,7 +8,14 @@ export type Database = LibSQLDatabase<typeof schema>
  * startup config check so the three never drift apart.
  */
 export function resolveDatabaseUrl(): string | undefined {
-  return process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL
+  // Le local l'emporte quand il est là : les deux jeux de variables cohabitent
+  // dans le `.env` du poste de dev, et c'est `pnpm dev` qui doit rester sur
+  // `local.db` — viser la prod se fait en vidant DATABASE_URL, ce que
+  // `pnpm db:migrate:prod` est seul à faire. En prod, Netlify ne définit que
+  // TURSO_*, donc rien ne change là-bas.
+  //
+  // `||` et non `??` : une variable vidée (`DATABASE_URL=`) vaut absente.
+  return process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL
 }
 
 /**
