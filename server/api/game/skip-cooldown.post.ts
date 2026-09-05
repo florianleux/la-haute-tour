@@ -9,12 +9,15 @@ import type { GameState } from '~~/server/utils/game'
  * Échecs est trop maigre pour tirer un rattrapage, la lecture rendant alors les
  * vies comme pour une attente écoulée d'elle-même.
  *
- * Admin seulement, et pour soi-même : il n'y a pas d'userId dans la route, le
- * joueur concerné est le signé. L'onglet Joueurs vise les autres.
- * Voir specs/admin.md.
+ * Admin seulement, et pour la partie qu'il a sous les yeux : il n'y a pas
+ * d'userId dans la route. La garde lit le compte connecté, la cible est le
+ * joueur servi — les deux diffèrent quand l'admin incarne un joueur test, et
+ * c'est bien l'attente de ce dernier qu'il faut passer.
+ * Voir specs/admin.md et specs/admin.md#incarnation.
  */
 export default defineEventHandler(async (event): Promise<GameState> => {
-  const user = await requireAdmin(event)
+  await requireAdmin(event)
+  const user = await requireAuth(event)
   const db = useDatabase()
   const now = new Date()
 

@@ -14,6 +14,8 @@ import type { MeResponse } from '~~/server/api/auth/me.get'
 const route = useRoute()
 const { data } = useNuxtData<MeResponse>(CURRENT_USER_KEY)
 const user = computed(() => data.value?.user ?? null)
+const impersonator = computed(() => data.value?.impersonator ?? null)
+const isAdmin = computed(() => isRealAdmin(data.value ?? null))
 
 // La phase vient du serveur, sur toutes les pages : sans elle, la baguette
 // resterait éteinte sur un profil ouvert directement par son URL alors que
@@ -24,7 +26,7 @@ const game: Ref<GameState | null> = user.value ? (await useGameState()).state : 
 
 const icons = computed(() => navIcons({
   path: route.path,
-  isAdmin: Boolean(user.value?.isAdmin),
+  isAdmin: isAdmin.value,
   game: game.value,
 }))
 
@@ -44,6 +46,16 @@ const PATHS: Record<NavIconKey, string> = {
 </script>
 
 <template>
+  <!-- Qui joue, à gauche : réservé à l'admin, et sur toutes les pages comme la
+       barre elle-même. Voir specs/admin.md#incarnation. -->
+  <div v-if="isAdmin" class="absolute left-4 top-4">
+    <ImpersonationSelect
+      :acting-as="user"
+      :impersonator="impersonator"
+      :test-players="data?.testPlayers ?? []"
+    />
+  </div>
+
   <nav v-if="user" class="absolute right-4 top-4 flex items-center gap-3">
     <BaseIconLink
       v-for="icon in icons"

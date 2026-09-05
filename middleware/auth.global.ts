@@ -12,12 +12,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  const { user } = await useCurrentUser()
+  const { user, isAdmin } = await useCurrentUser()
   if (!user.value) {
     return navigateTo('/login')
   }
 
-  if (to.meta.admin && !user.value.isAdmin) {
+  // Les droits viennent du compte connecté, pas de l'identité servie : un admin
+  // qui incarne un joueur test garde l'accès à /admin, sinon il ne pourrait
+  // plus redevenir lui-même. Voir specs/admin.md#incarnation.
+  if (to.meta.admin && !isAdmin.value) {
     return navigateTo('/')
   }
 })

@@ -12,7 +12,7 @@ import {
   useSession,
 } from 'h3'
 import type { EventHandler } from 'h3'
-import { getCurrentUser, loginWithDiscord, requireAdmin, requireAuth, useAuthSession } from '../../server/utils/auth'
+import { getCurrentUser, getSessionUser, loginWithDiscord, requireAdmin, requireAuth, useAuthSession } from '../../server/utils/auth'
 import { buildAuthorizeUrl, toDiscordProfile } from '../../server/utils/discord'
 import type { DiscordProfile } from '../../server/utils/auth'
 
@@ -59,6 +59,7 @@ export function installNitroGlobals(discord: DiscordStubs = refusingDiscordStubs
     }),
     useAuthSession,
     getCurrentUser,
+    getSessionUser,
     requireAuth,
     requireAdmin,
     loginWithDiscord,
@@ -123,10 +124,10 @@ export function jsonRequest(
  * A session cookie for a signed-in player, without replaying the OAuth flow —
  * the flow itself is covered by callback.test.ts.
  */
-export async function sessionCookieFor(userId: number): Promise<string> {
+export async function sessionCookieFor(userId: number, actingAsUserId?: number): Promise<string> {
   const setSession = mountHandler('/session', defineEventHandler(async (event) => {
     const session = await useAuthSession(event)
-    await session.update({ userId })
+    await session.update({ userId, actingAsUserId })
     return { ok: true }
   }))
 

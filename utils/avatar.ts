@@ -9,13 +9,19 @@ const DEFAULT_AVATAR_COUNT = 6n
  * Sans hash — compte sans image, ou joueur pas encore reconnecté depuis que la
  * colonne existe — on rend l'avatar par défaut que Discord attribue lui-même à
  * ce compte. Il n'y a donc jamais de trou à la place d'une tête.
+ *
+ * Un joueur test porte un identifiant synthétique, que Discord n'aurait jamais
+ * produit : il retombe sur le premier avatar par défaut plutôt que de faire
+ * échouer la fiche entière. Voir specs/admin.md#joueurs-test.
  */
 export function discordAvatarUrl(discordId: string, avatar: string | null): string {
   if (avatar) {
     return `https://cdn.discordapp.com/avatars/${discordId}/${avatar}.png?size=64`
   }
 
-  const index = (BigInt(discordId) >> 22n) % DEFAULT_AVATAR_COUNT
+  const index = /^\d+$/.test(discordId)
+    ? (BigInt(discordId) >> 22n) % DEFAULT_AVATAR_COUNT
+    : 0n
 
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`
 }

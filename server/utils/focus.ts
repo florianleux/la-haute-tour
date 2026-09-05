@@ -1,4 +1,4 @@
-import { count, desc, eq, max } from 'drizzle-orm'
+import { and, count, desc, eq, max } from 'drizzle-orm'
 import { focusLosses, users } from '../db/schema'
 import type { Database } from '../db/client'
 
@@ -25,7 +25,9 @@ export async function focusLossTally(db: Database): Promise<FocusLossTally[]> {
       lastAt: max(focusLosses.lostAt),
     })
     .from(focusLosses)
-    .innerJoin(users, eq(users.id, focusLosses.userId))
+    // Un joueur test quitte la page autant qu'on veut : ce n'est pas de la
+    // triche à repérer. Voir specs/admin.md#joueurs-test.
+    .innerJoin(users, and(eq(users.id, focusLosses.userId), eq(users.isTest, false)))
     .groupBy(users.id, users.username)
     .orderBy(desc(count(focusLosses.id)))
 

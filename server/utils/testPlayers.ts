@@ -1,0 +1,294 @@
+import { and, asc, desc, eq, gt, inArray } from 'drizzle-orm'
+import { useDatabase } from '../db/client'
+import { cooldownFrom } from './mechanics'
+import { rulesForFloor } from './rules'
+import {
+  activeEffects,
+  attempts,
+  inventory,
+  missedPool,
+  questions,
+  recoveryQuestions,
+  reservations,
+  seenQuestions,
+  users,
+} from '../db/schema'
+import type { H3Event } from 'h3'
+import type { Database } from '../db/client'
+import type { User } from '../db/schema'
+import type { SpellId } from '../../shared/utils/spells'
+
+/**
+ * Les joueurs test : des joueurs créés par l'admin pour éprouver le jeu, sans
+ * compte Discord derrière. Ils jouent une vraie partie — mêmes tables, mêmes
+ * règles — mais dans un monde scellé, sans contact avec les vrais joueurs.
+ * Voir specs/admin.md#joueurs-test.
+ */
+
+/**
+ * Le joueur test qu'un geste d'admin vise. Un vrai joueur est refusé plutôt
+ * qu'introuvable : le distinguer dit à l'appelant que la cible existe, mais
+ * qu'elle n'est pas de celles qu'on manipule.
+ */
+export async function requireTestPlayer(db: Database, id: number): Promise<User> {
+  const [player] = await db.select().from(users).where(eq(users.id, id)).limit(1)
+
+  if (!player) {
+    throw createError({ statusCode: 404, statusMessage: 'Joueur introuvable' })
+  }
+
+  if (!player.isTest) {
+    throw createError({ statusCode: 403, statusMessage: 'Réservé aux joueurs test' })
+  }
+
+  return player
+}
+
+/**
+ * Le joueur test que la route désigne. Écrit une fois : six gestes partagent la
+ * même lecture de paramètre, et six copies divergeraient sur ce qu'est un
+ * identifiant valide.
+ */
+export async function testPlayerFromRoute(event: H3Event): Promise<User> {
+  const id = Number(getRouterParam(event, 'id') ?? '')
+
+  // `Number('')` vaut 0, et 0 est un entier : sans le signe, une route sans
+  // identifiant serait acceptée puis rejetée plus loin, pour une autre raison.
+  if (!Number.isInteger(id) || id <= 0) {
+    throw createError({ statusCode: 400, statusMessage: 'Joueur inconnu' })
+  }
+
+  return requireTestPlayer(useDatabase(), id)
+}
+
+export async function listTestPlayers(db: Database): Promise<User[]> {
+  return db.select().from(users).where(eq(users.isTest, true)).orderBy(asc(users.id))
+}
+
+/**
+ * Un joueur test de plus, nommé à la suite des autres — Testeur A, B, C. Le nom
+ * suit le premier rang libre plutôt que le nombre de joueurs test : après une
+ * suppression, c'est la lettre libérée qui resert, et deux joueurs test ne
+ * portent jamais le même nom.
+ *
+ * Le `discordId` est synthétique et se lit comme tel : aucune connexion Discord
+ * ne peut le produire, donc aucun compte réel ne viendra le heurter.
+ */
+export async function createTestPlayer(db: Database, now: Date): Promise<User> {
+  const taken = new Set((await listTestPlayers(db)).map(player => player.username))
+
+  let rank = 0
+  while (taken.has(testPlayerName(rank))) {
+    rank++
+  }
+
+  const [created] = await db
+    .insert(users)
+    .values({
+      discordId: `test-${crypto.randomUUID()}`,
+      username: testPlayerName(rank),
+      isTest: true,
+      // Une tentative ouverte à l'instant : sans elle, tout ce que le joueur
+      // test verra plus tard daterait de l'époque zéro.
+      attemptStartedAt: now,
+    })
+    .returning()
+
+  return created
+}
+
+/**
+ * Supprime un joueur test et, avec lui, tout ce qu'il a joué : les clés
+ * étrangères des tables de jeu sont en `cascade`.
+ */
+export async function deleteTestPlayer(db: Database, testPlayer: User): Promise<void> {
+  assertTestPlayer(testPlayer)
+
+  await db.delete(users).where(eq(users.id, testPlayer.id))
+}
+
+/**
+ * Les gestes que l'admin exerce sur un joueur test. Chacun laisse la base dans
+ * un état que le jeu sait produire de lui-même : ce sont des raccourcis vers
+ * des situations de jeu, jamais des états impossibles — sans quoi on déboguerait
+ * le jeu contre quelque chose qu'aucun joueur n'atteindra.
+ * Voir specs/admin.md#réglages-dun-joueur-test.
+ */
+
+/** Un exemplaire de plus à l'inventaire, comme un coffre en donne un. */
+export async function grantSpell(db: Database, testPlayer: User, spell: SpellId, now: Date): Promise<void> {
+  assertTestPlayer(testPlayer)
+
+  await db.insert(inventory).values({ userId: testPlayer.id, spell, obtainedAt: now })
+}
+
+export interface AdvanceOptions {
+  count: number
+  /** Justes, ou fausses — les fausses remplissent le Pool Échecs comme en jeu. */
+  correct: boolean
+}
+
+/**
+ * Avancer dans l'étage sans le jouer : les `count` questions suivantes du deck
+ * sont marquées vues. Le deck est parcouru par rang, à partir du curseur, exactement
+ * comme l'ascension le fait — un joueur test avance donc dans le même ordre qu'un
+ * vrai joueur, et s'arrête à ce que l'étage contient encore.
+ */
+export async function advanceTestPlayer(
+  db: Database,
+  testPlayer: User,
+  { count, correct }: AdvanceOptions,
+  now: Date,
+): Promise<void> {
+  assertTestPlayer(testPlayer)
+
+  const upcoming = await db
+    .select({ id: questions.id, rank: questions.rank })
+    .from(questions)
+    .where(and(eq(questions.floor, testPlayer.currentFloor), gt(questions.rank, testPlayer.floorCursor)))
+    .orderBy(asc(questions.rank))
+    .limit(count)
+
+  if (!upcoming.length) {
+    return
+  }
+
+  const markSeen = db.insert(seenQuestions).values(upcoming.map(question => ({
+    userId: testPlayer.id,
+    questionId: question.id,
+    floor: testPlayer.currentFloor,
+    correct,
+    seenAt: now,
+  })))
+
+  const moveCursor = db
+    .update(users)
+    .set({ floorCursor: upcoming[upcoming.length - 1].rank })
+    .where(eq(users.id, testPlayer.id))
+
+  // Une erreur dépose la question au Pool Échecs, comme en jeu. Les deux lots
+  // s'écrivent en entier plutôt que de se composer : Drizzle type un lot par
+  // les tables qu'il touche, et un tableau qui grandit perd ce typage.
+  if (correct) {
+    await db.batch([markSeen, moveCursor])
+    return
+  }
+
+  await db.batch([
+    markSeen,
+    moveCursor,
+    db.insert(missedPool).values(upcoming.map(question => ({
+      userId: testPlayer.id,
+      questionId: question.id,
+      floor: testPlayer.currentFloor,
+      lastFailedAt: now,
+    }))),
+  ])
+}
+
+/**
+ * Revenir en arrière dans l'étage : les `count` derniers passages sont effacés,
+ * et le Pool Échecs perd les leurs — le passage n'a pas eu lieu, il n'a donc
+ * rien pu y déposer. La réservation en cours part avec eux : elle pointerait un
+ * passage disparu.
+ */
+export async function rewindTestPlayer(db: Database, testPlayer: User, count: number): Promise<void> {
+  assertTestPlayer(testPlayer)
+
+  const last = await db
+    .select({ questionId: seenQuestions.questionId, rank: questions.rank })
+    .from(seenQuestions)
+    .innerJoin(questions, eq(questions.id, seenQuestions.questionId))
+    .where(and(eq(seenQuestions.userId, testPlayer.id), eq(seenQuestions.floor, testPlayer.currentFloor)))
+    .orderBy(desc(questions.rank))
+    .limit(count)
+
+  if (!last.length) {
+    return
+  }
+
+  const erased = last.map(row => row.questionId)
+  // Le curseur retombe sur le rang le plus haut qui reste vu — zéro quand il ne
+  // reste rien, c'est-à-dire un étage jamais entamé.
+  const cursor = Math.min(...last.map(row => row.rank)) - 1
+
+  await db.batch([
+    db
+      .delete(seenQuestions)
+      .where(and(eq(seenQuestions.userId, testPlayer.id), inArray(seenQuestions.questionId, erased))),
+    db
+      .delete(missedPool)
+      .where(and(eq(missedPool.userId, testPlayer.id), inArray(missedPool.questionId, erased))),
+    db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
+    db.update(users).set({ floorCursor: cursor }).where(eq(users.id, testPlayer.id)),
+  ])
+}
+
+/**
+ * Ouvrir une attente : c'est la seule phase où les Sorts se lancent, donc le
+ * point de départ de la plupart des essais. La durée vient des règles, jamais
+ * d'un nombre écrit ici.
+ */
+export async function sendToCooldown(db: Database, testPlayer: User, now: Date): Promise<void> {
+  assertTestPlayer(testPlayer)
+
+  await db.batch([
+    // Une question réservée survivrait à la perte des vies et continuerait de
+    // s'afficher : elle appartient à la tentative qui s'achève.
+    db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
+    db
+      .update(users)
+      .set({ lives: 0, cooldownUntil: cooldownFrom(rulesForFloor(testPlayer.currentFloor), now) })
+      .where(eq(users.id, testPlayer.id)),
+  ])
+}
+
+/**
+ * Effacer la partie d'un joueur test et le rendre neuf. Tous les effets partent
+ * avec elle, donc écrire `attemptStartedAt` ici ne peut désaccorder aucune ancre
+ * — c'est la seule raison pour laquelle ce geste peut se passer d'openAttempt().
+ * Voir server/utils/journey.ts.
+ */
+export async function resetTestPlayer(db: Database, testPlayer: User, now: Date): Promise<void> {
+  assertTestPlayer(testPlayer)
+
+  await db.batch([
+    db.delete(seenQuestions).where(eq(seenQuestions.userId, testPlayer.id)),
+    db.delete(missedPool).where(eq(missedPool.userId, testPlayer.id)),
+    db.delete(inventory).where(eq(inventory.userId, testPlayer.id)),
+    db.delete(activeEffects).where(eq(activeEffects.userId, testPlayer.id)),
+    db.delete(activeEffects).where(eq(activeEffects.casterId, testPlayer.id)),
+    db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, testPlayer.id)),
+    db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
+    db.delete(attempts).where(eq(attempts.userId, testPlayer.id)),
+    db
+      .update(users)
+      .set({
+        currentFloor: 1,
+        lives: rulesForFloor(1).lives,
+        cooldownUntil: null,
+        floorCursor: 0,
+        attemptStartedAt: now,
+      })
+      .where(eq(users.id, testPlayer.id)),
+  ])
+}
+
+/**
+ * Les gestes ne s'exercent que sur un joueur test. La garde vit ici plutôt que
+ * dans les seuls endpoints : c'est la fonction qui écrit qui doit refuser, pas
+ * la route qui l'appelle.
+ */
+function assertTestPlayer(player: User): void {
+  if (!player.isTest) {
+    throw createError({ statusCode: 403, statusMessage: 'Réservé aux joueurs test' })
+  }
+}
+
+/** Testeur A, B, C… puis Testeur AA quand l'alphabet est épuisé. */
+function testPlayerName(rank: number): string {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const loops = Math.floor(rank / letters.length) + 1
+
+  return `Testeur ${letters[rank % letters.length].repeat(loops)}`
+}

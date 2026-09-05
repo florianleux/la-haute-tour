@@ -32,6 +32,6 @@ describe('déconnexion', () => {
     expect(response.status).toBe(200)
     const cleared = (response.headers.get('set-cookie') ?? '').split(';')[0]
     const after = await me(apiRequest('http://test/me', cleared))
-    expect(await after.json()).toEqual({ user: null })
+    expect(await after.json()).toEqual({ user: null, impersonator: null, testPlayers: [] })
   })
 })

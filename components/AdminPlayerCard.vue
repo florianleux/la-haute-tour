@@ -13,17 +13,11 @@ const props = defineProps<{
 
 defineEmits<{ skipCooldown: [], grantLife: [] }>()
 
-const waiting = computed(() => props.player.phase === 'cooldown')
-
-// « terminée » plutôt qu'un délai quand l'échéance vient de passer : la phase du
-// serveur ne bougera qu'à la prochaine lecture du joueur.
-const remaining = computed(() =>
-  props.player.cooldownUntil ? formatWait(props.player.cooldownUntil, props.now) : null,
-)
+const { waiting, remaining } = usePlayerWait(toRef(props, 'player'), toRef(props, 'now'))
 </script>
 
 <template>
-  <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+  <BaseTile>
     <div class="flex items-center gap-3">
       <BaseAvatar :src="discordAvatarUrl(player.discordId, player.avatar)" :alt="player.username" />
       <div class="min-w-0">
@@ -84,5 +78,5 @@ const remaining = computed(() =>
         Rendre une vie
       </BaseButton>
     </div>
-  </div>
+  </BaseTile>
 </template>

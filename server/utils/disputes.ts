@@ -129,7 +129,9 @@ export async function pendingDisputes(db: Database): Promise<PendingDispute[]> {
       eq(seenQuestions.questionId, disputes.questionId),
     ))
     .leftJoin(acceptedAnswers, eq(acceptedAnswers.questionId, disputes.questionId))
-    .where(eq(disputes.status, 'pending'))
+    // Les joueurs test n'entrent pas dans la file : elle sert à arbitrer de
+    // vraies parties. Voir specs/admin.md#joueurs-test.
+    .where(and(eq(disputes.status, 'pending'), eq(users.isTest, false)))
     .orderBy(asc(disputes.createdAt), asc(acceptedAnswers.id))
 
   const queue = new Map<number, PendingDispute>()

@@ -52,6 +52,19 @@ export async function requirePlayer(db: Database, id: number): Promise<User> {
  * La phase se dérive ensuite par `phaseOf` — aucune règle n'est réécrite ici.
  */
 export async function playerRoster(db: Database, now: Date): Promise<PlayerCard[]> {
+  return roster(db, now, false)
+}
+
+/**
+ * Les mêmes fiches, pour les joueurs test. Une seule requête pour les deux
+ * mondes : ce qu'on lit d'un joueur ne change pas selon qu'il est réel ou non,
+ * seul le filtre change. Voir specs/admin.md#joueurs-test.
+ */
+export async function testPlayerRoster(db: Database, now: Date): Promise<PlayerCard[]> {
+  return roster(db, now, true)
+}
+
+async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerCard[]> {
   const rows = await db
     .select({
       user: users,
@@ -68,6 +81,10 @@ export async function playerRoster(db: Database, now: Date): Promise<PlayerCard[
           and ${disputes.status} = 'pending')`,
     })
     .from(users)
+    // Les deux mondes ne se mélangent jamais : l'onglet Joueurs sert à arbitrer
+    // de vraies parties, et y mêler des fantômes fausserait ce qu'on y lit.
+    // Voir specs/admin.md#joueurs-test.
+    .where(eq(users.isTest, isTest))
     .orderBy(asc(users.username))
 
   return rows.map(row => ({

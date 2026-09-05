@@ -30,6 +30,13 @@ export const users = sqliteTable('users', {
    */
   avatar: text('avatar'),
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+  /**
+   * Un joueur créé par l'admin pour éprouver le jeu, sans compte Discord
+   * derrière. Il joue une vraie partie — mêmes règles, mêmes tables — mais dans
+   * un monde scellé : il n'apparaît ni dans les fiches joueurs, ni dans le
+   * tirage des cibles d'un vrai lanceur. Voir specs/admin.md#joueurs-test.
+   */
+  isTest: integer('is_test', { mode: 'boolean' }).notNull().default(false),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /** When the wait ends. Null outside a wait. The phase derives from it. */

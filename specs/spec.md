@@ -45,6 +45,8 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Passer l'attente** | `skipCooldown` | Geste d'admin qui fait échoir immédiatement l'attente d'un joueur. La suite se déroule comme si le délai s'était écoulé : rattrapage si le Pool Échecs le permet, reprise sinon. |
 | **Maintenance** | `maintenance` | Interrupteur d'administration qui ferme le jeu à tous sauf aux admins. Les joueurs se connectent toujours, mais n'obtiennent plus de nouvelle question. |
 | **Fiche joueur** | `playerCard` | Ce que l'admin voit d'un joueur d'un seul coup d'œil : identité, étage, progression, phase, vies, attente en cours et contestations en attente. Lecture pure, sans effet sur la partie. |
+| **Joueur test** | `testPlayer` | Un joueur créé par l'admin pour éprouver le jeu, sans compte Discord derrière. Il joue une vraie partie, mais dans un monde scellé : jamais de contact avec un vrai joueur. |
+| **Incarnation** | `impersonation` | L'admin joue à la place d'un joueur test. Le jeu le prend pour lui ; les pouvoirs d'admin, eux, restent attachés au vrai compte. Réservée aux joueurs test. |
 | **Sort** | `spell` | Le seul objet qu'on obtient en jouant. Se lance pendant l'attente, sur soi, un allié ou un ennemi. Voir [`bonus.md`](./bonus.md). |
 | **Lancer** | `cast` | L'action de consommer un sort de son inventaire vers une catégorie de cible. |
 | **Cible** | `target` | Le joueur que le tirage désigne. Jamais choisi nominativement. |

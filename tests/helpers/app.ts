@@ -2,6 +2,7 @@ import { computed, getCurrentScope, onScopeDispose, reactive, ref, watch } from 
 import { vi } from 'vitest'
 import type { Mock } from 'vitest'
 import { CURRENT_USER_KEY } from '../../composables/useCurrentUser'
+import { isRealAdmin } from '../../utils/identity'
 import type { MeResponse, SessionUser } from '../../server/api/auth/me.get'
 
 /**
@@ -19,6 +20,8 @@ export interface FakeNuxt {
   /** Le réseau est mort : toute action est refusée. */
   breakNetwork: () => void
   signIn: (user: SessionUser) => void
+  /** L'admin incarne un joueur test : le jeu sert celui-ci, les droits restent à l'autre. */
+  impersonate: (admin: SessionUser, testPlayer: SessionUser) => void
   signOut: () => void
   /** Ce que la lecture d'une clé rend maintenant — le client a pu l'écrire. */
   cached: (key: string) => unknown
@@ -26,6 +29,8 @@ export interface FakeNuxt {
   calls: () => string[]
   /** Les routes demandées, dans l'ordre. */
   navigations: () => string[]
+  /** Les rechargements complets de l'application, dans l'ordre. */
+  reloads: () => string[]
   /** Tient lieu du refresh de useAsyncData. */
   refresh: Mock<() => Promise<void>>
   /** Joueur déconnecté, aucun appel enregistré, réseau qui marche. */
@@ -55,18 +60,28 @@ export function installAppGlobals(): FakeNuxt {
   const payloads = reactive(new Map<string, unknown>())
   const errors = reactive(new Map<string, unknown>())
   const navigations: string[] = []
+  const reloads: string[] = []
   const calls: string[] = []
   const refresh = vi.fn(async (): Promise<void> => {})
   let fetchRejection: unknown = null
   let fetchResponse: unknown = { ok: true }
 
-  const currentUser = computed<SessionUser | null>(
-    () => (payloads.get(CURRENT_USER_KEY) as MeResponse | undefined)?.user ?? null,
+  const identity = computed<MeResponse | null>(
+    () => (payloads.get(CURRENT_USER_KEY) as MeResponse | undefined) ?? null,
   )
+  const currentUser = computed<SessionUser | null>(() => identity.value?.user ?? null)
+  // La même règle que l'application : les droits suivent le compte connecté.
+  const currentIsAdmin = computed<boolean>(() => isRealAdmin(identity.value))
 
   Object.assign(globalThis, {
     defineNuxtRouteMiddleware: <T>(middleware: T): T => middleware,
-    useCurrentUser: async () => ({ user: currentUser, refresh }),
+    useCurrentUser: async () => ({
+      user: currentUser,
+      impersonator: computed(() => identity.value?.impersonator ?? null),
+      testPlayers: computed(() => identity.value?.testPlayers ?? []),
+      isAdmin: currentIsAdmin,
+      refresh,
+    }),
     useApiFetchOptions: () => ({ headers: undefined }),
     useState: <T>(key: string, init: () => T) => {
       if (!payloads.has(key)) {
@@ -97,6 +112,10 @@ export function installAppGlobals(): FakeNuxt {
       payloads.clear()
       calls.push('clear cache')
     },
+    reloadNuxtApp: ({ path }: { path?: string } = {}): void => {
+      calls.push(`reload ${path ?? 'current'}`)
+      reloads.push(path ?? 'current')
+    },
     useRequestHeaders: () => ({}),
     getCurrentScope,
     onScopeDispose,
@@ -121,7 +140,7 @@ export function installAppGlobals(): FakeNuxt {
   })
 
   const signOut = (): void => {
-    payloads.set(CURRENT_USER_KEY, { user: null } satisfies MeResponse)
+    payloads.set(CURRENT_USER_KEY, { user: null, impersonator: null, testPlayers: [] } satisfies MeResponse)
   }
 
   return {
@@ -133,16 +152,25 @@ export function installAppGlobals(): FakeNuxt {
     breakNetwork: () => {
       fetchRejection = new Error('network unreachable')
     },
-    signIn: user => payloads.set(CURRENT_USER_KEY, { user } satisfies MeResponse),
+    signIn: user => payloads.set(
+      CURRENT_USER_KEY,
+      { user, impersonator: null, testPlayers: [] } satisfies MeResponse,
+    ),
+    impersonate: (admin, testPlayer) => payloads.set(
+      CURRENT_USER_KEY,
+      { user: testPlayer, impersonator: admin, testPlayers: [testPlayer] } satisfies MeResponse,
+    ),
     signOut,
     cached: key => payloads.get(key) ?? null,
     calls: () => [...calls],
     navigations: () => [...navigations],
+    reloads: () => [...reloads],
     refresh,
     reset: (): void => {
       payloads.clear()
       errors.clear()
       navigations.length = 0
+      reloads.length = 0
       calls.length = 0
       refresh.mockClear()
       fetchRejection = null

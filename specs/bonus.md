@@ -47,7 +47,9 @@ meilleur à coup sûr : il le rend simplement plus probable.
 1. **Filtrer les éligibles.** Sont écartés les joueurs en `gameOver` (ils n'auront
    jamais de prochaine tentative, tout effet posé sur eux serait mort-né), ceux qui
    n'ont jamais commencé, et — pour la magie noire seulement — ceux qui portent déjà
-   deux effets négatifs.
+   deux effets négatifs. Les **joueurs test** forment un monde scellé : un vrai
+   lanceur ne les voit jamais, et eux ne voient que leurs semblables. Voir
+   [`admin.md`](./admin.md#joueurs-test).
 2. **Classer les éligibles** par progression croissante : étage, puis nombre de
    questions vues à l'étage, puis ancienneté du compte pour que l'ordre soit total
    et stable.

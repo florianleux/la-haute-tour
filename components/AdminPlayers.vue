@@ -5,17 +5,7 @@ const { players, failed, loading, acting, skipCooldown, grantLife } = await useA
 
 const actionFailed = ref(false)
 
-// Les délais s'affichent à la minute : les rafraîchir chaque demi-minute suffit
-// à ce qu'aucun chiffre affiché ne soit faux.
-const TICK_MS = 30_000
-const now = ref(Date.now())
-
-if (import.meta.client) {
-  const tick = setInterval(() => {
-    now.value = Date.now()
-  }, TICK_MS)
-  onScopeDispose(() => clearInterval(tick))
-}
+const now = useClockTick()
 
 // La première lecture n'a encore aucune fiche à montrer : on montre leur forme.
 // Une relecture, elle, garde les fiches à l'écran — le bouton cliqué porte déjà
@@ -60,9 +50,9 @@ async function act(action: PlayerAction, userId: number): Promise<void> {
       Impossible de lire les joueurs. Recharge la page.
     </BaseNotice>
 
-    <div v-if="emptyMessage" class="mt-6 rounded-xl border border-slate-800 px-4 py-3 text-sm text-slate-500">
+    <BaseEmpty v-if="emptyMessage" class="mt-6">
       {{ emptyMessage }}
-    </div>
+    </BaseEmpty>
 
     <div class="mt-6 grid gap-4 sm:grid-cols-2">
       <AdminPlayerCardSkeleton v-for="index in (firstLoad ? SKELETONS : 0)" :key="`skeleton-${index}`" />

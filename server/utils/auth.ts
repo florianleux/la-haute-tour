@@ -62,6 +62,12 @@ export async function loginWithDiscord(
 
 export interface SessionData {
   userId?: number
+  /**
+   * Le joueur test que l'admin incarne. Le vrai `userId` ne bouge pas : les
+   * pouvoirs d'admin restent attachés au compte qui s'est connecté, sinon
+   * l'incarnation serait sans retour. Voir specs/admin.md#incarnation.
+   */
+  actingAsUserId?: number
   /** Pending OAuth2 state between the Discord redirect and the callback. */
   oauthState?: string
 }
@@ -79,21 +85,39 @@ export async function useAuthSession(event: H3Event): Promise<SessionManager<Ses
   })
 }
 
-/** The signed-in player, or `null`. Always read back from the database. */
+/**
+ * Le compte qui s'est connecté, quoi qu'il incarne. C'est lui qui porte les
+ * droits : les lire sur l'identité incarnée verrouillerait l'admin dehors, le
+ * joueur test n'étant pas admin — y compris pour l'endpoint qui met fin à
+ * l'incarnation. Voir specs/admin.md#incarnation.
+ */
+export async function getSessionUser(event: H3Event): Promise<User | null> {
+  const session = await useAuthSession(event)
+
+  return loadUser(session.data.userId)
+}
+
+/**
+ * Le joueur que le jeu doit servir : celui qu'un admin incarne, ou le compte
+ * connecté. Seul endroit où la bascule se lit — les endpoints de jeu reçoivent
+ * un `User` et n'ont pas à savoir d'où il vient.
+ *
+ * Une incarnation qui ne tient plus — cible supprimée, cible qui n'est pas un
+ * joueur test, ou porteur qui n'est pas admin — est ignorée plutôt qu'honorée :
+ * on rend le compte connecté, jamais une erreur. Le champ de session peut
+ * survivre à ce qu'il désigne.
+ */
 export async function getCurrentUser(event: H3Event): Promise<User | null> {
   const session = await useAuthSession(event)
-  const userId = session.data.userId
-  if (!userId) {
-    return null
+  const signedIn = await loadUser(session.data.userId)
+
+  if (!signedIn?.isAdmin || !session.data.actingAsUserId) {
+    return signedIn
   }
 
-  const [user] = await useDatabase()
-    .select()
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1)
+  const acted = await loadUser(session.data.actingAsUserId)
 
-  return user ?? null
+  return acted?.isTest ? acted : signedIn
 }
 
 /** Call at the top of a protected handler. */
@@ -105,11 +129,27 @@ export async function requireAuth(event: H3Event): Promise<User> {
   return user
 }
 
-/** Call at the top of an admin handler. */
+/**
+ * Call at the top of an admin handler. Lit le compte connecté et non l'identité
+ * incarnée : c'est la seule façon de rester admin sous le masque.
+ */
 export async function requireAdmin(event: H3Event): Promise<User> {
-  const user = await requireAuth(event)
+  const user = await getSessionUser(event)
+  if (!user) {
+    throw createError({ statusCode: 401, statusMessage: 'Non authentifié' })
+  }
   if (!user.isAdmin) {
     throw createError({ statusCode: 403, statusMessage: 'Accès admin requis' })
   }
   return user
+}
+
+async function loadUser(id: number | undefined): Promise<User | null> {
+  if (!id) {
+    return null
+  }
+
+  const [user] = await useDatabase().select().from(users).where(eq(users.id, id)).limit(1)
+
+  return user ?? null
 }

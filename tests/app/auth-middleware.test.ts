@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testAdmin, testUser } from '../helpers/app'
 
-const { signIn, navigations, reset } = installAppGlobals()
+const { signIn, impersonate, navigations, reset } = installAppGlobals()
 
 const { default: authMiddleware } = await import('../../middleware/auth.global')
 
@@ -48,6 +48,17 @@ describe('middleware d authentification', () => {
 
   it('laisse passer un admin sur une page admin', async () => {
     signIn(testAdmin)
+
+    await middleware({ meta: { admin: true } })
+
+    expect(navigations()).toEqual([])
+  })
+
+  it('laisse un admin qui incarne un joueur test revenir sur /admin', async () => {
+    // Le jeu le prend pour un joueur ordinaire, mais les droits suivent le
+    // compte connecté : sans ça, l'incarnation serait sans retour.
+    // Voir specs/admin.md#incarnation.
+    impersonate(testAdmin, { ...testUser, id: 42, username: 'Testeur A' })
 
     await middleware({ meta: { admin: true } })
 

@@ -42,6 +42,9 @@ export default defineEventHandler(async (event): Promise<void> => {
     return sendRedirect(event, '/refus')
   }
 
-  await session.update({ userId: result.user.id, oauthState: undefined })
+  // L'incarnation ne survit pas à une connexion : sans cette remise à zéro, un
+  // second admin sur le même navigateur reprendrait celle du premier sans
+  // l'avoir demandée. Voir specs/admin.md#incarnation.
+  await session.update({ userId: result.user.id, oauthState: undefined, actingAsUserId: undefined })
   return sendRedirect(event, '/')
 })

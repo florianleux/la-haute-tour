@@ -28,7 +28,7 @@ describe('identité du joueur', () => {
     const response = await me(meRequest())
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ user: null })
+    expect(await response.json()).toEqual({ user: null, impersonator: null, testPlayers: [] })
   })
 
   it('renvoie le pseudo et la date d inscription du joueur connecté', async () => {
@@ -43,6 +43,10 @@ describe('identité du joueur', () => {
         isAdmin: false,
         createdAt: '2026-09-01T10:00:00.000Z',
       },
+      // Personne n'incarne personne, et un joueur ne se voit proposer aucune
+      // identité : le sélecteur est réservé à l'admin.
+      impersonator: null,
+      testPlayers: [],
     })
   })
 

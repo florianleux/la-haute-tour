@@ -18,8 +18,9 @@ const {
   loading,
 } = await useQuestionRun()
 
-// L'admin peut passer sa propre attente : le bouton ne se montre qu'à lui.
-const { user } = await useCurrentUser()
+// L'admin peut passer l'attente de la partie qu'il regarde — la sienne, ou
+// celle du joueur test qu'il incarne. Le bouton ne se montre qu'à lui.
+const { isAdmin } = await useCurrentUser()
 
 // Ce que la carte montre se décide en un seul endroit, testable : la page ne
 // fait que projeter cette décision. Voir utils/phase.ts.
@@ -125,7 +126,7 @@ const waiting = computed(() =>
     </BaseLoading>
 
     <BaseButton
-      v-if="user?.isAdmin && state?.phase === 'cooldown'"
+      v-if="isAdmin && state?.phase === 'cooldown'"
       variant="ghost"
       class="mt-4"
       :loading="isRunning('skipCooldown')"
