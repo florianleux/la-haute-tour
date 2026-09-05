@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
+import { CHEST_STATES, SPELL_IDS } from '../../shared/utils/spells'
 
 /**
  * Discord IDs allowed to sign up. Filled manually (admin UI or raw SQL).
@@ -157,6 +158,17 @@ export const reservations = sqliteTable('reservations', {
   /** Verdict, null while the reservation is still live. */
   correct: integer('correct', { mode: 'boolean' }),
   submittedAnswer: text('submitted_answer'),
+  /**
+   * Le coffre de cette question loot : `closed` tant qu'il n'est pas ouvert,
+   * puis `mimic` ou le sort trouvé. Null quand il n'y a pas de coffre — question
+   * ordinaire, ou ratée.
+   *
+   * Gravé à la résolution, et non dérivé comme le statut loot dont il découle :
+   * une contestation acceptée rend la question juste après coup, et le coffre,
+   * lui, reste perdu. Le statut est attaché au passage, et le passage est fini.
+   * Voir specs/bonus.md#contestation.
+   */
+  chest: text('chest', { enum: CHEST_STATES }),
 })
 
 /**
@@ -268,6 +280,20 @@ export const focusLosses = sqliteTable('focus_losses', {
   lostAt: integer('lost_at', { mode: 'timestamp' }).notNull(),
 }, table => [index('focus_losses_user_idx').on(table.userId, table.lostAt)])
 
+/**
+ * Les sorts que le joueur possède et n'a pas encore lancés. Une ligne par
+ * exemplaire : les doublons sont illimités, et un lancer en consomme un seul.
+ * Voir specs/bonus.md#sorts.
+ */
+export const inventory = sqliteTable('inventory', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  spell: text('spell', { enum: SPELL_IDS }).notNull(),
+  obtainedAt: integer('obtained_at', { mode: 'timestamp' }).notNull(),
+}, table => [index('inventory_user_idx').on(table.userId, table.obtainedAt)])
+
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect
 export type Question = typeof questions.$inferSelect
@@ -280,3 +306,4 @@ export type RecoveryQuestion = typeof recoveryQuestions.$inferSelect
 export type Dispute = typeof disputes.$inferSelect
 export type Attempt = typeof attempts.$inferSelect
 export type FocusLoss = typeof focusLosses.$inferSelect
+export type InventoryEntry = typeof inventory.$inferSelect

@@ -1,6 +1,8 @@
 import { isAnswerAccepted } from './answers'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
+import { SPELL_IDS } from '../../shared/utils/spells'
 import type { FloorRules } from './rules'
+import type { SpellId } from '../../shared/utils/spells'
 import type { MissedPoolEntry, Reservation, User } from '../db/schema'
 
 /**
@@ -60,6 +62,16 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
  */
 export function isExpired(expiresAt: Date, rules: FloorRules, now: Date): boolean {
   return now.getTime() > expiresAt.getTime() + rules.latencyGraceMs
+}
+
+/**
+ * L'échéance de l'attente qui s'ouvre quand la dernière vie tombe. Un Mimic la
+ * prend par le même chemin qu'une mauvaise réponse : « traité comme une perte de
+ * dernière vie ordinaire » ne tient que si la durée vient d'un seul endroit.
+ * Voir specs/bonus.md#coffre-et-mimic.
+ */
+export function cooldownFrom(rules: FloorRules, now: Date): Date {
+  return new Date(now.getTime() + rules.cooldownMs)
 }
 
 export interface AnswerJudgement {
@@ -133,7 +145,7 @@ export function judgeAnswer(input: AnswerInput, now: Date): AnswerJudgement {
     expired,
     lifeLost: true,
     livesAfter,
-    cooldownUntil: livesAfter <= 0 ? new Date(now.getTime() + rules.cooldownMs) : null,
+    cooldownUntil: livesAfter <= 0 ? cooldownFrom(rules, now) : null,
     seenDelta: 1,
     entersPool: true,
   }
@@ -171,6 +183,28 @@ export function isLootQuestion(input: LootQuestionInput, rules: FloorRules): boo
   }
 
   return position % rules.questionsPerChest === 0
+}
+
+export interface ChestOutcome {
+  mimic: boolean
+  /** Le sort obtenu, null sur un Mimic. */
+  spell: SpellId | null
+}
+
+/**
+ * Ce qu'un coffre contenait. Le hasard vient de l'appelant : la mécanique décide,
+ * elle ne tire pas — c'est ce qui la rend jouable sans horloge ni dé. Nommée pour
+ * le geste qu'elle fait, jeter le dé, et non pour celui du joueur.
+ * Voir specs/bonus.md#coffre-et-mimic.
+ */
+export function rollChest(rules: FloorRules, random: () => number): ChestOutcome {
+  if (random() < rules.mimicChance) {
+    return { mimic: true, spell: null }
+  }
+
+  // Tiré au hasard dans le catalogue, indépendamment du stock déjà possédé :
+  // les doublons sont illimités.
+  return { mimic: false, spell: SPELL_IDS[Math.floor(random() * SPELL_IDS.length)] }
 }
 
 export type PoolMove =

@@ -39,6 +39,11 @@ export interface FloorRules {
    * n'est stocké. Voir specs/bonus.md#question-loot.
    */
   questionsPerChest: number
+  /**
+   * La part des coffres qui sont des Mimics. Aucun objet, et toutes les vies de
+   * la tentative retirées d'un coup. Voir specs/bonus.md#coffre-et-mimic.
+   */
+  mimicChance: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -56,6 +61,7 @@ const DEFAULT_RULES: FloorRules = {
   latencyGraceMs: 1_000,
   focusGraceMs: 1_000,
   questionsPerChest: 20,
+  mimicChance: 0.05,
 }
 
 /**

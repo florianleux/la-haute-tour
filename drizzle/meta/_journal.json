@@ -50,6 +50,13 @@
       "when": 1788537940479,
       "tag": "0006_wild_crusher_hogan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1788594933263,
+      "tag": "0007_serious_wild_pack",
+      "breakpoints": true
     }
   ]
 }

@@ -83,6 +83,8 @@ export interface GameScreen {
   phase: GameState['phase']
   /** Le libellé du bouton qui fait avancer, null quand rien n'avance ici. */
   action: string | null
+  /** Le coffre à ouvrir, null quand il n'y en a pas à cet endroit. */
+  chest: GameState['chest']
 }
 
 export interface RecoveryLine {
@@ -96,15 +98,20 @@ export interface RecoveryLine {
 
 export function gameScreen(state: GameState): GameScreen {
   const answering = state.question !== null
+  const chest = answering ? null : state.chest
+  // Un coffre fermé retient le joueur : l'ouvrir est un clic distinct de
+  // « suivant », sinon l'objet se perdrait. Voir specs/bonus.md#coffre-et-mimic.
+  const holdsChest = chest !== null && !chest.opened
 
   return {
     question: state.question,
     verdict: answering ? null : state.verdict,
     recovery: state.recovery && recoveryLine(state.recovery),
     phase: state.phase,
+    chest,
     // Pendant une question, aucune action à part répondre ; à la fin de partie,
     // plus aucune. Voir specs/ecrans.md#principes.
-    action: answering || state.phase === 'gameOver' ? null : nextActionLabel(state),
+    action: answering || holdsChest || state.phase === 'gameOver' ? null : nextActionLabel(state),
   }
 }
 

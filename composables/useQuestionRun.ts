@@ -20,6 +20,8 @@ export interface QuestionRun {
   advance: () => Promise<void>
   /** L'admin passe son attente. Sans effet pour un joueur non admin. */
   skipCooldown: () => Promise<void>
+  /** Ouvre le coffre d'une question loot réussie. */
+  openChest: () => Promise<void>
   pending: Ref<boolean>
   /**
    * Vrai quand c'est le départ de la page qui a envoyé la dernière réponse. Le
@@ -64,7 +66,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   // après, ni la portée réactive ni l'instance Nuxt ne sont plus les siennes.
   // Un composable Nuxt appelé après l'await lève « called outside of setup ».
   const owner = getCurrentScope()
-  const { next, answer, skipCooldown, failed: actionFailed, pending } = usePlay()
+  const { next, answer, skipCooldown, openChest, failed: actionFailed, pending } = usePlay()
 
   const { state, failed: readFailed, loading, refresh } = await useGameState()
 
@@ -228,6 +230,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     submit,
     advance,
     skipCooldown,
+    openChest,
     pending,
     leftThePage,
     actionFailed,

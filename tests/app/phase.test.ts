@@ -16,6 +16,7 @@ function state(overrides: Partial<GameState>): GameState {
     floorSeen: 0,
     floorTotal: 0,
     attemptSeen: 0,
+    chest: null,
     ...overrides,
   }
 }
@@ -39,15 +40,15 @@ describe('action principale de l accueil', () => {
 
 const verdict = { questionId: 'q1', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true }
 
-describe('écran de jeu', () => {
-  const question = {
-    id: 'q1',
-    statement: 'Capitale de la Gironde ?',
-    expiresAt: '2026-09-03T12:00:20.000Z',
-    focusGraceMs: 1_000,
-    lootQuestion: false,
-  }
+const question = {
+  id: 'q1',
+  statement: 'Capitale de la Gironde ?',
+  expiresAt: '2026-09-03T12:00:20.000Z',
+  focusGraceMs: 1_000,
+  lootQuestion: false,
+}
 
+describe('écran de jeu', () => {
   it('ne montre que la question tant qu elle est servie', () => {
     expect(gameScreen(state({ question, verdict }))).toMatchObject({
       question,
@@ -119,5 +120,34 @@ describe('action de la page de jeu', () => {
       .toBe('Question suivante')
     expect(nextActionLabel(state({ phase: 'recovery', recovery: { ...recovery, played: 3 } })))
       .toBe('Terminer le rattrapage')
+  })
+})
+
+describe('coffre sur l écran de verdict', () => {
+  const closed = { opened: false, mimic: false, spell: null }
+
+  it('retient le joueur tant que le coffre est fermé', () => {
+    expect(gameScreen(state({ verdict, chest: closed }))).toMatchObject({
+      verdict,
+      chest: closed,
+      // Ouvrir est un clic distinct de « suivant » : rien d'autre n'avance.
+      action: null,
+    })
+  })
+
+  it('rend la suite une fois le coffre ouvert', () => {
+    const opened = { opened: true, mimic: false, spell: 'VITALITY' as const }
+
+    expect(gameScreen(state({ verdict, chest: opened }))).toMatchObject({
+      chest: opened,
+      action: 'Question suivante',
+    })
+  })
+
+  it('cache le coffre tant qu une question est servie', () => {
+    expect(gameScreen(state({ question, verdict, chest: closed }))).toMatchObject({
+      chest: null,
+      action: null,
+    })
   })
 })

@@ -10,6 +10,7 @@ const {
   submit,
   advance,
   skipCooldown,
+  openChest,
   pending,
   leftThePage,
   actionFailed,
@@ -27,7 +28,7 @@ const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 // Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
 // la page, il ferait tourner « Commencer le rattrapage » pendant qu'un admin
 // passe l'attente juste au-dessus.
-type PlayAction = 'submit' | 'advance' | 'skipCooldown'
+type PlayAction = 'submit' | 'advance' | 'skipCooldown' | 'chest'
 const running = ref<PlayAction | null>(null)
 
 function isRunning(action: PlayAction): boolean {
@@ -118,7 +119,18 @@ const waiting = computed(() =>
       Passer l'attente
     </BaseButton>
 
-    <BaseHint v-if="screen?.verdict" class="mt-6">
+    <!-- Un Mimic fait basculer en attente au moment même où le joueur l'ouvre :
+         son résultat se lit donc ici, pas sur l'écran de verdict qu'il vient de
+         quitter. Seulement pendant l'attente qu'il a ouverte : le rattrapage qui
+         suit n'a plus à la rappeler. Voir specs/bonus.md#coffre-et-mimic. -->
+    <ChestResult
+      v-if="state?.phase === 'cooldown' && screen?.chest?.opened"
+      :chest="screen.chest"
+      class="mt-6"
+    />
+
+    <!-- Juste, elle peut l'être : un Mimic envoie ici sur une bonne réponse. -->
+    <BaseHint v-if="screen?.verdict && !screen.verdict.correct" class="mt-6">
       Dernière question ratée — réponse :
       <AnswerLabel :label="screen.verdict.answerLabel" />
     </BaseHint>
@@ -225,6 +237,22 @@ const waiting = computed(() =>
           </svg>
           Contester cette question
         </BaseButton>
+
+        <!-- Le coffre, en bas du verdict. L'ouvrir est un clic distinct de
+             « suivant » : tant qu'il est fermé, rien d'autre n'avance.
+             Voir specs/bonus.md#coffre-et-mimic. -->
+        <template v-if="screen.chest">
+          <BaseButton
+            v-if="!screen.chest.opened"
+            block
+            class="mt-6"
+            :loading="isRunning('chest')"
+            @click="run('chest', openChest)"
+          >
+            Ouvrir le coffre
+          </BaseButton>
+          <ChestResult v-else :chest="screen.chest" class="mt-6" />
+        </template>
 
         <!-- Le résultat du rattrapage s'annonce à la fin, pas question par question. -->
         <BaseHint

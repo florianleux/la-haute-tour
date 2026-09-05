@@ -10,11 +10,13 @@ const { default: stateHandler } = await import('../../server/api/game/state.get'
 const { default: nextHandler } = await import('../../server/api/game/next.post')
 const { default: answerHandler } = await import('../../server/api/game/answer.post')
 const { default: poolHandler } = await import('../../server/api/game/pool.get')
+const { default: chestHandler } = await import('../../server/api/game/chest.post')
 
 const state = mountHandler('/state', stateHandler)
 const next = mountHandler('/next', nextHandler)
 const answer = mountHandler('/answer', answerHandler)
 const pool = mountHandler('/pool', poolHandler)
+const chest = mountHandler('/chest', chestHandler)
 
 function post(path: string, body: unknown, cookie?: string): Request {
   return new Request(`http://test${path}`, {
@@ -43,6 +45,7 @@ describe('endpoints de jeu', () => {
     expect((await next(post('/next', {}))).status).toBe(401)
     expect((await answer(post('/answer', { answer: 'Bordeaux' }))).status).toBe(401)
     expect((await pool(apiRequest('http://test/pool'))).status).toBe(401)
+    expect((await chest(post('/chest', {}))).status).toBe(401)
   })
 
   it('rend l état courant sans rien réserver', async () => {
@@ -88,5 +91,16 @@ describe('endpoints de jeu', () => {
     const response = await pool(apiRequest('http://test/pool?order=aleatoire', cookie))
 
     expect(response.status).toBe(400)
+  })
+
+  it('ouvre le coffre par son propre endpoint, sans rien avancer d autre', async () => {
+    // Sans coffre à ouvrir, l'appel est ignoré : il rend l'état courant, comme
+    // toute action périmée. Voir specs/architecture.md.
+    await next(post('/next', {}, cookie))
+
+    const body = await (await chest(post('/chest', {}, cookie))).json()
+
+    expect(body.chest).toBeNull()
+    expect(body.question).not.toBeNull()
   })
 })

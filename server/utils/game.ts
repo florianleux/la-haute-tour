@@ -1,12 +1,14 @@
 import { and, asc, count, desc, eq, isNull, notExists, sql } from 'drizzle-orm'
 import {
   canDrawRecovery,
+  cooldownFrom,
   isExpired,
   isLootQuestion,
   judgeAnswer,
   judgeRecovery,
   movePoolCounter,
   phaseOf,
+  rollChest,
   resumesRecovery,
 } from './mechanics'
 import { closeAttempt } from './journey'
@@ -18,12 +20,14 @@ import {
   questions,
   recoveryQuestions,
   focusLosses,
+  inventory,
   reservations,
   seenQuestions,
   users,
 } from '../db/schema'
 import type { AnswerSource, Phase } from './mechanics'
 import type { FloorRules } from './rules'
+import type { ChestState, SpellId } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
 import type { Question, Reservation, User } from '../db/schema'
 
@@ -59,6 +63,16 @@ export interface Verdict {
   lifeLost: boolean
 }
 
+export interface ChestView {
+  /** False tant que le joueur ne l'a pas ouvert : le dé n'est pas encore jeté. */
+  opened: boolean
+  /** Vrai quand le coffre ouvert était piégé. Dit une fois, plutôt que déduit
+   * d'un sort absent à chaque endroit qui le lit. */
+  mimic: boolean
+  /** Le sort obtenu. Null sur un coffre fermé comme sur un Mimic. */
+  spell: SpellId | null
+}
+
 export interface RecoveryProgress {
   total: number
   played: number
@@ -91,6 +105,11 @@ export interface GameState {
   floorTotal: number
   /** Questions vues depuis le début de la tentative en cours. */
   attemptSeen: number
+  /**
+   * Le coffre de la question loot qui vient d'être réussie, null partout
+   * ailleurs. Tant qu'il est fermé, rien ne sert la question suivante.
+   */
+  chest: ChestView | null
 }
 
 /**
@@ -285,7 +304,7 @@ interface Resolution {
  */
 async function resolve(
   db: Database,
-  user: User,
+  snapshot: PlayerSnapshot,
   reservation: Reservation,
   answer: string,
   now: Date,
@@ -293,6 +312,7 @@ async function resolve(
 ): Promise<Resolution> {
   // Le joueur vient du snapshot de l'appelant, chargé dans le même aller-retour
   // que la réservation : le relire ici coûterait un hop pour la même ligne.
+  const { user } = snapshot
   const rules = rulesForFloor(user.currentFloor)
   const judgement = judgeAnswer({
     user,
@@ -304,9 +324,14 @@ async function resolve(
   }, now)
   const { correct } = judgement
 
+  // Le coffre se grave ici, une fois pour toutes : une contestation acceptée
+  // rendra peut-être la question juste plus tard, sans faire naître de coffre.
+  // Voir specs/bonus.md#contestation.
+  const chest: ChestState | null = correct && servesLoot(snapshot, reservation, rules) ? 'closed' : null
+
   await db
     .update(reservations)
-    .set({ resolvedAt: now, correct, submittedAnswer: answer })
+    .set({ resolvedAt: now, correct, submittedAnswer: answer, chest })
     .where(eq(reservations.userId, user.id))
 
   const resolved: Reservation = {
@@ -314,6 +339,7 @@ async function resolve(
     resolvedAt: now,
     correct,
     submittedAnswer: answer,
+    chest,
   }
 
   if (reservation.mode === 'recovery') {
@@ -386,6 +412,39 @@ function servedQuestion(
   }
 }
 
+/** Le coffre d'une réservation, tel que l'écran le lit. Null quand il n'y en a pas. */
+function chestOf(reservation: Reservation): ChestView | null {
+  const { chest } = reservation
+
+  if (chest === null) {
+    return null
+  }
+
+  if (chest === 'closed') {
+    return { opened: false, mimic: false, spell: null }
+  }
+
+  if (chest === 'mimic') {
+    return { opened: true, mimic: true, spell: null }
+  }
+
+  return { opened: true, mimic: false, spell: chest }
+}
+
+/**
+ * Le statut loot de la question réservée : elle occupera le rang suivant dans les
+ * questions vues de l'étage. La même formule sert à l'annoncer au joueur et à
+ * graver son coffre — un seul endroit décide.
+ */
+function servesLoot(snapshot: PlayerSnapshot, reservation: Reservation, rules: FloorRules): boolean {
+  return isLootQuestion({
+    position: snapshot.seen + 1,
+    floorTotal: snapshot.floorTotal,
+    mode: reservation.mode,
+  }, rules)
+}
+
+
 /**
  * Derives the phase from a snapshot. The only query it may still make is the
  * recovery tally, and only when the player has no lives left: a recovery run
@@ -407,9 +466,12 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
     attemptSeen: snapshot.attemptSeen,
+    chest: null as ChestView | null,
   }
 
   if (reservation && question) {
+    const rules = rulesForFloor(user.currentFloor)
+
     // The verdict is carried whatever the phase: the question that took the last
     // life is precisely the one whose answer the player still has to read.
     if (reservation.resolvedAt) {
@@ -422,18 +484,17 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
         // fait perdre une.
         lifeLost: reservation.mode === 'ascent' && !reservation.correct,
       }
+      base.chest = chestOf(reservation)
     }
     else {
-      const rules = rulesForFloor(user.currentFloor)
       // La question en jeu n'est pas encore résolue : c'est le rang suivant
       // qu'elle occupera dans les questions vues de l'étage.
-      const lootQuestion = isLootQuestion({
-        position: seen + 1,
-        floorTotal: snapshot.floorTotal,
-        mode: reservation.mode,
-      }, rules)
-
-      base.question = servedQuestion(reservation, question.statement, rules, lootQuestion)
+      base.question = servedQuestion(
+        reservation,
+        question.statement,
+        rules,
+        servesLoot(snapshot, reservation, rules),
+      )
     }
   }
 
@@ -466,7 +527,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     && isExpiredForUser(reservation, snapshot.user, now)
 
   if (expired) {
-    const resolution = await resolve(db, snapshot.user, reservation, '', now)
+    const resolution = await resolve(db, snapshot, reservation, '', now)
 
     // Rien d'autre n'a bougé : l'attente ne peut pas s'achever dans la seconde où
     // elle démarre. On rend ce qui vient d'être écrit.
@@ -530,6 +591,13 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   let fresh = snapshot.user
   let seenDelta = 0
 
+  // Un coffre encore fermé retient le joueur : passer par-dessus lui ferait
+  // perdre l'objet, et le clic « suivant » est justement celui dont l'ouverture
+  // doit se distinguer. Voir specs/bonus.md#coffre-et-mimic.
+  if (reservation?.chest === 'closed') {
+    return stateFrom(db, snapshot, now)
+  }
+
   if (reservation && !reservation.resolvedAt) {
     // A live reservation is not replaced: fleeing a question costs what a wrong
     // answer costs. An expired one resolves first, then the next is drawn.
@@ -537,7 +605,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
       return stateFrom(db, snapshot, now)
     }
 
-    const resolution = await resolve(db, snapshot.user, reservation, '', now)
+    const resolution = await resolve(db, snapshot, reservation, '', now)
     fresh = resolution.user
     seenDelta = resolution.seenDelta
   }
@@ -591,8 +659,74 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
       resolvedAt: null,
       correct: null,
       submittedAnswer: null,
+      chest: null,
     },
     question: drawn.question,
+  }, now)
+}
+
+/**
+ * Le joueur ouvre son coffre. Le dé est jeté ici, une seule fois, et son résultat
+ * est gravé sur la réservation : tiré à la question, le joueur en connaîtrait le
+ * contenu avant de répondre ; non gravé, un rechargement le rejouerait.
+ *
+ * Une ouverture sans coffre, ou sur un coffre déjà ouvert, est ignorée — l'appareil
+ * qui l'a envoyée est en retard, pas fautif.
+ */
+export async function openPlayerChest(
+  db: Database,
+  user: User,
+  now: Date,
+  random: () => number = Math.random,
+): Promise<GameState> {
+  const snapshot = await loadSnapshot(db, user.id)
+  const { reservation } = snapshot
+  const rules = rulesForFloor(snapshot.user.currentFloor)
+
+  if (!reservation || reservation.chest !== 'closed') {
+    return stateFrom(db, snapshot, now)
+  }
+
+  const outcome = rollChest(rules, random)
+  const chest: ChestState = outcome.spell ?? 'mimic'
+
+  // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures
+  // simultanées jetteraient deux dés, et la seconde écraserait la première —
+  // un sort de plus à l'inventaire, ou un Mimic par-dessus.
+  const [claimed] = await db
+    .update(reservations)
+    .set({ chest })
+    .where(and(eq(reservations.userId, user.id), eq(reservations.chest, 'closed')))
+    .returning()
+
+  if (!claimed) {
+    // Un autre appel l'a ouvert entre-temps : ce dé-ci ne compte pas.
+    return buildState(db, user.id, now)
+  }
+
+  if (outcome.spell) {
+    // Une ligne par exemplaire : le tirage ignore le stock, les doublons sont
+    // illimités.
+    await db.insert(inventory).values({ userId: user.id, spell: outcome.spell, obtainedAt: now })
+  }
+
+  const opened: Reservation = { ...reservation, chest }
+
+  if (!outcome.mimic) {
+    return stateFrom(db, { ...snapshot, reservation: opened }, now)
+  }
+
+  // Le Mimic retire toutes les vies d'un coup, traité comme une perte de dernière
+  // vie ordinaire : l'attente démarre, et le verdict de la question — juste, elle
+  // l'était — reste lisible par-dessus.
+  const cooldownUntil = cooldownFrom(rules, now)
+
+  await db.update(users).set({ lives: 0, cooldownUntil }).where(eq(users.id, user.id))
+
+  return stateFrom(db, {
+    ...snapshot,
+    user: { ...snapshot.user, lives: 0, cooldownUntil },
+    reservation: opened,
   }, now)
 }
 
@@ -681,6 +815,7 @@ async function reserve(
     resolvedAt: null,
     correct: null,
     submittedAnswer: null,
+    chest: null,
   }
 
   await db
@@ -899,7 +1034,7 @@ export async function submitAnswer(
     })
   }
 
-  const resolution = await resolve(db, snapshot.user, reservation, answer, now, source)
+  const resolution = await resolve(db, snapshot, reservation, answer, now, source)
 
   return stateFrom(db, {
     ...snapshot,

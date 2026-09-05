@@ -13,6 +13,8 @@ export interface Play {
   answer: (text: string, source?: AnswerSource) => Promise<void>
   /** L'admin passe sa propre attente. Sans effet pour un joueur non admin. */
   skipCooldown: () => Promise<void>
+  /** Ouvrir le coffre d'une question loot réussie. Le dé se jette côté serveur. */
+  openChest: () => Promise<void>
   /** True when the last action came back empty-handed. */
   failed: Ref<boolean>
   pending: Ref<boolean>
@@ -47,6 +49,7 @@ export function usePlay(): Play {
     next: () => act('/api/game/next'),
     answer: (text, source = 'player') => act('/api/game/answer', { answer: text, source }),
     skipCooldown: () => act('/api/game/skip-cooldown'),
+    openChest: () => act('/api/game/chest'),
     failed,
     pending,
   }

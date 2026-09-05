@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { canDrawRecovery, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, phaseOf } from '../../server/utils/mechanics'
+import { canDrawRecovery, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, rollChest, phaseOf } from '../../server/utils/mechanics'
+import { SPELL_IDS } from '../../shared/utils/spells'
 import { rulesForFloor } from '../../server/utils/rules'
+import { rolls } from '../helpers/random'
 import type { LootQuestionInput } from '../../server/utils/mechanics'
 
 const NOW = new Date('2026-09-03T12:00:00.000Z')
@@ -239,5 +241,27 @@ describe('question loot', () => {
 
   it('ignore le rattrapage : ses questions sont déjà vues', () => {
     expect(at(step, { mode: 'recovery' })).toBe(false)
+  })
+})
+
+describe('contenu d un coffre', () => {
+  it('rend un Mimic sous le taux', () => {
+    const roll = rules.mimicChance - 0.001
+
+    expect(rollChest(rules, rolls(roll))).toEqual({ mimic: true, spell: null })
+  })
+
+  it('rend un sort au taux pile', () => {
+    expect(rollChest(rules, rolls(rules.mimicChance, 0))).toEqual({
+      mimic: false,
+      spell: SPELL_IDS[0],
+    })
+  })
+
+  it('tire dans tout le catalogue, jusqu au dernier', () => {
+    expect(rollChest(rules, rolls(0.5, 0.999))).toEqual({
+      mimic: false,
+      spell: SPELL_IDS[SPELL_IDS.length - 1],
+    })
   })
 })
