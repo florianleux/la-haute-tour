@@ -192,12 +192,28 @@ au-dessus du seuil, aucune règle de repli n'est nécessaire.
 
 ### Rareté assumée
 
-Avec trois vies et un taux d'erreur plausible, un joueur meurt toutes les dix
-questions environ et loote toutes les cinquante : **il traverse quatre ou cinq
-attentes les mains vides avant d'en trouver une avec quelque chose à lancer**, et la
-règle « un exemplaire par sort et par attente » ne mordra jamais. C'est accepté, et
-c'est même le but : un sort est un événement rare, pas une routine. Sur un étage de
-166 questions, cela fait trois coffres ; sur les 1000 visés, vingt.
+**Le nombre de coffres d'un étage ne dépend pas du joueur, il dépend du deck** :
+c'est la taille de l'étage divisée par le seuil. Trois coffres sur un étage de 166
+questions, vingt sur les 1000 visés — pour tout le monde, du meilleur au pire. Ce
+que le niveau change, c'est le *rythme* : en combien de tentatives on les ramasse,
+et combien d'attentes on traverse entre deux.
+
+Et ce rythme est bien plus rapide qu'on ne le croit de loin. Mesuré sur les
+premières parties réelles : **97 % de bonnes réponses**, soit trois vies perdues en
+une centaine de questions. Une tentative dure donc à peu près 110 questions et
+rapporte **deux coffres**, là où un raisonnement de coin de table sur un taux
+d'échec de 30 % en annonçait un pour cinq attentes.
+
+Deux conséquences à garder en tête, et la seconde est la plus importante :
+
+- La règle « un exemplaire d'un même sort par attente » ne mordra jamais. Elle reste
+  utile pour l'idempotence du lancer, mais son rôle d'équilibrage est mort.
+- **Les chiffres du jeu ont été posés en imaginant un joueur qui se trompe souvent.**
+  Le vrai se trompe rarement. Tout ce qui se déclenche à la mort — l'attente, le
+  Pool Échecs, le rattrapage, et l'ancrage des Sorts sur la tentative suivante — se
+  déclenche donc bien plus rarement que prévu. La mesure ci-dessus porte sur la
+  difficulté 1, la plus facile : elle est un plafond, pas une moyenne. À revoir
+  quand des parties auront tourné sur les étages hauts.
 
 ## Coffre et Mimic
 
