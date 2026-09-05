@@ -91,6 +91,16 @@ export function isAnswering(state: GameState | null): boolean {
   return Boolean(state?.question)
 }
 
+/**
+ * L'attente : la seule phase où les Sorts existent, donc la seule d'où la page
+ * qui les porte est atteignable. Dit ici, comme isAnswering, plutôt qu'à chaque
+ * endroit qui en dépend — la baguette de la barre et la garde de la page.
+ * Voir specs/ecrans.md#sorts.
+ */
+export function isCooldown(state: GameState | null): boolean {
+  return state?.phase === 'cooldown'
+}
+
 export function gameScreen(state: GameState): GameScreen {
   const answering = isAnswering(state)
   const chest = answering ? null : state.chest

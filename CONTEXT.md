@@ -21,6 +21,8 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Que devient le joueur ? | [`server/utils/mechanics.ts`](server/utils/mechanics.ts) — les décisions, sans base de données |
 | Comment est-ce lu et écrit ? | [`server/utils/game.ts`](server/utils/game.ts) — lectures, écritures, réservation |
 | Ce qu'affiche l'écran de jeu | [`utils/phase.ts`](utils/phase.ts) — `gameScreen()` : ce que la carte montre pour un état donné |
+| Ce que porte la barre d'icônes | [`utils/nav.ts`](utils/nav.ts) — `navIcons()` : lien, page courante, ou icône éteinte |
+| Ce que le joueur possède | [`server/utils/inventory.ts`](server/utils/inventory.ts) — l'inventaire, lisible en attente seulement |
 | Qui peut contester, et ce qu'accepter change | [`server/utils/disputes.ts`](server/utils/disputes.ts) |
 | Ce que coûte un départ de page | [`server/utils/focus.ts`](server/utils/focus.ts) et la détection dans [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) |
 | Le deck vu par l'administration | [`server/utils/questions.ts`](server/utils/questions.ts) |
