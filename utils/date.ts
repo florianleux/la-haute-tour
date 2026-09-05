@@ -12,6 +12,17 @@ export function formatDay(iso: string): string {
   return dayFormat.format(new Date(iso))
 }
 
+/** Le jour et l'heure, même fuseau explicite et pour la même raison. */
+const dayTimeFormat = new Intl.DateTimeFormat('fr-FR', {
+  dateStyle: 'long',
+  timeStyle: 'short',
+  timeZone: 'Europe/Paris',
+})
+
+export function formatDayTime(iso: string): string {
+  return dayTimeFormat.format(new Date(iso))
+}
+
 /**
  * How long is left, as a player reads a wait — détaillé à la seconde, parce que
  * l'attente se compte à la seconde près. "11 h 58 min 12 s", "4 min 32 s", "32 s".

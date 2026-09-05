@@ -51,3 +51,27 @@
 ## Réglages du jeu
 
 Vies, timers, taille du rattrapage, seuils, durées d'attente ne sont **pas** administrables depuis l'interface : ils vivent dans le code, en un seul endroit, et se modifient par déploiement. Voir [`mecanique.md`](./mecanique.md#règles-chiffrées).
+
+## Maintenance
+
+Un interrupteur, sous `/admin`, qui **ferme le jeu à tous les joueurs sauf aux
+admins**. Il sert à travailler sur la partie — importer un deck, corriger des
+données — sans qu'une partie avance sous les mains.
+
+- Les joueurs **se connectent normalement** : rien n'est coupé à l'authentification.
+- Ce qui se ferme est la porte qui ouvre la suite : **plus aucune question n'est
+  servie**. Ni la suivante en ascension, ni le démarrage d'un rattrapage, ni la
+  première question d'un nouvel étage.
+- **Ce qui est commencé se finit.** Un joueur qui tient une question la répond, lit
+  son verdict et ouvre son coffre : couper là lui volerait une réponse qu'il a
+  payée d'un timer, et la bonne réponse ne doit jamais être escamotée (voir
+  [`ecrans.md`](./ecrans.md#ascent--verdict)). C'est au clic suivant que la
+  maintenance apparaît.
+- Tous les autres — en attente, en rattrapage prêt à démarrer, ou n'ayant jamais
+  commencé — voient l'écran de maintenance dès leur arrivée.
+- **Les attentes ne sont pas suspendues.** Le délai continue de courir pendant la
+  maintenance ; il s'achève, simplement le joueur ne peut rien en faire tant que le
+  jeu est fermé. Suspendre demanderait de décaler chaque échéance à la réouverture,
+  et de décider ce qu'on fait de celles déjà échues — pour un gain nul, l'attente
+  étant faite pour s'écouler sans le joueur.
+- L'admin, lui, joue normalement : c'est tout l'intérêt de l'interrupteur.

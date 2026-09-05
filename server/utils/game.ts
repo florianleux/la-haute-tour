@@ -22,6 +22,7 @@ import {
   recoveryQuestions,
   focusLosses,
   inventory,
+  settings,
   reservations,
   seenQuestions,
   users,
@@ -111,6 +112,12 @@ export interface GameState {
    * ailleurs. Tant qu'il est fermé, rien ne sert la question suivante.
    */
   chest: ChestView | null
+  /**
+   * Le jeu est fermé **pour ce joueur-là** : l'administration a coupé et il n'est
+   * pas admin. Une question déjà servie et son verdict restent lisibles ; c'est le
+   * passage à la suite qui n'existe plus. Voir specs/admin.md#maintenance.
+   */
+  maintenance: boolean
 }
 
 /**
@@ -122,6 +129,8 @@ export interface GameState {
  */
 export interface PlayerSnapshot {
   user: User
+  /** Le jeu est fermé par l'administration. Vrai pour tout le monde, admins compris. */
+  gameClosed: boolean
   /** Questions seen on the current floor. */
   seen: number
   /** Questions the current floor holds. */
@@ -162,6 +171,10 @@ async function loadSnapshot(db: Database, userId: number, now: Date): Promise<Pl
       attemptSeen: sql<number>`(select count(*) from ${seenQuestions}
         where ${seenQuestions.userId} = ${users.id}
           and ${seenQuestions.seenAt} >= ${users.attemptStartedAt})`,
+      // Lu avec le joueur plutôt qu'à part : la maintenance se consulte à chaque
+      // lecture d'état, et un aller-retour de plus par question se paierait cher.
+      gameClosed: sql<number>`coalesce((select ${settings.maintenanceSince} is not null
+        from ${settings} where ${settings.id} = 1), 0)`,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -181,6 +194,7 @@ async function loadSnapshot(db: Database, userId: number, now: Date): Promise<Pl
     // éditions de l'administration. Voir server/utils/deck.ts.
     floorTotal: await floorSize(db, row.user.currentFloor, now),
     attemptSeen: row.attemptSeen,
+    gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
   }
@@ -468,6 +482,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     floorTotal: snapshot.floorTotal,
     attemptSeen: snapshot.attemptSeen,
     chest: null as ChestView | null,
+    maintenance: snapshot.gameClosed && !user.isAdmin,
   }
 
   if (reservation && question) {
@@ -591,6 +606,13 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
   let fresh = snapshot.user
   let seenDelta = 0
+
+  // Le jeu est fermé : plus aucune question n'est servie. Ce qui est commencé se
+  // finit par d'autres chemins — répondre et ouvrir son coffre restent permis, et
+  // le verdict se lit. Voir specs/admin.md#maintenance.
+  if (snapshot.gameClosed && !snapshot.user.isAdmin) {
+    return stateFrom(db, snapshot, now)
+  }
 
   // Un coffre encore fermé retient le joueur : passer par-dessus lui ferait
   // perdre l'objet, et le clic « suivant » est justement celui dont l'ouverture

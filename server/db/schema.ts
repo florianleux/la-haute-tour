@@ -312,6 +312,22 @@ export const inventory = sqliteTable('inventory', {
   obtainedAt: integer('obtained_at', { mode: 'timestamp' }).notNull(),
 }, table => [index('inventory_user_idx').on(table.userId, table.obtainedAt)])
 
+/**
+ * Les réglages du jeu, en une seule ligne — d'où la clé figée à 1. Il n'y en a
+ * qu'un pour l'instant, la maintenance ; une table plutôt qu'une variable
+ * d'environnement parce que l'admin l'actionne en cours de route, sans redéployer.
+ * Voir specs/admin.md#maintenance.
+ */
+export const settings = sqliteTable('settings', {
+  id: integer('id').primaryKey(),
+  /**
+   * Depuis quand le jeu est fermé aux joueurs. Null quand il est ouvert : une date
+   * plutôt qu'un booléen, pour que l'administration sache aussi depuis combien de
+   * temps elle a fermé.
+   */
+  maintenanceSince: integer('maintenance_since', { mode: 'timestamp' }),
+}, table => [check('settings_single_row', sql`${table.id} = 1`)])
+
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect
 export type Question = typeof questions.$inferSelect
@@ -325,3 +341,4 @@ export type Dispute = typeof disputes.$inferSelect
 export type Attempt = typeof attempts.$inferSelect
 export type FocusLoss = typeof focusLosses.$inferSelect
 export type InventoryEntry = typeof inventory.$inferSelect
+export type Settings = typeof settings.$inferSelect

@@ -27,6 +27,7 @@ const served: GameState = {
   floorTotal: 0,
   attemptSeen: 0,
   chest: null,
+  maintenance: false,
 }
 
 describe('actions du joueur', () => {

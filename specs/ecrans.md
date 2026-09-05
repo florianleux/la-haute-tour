@@ -111,6 +111,15 @@ Atteignable **en attente seulement**, par l'icône baguette. Trois choses :
 
 Hors attente, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
 
+## Maintenance
+
+Quand l'administration ferme le jeu, un joueur non-admin voit un écran qui le dit et
+n'offre rien d'autre : ni question, ni attente, ni pool. La barre d'icônes reste,
+c'est la seule sortie.
+
+Il ne remplace pas une question en cours ni le verdict qui la suit — voir
+[`admin.md`](./admin.md#maintenance). Il prend leur place au clic suivant.
+
 ## Écrans d'administration
 
 Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).

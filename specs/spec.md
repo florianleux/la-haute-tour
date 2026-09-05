@@ -43,6 +43,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Parcours** | `journey` | Ce que le profil montre du chemin déjà fait : étage atteint, questions vues, meilleure série, tentatives achevées. Jamais l'état de l'instant. |
 | **Rendre une vie** | `grantLife` | Rendre une vie à un joueur — contestation acceptée, ou geste d'admin. Sans plafond : c'est une réparation, pas une récompense. S'il n'en avait plus, l'attente et le rattrapage en cours sont annulés et la tentative se poursuit. |
 | **Passer l'attente** | `skipCooldown` | Geste d'admin qui fait échoir immédiatement l'attente d'un joueur. La suite se déroule comme si le délai s'était écoulé : rattrapage si le Pool Échecs le permet, reprise sinon. |
+| **Maintenance** | `maintenance` | Interrupteur d'administration qui ferme le jeu à tous sauf aux admins. Les joueurs se connectent toujours, mais n'obtiennent plus de nouvelle question. |
 | **Fiche joueur** | `playerCard` | Ce que l'admin voit d'un joueur d'un seul coup d'œil : identité, étage, progression, phase, vies, attente en cours et contestations en attente. Lecture pure, sans effet sur la partie. |
 | **Sort** | `spell` | Le seul objet qu'on obtient en jouant. Se lance pendant l'attente, sur soi, un allié ou un ennemi. Voir [`bonus.md`](./bonus.md). |
 | **Lancer** | `cast` | L'action de consommer un sort de son inventaire vers une catégorie de cible. |
