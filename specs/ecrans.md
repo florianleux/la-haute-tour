@@ -4,9 +4,9 @@
 
 - **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers les Sorts, un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
 - **Chaque icône a trois états.** **Lien** quand la page est atteignable d'ici. **Actif** quand c'est la page qu'on regarde : elle est mise en avant et ne mène nulle part, comme dans un en-tête ordinaire — on ne clique pas vers là où on est déjà. **Désactivé** quand on ne peut pas y aller maintenant : éteinte et inerte. La barre ne disparaît jamais ; ce sont ses liens qui s'éteignent.
-- **L'accueil reste le hub.** C'est la page d'atterrissage par défaut, celle qu'on retrouve en rechargeant, et le point de départ que suit un joueur qui ne cherche rien de précis. Il n'a pas d'icône : la barre ne le remplace pas, elle évite d'y repasser pour aller ailleurs.
-- **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, fin — vit sur la même page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
-- **Étage et vies s'affichent à deux endroits seulement** : sur l'accueil, pour savoir où l'on en est avant de reprendre, et pendant le jeu, là où ils bougent. Nulle part ailleurs.
+- **Le jeu est la page d'accueil.** `/` est la partie : c'est là qu'on atterrit en se connectant, là qu'on retombe en rechargeant, et il n'existe pas de vestibule devant. Un joueur qui n'a jamais commencé y trouve l'invitation à le faire ; les autres, leur phase. Rien à traverser pour jouer.
+- **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, fin — vit sur cette page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
+- **Étage et vies ne s'affichent que pendant le jeu**, là où ils bougent. Nulle part ailleurs.
 - **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension comme en rattrapage — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente ou le palier, rien ne tourne et la barre redevient vivante.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
 - **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'en attente, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette est donc **désactivée hors attente** — visible partout, cliquable là seulement. Elle annonce ainsi une page qui existe, à un moment qui viendra.
@@ -17,9 +17,8 @@
 |---|---|---|
 | Connexion | `/login` | oui |
 | Accès refusé | `/refus` | oui |
-| Accueil | `/` | non |
+| Jeu | `/` — 5 phases, page d'accueil | non |
 | Profil | `/profil` | non |
-| Jeu | `/jouer` — 5 phases | non |
 | Sorts | `/sorts` — en attente seulement | non |
 | Dashboard admin | `/admin` | non, réservé admin |
 | File de contestation | `/admin` | non, réservé admin |
@@ -30,29 +29,12 @@ Toute page non listée comme ouverte redirige vers la connexion.
 
 ## Connexion et accès refusé
 
-- **Connexion** : titre du jeu, une phrase disant que l'accès se fait par Discord sur invitation, un bouton de connexion Discord. Un joueur déjà connecté est renvoyé vers l'accueil.
+- **Connexion** : titre du jeu, une phrase disant que l'accès se fait par Discord sur invitation, un bouton de connexion Discord. Un joueur déjà connecté est renvoyé vers le jeu.
 - **Accès refusé** : le compte Discord n'est pas sur la whitelist, aucun compte n'a été créé, il faut demander l'accès à l'administrateur. Un retour vers la connexion.
-
-## Accueil
-
-Le joueur y voit son pseudo, son **étage** et ses **vies**, une action principale, et un lien vers son profil.
-
-L'action principale dépend de la phase renvoyée par le serveur — l'accueil lit le même état de jeu que la page de jeu, sans jamais rien réserver :
-
-| Phase | Action proposée |
-|---|---|
-| jamais commencé | Commencer l'ascension |
-| `ascent` | Reprendre l'ascension |
-| `cooldown` | Voir l'attente, avec le temps restant |
-| `recovery` | Aller au rattrapage |
-| `floorEnd` | Continuer vers l'étage suivant |
-| `gameOver` | Revoir la fin |
-
-Toutes mènent à la page de jeu. Le libellé annonce ce qu'on va y trouver — un joueur en attente n'a pas à cliquer pour l'apprendre.
 
 ## Profil
 
-Pseudo Discord, date d'inscription, **parcours**, bouton de déconnexion, retour à l'accueil.
+Pseudo Discord, date d'inscription, **parcours**, bouton de déconnexion. Le retour au jeu se fait par la barre, comme partout ailleurs.
 
 Le parcours dit le chemin déjà fait, jamais l'état de l'instant :
 
@@ -65,7 +47,7 @@ Une tentative se mesure en **questions vues**, l'unité de progression du jeu, e
 
 S'y ajoute, en une phrase, le nombre de **contestations acceptées** sur celles ouvertes.
 
-Ce que le profil ne montre toujours pas : ni phase, ni vies, ni attente — l'état de l'instant vit sur l'accueil et dans le jeu — et **jamais** de donnée de triche, les flags étant réservés à l'administration.
+Ce que le profil ne montre toujours pas : ni phase, ni vies, ni attente — l'état de l'instant vit dans le jeu — et **jamais** de donnée de triche, les flags étant réservés à l'administration.
 
 ## Jeu
 
@@ -115,7 +97,7 @@ L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet
 
 ### `gameOver` — fin de partie
 
-Message de félicitations, précédé du verdict de la dernière question. Phase terminale, sans classement : la seule sortie est l'accueil.
+Message de félicitations, précédé du verdict de la dernière question. Phase terminale, sans classement : plus rien n'avance, et la barre est la seule sortie.
 
 ## Sorts
 
@@ -142,5 +124,5 @@ Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
 - **Aucun inventaire hors attente** : la page Sorts n'existe que pendant l'attente.
 - **Aucune cible avant le lancer** : le joueur choisit une catégorie, jamais une personne.
 - **Aucun compteur de triche** : les flags existent, ils sont réservés à l'administration.
-- **Aucun état de jeu sur le profil** : il y montre son parcours, pas sa phase, ses vies ni son attente — celles-là vivent sur l'accueil et dans le jeu.
-- **Aucune question à venir** : l'accueil n'annonce jamais l'énoncé suivant.
+- **Aucun état de jeu sur le profil** : il y montre son parcours, pas sa phase, ses vies ni son attente — celles-là vivent dans le jeu.
+- **Aucune question à venir** : rien n'annonce jamais l'énoncé suivant avant qu'il soit servi.

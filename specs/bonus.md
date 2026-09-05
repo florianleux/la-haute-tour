@@ -16,7 +16,7 @@ Les équipes sont traitées à part, dans `equipes.md`, qui reste à écrire.
 ### Où et quand
 
 Un Sort **se lance uniquement pendant l'attente** — jamais en ascension, ni en
-rattrapage, ni sur l'accueil ou le profil. L'écran d'attente porte un accès vers
+rattrapage, ni sur le profil. L'écran d'attente porte un accès vers
 une **page Sorts** dédiée, où le lancer se fait réellement.
 
 **Un seul exemplaire d'un même sort par attente**, par lanceur. Le catalogue en

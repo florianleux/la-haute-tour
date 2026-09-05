@@ -66,7 +66,7 @@ Deux règles gouvernent cette API :
 
 Une action portant sur une réservation déjà résolue est **ignorée** : l'API renvoie l'état courant, sans erreur. L'appareil qui l'a envoyée n'est pas fautif, il est périmé.
 
-Les vies et l'étage affichés sur l'accueil viennent de ce même endpoint : il n'existe qu'une définition de « où en est le joueur ». L'endpoint d'identité ne sert qu'à l'identité.
+Les vies et l'étage affichés pendant le jeu viennent de ce même endpoint : il n'existe qu'une définition de « où en est le joueur ». L'endpoint d'identité ne sert qu'à l'identité.
 
 ## Multi-appareil
 
