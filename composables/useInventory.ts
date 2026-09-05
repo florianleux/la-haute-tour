@@ -1,5 +1,7 @@
 import type { Ref } from 'vue'
 import type { InventoryEntryView, InventoryView } from '~~/server/utils/inventory'
+import type { CastView } from '~~/server/utils/effects'
+import type { SpellId } from '~~/shared/utils/spells'
 
 /** Cache key of the inventory read: one name, so nobody re-types the string. */
 export const INVENTORY_KEY = 'inventory'
@@ -8,8 +10,16 @@ export interface InventoryRead {
   entries: Ref<InventoryEntryView[]>
   /** Le nombre d'exemplaires possédés, doublons compris. */
   total: Ref<number>
+  /** Ce que le joueur a lancé, du plus récent au plus ancien. */
+  log: Ref<CastView[]>
   /** Vrai quand la lecture a échoué : un inventaire vide n'est pas la même nouvelle. */
   failed: Ref<boolean>
+  /** Le sort dont le lancer est en vol, null au repos. */
+  casting: Ref<SpellId | null>
+  /** Vrai quand le dernier lancer n'est pas parti. */
+  castFailed: Ref<boolean>
+  /** Lance un sort sur soi et réaffiche l'inventaire que le serveur renvoie. */
+  cast: (spell: SpellId) => Promise<void>
 }
 
 /**
@@ -22,9 +32,40 @@ export async function useInventory(): Promise<InventoryRead> {
     () => $fetch<InventoryView>('/api/game/inventory', useApiFetchOptions()),
   )
 
+  const casting = ref<SpellId | null>(null)
+  const castFailed = ref(false)
+
+  /**
+   * Le lancer rend l'inventaire tel qu'il est ensuite : on réaffiche ce que le
+   * serveur renvoie plutôt que de retirer l'exemplaire de son côté. Un second
+   * lancer du même sort revient sans rien changer — c'est la même réponse.
+   */
+  async function cast(spell: SpellId): Promise<void> {
+    casting.value = spell
+    castFailed.value = false
+
+    try {
+      data.value = await $fetch<InventoryView>('/api/game/cast', {
+        method: 'POST',
+        body: { spell },
+        ...useApiFetchOptions(),
+      })
+    }
+    catch {
+      castFailed.value = true
+    }
+    finally {
+      casting.value = null
+    }
+  }
+
   return {
     entries: computed<InventoryEntryView[]>(() => data.value?.entries ?? []),
     total: computed<number>(() => data.value?.total ?? 0),
+    log: computed<CastView[]>(() => data.value?.log ?? []),
     failed: computed<boolean>(() => Boolean(error.value)),
+    casting,
+    castFailed,
+    cast,
   }
 }

@@ -71,6 +71,10 @@ export interface GameScreen {
   action: string | null
   /** Le coffre à ouvrir, null quand il n'y en a pas à cet endroit. */
   chest: GameState['chest']
+  /** Les sorts qui attendent la prochaine tentative : l'attente les récapitule. */
+  pendingEffects: GameState['effects']
+  /** Ceux qui courent sur la tentative en jeu : l'ascension en affiche une icône. */
+  activeEffects: GameState['effects']
 }
 
 export interface RecoveryLine {
@@ -114,6 +118,11 @@ export function gameScreen(state: GameState): GameScreen {
     recovery: state.recovery && recoveryLine(state.recovery),
     phase: state.phase,
     chest,
+    // Deux lectures du même champ, parce que tous les effets s'ancrent sur la
+    // tentative suivante : ce qui attend se lit pendant l'attente, ce qui court
+    // s'affiche pendant l'ascension. Voir specs/bonus.md#écrans.
+    pendingEffects: state.effects.filter(effect => effect.state === 'pending'),
+    activeEffects: state.effects.filter(effect => effect.state === 'active'),
     // Pendant une question, aucune action à part répondre. L'attente porte les
     // siennes — passer l'attente, lancer le rattrapage — et la fin de partie n'en
     // a plus aucune. Voir specs/ecrans.md#principes.

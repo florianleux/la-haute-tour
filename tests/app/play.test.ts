@@ -28,6 +28,7 @@ const served: GameState = {
   attemptSeen: 0,
   chest: null,
   maintenance: false,
+  effects: [],
 }
 
 describe('actions du joueur', () => {

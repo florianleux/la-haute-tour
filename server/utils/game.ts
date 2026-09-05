@@ -12,7 +12,8 @@ import {
   resumesRecovery,
 } from './mechanics'
 import { floorSize } from './deck'
-import { closeAttempt } from './journey'
+import { closeAttempt, openAttempt } from './journey'
+import { effectsQuery, toEffectViews } from './effects'
 import { rulesForFloor } from './rules'
 import {
   acceptedAnswers,
@@ -27,6 +28,7 @@ import {
   seenQuestions,
   users,
 } from '../db/schema'
+import type { EffectView } from './effects'
 import type { AnswerSource, Phase } from './mechanics'
 import type { FloorRules } from './rules'
 import type { ChestState, SpellId } from '../../shared/utils/spells'
@@ -118,6 +120,12 @@ export interface GameState {
    * passage à la suite qui n'existe plus. Voir specs/admin.md#maintenance.
    */
   maintenance: boolean
+  /**
+   * Les Sorts posés sur le joueur : ceux qui attendent sa prochaine tentative,
+   * que l'écran d'attente récapitule, et ceux ancrés sur celle qu'il joue, dont
+   * l'ascension affiche une icône. Voir specs/bonus.md#écrans.
+   */
+  effects: EffectView[]
 }
 
 /**
@@ -137,6 +145,8 @@ export interface PlayerSnapshot {
   floorTotal: number
   /** Questions seen since the current attempt started. */
   attemptSeen: number
+  /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
+  effects: EffectView[]
   reservation?: Reservation
   /** The reserved question, loaded with the reservation. */
   question?: Question
@@ -180,16 +190,24 @@ async function loadSnapshot(db: Database, userId: number, now: Date): Promise<Pl
     .where(eq(users.id, userId))
     .limit(1)
 
-  const [held] = await db
-    .select({ reservation: reservations, question: questions })
-    .from(reservations)
-    .innerJoin(questions, eq(questions.id, reservations.questionId))
-    .where(eq(reservations.userId, userId))
-    .limit(1)
+  // La réservation et les effets voyagent dans le même lot : deux requêtes, un
+  // seul aller-retour réseau. Voir tests/server/query-budget.test.ts.
+  const [holding, effects] = await db.batch([
+    db
+      .select({ reservation: reservations, question: questions })
+      .from(reservations)
+      .innerJoin(questions, eq(questions.id, reservations.questionId))
+      .where(eq(reservations.userId, userId))
+      .limit(1),
+    effectsQuery(db, userId),
+  ])
+
+  const [held] = holding
 
   return {
     user: row.user,
     seen: row.seen,
+    effects: toEffectViews(effects, row.user),
     // Lu au deck plutôt que recompté ici : c'est une constante entre deux
     // éditions de l'administration. Voir server/utils/deck.ts.
     floorTotal: await floorSize(db, row.user.currentFloor, now),
@@ -483,6 +501,9 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     attemptSeen: snapshot.attemptSeen,
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin,
+    // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une
+    // icône, et ce qui module les règles doit se voir là où il agit.
+    effects: snapshot.effects,
   }
 
   if (reservation && question) {
@@ -582,18 +603,14 @@ async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promis
     return
   }
 
-  const rules = rulesForFloor(user.currentFloor)
-  if (canDrawRecovery(await poolSize(db, user), rules)) {
+  if (canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
     return
   }
 
   // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
   // contestable. Voir specs/validation.md#contestation.
   await closeAttempt(db, user, now)
-  await db
-    .update(users)
-    .set({ lives: rules.lives, cooldownUntil: null, attemptStartedAt: now })
-    .where(eq(users.id, user.id))
+  await openAttempt(db, user, now)
 }
 
 /**
@@ -915,21 +932,20 @@ async function finishRecovery(db: Database, user: User, now: Date): Promise<Game
   await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))
   await db.delete(reservations).where(eq(reservations.userId, user.id))
 
-  // La tentative ne se clôt qu'au moment où la suivante s'ouvre : une attente de
-  // plus prolonge celle qui court.
   if (verdict.resumes) {
+    // La tentative ne se clôt qu'au moment où la suivante s'ouvre : une attente
+    // de plus prolonge celle qui court. Les vies rendues sont celles de la
+    // tentative qui s'ouvre, effets compris — d'où openAttempt plutôt que le
+    // décompte du verdict, qui ne connaît que les règles de l'étage.
     await closeAttempt(db, user, now)
+    await openAttempt(db, user, now)
   }
-
-  await db
-    .update(users)
-    .set({
-      lives: verdict.livesAfter,
-      cooldownUntil: verdict.cooldownUntil,
-      // Une reprise ouvre une tentative ; une attente de plus la prolonge.
-      attemptStartedAt: verdict.resumes ? now : user.attemptStartedAt,
-    })
-    .where(eq(users.id, user.id))
+  else {
+    await db
+      .update(users)
+      .set({ lives: verdict.livesAfter, cooldownUntil: verdict.cooldownUntil })
+      .where(eq(users.id, user.id))
+  }
 
   // Le verdict du rattrapage se lit sur un écran à part, pas sur la dernière
   // question : il voyage avec l'état jusqu'à ce que le joueur reprenne.

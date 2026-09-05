@@ -1,5 +1,7 @@
 import { and, asc, count, eq, gte, max, min, sql } from 'drizzle-orm'
-import { attempts, disputes, questions, seenQuestions } from '../db/schema'
+import { anchorEffects } from './effects'
+import { attempts, disputes, questions, seenQuestions, users } from '../db/schema'
+import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 
@@ -8,6 +10,27 @@ import type { User } from '../db/schema'
  * l'instant — la phase, les vies et l'attente vivent sur l'accueil et dans le
  * jeu, et n'ont rien à faire ici. Voir specs/ecrans.md#profil.
  */
+
+/**
+ * Ouvre une tentative : les vies reviennent, l'attente s'efface, et ce qui
+ * attendait s'y ancre. Appelée aux deux endroits où une tentative commence, et
+ * nulle part ailleurs — une vie rendue par une contestation poursuit celle en
+ * cours et ne réveille donc aucun effet. Voir specs/validation.md#contestation.
+ */
+export async function openAttempt(db: Database, user: User, now: Date): Promise<FloorRules> {
+  // Les effets en attente s'ancrent sur cette tentative-ci, et les règles
+  // qu'elle jouera en tiennent compte : c'est le même instant qui sert d'ancre
+  // et de début de tentative, et les deux s'écrivent ici pour qu'aucun appelant
+  // ne puisse les désaccorder. Voir specs/bonus.md#ancrage-et-durée-de-vie.
+  const rules = await anchorEffects(db, user, now)
+
+  await db
+    .update(users)
+    .set({ lives: rules.lives, cooldownUntil: null, attemptStartedAt: now })
+    .where(eq(users.id, user.id))
+
+  return rules
+}
 
 /**
  * Clôt la tentative en cours et enregistre sa longueur, en questions vues.

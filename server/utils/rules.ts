@@ -1,3 +1,5 @@
+import type { SpellEffect } from '../../shared/utils/spells'
+
 /**
  * The one rule set of the game. No number of the game lives anywhere else: a
  * caller asks for the rules of a floor, never for an isolated constant.
@@ -44,6 +46,12 @@ export interface FloorRules {
    * la tentative retirées d'un coup. Voir specs/bonus.md#coffre-et-mimic.
    */
   mimicChance: number
+  /**
+   * Les vies qu'une Vitalité ajoute — ou retire, en magie noire. Un facteur
+   * appliqué aux vies de la tentative, pas une valeur qui les remplace.
+   * Voir specs/mecanique.md#ce-que-les-sorts-modifient.
+   */
+  vitalityLives: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -62,6 +70,7 @@ const DEFAULT_RULES: FloorRules = {
   focusGraceMs: 1_000,
   questionsPerChest: 50,
   mimicChance: 0.05,
+  vitalityLives: 1,
 }
 
 /**
@@ -72,4 +81,26 @@ const FLOOR_OVERRIDES: Partial<Record<number, Partial<FloorRules>>> = {}
 
 export function rulesForFloor(floor: number): FloorRules {
   return { ...DEFAULT_RULES, ...FLOOR_OVERRIDES[floor] }
+}
+
+/**
+ * Les règles telles qu'un joueur les joue : celles de son étage, modulées par
+ * les effets posés sur lui. Un effet ne remplace jamais une règle — il l'écarte
+ * de ce que le jeu de règles dit, du facteur que ce même jeu de règles porte.
+ * C'est ici que la lecture cesse de dépendre du seul étage.
+ *
+ * Les deux faces se composent plutôt qu'elles ne s'annulent : deux blanches et
+ * une noire valent une vie de plus, pas deux qui se neutralisent puis une.
+ * Voir specs/mecanique.md#ce-que-les-sorts-modifient et specs/bonus.md#cumul.
+ */
+export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): FloorRules {
+  const vitality = effects.filter(effect => effect.spell === 'VITALITY')
+
+  return {
+    ...rules,
+    lives: vitality.reduce(
+      (lives, { face }) => lives + (face === 'boon' ? rules.vitalityLives : -rules.vitalityLives),
+      rules.lives,
+    ),
+  }
 }

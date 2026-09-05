@@ -5,22 +5,24 @@ import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
 /**
- * La base est distante en production : chaque requête est un aller-retour réseau,
- * mesuré à ~135 ms. Ces budgets empêchent un N+1 de revenir s'installer sur les
- * chemins que le joueur emprunte à chaque question.
+ * La base est distante en production : chaque aller-retour réseau est mesuré à
+ * ~135 ms. Ces budgets empêchent un N+1 de revenir s'installer sur les chemins
+ * que le joueur emprunte à chaque question.
  *
- * On compte les appels au query builder ; un sous-select en compte un de plus que
- * d'allers-retours réels, d'où le budget de 5 sur un chemin qui en fait 4.
+ * On compte les allers-retours, pas les requêtes : un lot en fait un seul, quel
+ * que soit le nombre de requêtes qu'il transporte, et c'est ce qui se paie.
  */
 function countQueries(db: Database): () => number {
   let count = 0
+  // Le client libSQL sous Drizzle : c'est lui qui part sur le réseau, une fois
+  // par `execute` et une fois par `batch`, quel que soit le contenu du lot.
+  const client = (db as unknown as { $client: Record<'execute' | 'batch', (...args: unknown[]) => unknown> }).$client
 
-  for (const method of ['select', 'insert', 'update', 'delete'] as const) {
-    const original = db[method].bind(db)
-    Object.assign(db, {
+  for (const method of ['execute', 'batch'] as const) {
+    const original = client[method].bind(client)
+    Object.assign(client, {
       [method]: (...args: unknown[]) => {
         count++
-        // @ts-expect-error instrumentation de test : la signature varie par méthode
         return original(...args)
       },
     })

@@ -52,6 +52,8 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Magie blanche** | `boon` | La face positive d'un sort, appliquée sur soi ou un allié. |
 | **Magie noire** | `curse` | La face négative, appliquée sur un ennemi. Miroir systématique de la face blanche. |
 | **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non. |
+| **Face** | `face` | Laquelle des deux magies un effet porte : blanche (`boon`) sur soi ou un allié, noire (`curse`) sur un ennemi. Gravée au lancer, jamais redéduite de la cible. |
+| **Ancrage** | `anchor` | Le moment où un effet en attente se fixe sur une tentative — celle qui s'ouvre. Il vaut alors le début de cette tentative, et meurt quand elle finit. |
 | **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable en attente seulement. |
 | **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 50e question résolue de l'étage ouvre un coffre si elle est juste. |
 | **Coffre** | `chest` | Ce qui s'ouvre au verdict d'une question loot réussie. Donne un sort, ou un Mimic. |

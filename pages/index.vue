@@ -83,6 +83,7 @@ const waiting = computed(() =>
   state.value?.phase === 'cooldown'
   || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
 )
+
 </script>
 
 <template>
@@ -143,6 +144,15 @@ const waiting = computed(() =>
       class="mt-6"
     />
 
+    <!-- Ce qui attend la prochaine tentative, lu avant de la reprendre : tous
+         les effets s'ancrent sur elle. Voir specs/bonus.md#écrans. -->
+    <BaseSection v-if="screen?.pendingEffects.length" title="Ce qui t'attend" class="mt-8">
+      <template #lead>
+        Ces sorts s'appliqueront à ta prochaine tentative, puis disparaîtront avec elle.
+      </template>
+      <EffectList :effects="screen.pendingEffects" class="mt-3" />
+    </BaseSection>
+
     <!-- Juste, elle peut l'être : un Mimic envoie ici sur une bonne réponse. -->
     <BaseHint v-if="screen?.verdict && !screen.verdict.correct" class="mt-6">
       Dernière question ratée — réponse :
@@ -179,6 +189,11 @@ const waiting = computed(() =>
       <BaseHint v-if="state.phase === 'ascent'" class="mt-2">
         Étage {{ state.floor }} — question {{ state.question ? state.floorSeen + 1 : state.floorSeen }} / {{ state.floorTotal }}
       </BaseHint>
+
+      <!-- Une icône par effet actif : un joueur dont les chiffres ont changé
+           doit pouvoir comprendre pourquoi plutôt que de croire à un bug.
+           C'est un état, comme les vies — pas une action. -->
+      <EffectList v-if="screen.activeEffects.length" :effects="screen.activeEffects" class="mt-3" />
 
       <BaseHint v-if="screen.recovery">
         Rattrapage — question {{ screen.recovery.position }}

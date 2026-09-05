@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { CHEST_STATES, SPELL_IDS } from '../../shared/utils/spells'
+import { CHEST_STATES, SPELL_FACES, SPELL_IDS } from '../../shared/utils/spells'
 
 /**
  * Discord IDs allowed to sign up. Filled manually (admin UI or raw SQL).
@@ -313,6 +313,53 @@ export const inventory = sqliteTable('inventory', {
 }, table => [index('inventory_user_idx').on(table.userId, table.obtainedAt)])
 
 /**
+ * Un sort lancé, et ce qu'il attend pour agir. Une ligne par lancer : le sort
+ * est consommé de l'inventaire, et ce qu'il devient vit ici.
+ *
+ * `anchoredAt` porte tout le cycle de vie, sans second champ qui pourrait le
+ * contredire. Null, l'effet attend la prochaine tentative de sa cible. Posé, il
+ * vaut le `attemptStartedAt` de la tentative sur laquelle il s'est ancré : il
+ * est actif tant que la cible joue celle-là, et mort dès qu'elle en ouvre une
+ * autre — consommé ou non, sans qu'aucun ménage n'ait à passer.
+ *
+ * Le lanceur est gardé pour deux raisons : la règle « un exemplaire d'un même
+ * sort par attente, par lanceur », et le journal nominatif des deux côtés.
+ * Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+export const activeEffects = sqliteTable('active_effects', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  /** La cible : celle qui subit ou reçoit l'effet. */
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  casterId: integer('caster_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  spell: text('spell', { enum: SPELL_IDS }).notNull(),
+  /** Magie blanche sur soi ou un allié, noire sur un ennemi. */
+  face: text('face', { enum: SPELL_FACES }).notNull(),
+  castAt: integer('cast_at', { mode: 'timestamp' }).notNull(),
+  /**
+   * L'attente pendant laquelle le sort est parti, désignée par son échéance —
+   * un sort ne se lance que là, donc elle existe toujours. C'est elle qui porte
+   * la règle « un exemplaire par attente », et non l'attente d'un ancrage : un
+   * rattrapage entièrement manqué ouvre une **seconde** attente sans ouvrir de
+   * tentative, et le premier lancer y bloquerait sinon le second.
+   */
+  castCooldownUntil: integer('cast_cooldown_until', { mode: 'timestamp' }).notNull(),
+  /** La tentative sur laquelle l'effet s'est ancré. Null tant qu'il attend. */
+  anchoredAt: integer('anchored_at', { mode: 'timestamp' }),
+}, table => [
+  index('active_effects_user_idx').on(table.userId, table.anchoredAt),
+  index('active_effects_caster_idx').on(table.casterId, table.castAt),
+  // « Un seul exemplaire d'un même sort par attente, par lanceur. » En faire une
+  // contrainte donne l'idempotence gratuitement — double-clic, second onglet ou
+  // requête rejouée tombent dessus. Voir specs/bonus.md#où-et-quand.
+  unique('active_effects_one_per_cooldown')
+    .on(table.casterId, table.spell, table.castCooldownUntil),
+])
+
+/**
  * Les réglages du jeu, en une seule ligne — d'où la clé figée à 1. Il n'y en a
  * qu'un pour l'instant, la maintenance ; une table plutôt qu'une variable
  * d'environnement parce que l'admin l'actionne en cours de route, sans redéployer.
@@ -341,4 +388,5 @@ export type Dispute = typeof disputes.$inferSelect
 export type Attempt = typeof attempts.$inferSelect
 export type FocusLoss = typeof focusLosses.$inferSelect
 export type InventoryEntry = typeof inventory.$inferSelect
+export type ActiveEffect = typeof activeEffects.$inferSelect
 export type Settings = typeof settings.$inferSelect

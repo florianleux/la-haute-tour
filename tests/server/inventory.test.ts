@@ -2,15 +2,17 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
 import { inventory } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
-import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
+import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { SpellId } from '../../shared/utils/spells'
 
 installNitroGlobals()
 
 const { default: inventoryHandler } = await import('../../server/api/game/inventory.get')
+const { default: castHandler } = await import('../../server/api/game/cast.post')
 
 const inventoryRead = mountHandler('/inventory', inventoryHandler)
+const cast = mountHandler('/cast', castHandler)
 
 /** Un joueur en attente : c'est la seule phase où les Sorts existent. */
 const IN_COOLDOWN = { lives: 0, cooldownUntil: new Date(Date.now() + 60_000) }
@@ -50,6 +52,7 @@ describe('inventaire des sorts', () => {
         { spell: 'VITALITY', count: 2 },
         { spell: 'RESPITE', count: 1 },
       ],
+      log: [],
     })
   })
 
@@ -71,7 +74,7 @@ describe('inventaire des sorts', () => {
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ total: 0, entries: [] })
+    expect(await response.json()).toEqual({ total: 0, entries: [], log: [] })
   })
 
   it('ne montre rien à un autre joueur', async () => {
@@ -81,7 +84,7 @@ describe('inventaire des sorts', () => {
 
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(other)))
 
-    expect(await response.json()).toEqual({ total: 0, entries: [] })
+    expect(await response.json()).toEqual({ total: 0, entries: [], log: [] })
   })
 
   it('ferme la page hors attente, URL comprise', async () => {
@@ -99,5 +102,59 @@ describe('inventaire des sorts', () => {
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(403)
+  })
+
+  describe('lancer', () => {
+    it('refuse tout sans session', async () => {
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }))
+
+      expect(response.status).toBe(401)
+    })
+
+    it('consomme l exemplaire et rend l inventaire à jour', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY', 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+
+      expect(response.status).toBe(200)
+      const page = await response.json()
+      expect(page.entries).toEqual([{ spell: 'VITALITY', count: 1 }])
+      expect(page.log).toMatchObject([{ spell: 'VITALITY', face: 'boon', targetName: 'gandalf' }])
+    })
+
+    it('refuse un second lancer du même sort sans erreur, en rendant l état courant', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY', 'VITALITY')
+
+      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+
+      expect(response.status).toBe(200)
+      const page = await response.json()
+      expect(page.entries).toEqual([{ spell: 'VITALITY', count: 1 }])
+      expect(page.log).toHaveLength(1)
+    })
+
+    it('ne lance rien hors attente, URL comprise', async () => {
+      const userId = await createPlayer(db)
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+
+      expect(response.status).toBe(403)
+    })
+
+    it('rejette un sort qui n existe pas au catalogue', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+      const cookie = await sessionCookieFor(userId)
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'FIREBALL' }, cookie))
+
+      expect(response.status).toBe(400)
+    })
   })
 })
