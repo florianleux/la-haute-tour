@@ -52,7 +52,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Magie noire** | `curse` | La face négative, appliquée sur un ennemi. Miroir systématique de la face blanche. |
 | **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non. |
 | **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable en attente seulement. |
-| **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 20e question résolue de l'étage ouvre un coffre si elle est juste. |
+| **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 50e question résolue de l'étage ouvre un coffre si elle est juste. |
 | **Coffre** | `chest` | Ce qui s'ouvre au verdict d'une question loot réussie. Donne un sort, ou un Mimic. |
 | **Mimic** | `mimic` | Le coffre piégé : aucun objet, et toutes les vies de la tentative retirées d'un coup. |
 | **Talisman** | `talisman` | Passif équipé en continu, qui module les Sorts. Hors périmètre. |

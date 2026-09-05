@@ -34,7 +34,7 @@ export interface FloorRules {
    */
   focusGraceMs: number
   /**
-   * Questions résolues entre deux coffres. La 20e question résolue de l'étage
+   * Questions résolues entre deux coffres. La 50e question résolue de l'étage
    * en ouvre un si elle est juste — le statut se dérive de ce décompte, rien
    * n'est stocké. Voir specs/bonus.md#question-loot.
    */
@@ -60,7 +60,7 @@ const DEFAULT_RULES: FloorRules = {
   cooldownAfterFailedRecoveryMs: 4 * HOUR_MS,
   latencyGraceMs: 1_000,
   focusGraceMs: 1_000,
-  questionsPerChest: 20,
+  questionsPerChest: 50,
   mimicChance: 0.05,
 }
 

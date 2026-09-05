@@ -172,7 +172,7 @@ Trois lieux d'affichage :
 
 ## Question loot
 
-- La question servie est **loot** quand elle sera la 20e, 40e, 60e… question résolue
+- La question servie est **loot** quand elle sera la 50e, 100e, 150e… question résolue
   de l'étage. Le seuil est une règle chiffrée, surchargeable par étage.
 - **Rien n'est stocké.** Le statut se dérive du nombre de questions vues à l'étage,
   qui est déjà la seule unité de progression du jeu. Il n'existe pas de second
@@ -192,10 +192,12 @@ au-dessus du seuil, aucune règle de repli n'est nécessaire.
 
 ### Rareté assumée
 
-Avec trois vies et un taux d'erreur plausible, un joueur meurt à peu près deux fois
-plus souvent qu'il ne loote. **L'inventaire sera vide une attente sur deux**, et la
-règle « un exemplaire par sort et par attente » ne mordra presque jamais. C'est
-accepté : un sort est un événement, pas une routine.
+Avec trois vies et un taux d'erreur plausible, un joueur meurt toutes les dix
+questions environ et loote toutes les cinquante : **il traverse quatre ou cinq
+attentes les mains vides avant d'en trouver une avec quelque chose à lancer**, et la
+règle « un exemplaire par sort et par attente » ne mordra jamais. C'est accepté, et
+c'est même le but : un sort est un événement rare, pas une routine. Sur un étage de
+166 questions, cela fait trois coffres ; sur les 1000 visés, vingt.
 
 ## Coffre et Mimic
 
@@ -265,7 +267,7 @@ et aient tourné — c'est leur définition même.
 | Piste | Positif | Négatif | État |
 |---|---|---|---|
 | **Double lancer** | les deux faces partent ensemble, vers deux cibles distinctes | un seul lancer toutes les 24 h | périmé : avec la rareté du loot, le malus ne coûte rien |
-| **Coffres fréquents** | seuil du coffre à 10 au lieu de 20 | Mimic à 30 % | périmé : deviendrait le seul moyen d'atteindre un rythme vivable, donc obligatoire |
+| **Coffres fréquents** | seuil du coffre divisé par deux | Mimic à 30 % | périmé : deviendrait le seul moyen d'atteindre un rythme vivable, donc obligatoire |
 | **Attente écourtée** | attente réduite de 30 % | le Pool Échecs n'est plus affiché en attente | tient — vrai arbitrage |
 
 ## Livraison

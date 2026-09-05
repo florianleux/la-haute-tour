@@ -109,7 +109,7 @@ Valeurs par défaut, identiques aux 6 étages :
 | Attente après la dernière vie perdue | 12 h |
 | Attente après un rattrapage entièrement manqué | 4 h |
 | Tolérance de perte de focus | 1 s |
-| Questions résolues entre deux coffres | 20 |
+| Questions résolues entre deux coffres | 50 |
 | Chance de Mimic à l'ouverture d'un coffre | 5 % |
 | Effets négatifs simultanés par joueur | 2 |
 | Vitalité — vies ajoutées ou retirées | 1 |
