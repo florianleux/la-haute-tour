@@ -11,12 +11,14 @@ const { default: nextHandler } = await import('../../server/api/game/next.post')
 const { default: answerHandler } = await import('../../server/api/game/answer.post')
 const { default: poolHandler } = await import('../../server/api/game/pool.get')
 const { default: chestHandler } = await import('../../server/api/game/chest.post')
+const { default: unknownHandler } = await import('../../server/api/[...]')
 
 const state = mountHandler('/state', stateHandler)
 const next = mountHandler('/next', nextHandler)
 const answer = mountHandler('/answer', answerHandler)
 const pool = mountHandler('/pool', poolHandler)
 const chest = mountHandler('/chest', chestHandler)
+const unknown = mountHandler('/api/nimportequoi', unknownHandler)
 
 function post(path: string, body: unknown, cookie?: string): Request {
   return new Request(`http://test${path}`, {
@@ -102,5 +104,13 @@ describe('endpoints de jeu', () => {
 
     expect(body.chest).toBeNull()
     expect(body.question).not.toBeNull()
+  })
+
+  it('répond 404 sur une route d API inconnue, sans rediriger', async () => {
+    // L'attrape-tout des pages ramène au jeu ; une API, elle, doit dire non —
+    // aucun client ne sait lire une redirection vers du HTML.
+    const response = await unknown(apiRequest('http://test/api/nimportequoi'))
+
+    expect(response.status).toBe(404)
   })
 })

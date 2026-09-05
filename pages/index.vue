@@ -86,9 +86,6 @@ const waiting = computed(() =>
     <BaseButton block class="mt-8" :loading="isRunning('advance')" @click="run('advance', advance)">
       Reprendre l'ascension
     </BaseButton>
-    <BaseButton to="/" variant="ghost" block class="mt-3">
-      Retour à l'accueil
-    </BaseButton>
   </BaseCard>
 
   <BaseCard v-else-if="waiting" wide :title="state?.phase === 'cooldown' ? 'Attente' : 'Rattrapage'">
@@ -147,10 +144,6 @@ const waiting = computed(() =>
       @click="run('advance', advance)"
     >
       Commencer le rattrapage
-    </BaseButton>
-
-    <BaseButton to="/" variant="ghost" block class="mt-3">
-      Retour à l'accueil
     </BaseButton>
   </BaseCard>
 
@@ -297,15 +290,6 @@ const waiting = computed(() =>
         @click="run('advance', advance)"
       >
         {{ screen.action }}
-      </BaseButton>
-      <BaseButton
-        v-else-if="screen.phase === 'gameOver'"
-        to="/"
-        variant="ghost"
-        block
-        class="mt-6"
-      >
-        Retour à l'accueil
       </BaseButton>
     </template>
 
