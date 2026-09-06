@@ -1,7 +1,7 @@
 import { and, asc, count, eq, inArray, like, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { recountSeenBy, shiftFloorSize } from './deck'
+import { floorSize, recountSeenBy, shiftFloorSize, wholeDeckSize } from './deck'
 import { acceptedAnswers, questions, seenQuestions } from '../db/schema'
 import type { Database } from '../db/client'
 
@@ -81,23 +81,36 @@ export async function listQuestions(
   ].filter((clause): clause is NonNullable<typeof clause> => clause !== undefined)
   const where = conditions.length ? and(...conditions) : undefined
 
-  const [totalRow] = await db.select({ value: count() }).from(questions).where(where)
+  // Sans recherche, le total se lit au deck : une ligne par étage, contre un
+  // parcours du deck entier. Une recherche, elle, impose le parcours — un
+  // `LIKE '%…%'` ne s'indexe pas — mais c'est le seul cas qui le paie.
+  // Voir server/utils/deck.ts.
+  const total = query.search
+    ? (await db.select({ value: count() }).from(questions).where(where))[0].value
+    : query.floor === undefined
+        ? await wholeDeckSize(db)
+        : await floorSize(db, query.floor)
 
   // Paginer sur les questions : on tire d'abord les ids de la page, puis on
   // ramène leurs réponses acceptées — sinon une question à plusieurs réponses
   // pousserait la suivante hors de la page.
+  //
+  // Trié dans l'ordre du deck, celui que l'index `(floor, rank)` porte déjà :
+  // la page est un saut dans l'index, là où trier par date de création
+  // parcourait tout le deck et le triait en mémoire, à chaque frappe de la
+  // recherche. C'est aussi l'ordre que le joueur rencontrera.
   const idRows = await db
     .select({ id: questions.id })
     .from(questions)
     .where(where)
-    .orderBy(asc(questions.floor), asc(questions.createdAt), asc(questions.id))
+    .orderBy(asc(questions.floor), asc(questions.rank))
     .limit(query.limit)
     .offset(query.offset)
 
   const ids = idRows.map(row => row.id)
 
   if (!ids.length) {
-    return { questions: [], total: totalRow.value }
+    return { questions: [], total }
   }
 
   const rows = await db
@@ -111,7 +124,7 @@ export async function listQuestions(
     .from(questions)
     .leftJoin(acceptedAnswers, eq(acceptedAnswers.questionId, questions.id))
     .where(inArray(questions.id, ids))
-    .orderBy(asc(questions.floor), asc(questions.createdAt), asc(questions.id), asc(acceptedAnswers.id))
+    .orderBy(asc(questions.floor), asc(questions.rank), asc(acceptedAnswers.id))
 
   // Une question sans réponse acceptée existe en base ; l'admin doit pouvoir
   // la voir pour la réparer, d'où la jointure externe. L'ordre des ids de la
@@ -133,7 +146,7 @@ export async function listQuestions(
     }
   }
 
-  return { questions: ids.map(id => listed.get(id)!), total: totalRow.value }
+  return { questions: ids.map(id => listed.get(id)!), total }
 }
 
 export async function addQuestion(db: Database, draft: QuestionDraft): Promise<AdminQuestion> {

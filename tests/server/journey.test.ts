@@ -27,7 +27,9 @@ describe('parcours', () => {
       await see(true, 1)
       await see(false, 2)
 
-      await closeAttempt(db, player, NOW)
+      // Relu : le joueur porte sa longueur de tentative, et la copie d'avant
+      // les questions vues ne la connaît pas. Voir tests/helpers/db.ts.
+      await closeAttempt(db, await loadPlayer(db, player.id), NOW)
 
       expect(await db.select().from(attempts)).toMatchObject([{
         userId: player.id,
@@ -50,7 +52,9 @@ describe('parcours', () => {
     })
 
     it('n inscrit rien quand aucune question n a été vue', async () => {
-      await closeAttempt(db, player, NOW)
+      // Relu : le joueur porte sa longueur de tentative, et la copie d'avant
+      // les questions vues ne la connaît pas. Voir tests/helpers/db.ts.
+      await closeAttempt(db, await loadPlayer(db, player.id), NOW)
 
       expect(await db.select().from(attempts)).toHaveLength(0)
     })

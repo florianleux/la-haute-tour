@@ -72,6 +72,16 @@ export async function upcomingQuestions(
 }
 
 /**
+ * Ce que le deck entier contient, tous étages confondus : six lignes lues, au
+ * lieu de le parcourir. L'administration l'affiche au-dessus de sa liste.
+ */
+export async function wholeDeckSize(db: Database): Promise<number> {
+  const rows = await db.select({ total: deckFloors.total }).from(deckFloors)
+
+  return rows.reduce((sum, row) => sum + row.total, 0)
+}
+
+/**
  * Le compte d'un étage bouge d'autant. Rendu comme requête plutôt qu'exécuté :
  * l'édition du deck l'écrit dans le même lot que la question elle-même, sinon
  * une interruption au milieu laisserait le compte en désaccord avec ce que

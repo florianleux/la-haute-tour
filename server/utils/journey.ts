@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gte, max, min, sql } from 'drizzle-orm'
+import { asc, count, eq, max, min, sql } from 'drizzle-orm'
 import { anchorEffects } from './effects'
 import { attempts, disputes, questions, seenQuestions, users } from '../db/schema'
 import type { FloorRules } from './rules'
@@ -45,15 +45,11 @@ export async function openAttempt(db: Database, user: User, now: Date): Promise<
  * Une tentative sans aucune question vue n'en est pas une : rien n'est écrit.
  */
 export async function closeAttempt(db: Database, user: User, now: Date): Promise<void> {
-  const [row] = await db
-    .select({ seen: count() })
-    .from(seenQuestions)
-    .where(and(
-      eq(seenQuestions.userId, user.id),
-      gte(seenQuestions.seenAt, user.attemptStartedAt),
-    ))
+  // Le joueur porte déjà sa longueur : la recompter lisait une ligne par
+  // question qu'il a vue. Voir server/db/schema.ts.
+  const seen = user.attemptSeen
 
-  if (row.seen === 0) {
+  if (seen === 0) {
     return
   }
 
@@ -61,7 +57,7 @@ export async function closeAttempt(db: Database, user: User, now: Date): Promise
     userId: user.id,
     startedAt: user.attemptStartedAt,
     endedAt: now,
-    seen: row.seen,
+    seen,
     floor: user.currentFloor,
   })
 }
