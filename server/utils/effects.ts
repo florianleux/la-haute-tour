@@ -1,11 +1,13 @@
-import { and, desc, eq, isNull, notExists, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, ne, notExists, sql } from 'drizzle-orm'
 import { rulesForFloor, rulesWithEffects } from './rules'
+import { drawTarget } from './targets'
 import { activeEffects, inventory, missedPool, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
-import { isWaitBound } from '../../shared/utils/spells'
+import { faceFor, isWaitBound } from '../../shared/utils/spells'
 import type { SpellFace, SpellId } from '../../shared/utils/spells'
+import type { CastableTargetKind } from '../../shared/utils/teams'
 
 /**
  * Un effet tel qu'un écran le montre : quel sort, quelle face, de qui, et s'il
@@ -21,11 +23,29 @@ export interface EffectView {
   state: 'pending' | 'active'
 }
 
-/** Une ligne du journal : ce que le joueur a lancé, sur qui, et quand. */
+/**
+ * Une ligne du journal : ce que le joueur a lancé, sur qui, et quand. Le nom est
+ * null quand le tirage n'a désigné personne — le sort est parti dans le vide, et
+ * le journal le dit plutôt que de taire un exemplaire dépensé.
+ */
 export interface CastView {
   spell: SpellId
   face: SpellFace
-  targetName: string
+  targetName: string | null
+  /** ISO 8601. */
+  castAt: string
+}
+
+/**
+ * Une ligne de l'autre journal : ce que le joueur a reçu, de qui, et quand.
+ * L'anonymat vaut au moment du lancer, pour qu'on ne vise pas toujours la même
+ * personne ; il n'a plus de raison d'être une fois le sort parti.
+ * Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
+ */
+export interface ReceivedView {
+  spell: SpellId
+  face: SpellFace
+  casterName: string
   /** ISO 8601. */
   castAt: string
 }
@@ -34,20 +54,30 @@ export interface CastView {
  * Lancer un sort. L'exemplaire quitte l'inventaire et le sort est consommé,
  * qu'il produise un effet ou non.
  *
+ * Le lanceur choisit une **catégorie**, jamais une personne : sur soi, la cible
+ * est lui-même ; sur un allié, le serveur la tire. Un pool éligible vide ne
+ * désigne personne — le sort part quand même et ne fait rien.
+ * Voir specs/bonus.md#tirage-de-la-cible.
+ *
  * Ce que l'effet attend dépend du sort : Vitalité et Chronomancie s'ancrent sur
  * la prochaine tentative de la cible, tandis que Répit, Indulgence et Purge
- * trouvent leur déclencheur dans l'attente en cours et agissent tout de suite.
+ * trouvent leur déclencheur dans l'attente **de la cible** et agissent tout de
+ * suite. Une cible qui ne vit pas d'attente n'a rien à leur donner à mordre.
  * Voir shared/utils/spells.ts et specs/bonus.md#ancrage-et-durée-de-vie.
- *
- * Seule la catégorie Soi existe aujourd'hui : la cible est le lanceur, et la
- * face est donc blanche. Allié et Ennemi arrivent avec les équipes.
  *
  * Un lancer sans exemplaire à consommer, ou une attente dont le budget est
  * épuisé, ne fait rien et ne dit rien : l'appareil qui l'a envoyé est en retard
  * ou en double, pas fautif. L'écran a déjà éteint le bouton.
  * Voir specs/bonus.md#où-et-quand.
  */
-export async function castSpell(db: Database, caster: User, spell: SpellId, now: Date): Promise<void> {
+export async function castSpell(
+  db: Database,
+  caster: User,
+  spell: SpellId,
+  kind: CastableTargetKind,
+  now: Date,
+  random: () => number = Math.random,
+): Promise<void> {
   // Le lancer n'a lieu que pendant une attente, dont le **début** identifie
   // l'exemplaire déjà parti — l'échéance ne le peut plus, Répit la déplace.
   // L'appelant l'a vérifié : sans attente, il n'y a rien à identifier, donc
@@ -55,6 +85,13 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
   const startedAt = caster.cooldownStartedAt
 
   if (!startedAt) {
+    return
+  }
+
+  // Sans équipe, la catégorie Allié ne désigne aucun pool : le lancer n'existe
+  // pas pour ce joueur-là, il n'est donc pas dépensé. L'écran ne le lui propose
+  // déjà pas ; ceci ferme l'URL. Voir specs/equipes.md#le-joueur-sans-équipe.
+  if (kind !== 'self' && caster.team === null) {
     return
   }
 
@@ -91,28 +128,41 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
     return
   }
 
+  // La cible n'est tirée qu'une fois l'exemplaire consommé : un lancer refusé
+  // par le budget ne doit pas désigner quelqu'un pour rien.
+  const target = kind === 'self' ? caster : await drawTarget(db, caster, kind, now, random)
+
   await db.insert(activeEffects).values({
-    userId: caster.id,
+    userId: target?.id ?? null,
     casterId: caster.id,
     spell,
-    face: 'boon' satisfies SpellFace,
+    face: faceFor(kind),
     castAt: now,
     castCooldownStartedAt: startedAt,
+    // L'attente de la cible, et non celle du lancer : ce sont deux instants
+    // différents dès qu'on lance sur quelqu'un d'autre.
+    targetCooldownStartedAt: target?.cooldownStartedAt ?? null,
   })
 
-  // Répit trouve son déclencheur déjà là : l'attente en cours se recalcule tout
-  // de suite, sur l'écran même d'où le sort est parti. Recalculé plutôt que
-  // raccourci, et depuis le début de l'attente : deux Répit divisent la durée
-  // d'origine par quatre, au lieu de grignoter deux fois ce qu'il restait.
-  // Voir specs/bonus.md#catalogue.
-  if (spell === 'RESPITE') {
-    await reshapeCooldown(db, caster, startedAt)
+  if (!target) {
+    return
   }
 
   // Purge n'attend rien et ne module rien : elle vide une ligne du Pool Échecs
-  // à l'instant du lancer. Voir specs/bonus.md#catalogue.
+  // à l'instant du lancer. Le pool d'un allié existe quelle que soit sa phase,
+  // donc elle mord même sur qui n'attend pas. Voir specs/bonus.md#catalogue.
   if (spell === 'PURGE') {
-    await purgeFromPool(db, caster)
+    await purgeFromPool(db, target)
+  }
+
+  // Répit, lui, ne déplace que ce qui existe : l'échéance de la cible. Sur un
+  // allié en pleine ascension, il n'y a rien à raccourcir et le sort est
+  // gaspillé — même logique qu'un pool vide.
+  // Recalculée plutôt que raccourcie, et depuis le début de l'attente : deux
+  // Répit divisent la durée d'origine par quatre, au lieu de grignoter deux fois
+  // ce qu'il restait. Voir specs/bonus.md#catalogue.
+  if (spell === 'RESPITE' && target.cooldownStartedAt) {
+    await reshapeCooldown(db, target, target.cooldownStartedAt)
   }
 }
 
@@ -165,7 +215,7 @@ async function reshapeCooldown(db: Database, target: User, startedAt: Date): Pro
     .from(activeEffects)
     .where(and(
       eq(activeEffects.userId, target.id),
-      eq(activeEffects.castCooldownStartedAt, startedAt),
+      eq(activeEffects.targetCooldownStartedAt, startedAt),
     ))
 
   // Le jeu de règles module la durée, on lui donne celle de cette attente-là.
@@ -233,7 +283,7 @@ function buildEffectsQuery(db: Database, userId: number) {
       face: activeEffects.face,
       casterName: users.username,
       anchoredAt: activeEffects.anchoredAt,
-      castCooldownStartedAt: activeEffects.castCooldownStartedAt,
+      targetCooldownStartedAt: activeEffects.targetCooldownStartedAt,
     })
     .from(activeEffects)
     .innerJoin(users, eq(users.id, activeEffects.casterId))
@@ -284,7 +334,13 @@ export const CAST_LOG_SIZE = 20
  * que le lanceur lit que son sort a touché quelqu'un.
  */
 export async function readCastLog(db: Database, caster: User, limit = CAST_LOG_SIZE): Promise<CastView[]> {
-  const rows = await db
+  return toCastViews(await castLogQuery(db, caster.id, limit))
+}
+
+type CastLogQuery = ReturnType<typeof buildCastLogQuery>
+
+function buildCastLogQuery(db: Database, casterId: number, limit: number) {
+  return db
     .select({
       spell: activeEffects.spell,
       face: activeEffects.face,
@@ -292,11 +348,72 @@ export async function readCastLog(db: Database, caster: User, limit = CAST_LOG_S
       castAt: activeEffects.castAt,
     })
     .from(activeEffects)
-    .innerJoin(users, eq(users.id, activeEffects.userId))
-    .where(eq(activeEffects.casterId, caster.id))
-    .orderBy(desc(activeEffects.castAt))
+    // Jointure ouverte : un lancer que le tirage n'a mené à personne reste une
+    // ligne du journal, sans nom en face.
+    .leftJoin(users, eq(users.id, activeEffects.userId))
+    .where(eq(activeEffects.casterId, casterId))
+    // L'horodatage se compte en secondes : deux lancers de la même seconde s'y
+    // égalisent, et l'ordre d'écriture les départage. Sans ce second critère,
+    // l'écran nommerait la cible d'un lancer pour celle d'un autre.
+    .orderBy(desc(activeEffects.castAt), desc(activeEffects.id))
     .limit(limit)
+}
 
+/**
+ * La requête du journal, rendue plutôt qu'exécutée : la page Sorts la fait
+ * voyager dans le même lot que ses voisines, pour qu'ouvrir l'écran ne coûte pas
+ * un aller-retour réseau par liste affichée.
+ * Voir tests/server/query-budget.test.ts.
+ */
+export function castLogQuery(db: Database, casterId: number, limit = CAST_LOG_SIZE): CastLogQuery {
+  return buildCastLogQuery(db, casterId, limit)
+}
+
+export function toCastViews(rows: Awaited<CastLogQuery>): CastView[] {
+  return rows.map(row => ({ ...row, castAt: row.castAt.toISOString() }))
+}
+
+/**
+ * L'autre journal : ce que le joueur a **reçu**, de qui, et quand. Ses propres
+ * lancers sur lui-même n'y figurent pas — il les lit déjà en face.
+ *
+ * Sans ce journal, personne ne saurait jamais que le système existe : un effet
+ * meurt avec la tentative qu'il a servie, et le nom de son lanceur avec lui.
+ * Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
+ */
+export async function readReceivedLog(db: Database, target: User, limit = CAST_LOG_SIZE): Promise<ReceivedView[]> {
+  return toReceivedViews(await receivedLogQuery(db, target.id, limit))
+}
+
+type ReceivedLogQuery = ReturnType<typeof buildReceivedLogQuery>
+
+function buildReceivedLogQuery(db: Database, userId: number, limit: number) {
+  return db
+    .select({
+      spell: activeEffects.spell,
+      face: activeEffects.face,
+      casterName: users.username,
+      castAt: activeEffects.castAt,
+    })
+    .from(activeEffects)
+    // Jointure fermée, contrairement au journal des lancers : un effet reçu a
+    // toujours quelqu'un derrière lui.
+    .innerJoin(users, eq(users.id, activeEffects.casterId))
+    .where(and(
+      eq(activeEffects.userId, userId),
+      ne(activeEffects.casterId, userId),
+    ))
+    // Même départage qu'au journal des lancers : la seconde ne suffit pas.
+    .orderBy(desc(activeEffects.castAt), desc(activeEffects.id))
+    .limit(limit)
+}
+
+/** Même raison d'être que `castLogQuery` : les deux listes voyagent ensemble. */
+export function receivedLogQuery(db: Database, userId: number, limit = CAST_LOG_SIZE): ReceivedLogQuery {
+  return buildReceivedLogQuery(db, userId, limit)
+}
+
+export function toReceivedViews(rows: Awaited<ReceivedLogQuery>): ReceivedView[] {
   return rows.map(row => ({ ...row, castAt: row.castAt.toISOString() }))
 }
 
@@ -333,7 +450,8 @@ function actsOnCurrentWait(row: EffectRow, user: User): boolean {
   }
 
   return user.cooldownStartedAt !== null
-    && row.castCooldownStartedAt.getTime() === user.cooldownStartedAt.getTime()
+    && row.targetCooldownStartedAt !== null
+    && row.targetCooldownStartedAt.getTime() === user.cooldownStartedAt.getTime()
 }
 
 /**

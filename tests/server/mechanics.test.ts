@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canDrawRecovery, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, rollChest, phaseOf } from '../../server/utils/mechanics'
+import { canDrawRecovery, drawByRank, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, rollChest, phaseOf } from '../../server/utils/mechanics'
 import { SPELL_IDS } from '../../shared/utils/spells'
 import { rulesForFloor } from '../../server/utils/rules'
 import { rolls } from '../helpers/random'
@@ -263,5 +263,37 @@ describe('contenu d un coffre', () => {
       mimic: false,
       spell: SPELL_IDS[SPELL_IDS.length - 1],
     })
+  })
+})
+
+// Une seule fonction, lue dans les deux sens : on tape le plus fort, on soutient
+// le plus faible. Voir specs/bonus.md#tirage-de-la-cible.
+describe('tirage pondéré par le rang', () => {
+  // Classés par progression croissante : le premier est le moins avancé.
+  const ranked = ['bas', 'moyen', 'haut', 'tête']
+
+  it('donne au moins avancé le plus gros poids en allié', () => {
+    // Quatre cibles, poids 4/3/2/1 sur 10 : le premier tient les 40 % du bas.
+    expect(drawByRank(ranked, 'ally', rolls(0))).toBe('bas')
+    expect(drawByRank(ranked, 'ally', rolls(0.399))).toBe('bas')
+    expect(drawByRank(ranked, 'ally', rolls(0.401))).toBe('moyen')
+    expect(drawByRank(ranked, 'ally', rolls(0.999))).toBe('tête')
+  })
+
+  it('renverse la pondération en ennemi', () => {
+    // Poids 1/2/3/4 : le mieux classé tient les 40 % du haut.
+    expect(drawByRank(ranked, 'foe', rolls(0))).toBe('bas')
+    expect(drawByRank(ranked, 'foe', rolls(0.101))).toBe('moyen')
+    expect(drawByRank(ranked, 'foe', rolls(0.5))).toBe('haut')
+    expect(drawByRank(ranked, 'foe', rolls(0.999))).toBe('tête')
+  })
+
+  it('rend la seule cible du pool, quel que soit le tirage', () => {
+    expect(drawByRank(['seul'], 'ally', rolls(0.999))).toBe('seul')
+  })
+
+  // Pool vide : le sort part et ne fait rien, comme Purge sur un pool vide.
+  it('ne rend personne sur un pool vide', () => {
+    expect(drawByRank([], 'ally', rolls(0.5))).toBeNull()
   })
 })

@@ -141,6 +141,13 @@
       "when": 1788711082012,
       "tag": "0019_quiet_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1788716471127,
+      "tag": "0020_yellow_hairball",
+      "breakpoints": true
     }
   ]
 }

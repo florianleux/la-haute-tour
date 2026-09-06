@@ -7,6 +7,8 @@
  * écran, parce qu'eux sont provisoires et n'ont pas à traverser la frontière.
  * Voir specs/bonus.md#catalogue.
  */
+import type { TargetKind } from './teams'
+
 export const SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY', 'INDULGENCE', 'PURGE'] as const
 
 export type SpellId = typeof SPELL_IDS[number]
@@ -51,6 +53,15 @@ export function isWaitBound(spell: SpellId): boolean {
 export const SPELL_FACES = ['boon', 'curse'] as const
 
 export type SpellFace = typeof SPELL_FACES[number]
+
+/**
+ * La face qu'une catégorie de cible applique : blanche sur soi et sur un allié,
+ * noire sur un ennemi. Dite ici plutôt qu'au lancer, pour qu'un second appelant
+ * ne réinvente pas la moitié de la règle.
+ */
+export function faceFor(kind: TargetKind): SpellFace {
+  return kind === 'foe' ? 'curse' : 'boon'
+}
 
 /**
  * Un effet réduit à ce dont les règles ont besoin pour se moduler : quel sort,

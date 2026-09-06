@@ -62,6 +62,30 @@ describe('inventaire des sorts', () => {
     })
   })
 
+  // La page ne propose la catégorie Allié qu'à qui a une équipe : sans elle,
+  // elle ne désignerait aucun pool. Voir specs/equipes.md#le-joueur-sans-équipe.
+  it('dit si le joueur peut viser un allié, sans jamais dire qui', async () => {
+    const alone = await createPlayer(db, IN_COOLDOWN)
+    const teamed = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'teamed', team: 'AZURE' })
+
+    const withoutTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(alone)))
+    const withTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(teamed)))
+
+    expect((await withoutTeam.json()).canTargetAllies).toBe(false)
+
+    // Le classement de progression ne sort jamais du serveur : la page ne porte
+    // que ce qui la remplit. Voir specs/ecrans.md#ce-quaucun-écran-joueur-ne-montre.
+    expect(Object.keys(await withTeam.json()).sort()).toEqual([
+      'canTargetAllies',
+      'castsLeft',
+      'castsPerCooldown',
+      'entries',
+      'log',
+      'received',
+      'total',
+    ])
+  })
+
   it('garde l ordre du premier exemplaire obtenu, qu un doublon ne déplace pas', async () => {
     const userId = await createPlayer(db, IN_COOLDOWN)
     await loot(userId, 'RESPITE', 'VITALITY', 'VITALITY')
@@ -133,7 +157,7 @@ describe('inventaire des sorts', () => {
 
   describe('lancer', () => {
     it('refuse tout sans session', async () => {
-      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }))
 
       expect(response.status).toBe(401)
     })
@@ -143,7 +167,7 @@ describe('inventaire des sorts', () => {
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY', 'VITALITY')
 
-      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
 
       expect(response.status).toBe(200)
       const page = await response.json()
@@ -156,8 +180,8 @@ describe('inventaire des sorts', () => {
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY', 'VITALITY')
 
-      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
-      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
 
       expect(response.status).toBe(200)
       const page = await response.json()
@@ -174,9 +198,9 @@ describe('inventaire des sorts', () => {
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY', 'VITALITY', 'RESPITE')
 
-      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
-      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
-      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'RESPITE' }, cookie))
+      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
+      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'RESPITE', target: 'self' }, cookie))
 
       expect(response.status).toBe(200)
       const page = await response.json()
@@ -190,16 +214,53 @@ describe('inventaire des sorts', () => {
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')
 
-      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
 
       expect(response.status).toBe(403)
+    })
+
+    // La magie noire n'existe pas encore : proposée, elle consommerait un
+    // exemplaire pour rien. Voir specs/bonus.md#livraison.
+    it('rejette une catégorie de cible que le tirage ne sait pas résoudre', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'foe' }, cookie))
+
+      expect(response.status).toBe(400)
+    })
+
+    it('révèle la cible tirée au retour du lancer, et la dit à la cible', async () => {
+      // Un étage qui a encore de quoi jouer : sinon le palier primerait sur
+      // l'attente, et la page des Sorts se fermerait.
+      await createQuestion(db)
+      await createQuestion(db)
+      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'CRIMSON', floorSeen: 1 })
+      const allyId = await createPlayer(db, {
+        discordId: 'ally',
+        username: 'samsagace',
+        team: 'CRIMSON',
+        floorSeen: 1,
+        ...IN_COOLDOWN,
+      })
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'ally' }, cookie))
+
+      expect(response.status).toBe(200)
+      expect((await response.json()).log).toMatchObject([{ spell: 'VITALITY', targetName: 'samsagace' }])
+
+      const seen = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(allyId)))
+      expect((await seen.json()).received).toMatchObject([{ spell: 'VITALITY', casterName: 'gandalf' }])
     })
 
     it('rejette un sort qui n existe pas au catalogue', async () => {
       const userId = await createPlayer(db, IN_COOLDOWN)
       const cookie = await sessionCookieFor(userId)
 
-      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'FIREBALL' }, cookie))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'FIREBALL', target: 'self' }, cookie))
 
       expect(response.status).toBe(400)
     })

@@ -106,8 +106,8 @@ Message de félicitations, précédé du verdict de la dernière question. Phase
 Atteignable **en attente seulement**, par l'icône baguette. Trois choses :
 
 - L'**inventaire** — ce que le joueur possède, avec les doublons.
-- Le **lancer** — un sort, une catégorie de cible (soi, allié, ennemi). La cible réelle n'est pas annoncée avant : le tirage est pondéré mais imprévisible. Elle l'est après. Un même sort ne se lance qu'une fois par attente.
-- Le **journal** — les sorts reçus et lancés, horodatés, nominatifs des deux côtés. C'est là que le lanceur apprend qui il a touché.
+- Le **lancer** — un sort, une catégorie de cible (soi, allié, ennemi), un bouton par catégorie. La cible réelle n'est pas annoncée avant : le tirage est pondéré mais imprévisible. Elle l'est après, au retour du lancer. Deux lancers par attente, quels qu'ils soient, et le décompte se lit avant le clic.
+- Le **journal** — deux listes : les sorts lancés et les sorts reçus, horodatés, nominatifs des deux côtés. C'est là que le lanceur apprend qui il a touché, et la cible de qui elle le tient.
 
 Hors attente, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
 

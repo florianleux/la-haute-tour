@@ -1,8 +1,9 @@
 import { useWriteThenReplace } from './useWriteThenReplace'
 import type { Ref } from 'vue'
 import type { InventoryEntryView, InventoryView } from '~~/server/utils/inventory'
-import type { CastView } from '~~/server/utils/effects'
+import type { CastView, ReceivedView } from '~~/server/utils/effects'
 import type { SpellId } from '~~/shared/utils/spells'
+import type { CastableTargetKind } from '~~/shared/utils/teams'
 
 /** Cache key of the inventory read: one name, so nobody re-types the string. */
 export const INVENTORY_KEY = 'inventory'
@@ -13,6 +14,10 @@ export interface InventoryRead {
   total: Ref<number>
   /** Ce que le joueur a lancé, du plus récent au plus ancien. */
   log: Ref<CastView[]>
+  /** Ce qu'il a reçu des autres, du plus récent au plus ancien. */
+  received: Ref<ReceivedView[]>
+  /** Vrai quand le joueur a une équipe : sans elle, la catégorie Allié ne vise rien. */
+  canTargetAllies: Ref<boolean>
   /** Vrai quand la lecture a échoué : un inventaire vide n'est pas la même nouvelle. */
   failed: Ref<boolean>
   /** Ce qu'il reste de lancers pour l'attente en cours. */
@@ -23,8 +28,11 @@ export interface InventoryRead {
   casting: Ref<SpellId | null>
   /** Vrai quand le dernier lancer n'est pas parti. */
   castFailed: Ref<boolean>
-  /** Lance un sort sur soi et réaffiche l'inventaire que le serveur renvoie. */
-  cast: (spell: SpellId) => Promise<void>
+  /**
+   * Lance un sort sur une catégorie de cible et réaffiche l'inventaire que le
+   * serveur renvoie — le journal y dit qui a été touché.
+   */
+  cast: (spell: SpellId, target: CastableTargetKind) => Promise<void>
 }
 
 /**
@@ -45,15 +53,15 @@ export async function useInventory(): Promise<InventoryRead> {
 
   /**
    * Le lancer rend l'inventaire tel qu'il est ensuite : on réaffiche ce que le
-   * serveur renvoie plutôt que de retirer l'exemplaire de son côté. Un second
-   * lancer du même sort revient sans rien changer — c'est la même réponse.
+   * serveur renvoie plutôt que de retirer l'exemplaire de son côté. C'est aussi
+   * par là que la cible tirée se révèle — le journal revient avec son nom.
    */
-  async function cast(spell: SpellId): Promise<void> {
+  async function cast(spell: SpellId, target: CastableTargetKind): Promise<void> {
     casting.value = spell
 
     await send(() => $fetch<InventoryView>('/api/game/cast', {
       method: 'POST',
-      body: { spell },
+      body: { spell, target },
       ...useApiFetchOptions(),
     }))
 
@@ -64,6 +72,8 @@ export async function useInventory(): Promise<InventoryRead> {
     entries: computed<InventoryEntryView[]>(() => data.value?.entries ?? []),
     total: computed<number>(() => data.value?.total ?? 0),
     log: computed<CastView[]>(() => data.value?.log ?? []),
+    received: computed<ReceivedView[]>(() => data.value?.received ?? []),
+    canTargetAllies: computed<boolean>(() => data.value?.canTargetAllies ?? false),
     castsLeft: computed<number>(() => data.value?.castsLeft ?? 0),
     castsPerCooldown: computed<number>(() => data.value?.castsPerCooldown ?? 0),
     failed: computed<boolean>(() => Boolean(error.value)),

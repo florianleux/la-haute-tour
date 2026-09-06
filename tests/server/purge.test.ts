@@ -36,7 +36,7 @@ describe('Purge, sur le Pool Échecs', () => {
   /** Un exemplaire en poche, puis lancé sur soi pendant l'attente. */
   async function castPurge(caster: number = player.id): Promise<void> {
     await db.insert(inventory).values({ userId: caster, spell: 'PURGE', obtainedAt: NOW })
-    await castSpell(db, await loadPlayer(db, caster), 'PURGE', NOW)
+    await castSpell(db, await loadPlayer(db, caster), 'PURGE', 'self', NOW)
   }
 
   /** Remplit le Pool Échecs de l'étage courant. */

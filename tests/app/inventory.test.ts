@@ -10,17 +10,21 @@ const owned: InventoryView = {
   entries: [{ spell: 'VITALITY', count: 2 }],
   total: 2,
   log: [],
+  received: [],
   castsLeft: 2,
   castsPerCooldown: 2,
+  canTargetAllies: true,
 }
 
 /** Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en plus. */
 const afterCast: InventoryView = {
   entries: [{ spell: 'VITALITY', count: 1 }],
   total: 1,
-  log: [{ spell: 'VITALITY', face: 'boon', targetName: 'gandalf', castAt: '2026-09-06T09:00:00.000Z' }],
+  log: [{ spell: 'VITALITY', face: 'boon', targetName: 'samsagace', castAt: '2026-09-06T09:00:00.000Z' }],
+  received: [],
   castsLeft: 1,
   castsPerCooldown: 2,
+  canTargetAllies: true,
 }
 
 describe('inventaire du joueur', () => {
@@ -36,7 +40,7 @@ describe('inventaire du joueur', () => {
     answerWith(afterCast)
     const { entries, total, log, cast } = await useInventory()
 
-    await cast('VITALITY')
+    await cast('VITALITY', 'self')
 
     expect(calls()).toEqual(['fetch POST /api/game/cast'])
     expect(entries.value).toEqual([{ spell: 'VITALITY', count: 1 }])
@@ -55,9 +59,26 @@ describe('inventaire du joueur', () => {
     expect(castsLeft.value).toBe(2)
     expect(castsPerCooldown.value).toBe(2)
 
-    await cast('VITALITY')
+    await cast('VITALITY', 'self')
 
     expect(castsLeft.value).toBe(1)
+  })
+
+  // Le joueur choisit une catégorie, jamais une personne : c'est elle qui part
+  // au serveur, et c'est lui qui nomme la cible au retour.
+  // Voir specs/bonus.md#tirage-de-la-cible.
+  it('envoie la catégorie de cible et lit le nom qui revient', async () => {
+    serve(INVENTORY_KEY, owned)
+    answerWith(afterCast)
+    const { log, received, canTargetAllies, cast } = await useInventory()
+
+    expect(canTargetAllies.value).toBe(true)
+    expect(received.value).toEqual([])
+
+    await cast('VITALITY', 'ally')
+
+    expect(calls()).toEqual(['fetch POST /api/game/cast'])
+    expect(log.value[0]?.targetName).toBe('samsagace')
   })
 
   it('signale un lancer refusé et laisse l inventaire intact', async () => {
@@ -65,7 +86,7 @@ describe('inventaire du joueur', () => {
     breakNetwork()
     const { entries, castFailed, casting, cast } = await useInventory()
 
-    await cast('VITALITY')
+    await cast('VITALITY', 'self')
 
     expect(castFailed.value).toBe(true)
     expect(entries.value).toEqual([{ spell: 'VITALITY', count: 2 }])

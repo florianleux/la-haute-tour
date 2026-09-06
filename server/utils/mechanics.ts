@@ -3,6 +3,7 @@ import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { SPELL_IDS } from '../../shared/utils/spells'
 import type { FloorRules } from './rules'
 import type { SpellId } from '../../shared/utils/spells'
+import type { DrawnTargetKind } from '../../shared/utils/teams'
 import type { MissedPoolEntry, Reservation, User } from '../db/schema'
 
 /**
@@ -54,6 +55,22 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
   }
 
   return 'ascent'
+}
+
+/**
+ * Le joueur a-t-il vu ne serait-ce qu'une question ? Un compte créé et jamais
+ * ouvert se reconnaît à ça : premier étage, rien de vu, rien en main.
+ *
+ * Il n'existe pas de phase pour le dire — un joueur qui n'a jamais commencé est
+ * en `ascent` comme les autres, l'écran de jeu l'y invite. C'est pourtant une
+ * cible que rien n'atteindrait : le tirage l'écarte.
+ * Voir specs/bonus.md#tirage-de-la-cible.
+ */
+export function hasStarted(
+  user: Pick<User, 'currentFloor' | 'floorSeen'>,
+  hasLiveReservation: boolean,
+): boolean {
+  return hasLiveReservation || user.currentFloor > 1 || user.floorSeen > 0
 }
 
 /**
@@ -232,6 +249,42 @@ export function rollChest(rules: FloorRules, random: () => number): ChestOutcome
   // Tiré au hasard dans le catalogue, indépendamment du stock déjà possédé :
   // les doublons sont illimités.
   return { mimic: false, spell: SPELL_IDS[Math.floor(random() * SPELL_IDS.length)] }
+}
+
+/**
+ * La cible, tirée parmi les éligibles **classés par progression croissante** —
+ * le moins avancé en tête. Le poids est le rang, jamais la progression réelle :
+ * c'est ce qui borne le biais quel que soit l'écart, le premier valant *n* fois
+ * le dernier et jamais cinquante fois.
+ *
+ * Une seule fonction, lue dans les deux sens : on tape le plus fort, on soutient
+ * le plus faible. Sur un pool vide, personne — le sort part et ne fait rien.
+ *
+ * Le hasard vient de l'appelant, comme pour le coffre : la mécanique décide,
+ * elle ne tire pas. Voir specs/bonus.md#tirage-de-la-cible.
+ */
+export function drawByRank<T>(ranked: T[], kind: DrawnTargetKind, random: () => number): T | null {
+  if (!ranked.length) {
+    return null
+  }
+
+  // Poids d'un rang : sa place en partant du haut pour un allié, du bas pour un
+  // ennemi. Somme identique dans les deux sens, celle des n premiers entiers.
+  const weightOf = (index: number): number => (kind === 'ally' ? ranked.length - index : index + 1)
+  const total = (ranked.length * (ranked.length + 1)) / 2
+
+  let drawn = random() * total
+
+  for (const [index, candidate] of ranked.entries()) {
+    drawn -= weightOf(index)
+
+    if (drawn < 0) {
+      return candidate
+    }
+  }
+
+  // Un tirage à 1 exactement tomberait ici : la dernière part le reçoit.
+  return ranked[ranked.length - 1]
 }
 
 export type PoolMove =

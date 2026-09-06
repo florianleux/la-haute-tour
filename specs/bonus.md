@@ -91,10 +91,20 @@ Le filtre des saturés s'applique **avant** le classement : un joueur retiré du
 ne pèse plus dans la distribution.
 
 Si le pool éligible est **vide**, le sort part quand même et ne fait rien. Gaspillé,
-même logique que Purge sur un Pool Échecs vide.
+même logique que Purge sur un Pool Échecs vide. Le lancer est bel et bien dépensé :
+l'exemplaire quitte l'inventaire, le budget de l'attente baisse, et le journal porte
+la ligne — sans nom en face.
 
 Le tirage restant imprévisible, la cible n'est **pas affichée avant le lancer**.
-Elle l'est après.
+Elle l'est après : le nom revient avec la réponse du lancer, sur l'écran d'où le
+sort est parti, et reste au journal.
+
+**Un sort lié à l'attente vise l'attente de la cible**, pas celle du lanceur — ce
+ne sont plus les mêmes dès qu'on lance sur quelqu'un d'autre. Une cible qui n'en
+vit pas n'a rien à lui donner à mordre : Répit sur un allié en pleine ascension
+est gaspillé, comme sur un pool vide. Purge, elle, ne dépend pas de l'attente :
+le Pool Échecs de la cible existe quelle que soit sa phase, et la question en
+sort.
 
 ### Limite d'effets négatifs
 
@@ -185,8 +195,11 @@ Trois lieux d'affichage :
   tentative — effets actifs, positifs et négatifs, chacun avec le nom de son
   lanceur — ainsi que ce qui frappe l'attente elle-même. Comme tous les effets
   s'ancrent sur la tentative suivante, le joueur a tout lu avant de reprendre.
-- **La page Sorts** porte le journal complet, reçus et lancés, horodaté. C'est là que
-  le lanceur lit que son sort a touché quelqu'un.
+- **La page Sorts** porte le journal complet, en **deux listes horodatées** : ce que
+  le joueur a lancé, sur qui — ou sur personne quand le pool était vide — et ce
+  qu'il a reçu, de qui. C'est là que le lanceur lit que son sort a touché
+  quelqu'un, et que la cible lit qui l'a soutenue. Ce qu'un joueur s'est lancé à
+  lui-même ne figure que d'un côté, celui des lancers.
 - **L'ascension** affiche une **icône par effet actif**, pendant les questions
   concernées. Un joueur dont le timer démarre à 30 s trois jours après avoir lu
   l'avertissement doit pouvoir comprendre pourquoi plutôt que de croire à un bug.
@@ -283,9 +296,12 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 - **Icône baguette magique**, quatrième de la barre permanente. Visible partout,
   **cliquable en attente seulement** — la seule phase où le lancer existe. Ailleurs
   elle est désactivée, comme toute la barre l'est tant qu'un chrono tourne.
-- **Page Sorts** : inventaire, lancer, journal. Accessible en attente uniquement.
+- **Page Sorts** : inventaire, lancer, journaux. Accessible en attente uniquement.
   L'inventaire n'est donc pas consultable hors attente — le joueur voit passer son
   objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
+  Chaque sort porte un bouton **par catégorie de cible** — jamais un nom, et jamais
+  une liste de joueurs. La catégorie Allié n'apparaît qu'à qui a une équipe : sans
+  elle, elle ne désignerait aucun pool. Voir [`equipes.md`](./equipes.md#le-joueur-sans-équipe).
 - **Écran d'attente** : récapitulatif des effets qui attendent la prochaine tentative,
   en plus du Pool Échecs et des contestations qu'il porte déjà.
 - **Écran verdict d'ascension** : le coffre, et son résultat une fois ouvert.
@@ -320,9 +336,11 @@ Jouable et testable avant que les équipes existent.
 mécanique existante différente ; les brancher un par un sur une boucle qui tourne
 déjà est plus sûr que tout d'un coup.
 
-**T3 — le PvP.** [`equipes.md`](./equipes.md) est écrit ; restent l'équipe sur le
-joueur, les catégories Allié et Ennemi, la magie noire, la limite de deux effets
-négatifs, le tirage pondéré par rang et le journal nominatif.
+**T3 — le PvP.** [`equipes.md`](./equipes.md) est écrit. L'équipe sur le joueur,
+la catégorie **Allié**, le tirage pondéré par rang et le journal nominatif des
+deux côtés sont livrés. Restent la catégorie **Ennemi** et la magie noire, avec
+la limite de deux effets négatifs — la catégorie est refusée d'ici là plutôt que
+proposée, un lancer sans effet coûtant un exemplaire pour rien.
 
 ## Points encore à spécifier
 

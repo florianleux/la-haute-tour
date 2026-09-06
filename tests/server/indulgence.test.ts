@@ -37,7 +37,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
 
   async function castIndulgence(): Promise<void> {
     await db.insert(inventory).values({ userId: player.id, spell: 'INDULGENCE', obtainedAt: NOW })
-    await castSpell(db, await reload(), 'INDULGENCE', NOW)
+    await castSpell(db, await reload(), 'INDULGENCE', 'self', NOW)
   }
 
   /** Remplit le Pool Échecs de l'étage courant. */

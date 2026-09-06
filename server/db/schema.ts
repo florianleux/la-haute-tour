@@ -392,9 +392,13 @@ export const inventory = sqliteTable('inventory', {
  */
 export const activeEffects = sqliteTable('active_effects', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  /** La cible : celle qui subit ou reçoit l'effet. */
+  /**
+   * La cible : celle qui subit ou reçoit l'effet. Null quand le tirage n'a
+   * désigné personne — le pool d'alliés était vide, le sort est parti et n'a
+   * rien touché. La ligne reste : elle a coûté un exemplaire et un lancer, et le
+   * journal doit pouvoir le dire. Voir specs/bonus.md#tirage-de-la-cible.
+   */
   userId: integer('user_id')
-    .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   casterId: integer('caster_id')
     .notNull()
@@ -421,6 +425,16 @@ export const activeEffects = sqliteTable('active_effects', {
     // dont le défaut n'est pas constant, donc la migration ne s'appliquerait sur
     // aucune base existante. Le remplissage suit, dans la même migration.
     .default(sql`0`),
+  /**
+   * L'attente **de la cible** sur laquelle un sort lié à l'attente agit, par son
+   * début. Null quand elle n'en vivait pas — ou qu'il n'y avait pas de cible.
+   *
+   * Distincte de `castCooldownStartedAt` depuis qu'on lance sur un allié : le
+   * lanceur est toujours en attente, la cible ne l'est pas forcément, et ce ne
+   * sont plus les mêmes. L'une compte le budget du lanceur, l'autre borne la vie
+   * de l'effet chez la cible. Voir specs/bonus.md#ancrage-et-durée-de-vie.
+   */
+  targetCooldownStartedAt: integer('target_cooldown_started_at', { mode: 'timestamp' }),
   /** La tentative sur laquelle l'effet s'est ancré. Null tant qu'il attend. */
   anchoredAt: integer('anchored_at', { mode: 'timestamp' }),
 }, table => [

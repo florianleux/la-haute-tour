@@ -99,9 +99,11 @@ Rien d'autre que la relation. En particulier :
 - **Aucune progression d'autrui affichée** : on ne voit ni l'étage, ni les vies,
   ni l'avancement de ses coéquipiers. L'équipe dit qui peut être touché, pas où
   en sont les autres.
-- **Aucun écran joueur ne montre les équipes** tant que le PvP n'existe pas. La
-  donnée est posée avant d'être lue ; ce que le joueur en verra se décidera avec
-  les catégories de cible.
+- **Rien de plus qu'un bouton**, une fois le PvP là. La page Sorts propose la
+  catégorie Allié à qui a une équipe, pas à qui n'en a pas — ni couleur affichée,
+  ni liste de coéquipiers, ni effectif. Les noms n'arrivent qu'après un lancer,
+  un par un, par les journaux. L'équipe se découvre en jouant, elle ne se
+  consulte pas.
 
 L'équipe est une relation entre deux joueurs, lue au moment d'un lancer. Elle
 n'est pas un camp qu'on défend, et le jeu ne propose aucune façon de la faire
@@ -111,8 +113,6 @@ gagner.
 
 - Les **libellés** des deux équipes. Les identifiants étant figés, ça ne bloque
   rien.
-- Ce que le joueur voit de son équipe, et quand — à décider avec l'écran de
-  lancer des catégories Allié et Ennemi.
 
 ---
 

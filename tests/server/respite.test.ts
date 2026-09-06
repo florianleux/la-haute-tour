@@ -38,7 +38,7 @@ describe('Répit, sur l attente en cours', () => {
   /** Un exemplaire en poche, puis lancé sur soi pendant l'attente. */
   async function castRespite(at: Date = NOW): Promise<void> {
     await db.insert(inventory).values({ userId: player.id, spell: 'RESPITE', obtainedAt: at })
-    await castSpell(db, await reload(), 'RESPITE', at)
+    await castSpell(db, await reload(), 'RESPITE', 'self', at)
   }
 
   it('recalcule l échéance depuis le début de l attente', async () => {

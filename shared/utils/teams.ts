@@ -21,6 +21,29 @@ export type TeamId = typeof TEAM_IDS[number]
  */
 export type TeamBond = 'self' | 'ally' | 'foe' | 'none'
 
+/**
+ * Ce que le lanceur choisit, faute de choisir une personne : une catégorie, que
+ * le tirage change ensuite en quelqu'un. Voir specs/bonus.md#catégories-de-cible.
+ */
+export const TARGET_KINDS = ['self', 'ally', 'foe'] as const
+
+export type TargetKind = typeof TARGET_KINDS[number]
+
+/**
+ * Les catégories qu'un lanceur peut viser aujourd'hui. La magie noire attend son
+ * ticket : proposée avant d'exister, elle consommerait un exemplaire pour rien —
+ * même raison que `CASTABLE_SPELL_IDS`. Voir specs/bonus.md#livraison.
+ */
+export const CASTABLE_TARGET_KINDS = ['self', 'ally'] as const
+
+export type CastableTargetKind = typeof CASTABLE_TARGET_KINDS[number]
+
+/**
+ * Les catégories qui désignent quelqu'un d'autre, et qu'un tirage doit donc
+ * résoudre. `self` n'en est pas : la cible y est déjà connue.
+ */
+export type DrawnTargetKind = Exclude<TargetKind, 'self'>
+
 /** Ce qu'il faut savoir d'un joueur pour dire ce qu'il est pour un autre. */
 export interface Bonded {
   id: number

@@ -33,7 +33,7 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
   /** Un exemplaire en poche, puis lancé sur soi pendant l'attente. */
   async function castVitality(): Promise<void> {
     await db.insert(inventory).values({ userId: player.id, spell: 'VITALITY', obtainedAt: NOW })
-    await castSpell(db, await reload(), 'VITALITY', NOW)
+    await castSpell(db, await reload(), 'VITALITY', 'self', NOW)
   }
 
   /** Remplit le Pool Échecs, et laisse une question encore à voir à l'étage. */

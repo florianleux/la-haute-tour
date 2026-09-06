@@ -39,7 +39,7 @@ describe('lancer et ancrage des effets', () => {
   }
 
   async function cast(spell: SpellId, at: Date = NOW): Promise<void> {
-    await castSpell(db, await loadPlayer(db, userId), spell, at)
+    await castSpell(db, await loadPlayer(db, userId), spell, 'self', at)
   }
 
   it('consomme un exemplaire et pose un effet en attente', async () => {

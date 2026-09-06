@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { setDatabase } from '../../server/db/client'
+import { inventory } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { castFromInventory, readInventory } from '../../server/utils/inventory'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
+
+installNitroGlobals()
 
 /**
  * La base est distante en production : chaque aller-retour réseau est mesuré à
@@ -119,6 +125,59 @@ describe('budget de requêtes des chemins chauds', () => {
     await submitAnswer(db, player, 'Toulouse', NOW)
 
     expect(queries()).toBeLessThanOrEqual(7)
+  })
+
+  /**
+   * La page Sorts n'est pas un chemin chaud — on l'ouvre en attente, pas à
+   * chaque question — mais elle affiche trois listes, et trois listes servies
+   * l'une après l'autre feraient trois allers-retours de plus qu'il n'en faut.
+   * Le lancer, lui, tire une cible : ce tirage doit rester une requête, jamais
+   * une par joueur de l'équipe. Voir specs/bonus.md#tirage-de-la-cible.
+   */
+  describe('la page Sorts et le lancer', () => {
+    const IN_COOLDOWN = { lives: 0, cooldownUntil: new Date(NOW.getTime() + 60_000) }
+
+    beforeEach(async () => {
+      setDatabase(db)
+    })
+
+    /** Un joueur en attente, avec des coéquipiers à toucher. */
+    async function caster(): Promise<User> {
+      const id = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'CRIMSON', floorSeen: 1 })
+
+      for (let i = 0; i < 6; i++) {
+        await createPlayer(db, {
+          discordId: `mate-${i}`,
+          username: `mate-${i}`,
+          team: 'CRIMSON',
+          floorSeen: 1,
+        })
+      }
+
+      await db.insert(inventory).values({ userId: id, spell: 'VITALITY', obtainedAt: NOW })
+
+      return loadPlayer(db, id)
+    }
+
+    it('ouvre la page en trois allers-retours, quoi qu elle affiche', async () => {
+      const player = await caster()
+      queries()
+
+      await readInventory(db, player, NOW)
+
+      expect(queries()).toBeLessThanOrEqual(3)
+    })
+
+    it('ne paie pas le tirage à la cible : le pool tient en une requête', async () => {
+      const player = await caster()
+      queries()
+
+      await castFromInventory(db, player, 'VITALITY', 'ally', NOW)
+
+      // Phase, inventaire lu, exemplaire consommé, cible tirée, effet posé, puis
+      // la page rendue. Une cible de plus dans l'équipe n'en ajoute aucun.
+      expect(queries()).toBeLessThanOrEqual(7)
+    })
   })
 
   /**

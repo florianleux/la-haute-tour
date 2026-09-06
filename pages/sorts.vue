@@ -54,15 +54,22 @@
               <BaseHint v-if="!isCastable(entry.spell)">
                 Bientôt lançable
               </BaseHint>
-              <BaseButton
-                v-else
-                variant="ghost"
-                :disabled="!castsLeft || casting !== null"
-                :loading="casting === entry.spell"
-                @click="castOnSelf(entry.spell)"
-              >
-                Lancer sur moi
-              </BaseButton>
+              <!-- Une catégorie par bouton, jamais une personne : le joueur ne
+                   choisit pas qui il touche. La liste vient du catalogue des
+                   catégories lançables — Ennemi s'y ajoutera sans toucher ici.
+                   Voir specs/bonus.md#tirage-de-la-cible. -->
+              <div v-else class="flex shrink-0 gap-2">
+                <BaseButton
+                  v-for="kind in offeredTargets"
+                  :key="kind"
+                  variant="ghost"
+                  :disabled="!castsLeft || casting !== null"
+                  :loading="casting === entry.spell && castingOn === kind"
+                  @click="castOn(entry.spell, kind)"
+                >
+                  {{ targetKindLabel(kind) }}
+                </BaseButton>
+              </div>
             </div>
 
             <!-- Ce que le sort fait, avant de le dépenser : un exemplaire lancé
@@ -76,16 +83,48 @@
         Le sort n'est pas parti. Réessaie.
       </BaseNotice>
 
+      <!-- La cible n'est pas annoncée avant le lancer ; elle l'est après, ici,
+           sur l'écran d'où le sort est parti. Voir specs/bonus.md#tirage-de-la-cible. -->
+      <BaseHint v-else-if="lastCast" class="mt-4" :tone="lastCast.view.targetName ? 'success' : 'warning'">
+        <template v-if="lastCast.kind === 'self'">
+          {{ spellLabel(lastCast.view.spell) }} est posé sur toi.
+        </template>
+        <template v-else-if="lastCast.view.targetName">
+          {{ spellLabel(lastCast.view.spell) }} est parti sur {{ lastCast.view.targetName }}.
+        </template>
+        <template v-else>
+          {{ spellLabel(lastCast.view.spell) }} n'a trouvé personne à toucher :
+          l'exemplaire est dépensé quand même.
+        </template>
+      </BaseHint>
+
       <!-- Le journal : c'est là que le lanceur lit ce qu'il a envoyé, et quand.
            Il survit à l'effet, qui meurt avec la tentative qu'il a ouverte. -->
       <BaseSection title="Ce que tu as lancé" class="mt-8">
         <BaseList class="mt-4" :empty="log.length ? null : 'Tu n\'as encore rien lancé.'">
           <li
-            v-for="entry in log"
-            :key="entry.castAt"
+            v-for="(entry, index) in log"
+            :key="index"
             class="flex items-baseline justify-between gap-4 px-4 py-3"
           >
-            <span class="font-medium">{{ spellLabel(entry.spell) }} — sur {{ entry.targetName }}</span>
+            <span class="font-medium">
+              {{ spellLabel(entry.spell) }} — sur {{ entry.targetName ?? 'personne' }}
+            </span>
+            <span class="text-sm text-slate-400">{{ formatDayTime(entry.castAt) }}</span>
+          </li>
+        </BaseList>
+      </BaseSection>
+
+      <!-- L'autre côté du même système : sans lui, personne ne saurait jamais
+           qu'un allié l'a soutenu. Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur. -->
+      <BaseSection title="Ce que tu as reçu" class="mt-8">
+        <BaseList class="mt-4" :empty="received.length ? null : 'Personne ne t\'a encore rien lancé.'">
+          <li
+            v-for="(entry, index) in received"
+            :key="index"
+            class="flex items-baseline justify-between gap-4 px-4 py-3"
+          >
+            <span class="font-medium">{{ spellLabel(entry.spell) }} — de {{ entry.casterName }}</span>
             <span class="text-sm text-slate-400">{{ formatDayTime(entry.castAt) }}</span>
           </li>
         </BaseList>
@@ -95,11 +134,15 @@
 </template>
 
 <script setup lang="ts">
-// L'inventaire, le lancer et le journal — pendant l'attente et là seulement.
-// Le lancer ne vise que soi à ce stade : les catégories Allié et Ennemi arrivent
-// avec les équipes. Voir specs/ecrans.md#sorts.
+// L'inventaire, le lancer et les deux journaux — pendant l'attente et là
+// seulement. Le lancer vise une catégorie, jamais une personne : soi, ou un
+// allié que le serveur tire et ne nomme qu'après.
+// Voir specs/ecrans.md#sorts et specs/bonus.md#tirage-de-la-cible.
 import { isCastable } from '~~/shared/utils/spells'
 import type { SpellId } from '~~/shared/utils/spells'
+import { CASTABLE_TARGET_KINDS } from '~~/shared/utils/teams'
+import type { CastableTargetKind } from '~~/shared/utils/teams'
+import type { CastView } from '~~/server/utils/effects'
 
 definePageMeta({
   // Hors attente, la page n'est pas atteignable — URL comprise. Le serveur
@@ -112,11 +155,13 @@ const {
   entries,
   total,
   log,
+  received,
   failed,
   casting,
   castFailed,
   castsLeft,
   castsPerCooldown,
+  canTargetAllies,
   cast,
 } = await useInventory()
 
@@ -133,8 +178,36 @@ const waitRemaining = computed(() =>
   (state.value?.cooldownUntil ? formatRemaining(state.value.cooldownUntil, now.value) : ''),
 )
 
-async function castOnSelf(spell: SpellId): Promise<void> {
-  await cast(spell)
+// Les catégories proposées : Soi toujours, Allié seulement à qui a une équipe —
+// sans elle, elle ne désignerait aucun pool.
+// Voir specs/equipes.md#le-joueur-sans-équipe.
+const offeredTargets = computed<CastableTargetKind[]>(
+  () => CASTABLE_TARGET_KINDS.filter(kind => kind === 'self' || canTargetAllies.value),
+)
+
+// Quelle catégorie est en vol : un bouton par catégorie, et seul celui qu'on a
+// pressé tourne.
+const castingOn = ref<CastableTargetKind | null>(null)
+
+// Ce que le dernier lancer a touché, et la catégorie visée. Le journal le porte
+// aussi, mais c'est ici que le joueur le lit sans chercher : la cible n'était
+// pas annoncée avant, elle l'est maintenant. La catégorie voyage avec, pour que
+// le joueur ne lise pas son propre nom quand il s'est visé lui-même.
+const lastCast = ref<{ view: CastView, kind: CastableTargetKind } | null>(null)
+
+async function castOn(spell: SpellId, kind: CastableTargetKind): Promise<void> {
+  castingOn.value = kind
+  lastCast.value = null
+
+  await cast(spell, kind)
+
+  // La première ligne du journal est celle qui vient de partir : il revient trié
+  // du plus récent au plus ancien, et deux lancers de la même seconde se
+  // départagent par leur ordre d'écriture. Voir server/utils/effects.ts.
+  const view = log.value[0]
+  lastCast.value = castFailed.value || !view ? null : { view, kind }
+  castingOn.value = null
+
   await refreshGame()
 }
 </script>

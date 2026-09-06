@@ -39,7 +39,7 @@ describe('Chronomancie, sur toute la tentative', () => {
   /** Lancée pendant l'attente, comme tout sort : elle attend la tentative suivante. */
   async function castChronomancy(): Promise<void> {
     await db.insert(inventory).values({ userId: player.id, spell: 'CHRONOMANCY', obtainedAt: NOW })
-    await castSpell(db, await reload(), 'CHRONOMANCY', NOW)
+    await castSpell(db, await reload(), 'CHRONOMANCY', 'self', NOW)
   }
 
   /**
