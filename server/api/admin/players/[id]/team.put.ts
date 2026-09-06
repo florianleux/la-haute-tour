@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { useDatabase } from '~~/server/db/client'
 import { users } from '~~/server/db/schema'
-import { requirePlayer } from '~~/server/utils/players'
+import { playerFromRoute } from '~~/server/utils/players'
 import { TEAM_IDS } from '~~/shared/utils/teams'
 
 const bodySchema = z.object({
@@ -20,17 +20,11 @@ const bodySchema = z.object({
  */
 export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   await requireAdmin(event)
-  const id = Number(getRouterParam(event, 'id') ?? '')
 
-  if (!Number.isInteger(id) || id <= 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Joueur inconnu' })
-  }
-
+  const player = await playerFromRoute(event)
   const { team } = await readValidatedBody(event, bodySchema.parse)
-  const db = useDatabase()
-  const player = await requirePlayer(db, id)
 
-  await db.update(users).set({ team }).where(eq(users.id, player.id))
+  await useDatabase().update(users).set({ team }).where(eq(users.id, player.id))
 
   return { ok: true }
 })
