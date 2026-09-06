@@ -39,7 +39,7 @@ export async function grantLife(db: Database, player: User): Promise<void> {
     )),
     db
       .update(users)
-      .set({ lives: 1, cooldownUntil: null })
+      .set({ lives: 1, cooldownUntil: null, cooldownStartedAt: null })
       .where(eq(users.id, player.id)),
   ])
 }

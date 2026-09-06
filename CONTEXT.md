@@ -25,7 +25,7 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Ce qu'affiche l'écran de jeu | [`utils/phase.ts`](utils/phase.ts) — `gameScreen()` : ce que la carte montre pour un état donné |
 | Ce que porte la barre d'icônes | [`utils/nav.ts`](utils/nav.ts) — `navIcons()` : lien, page courante, ou icône éteinte |
 | Ce que le joueur possède | [`server/utils/inventory.ts`](server/utils/inventory.ts) — l'inventaire, lisible en attente seulement |
-| Ce qu'un sort lancé devient | [`server/utils/effects.ts`](server/utils/effects.ts) — lancer, ancrage sur la tentative suivante, journal |
+| Ce qu'un sort lancé devient | [`server/utils/effects.ts`](server/utils/effects.ts) — lancer, ancrage sur la tentative suivante, journal, et le recalcul de l'attente qu'un Répit écourte |
 | Ce que les effets changent aux règles | [`server/utils/rules.ts`](server/utils/rules.ts) — `rulesWithEffects()` : un effet module, il ne remplace pas |
 | Qui peut contester, et ce qu'accepter change | [`server/utils/disputes.ts`](server/utils/disputes.ts) |
 | Qui est allié, qui est ennemi | [`shared/utils/teams.ts`](shared/utils/teams.ts) — `bondBetween()` : une relation, jamais stockée |

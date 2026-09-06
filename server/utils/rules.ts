@@ -52,6 +52,14 @@ export interface FloorRules {
    * Voir specs/mecanique.md#ce-que-les-sorts-modifient.
    */
   vitalityLives: number
+  /**
+   * Ce par quoi un Répit divise l'attente — ou la multiplie, en magie noire.
+   * Multiplicatif et non soustractif : deux Répit blancs divisent par quatre,
+   * jamais jusqu'à zéro, quel que soit ce qu'on empilera plus tard. C'est ce
+   * qui garantit que la mécanique centrale du jeu reste debout.
+   * Voir specs/bonus.md#cumul.
+   */
+  respiteFactor: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -71,6 +79,7 @@ const DEFAULT_RULES: FloorRules = {
   questionsPerChest: 50,
   mimicChance: 0.05,
   vitalityLives: 1,
+  respiteFactor: 2,
 }
 
 /**
@@ -95,12 +104,20 @@ export function rulesForFloor(floor: number): FloorRules {
  */
 export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): FloorRules {
   const vitality = effects.filter(effect => effect.spell === 'VITALITY')
+  const respite = effects.filter(effect => effect.spell === 'RESPITE')
 
   return {
     ...rules,
     lives: vitality.reduce(
       (lives, { face }) => lives + (face === 'boon' ? rules.vitalityLives : -rules.vitalityLives),
       rules.lives,
+    ),
+    // Multiplicatif, là où Vitalité est additive : le mode de cumul est propre à
+    // chaque sort. Diviser plutôt que soustraire est ce qui empêche l'attente
+    // d'atteindre zéro, quel que soit l'empilement.
+    cooldownMs: respite.reduce(
+      (ms, { face }) => (face === 'boon' ? ms / rules.respiteFactor : ms * rules.respiteFactor),
+      rules.cooldownMs,
     ),
   }
 }

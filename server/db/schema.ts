@@ -61,6 +61,27 @@ export const users = sqliteTable('users', {
   /** When the wait ends. Null outside a wait. The phase derives from it. */
   cooldownUntil: integer('cooldown_until', { mode: 'timestamp' }),
   /**
+   * Quand l'attente a commencé. Null hors attente.
+   *
+   * L'échéance ne suffit plus à la décrire depuis que Répit la déplace : c'est
+   * de ce début-là qu'elle se recalcule à chaque lancer, pour que deux Répit
+   * divisent la durée d'origine par quatre plutôt que de grignoter ce qu'il
+   * reste. Il identifie aussi l'attente auprès des effets, là où l'échéance,
+   * mouvante, ne le peut plus. Voir specs/bonus.md#catalogue.
+   */
+  cooldownStartedAt: integer('cooldown_started_at', { mode: 'timestamp' }),
+  /**
+   * Ce que cette attente-ci dure, avant qu'aucun Répit ne la touche. Null hors
+   * attente.
+   *
+   * Portée et non relue dans le jeu de règles, parce qu'elles ne durent pas
+   * toutes pareil : une dernière vie perdue en ouvre une de douze heures, un
+   * rattrapage entièrement manqué une de quatre. Recalculer depuis la première
+   * rallongerait la seconde au lieu de l'écourter.
+   * Voir specs/mecanique.md#règles-chiffrées.
+   */
+  cooldownBaseMs: integer('cooldown_base_ms'),
+  /**
    * Où le joueur en est du deck de son étage : le rang de la dernière question
    * qui lui a été servie. Remis à zéro en franchissant le palier.
    *
@@ -383,13 +404,22 @@ export const activeEffects = sqliteTable('active_effects', {
   face: text('face', { enum: SPELL_FACES }).notNull(),
   castAt: integer('cast_at', { mode: 'timestamp' }).notNull(),
   /**
-   * L'attente pendant laquelle le sort est parti, désignée par son échéance —
+   * L'attente pendant laquelle le sort est parti, désignée par son **début** —
    * un sort ne se lance que là, donc elle existe toujours. C'est elle qui porte
    * la règle « un exemplaire par attente », et non l'attente d'un ancrage : un
    * rattrapage entièrement manqué ouvre une **seconde** attente sans ouvrir de
    * tentative, et le premier lancer y bloquerait sinon le second.
+   *
+   * Son début et non son échéance : Répit déplace l'échéance, qui ne peut donc
+   * plus servir d'identité — un second Répit du même lanceur en verrait une
+   * autre et passerait à travers la contrainte. Le début, lui, ne bouge pas.
    */
-  castCooldownUntil: integer('cast_cooldown_until', { mode: 'timestamp' }).notNull(),
+  castCooldownStartedAt: integer('cast_cooldown_started_at', { mode: 'timestamp' })
+    .notNull()
+    // Même raison qu'`attemptStartedAt` : SQLite refuse une colonne NOT NULL
+    // dont le défaut n'est pas constant, donc la migration ne s'appliquerait sur
+    // aucune base existante. Le remplissage suit, dans la même migration.
+    .default(sql`0`),
   /** La tentative sur laquelle l'effet s'est ancré. Null tant qu'il attend. */
   anchoredAt: integer('anchored_at', { mode: 'timestamp' }),
 }, table => [
@@ -399,7 +429,7 @@ export const activeEffects = sqliteTable('active_effects', {
   // contrainte donne l'idempotence gratuitement — double-clic, second onglet ou
   // requête rejouée tombent dessus. Voir specs/bonus.md#où-et-quand.
   unique('active_effects_one_per_cooldown')
-    .on(table.casterId, table.spell, table.castCooldownUntil),
+    .on(table.casterId, table.spell, table.castCooldownStartedAt),
 ])
 
 /**

@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm'
 import {
   canDrawRecovery,
+  cooldownFields,
   cooldownFrom,
   isExpired,
   isLootQuestion,
@@ -395,7 +396,7 @@ async function resolve(
   // vue elle-même, et la vie perdue avec eux : écrits à part, une interruption
   // au milieu laisserait le joueur avec un décompte qui ne décrit plus sa
   // partie. Voir server/db/schema.ts.
-  const moved: Partial<User> = entersPool ? { lives, cooldownUntil } : {}
+  const moved: Partial<User> = entersPool ? { lives, ...cooldownFields(cooldownUntil, now) } : {}
 
   const advance = db
     .update(users)
@@ -799,13 +800,13 @@ export async function openPlayerChest(
   // Le Mimic retire toutes les vies d'un coup, traité comme une perte de dernière
   // vie ordinaire : l'attente démarre, et le verdict de la question — juste, elle
   // l'était — reste lisible par-dessus.
-  const cooldownUntil = cooldownFrom(rules, now)
+  const wait = cooldownFields(cooldownFrom(rules, now), now)
 
-  await db.update(users).set({ lives: 0, cooldownUntil }).where(eq(users.id, user.id))
+  await db.update(users).set({ lives: 0, ...wait }).where(eq(users.id, user.id))
 
   return stateFrom(db, {
     ...snapshot,
-    user: { ...snapshot.user, lives: 0, cooldownUntil },
+    user: { ...snapshot.user, lives: 0, ...wait },
     reservation: opened,
   }, now)
 }
@@ -978,7 +979,7 @@ async function finishRecovery(db: Database, user: User, now: Date): Promise<Game
   else {
     await db
       .update(users)
-      .set({ lives: verdict.livesAfter, cooldownUntil: verdict.cooldownUntil })
+      .set({ lives: verdict.livesAfter, ...cooldownFields(verdict.cooldownUntil, now) })
       .where(eq(users.id, user.id))
   }
 

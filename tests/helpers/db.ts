@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../../server/db/schema'
 import { shiftFloorSize } from '../../server/utils/deck'
+import { rulesForFloor } from '../../server/utils/rules'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -55,6 +56,24 @@ export async function createQuestion(db: Database, seed: QuestionSeed = {}): Pro
 
 type PlayerState = Partial<typeof schema.users.$inferInsert>
 
+/**
+ * Ce que porte l'attente demandée, en plus de son échéance : son début et sa
+ * durée. Un test qui ne dit que l'échéance décrit l'attente ordinaire, celle
+ * d'une dernière vie perdue — pas la plus courte d'un rattrapage manqué, qu'il
+ * lui faut alors épeler. Voir server/utils/mechanics.ts, cooldownFields().
+ */
+function waitAround(state: PlayerState): Pick<PlayerState, 'cooldownStartedAt' | 'cooldownBaseMs'> {
+  const until = state.cooldownUntil
+
+  if (!(until instanceof Date)) {
+    return { cooldownStartedAt: null, cooldownBaseMs: null }
+  }
+
+  const { cooldownMs } = rulesForFloor(1)
+
+  return { cooldownStartedAt: new Date(until.getTime() - cooldownMs), cooldownBaseMs: cooldownMs }
+}
+
 /** A player in the database, spelling out only what the test looks at. */
 export async function createPlayer(db: Database, state: PlayerState = {}): Promise<number> {
   const [user] = await db
@@ -65,6 +84,10 @@ export async function createPlayer(db: Database, state: PlayerState = {}): Promi
       // Une tentative ouverte depuis toujours : les tests jouent à une heure
       // qu'ils choisissent, et l'horloge de la base ne la connaît pas.
       attemptStartedAt: new Date(0),
+      // Une attente a un début et une durée, toujours : c'est d'eux que Répit
+      // la recalcule. Déduits de l'échéance quand le test ne dit que celle-ci,
+      // pour qu'aucun test ne monte un joueur que le jeu ne saurait produire.
+      ...waitAround(state),
       ...state,
     })
     .returning()

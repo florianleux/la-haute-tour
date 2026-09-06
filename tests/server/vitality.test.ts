@@ -118,7 +118,7 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
         spell: 'VITALITY',
         face: 'boon',
         castAt: NOW,
-        castCooldownUntil: new Date(NOW.getTime() + 1_000),
+        castCooldownStartedAt: new Date(NOW.getTime() + 1_000),
       })
       await fillPool(rules.poolSizeForRecovery - 1)
 

@@ -167,4 +167,37 @@ describe('une question tourne', () => {
     // La barre d'icônes s'en sert : un état absent ne doit pas l'effacer.
     expect(isAnswering(null)).toBe(false)
   })
+
+  // Une attente raccourcie par un Répit reste une attente : à son échéance, le
+  // rattrapage s'ouvre comme d'habitude. Le joueur doit le lire, sinon il croit
+  // reprendre l'ascension et tombe sur un rattrapage.
+  // Voir specs/bonus.md#répit.
+  describe('attente écourtée', () => {
+    it('la signale quand un Répit attend sur l attente en cours', () => {
+      const built = state({
+        phase: 'cooldown',
+        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending' }],
+      })
+
+      expect(gameScreen(built).shortenedWait).toBe(true)
+    })
+
+    it('ne la signale pas sans Répit', () => {
+      const built = state({
+        phase: 'cooldown',
+        effects: [{ spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending' }],
+      })
+
+      expect(gameScreen(built).shortenedWait).toBe(false)
+    })
+
+    it('ne la signale pas hors attente : il n y a plus rien à écourter', () => {
+      const built = state({
+        phase: 'ascent',
+        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending' }],
+      })
+
+      expect(gameScreen(built).shortenedWait).toBe(false)
+    })
+  })
 })

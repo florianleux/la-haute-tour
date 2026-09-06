@@ -18,7 +18,7 @@ export type SpellId = typeof SPELL_IDS[number]
  * alors que « consommé qu'il produise un effet ou non » parle d'un sort dont
  * l'effet existe mais tombe à vide. Voir specs/bonus.md#livraison.
  */
-export const CASTABLE_SPELL_IDS = ['VITALITY'] as const
+export const CASTABLE_SPELL_IDS = ['VITALITY', 'RESPITE'] as const
 
 export type CastableSpellId = typeof CASTABLE_SPELL_IDS[number]
 

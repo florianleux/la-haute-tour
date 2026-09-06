@@ -32,6 +32,14 @@
       Rattrapage raté : aucune bonne réponse. Une nouvelle attente commence.
     </BaseHint>
 
+    <!-- Une attente écourtée reste une attente : à son échéance, c'est le
+         rattrapage qui s'ouvre, pas l'ascension. Le dire ici évite au joueur de
+         croire qu'il reprend. Voir specs/bonus.md#catalogue. -->
+    <BaseHint v-if="screen?.shortenedWait" class="mt-3" tone="success">
+      Un Répit a raccourci ton attente. Elle mène au rattrapage comme une attente
+      pleine — plus tôt, c'est tout.
+    </BaseHint>
+
     <BaseLoading v-if="loading" class="mt-4">
       Mise à jour de ta partie…
     </BaseLoading>
@@ -56,11 +64,13 @@
       class="mt-6"
     />
 
-    <!-- Ce qui attend la prochaine tentative, lu avant de la reprendre : tous
-         les effets s'ancrent sur elle. Voir specs/bonus.md#écrans. -->
-    <BaseSection v-if="screen?.pendingEffects.length" title="Ce qui t'attend" class="mt-8">
+    <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
+         prochaine tentative, le Répit a déjà agi sur l'attente qu'il lit.
+         Voir specs/bonus.md#ancrage-et-durée-de-vie. -->
+    <BaseSection v-if="screen?.pendingEffects.length" title="Ce qui est sur toi" class="mt-8">
       <template #lead>
-        Ces sorts s'appliqueront à ta prochaine tentative, puis disparaîtront avec elle.
+        Ces sorts s'appliquent à ta prochaine tentative et disparaîtront avec elle —
+        sauf le Répit, qui agit sur l'attente en cours.
       </template>
       <EffectList :effects="screen.pendingEffects" class="mt-3" />
     </BaseSection>

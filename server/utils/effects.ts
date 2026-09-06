@@ -41,12 +41,13 @@ export interface CastView {
  * est en retard ou en double, pas fautif. Voir specs/bonus.md#où-et-quand.
  */
 export async function castSpell(db: Database, caster: User, spell: SpellId, now: Date): Promise<void> {
-  // Le lancer n'a lieu que pendant une attente, dont l'échéance identifie
-  // l'exemplaire déjà parti. L'appelant l'a vérifié — sans attente, il n'y a
-  // rien à identifier, donc rien à lancer.
-  const cooldownUntil = caster.cooldownUntil
+  // Le lancer n'a lieu que pendant une attente, dont le **début** identifie
+  // l'exemplaire déjà parti — l'échéance ne le peut plus, Répit la déplace.
+  // L'appelant l'a vérifié : sans attente, il n'y a rien à identifier, donc
+  // rien à lancer, et le sort est gaspillé.
+  const startedAt = caster.cooldownStartedAt
 
-  if (!cooldownUntil) {
+  if (!startedAt) {
     return
   }
 
@@ -70,7 +71,7 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
   await db.batch([
     db.delete(inventory).where(and(
       eq(inventory.id, copy.id),
-      notExists(alreadyCast(db, caster.id, spell, cooldownUntil)),
+      notExists(alreadyCast(db, caster.id, spell, startedAt)),
     )),
     db
       .insert(activeEffects)
@@ -80,21 +81,63 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
         spell,
         face: 'boon' satisfies SpellFace,
         castAt: now,
-        castCooldownUntil: cooldownUntil,
+        castCooldownStartedAt: startedAt,
       })
       .onConflictDoNothing(),
   ])
+
+  // Répit trouve son déclencheur déjà là : l'attente en cours se recalcule tout
+  // de suite, sur l'écran même d'où le sort est parti. Recalculé plutôt que
+  // raccourci, et depuis le début de l'attente : deux Répit divisent la durée
+  // d'origine par quatre, au lieu de grignoter deux fois ce qu'il restait.
+  // Voir specs/bonus.md#catalogue.
+  if (spell === 'RESPITE') {
+    await reshapeCooldown(db, caster, startedAt)
+  }
+}
+
+/**
+ * L'échéance de l'attente, refaite à partir de son début et de tout ce qui a été
+ * posé sur elle. Idempotente : un second lancer qui n'a rien consommé rend la
+ * même échéance, donc un double-clic ne raccourcit rien deux fois.
+ */
+async function reshapeCooldown(db: Database, target: User, startedAt: Date): Promise<void> {
+  // Ce que cette attente-ci dure, et non ce que le jeu de règles dit d'une
+  // attente : celle qui suit un rattrapage entièrement manqué est plus courte,
+  // et la recalculer sur les douze heures de l'autre la rallongerait.
+  const baseMs = target.cooldownBaseMs
+
+  if (baseMs === null) {
+    return
+  }
+
+  const onThisWait = await db
+    .select({ spell: activeEffects.spell, face: activeEffects.face })
+    .from(activeEffects)
+    .where(and(
+      eq(activeEffects.userId, target.id),
+      eq(activeEffects.castCooldownStartedAt, startedAt),
+    ))
+
+  // Le jeu de règles module la durée, on lui donne celle de cette attente-là.
+  const rules = { ...rulesForFloor(target.currentFloor), cooldownMs: baseMs }
+  const { cooldownMs } = rulesWithEffects(rules, onThisWait)
+
+  await db
+    .update(users)
+    .set({ cooldownUntil: new Date(startedAt.getTime() + cooldownMs) })
+    .where(eq(users.id, target.id))
 }
 
 /** Ce lanceur a-t-il déjà envoyé ce sort pendant cette attente ? */
-function alreadyCast(db: Database, casterId: number, spell: SpellId, cooldownUntil: Date) {
+function alreadyCast(db: Database, casterId: number, spell: SpellId, startedAt: Date) {
   return db
     .select({ id: activeEffects.id })
     .from(activeEffects)
     .where(and(
       eq(activeEffects.casterId, casterId),
       eq(activeEffects.spell, spell),
-      eq(activeEffects.castCooldownUntil, cooldownUntil),
+      eq(activeEffects.castCooldownStartedAt, startedAt),
     ))
 }
 
@@ -112,6 +155,7 @@ function buildEffectsQuery(db: Database, userId: number) {
       face: activeEffects.face,
       casterName: users.username,
       anchoredAt: activeEffects.anchoredAt,
+      castCooldownStartedAt: activeEffects.castCooldownStartedAt,
     })
     .from(activeEffects)
     .innerJoin(users, eq(users.id, activeEffects.casterId))
@@ -140,6 +184,7 @@ export type EffectRow = Awaited<EffectsQuery>[number]
  */
 export function toEffectViews(rows: EffectRow[], user: User): EffectView[] {
   return rows
+    .filter(row => actsOnCurrentWait(row, user))
     .filter(row => row.anchoredAt === null || stillRunning(row.anchoredAt, user))
     .map(({ spell, face, casterName, anchoredAt }) => ({
       spell,
@@ -195,6 +240,22 @@ export async function anchorEffects(db: Database, user: User, startedAt: Date): 
     .returning({ spell: activeEffects.spell, face: activeEffects.face })
 
   return rulesWithEffects(rulesForFloor(user.currentFloor), pending)
+}
+
+/**
+ * Un Répit a agi sur l'attente pendant laquelle il est parti, et meurt avec
+ * elle : il n'attend aucune tentative, contrairement aux autres. Le garder
+ * visible ensuite ferait annoncer une attente écourtée qu'il n'a pas touchée, et
+ * poserait une icône d'effet actif sur une ascension qu'il ne module pas.
+ * Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+function actsOnCurrentWait(row: EffectRow, user: User): boolean {
+  if (row.spell !== 'RESPITE') {
+    return true
+  }
+
+  return user.cooldownStartedAt !== null
+    && row.castCooldownStartedAt.getTime() === user.cooldownStartedAt.getTime()
 }
 
 /**

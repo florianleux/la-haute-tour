@@ -70,8 +70,16 @@ describe('lancer et ancrage des effets', () => {
     // Un rattrapage entièrement manqué ouvre une **seconde** attente sans
     // ouvrir de tentative : rien ne s'est ancré, et pourtant le lancer revient.
     // Voir specs/mecanique.md#tentative-attente-et-rattrapage.
-    const nextCooldown = new Date(COOLDOWN_UNTIL.getTime() + 4 * 60 * 60 * 1000)
-    await db.update(users).set({ cooldownUntil: nextCooldown }).where(eq(users.id, userId))
+    // Une seconde attente, début compris : c'est lui qui l'identifie, l'échéance
+    // seule ne le peut plus depuis que Répit la déplace.
+    const nextStart = new Date(COOLDOWN_UNTIL.getTime())
+    await db
+      .update(users)
+      .set({
+        cooldownStartedAt: nextStart,
+        cooldownUntil: new Date(nextStart.getTime() + 4 * 60 * 60 * 1000),
+      })
+      .where(eq(users.id, userId))
 
     await cast('VITALITY', new Date(NOW.getTime() + 60_000))
 
@@ -113,8 +121,8 @@ describe('lancer et ancrage des effets', () => {
     // peuvent attendre la même tentative, et ils s'empilent.
     const other = await createPlayer(db, { discordId: '987654321', username: 'radagast' })
     await db.insert(activeEffects).values([
-      { userId, casterId: userId, spell: 'VITALITY', face: 'boon', castAt: NOW, castCooldownUntil: COOLDOWN_UNTIL },
-      { userId, casterId: other, spell: 'VITALITY', face: 'boon', castAt: NOW, castCooldownUntil: COOLDOWN_UNTIL },
+      { userId, casterId: userId, spell: 'VITALITY', face: 'boon', castAt: NOW, castCooldownStartedAt: COOLDOWN_UNTIL },
+      { userId, casterId: other, spell: 'VITALITY', face: 'boon', castAt: NOW, castCooldownStartedAt: COOLDOWN_UNTIL },
     ])
 
     expect((await anchorEffects(db, await loadPlayer(db, userId), NOW)).lives).toBe(rules.lives + 2)

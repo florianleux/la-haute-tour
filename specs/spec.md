@@ -28,6 +28,8 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Réussites** | `poolSuccesses` | Nombre de bonnes réponses consécutives obtenues en rattrapage sur une question du Pool Échecs. Une mauvaise réponse le remet à zéro ; le seuil atteint fait sortir la question du pool. |
 | **Rattrapage** | `recovery` | Retest de quelques questions du Pool Échecs, à l'issue de l'attente, pour retrouver ses vies. |
 | **Attente** | `cooldown` | Délai forcé après la perte de la dernière vie, avant de pouvoir reprendre ou rattraper. |
+| **Début d'attente** | `cooldownStartedAt` | L'instant où l'attente en cours a commencé. C'est de lui que Répit la recalcule, et c'est lui qui l'identifie auprès des effets — son échéance, elle, se déplace. |
+| **Durée d'attente** | `cooldownBaseMs` | Ce que l'attente en cours dure avant qu'aucun sort ne la touche. Portée par le joueur : elles ne durent pas toutes pareil, celle d'un rattrapage manqué étant plus courte. |
 | **Palier** | `floorEnd` | Fin d'étage : toutes les questions de l'étage sont vues, le joueur s'apprête à monter au suivant. |
 | **Franchir le palier** | `crossFloor` | L'action qui fait monter d'un étage : elle incrémente l'étage, abandonne le Pool Échecs de celui qu'on quitte et réserve la première question du suivant. |
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |

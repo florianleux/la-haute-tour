@@ -9,6 +9,10 @@ function vitality(face: SpellEffect['face'], count = 1): SpellEffect[] {
   return Array.from({ length: count }, () => ({ spell: 'VITALITY' as const, face }))
 }
 
+function respite(face: SpellEffect['face'], count = 1): SpellEffect[] {
+  return Array.from({ length: count }, () => ({ spell: 'RESPITE' as const, face }))
+}
+
 describe('jeu de règles', () => {
   it('sert les valeurs par défaut du premier étage', () => {
     expect(rulesForFloor(1)).toMatchObject({
@@ -24,6 +28,7 @@ describe('jeu de règles', () => {
       latencyGraceMs: 1_000,
       questionsPerChest: 50,
       mimicChance: 0.05,
+      respiteFactor: 2,
     })
   })
 
@@ -64,7 +69,46 @@ describe('règles modulées par les effets', () => {
     expect(rest).toEqual(floorRest)
   })
 
-  it('laisse les règles intactes pour un sort qui ne les module pas encore', () => {
-    expect(rulesWithEffects(rules, [{ spell: 'RESPITE', face: 'boon' }])).toEqual(rules)
+  it('divise l attente par le facteur de Répit blanc', () => {
+    expect(rulesWithEffects(rules, respite('boon')).cooldownMs)
+      .toBe(rules.cooldownMs / rules.respiteFactor)
+  })
+
+  // Multiplicatif, et c'est ce qui garantit qu'aucun empilement ne ramène une
+  // attente à zéro. Voir specs/bonus.md#cumul.
+  it('multiplie les Répit blancs entre eux', () => {
+    expect(rulesWithEffects(rules, respite('boon', 2)).cooldownMs)
+      .toBe(rules.cooldownMs / (rules.respiteFactor ** 2))
+  })
+
+  it('rallonge l attente d autant en Répit noir', () => {
+    expect(rulesWithEffects(rules, respite('curse')).cooldownMs)
+      .toBe(rules.cooldownMs * rules.respiteFactor)
+  })
+
+  it('compose les deux faces de Répit plutôt que de les annuler d office', () => {
+    const both = [...respite('boon', 2), ...respite('curse')]
+
+    expect(rulesWithEffects(rules, both).cooldownMs)
+      .toBe(rules.cooldownMs / rules.respiteFactor)
+  })
+
+  it('n atteint jamais zéro, quel qu en soit l empilement', () => {
+    expect(rulesWithEffects(rules, respite('boon', 20)).cooldownMs).toBeGreaterThan(0)
+  })
+
+  it('ne touche à rien d autre que l attente', () => {
+    const { cooldownMs: _cooldown, ...rest } = rulesWithEffects(rules, respite('boon'))
+    const { cooldownMs: _floorCooldown, ...floorRest } = rules
+
+    expect(rest).toEqual(floorRest)
+  })
+
+  it('module les vies et l attente ensemble, chacune selon son sort', () => {
+    const mixed = [...vitality('boon'), ...respite('boon')]
+    const modulated = rulesWithEffects(rules, mixed)
+
+    expect(modulated.lives).toBe(rules.lives + 1)
+    expect(modulated.cooldownMs).toBe(rules.cooldownMs / rules.respiteFactor)
   })
 })

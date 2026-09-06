@@ -99,6 +99,33 @@ export interface AnswerInput {
 }
 
 /**
+ * Une attente qui s'ouvre — ou qui se ferme : son échéance, son début, et ce
+ * qu'elle dure.
+ *
+ * Les trois s'écrivent ensemble parce qu'ils se décrivent l'un l'autre. Une
+ * échéance sans début serait une attente que Répit ne saurait plus recalculer ;
+ * sans sa durée propre, il la recalculerait sur celle d'une autre — et une
+ * attente de rattrapage manqué, plus courte, en ressortirait rallongée.
+ *
+ * `skipCooldown` fait exception et déplace l'échéance seule : il fait échoir une
+ * attente, il n'en ouvre pas. Voir server/utils/lives.ts.
+ */
+export function cooldownFields(
+  cooldownUntil: Date | null,
+  now: Date,
+): Pick<User, 'cooldownUntil' | 'cooldownStartedAt' | 'cooldownBaseMs'> {
+  if (cooldownUntil === null) {
+    return { cooldownUntil: null, cooldownStartedAt: null, cooldownBaseMs: null }
+  }
+
+  return {
+    cooldownUntil,
+    cooldownStartedAt: now,
+    cooldownBaseMs: cooldownUntil.getTime() - now.getTime(),
+  }
+}
+
+/**
  * Ce que coûte une réponse. Le timeout est une erreur ordinaire : vie perdue,
  * réponse affichée, question versée au Pool Échecs. En rattrapage, aucune vie
  * n'est en jeu et la progression ne bouge pas — la question était déjà vue.

@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
 import { upcomingQuestions } from './deck'
-import { cooldownFrom } from './mechanics'
+import { cooldownFields, cooldownFrom } from './mechanics'
 import { requirePlayer } from './players'
 import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
@@ -235,7 +235,7 @@ export async function sendToCooldown(db: Database, testPlayer: User, now: Date):
     db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
     db
       .update(users)
-      .set({ lives: 0, cooldownUntil: cooldownFrom(rulesForFloor(testPlayer.currentFloor), now) })
+      .set({ lives: 0, ...cooldownFields(cooldownFrom(rulesForFloor(testPlayer.currentFloor), now), now) })
       .where(eq(users.id, testPlayer.id)),
   ])
 }
@@ -264,6 +264,7 @@ export async function resetTestPlayer(db: Database, testPlayer: User, now: Date)
         currentFloor: 1,
         lives: rulesForFloor(1).lives,
         cooldownUntil: null,
+        cooldownStartedAt: null,
         floorCursor: 0,
         floorSeen: 0,
         attemptSeen: 0,

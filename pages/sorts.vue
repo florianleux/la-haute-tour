@@ -2,8 +2,16 @@
   <BaseCard wide title="Tes sorts">
     <template #lead>
       Ce que tes coffres t'ont donné. Un sort se lance sur toi, une seule fois
-      par attente, et s'appliquera à ta prochaine tentative.
+      par attente. La plupart attendent ta prochaine tentative ; le Répit, lui,
+      raccourcit l'attente que tu es en train de vivre.
     </template>
+
+    <!-- Le seul retour instantané du système : l'échéance recule sous les yeux
+         du joueur, sur l'écran d'où il vient de lancer.
+         Voir specs/bonus.md#catalogue. -->
+    <BaseHint v-if="waitRemaining" class="mt-4">
+      Reprise dans {{ waitRemaining }}.
+    </BaseHint>
 
     <BaseNotice v-if="failed">
       Impossible de lire ton inventaire. Recharge la page.
@@ -84,7 +92,15 @@ const { entries, total, log, failed, casting, castFailed, cast } = await useInve
 // Le récapitulatif de ce qui attend la prochaine tentative vit sur l'écran de
 // jeu : un sort lancé d'ici doit s'y voir au retour, pas au rechargement
 // suivant.
-const { refresh: refreshGame } = await useGameState()
+const { state, refresh: refreshGame } = await useGameState()
+
+// L'échéance se relit à la minute, comme les fiches de l'administration : c'est
+// assez fin pour qu'aucun chiffre affiché ne soit faux, et le Répit la fait
+// reculer d'un coup au retour du lancer.
+const now = useClockTick()
+const waitRemaining = computed(() =>
+  (state.value?.cooldownUntil ? formatRemaining(state.value.cooldownUntil, now.value) : ''),
+)
 
 async function castOnSelf(spell: SpellId): Promise<void> {
   await cast(spell)
