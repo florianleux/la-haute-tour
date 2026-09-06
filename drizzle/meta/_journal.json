@@ -85,6 +85,27 @@
       "when": 1788637924843,
       "tag": "0011_windy_steve_rogers",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788644298173,
+      "tag": "0012_fresh_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788644592160,
+      "tag": "0013_next_stature",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1788644597651,
+      "tag": "0014_assign_teams_to_existing_players",
+      "breakpoints": true
     }
   ]
 }

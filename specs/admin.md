@@ -14,6 +14,7 @@
 
 - Seuls les **Discord IDs whitelistés en base** peuvent s'inscrire.
 - L'admin liste les Discord IDs autorisés et en ajoute, depuis `/admin` ou directement en base.
+- **L'ajout porte l'équipe d'arrivée** : c'est là que l'appartenance se décide, et le compte la reprend à sa première connexion. Elle se change ensuite depuis la fiche joueur. Voir [`equipes.md`](./equipes.md).
 - Pas de whitelist → pas d'inscription possible.
 - Voir [`anti-triche.md`](./anti-triche.md).
 
@@ -39,6 +40,7 @@
 
 - **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
+- **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
 - **Deux gestes** : *passer l'attente* et *rendre une vie*. Ils appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
 - L'avatar est le hash renvoyé par Discord à la connexion, resynchronisé à chaque login. Faute de hash, l'avatar par défaut du compte.
 
@@ -51,7 +53,8 @@ créés depuis l'interface, sans compte Discord derrière, qu'il peut incarner.
 - **Autant qu'il en faut**, créés et supprimés depuis un onglet dédié. Supprimer
   un joueur test efface sa partie avec lui.
 - **Un monde scellé** : un vrai joueur ne peut jamais cibler ni être ciblé par
-  un joueur test, et réciproquement. Les joueurs test n'apparaissent ni dans les
+  un joueur test, et réciproquement — y compris quand les deux portent la même
+  équipe. La relation entre eux n'existe pas. Voir [`equipes.md`](./equipes.md). Les joueurs test n'apparaissent ni dans les
   fiches joueurs, ni dans la file de contestation, ni dans les flags de triche —
   ces écrans servent à arbitrer de vraies parties. Voir [`bonus.md`](./bonus.md).
 - **Ils jouent une vraie partie** : mêmes règles, mêmes phases, mêmes écrans.
@@ -79,6 +82,9 @@ regarde la partie.
 Des gestes nommés, jamais des champs bruts : chacun laisse la base dans un état
 que le jeu sait produire de lui-même.
 
+- **Mettre dans une équipe**, ou l'en retirer. Sans équipe, deux joueurs test ne
+  sont ni alliés ni ennemis : c'est le premier réglage à poser pour éprouver le
+  PvP. Voir [`equipes.md`](./equipes.md).
 - **Donner un sort**, choisi dans le catalogue.
 - **Avancer de N questions**, justes ou fausses — les fausses remplissent le
   Pool Échecs, comme en jeu. C'est ce qui permet d'atteindre une question loot

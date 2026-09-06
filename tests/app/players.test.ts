@@ -20,6 +20,7 @@ const card: PlayerCard = {
   floorTotal: 8,
   cooldownUntil: '2026-09-04T18:00:00.000Z',
   pendingDisputes: 2,
+  team: null,
 }
 
 describe('joueurs côté admin', () => {

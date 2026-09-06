@@ -26,6 +26,7 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Ce qu'un sort lancé devient | [`server/utils/effects.ts`](server/utils/effects.ts) — lancer, ancrage sur la tentative suivante, journal |
 | Ce que les effets changent aux règles | [`server/utils/rules.ts`](server/utils/rules.ts) — `rulesWithEffects()` : un effet module, il ne remplace pas |
 | Qui peut contester, et ce qu'accepter change | [`server/utils/disputes.ts`](server/utils/disputes.ts) |
+| Qui est allié, qui est ennemi | [`shared/utils/teams.ts`](shared/utils/teams.ts) — `bondBetween()` : une relation, jamais stockée |
 | Les joueurs test, et ce qu'on leur fait | [`server/utils/testPlayers.ts`](server/utils/testPlayers.ts) — création, gestes de réglage, monde scellé |
 | Qui joue vraiment, sous incarnation | [`server/utils/auth.ts`](server/utils/auth.ts) — `getSessionUser()` porte les droits, `getCurrentUser()` sert le jeu |
 | Ce que coûte un départ de page | [`server/utils/focus.ts`](server/utils/focus.ts) et la détection dans [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) |

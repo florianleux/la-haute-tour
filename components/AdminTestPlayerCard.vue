@@ -18,6 +18,17 @@
 
     <div class="mt-4 grid gap-3 sm:grid-cols-2">
       <div class="flex items-end gap-2">
+        <BaseSelect
+          :model-value="testPlayer.team ?? NO_TEAM"
+          label="Équipe"
+          :options="teamOptions"
+          :disabled="busy"
+          class="grow"
+          @update:model-value="value => emit('setTeam', value === NO_TEAM ? null : (value as TeamId))"
+        />
+      </div>
+
+      <div class="flex items-end gap-2">
         <BaseSelect v-model="spell" label="Sort" :options="spellOptions" class="grow" />
         <BaseButton :disabled="busy" @click="emit('grantSpell', spell)">
           Donner
@@ -60,7 +71,9 @@
 // Des gestes nommés, jamais des champs : chacun laisse la base dans un état que
 // le jeu sait produire. Voir specs/admin.md#réglages-dun-joueur-test.
 import { SPELL_IDS } from '~~/shared/utils/spells'
+import { TEAM_IDS } from '~~/shared/utils/teams'
 import type { SpellId } from '~~/shared/utils/spells'
+import type { TeamId } from '~~/shared/utils/teams'
 import type { PlayerCard } from '~~/server/utils/players'
 
 const props = defineProps<{
@@ -72,6 +85,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  setTeam: [TeamId | null]
   grantSpell: [SpellId]
   advance: [number, boolean]
   rewind: [number]
@@ -86,6 +100,14 @@ const spell = ref<SpellId>(SPELL_IDS[0])
 const steps = ref(10)
 
 const spellOptions = SPELL_IDS.map(id => ({ value: id, label: spellLabel(id) }))
+
+// Sans équipe, deux joueurs test ne sont ni alliés ni ennemis : c'est le premier
+// réglage à poser pour éprouver le PvP. Voir specs/equipes.md.
+const NO_TEAM = 'none'
+const teamOptions = [
+  { value: NO_TEAM, label: teamLabel(null) },
+  ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
+]
 const stepOptions = [1, 5, 10, 25, 49].map(count => ({ value: String(count), label: `${count}` }))
 
 const stepsValue = computed({

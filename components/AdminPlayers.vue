@@ -26,6 +26,7 @@
         :now="now"
         @skip-cooldown="act('skipCooldown', player.userId)"
         @grant-life="act('grantLife', player.userId)"
+        @set-team="(team: TeamId | null) => onTeam(player.userId, team)"
       />
     </div>
   </BaseSection>
@@ -34,7 +35,9 @@
 <script setup lang="ts">
 // Les fiches joueurs. Lecture sans effet : ouvrir l'onglet ne fait avancer
 // aucune partie. Voir specs/admin.md#gestion-des-joueurs.
-const { players, failed, loading, acting, skipCooldown, grantLife } = await useAdminPlayers()
+import type { TeamId } from '~~/shared/utils/teams'
+
+const { players, failed, loading, acting, skipCooldown, grantLife, setTeam } = await useAdminPlayers()
 
 const actionFailed = ref(false)
 
@@ -61,6 +64,11 @@ const running = ref<{ userId: number, action: PlayerAction } | null>(null)
 
 function runningOn(userId: number): PlayerAction | null {
   return running.value?.userId === userId ? running.value.action : null
+}
+
+/** L'équipe n'a pas de bouton dédié : le select porte le geste. */
+async function onTeam(userId: number, team: TeamId | null): Promise<void> {
+  actionFailed.value = !await setTeam(userId, team)
 }
 
 async function act(action: PlayerAction, userId: number): Promise<void> {

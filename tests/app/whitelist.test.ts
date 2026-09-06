@@ -23,7 +23,7 @@ describe('whitelist côté admin', () => {
   it('relit la liste après un ajout, au lieu de la deviner', async () => {
     const { add } = await useWhitelist()
 
-    const added = await add('111')
+    const added = await add('111', 'CRIMSON')
 
     expect(added).toBe(true)
     expect(calls()).toEqual(['fetch POST /api/admin/whitelist'])
@@ -33,7 +33,7 @@ describe('whitelist côté admin', () => {
   it('reste occupé jusqu à ce que la liste soit relue, pas seulement postée', async () => {
     const { add, adding } = await useWhitelist()
 
-    const inFlight = add('111')
+    const inFlight = add('111', 'CRIMSON')
     expect(adding.value).toBe(true)
     await inFlight
 
@@ -45,7 +45,7 @@ describe('whitelist côté admin', () => {
     breakNetwork()
     const { add, failed } = await useWhitelist()
 
-    const added = await add('111')
+    const added = await add('111', 'CRIMSON')
 
     expect(added).toBe(false)
     expect(refresh).not.toHaveBeenCalled()

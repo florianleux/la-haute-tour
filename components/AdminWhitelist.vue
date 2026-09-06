@@ -11,6 +11,9 @@
         placeholder="123456789012345678"
         class="flex-1"
       />
+      <!-- L'équipe se décide en invitant : c'est le seul moment où l'on sait
+           pourquoi on invite. Voir specs/equipes.md. -->
+      <BaseSelect v-model="team" label="Équipe" :options="teamOptions" />
       <BaseButton :disabled="!discordId.trim()" :loading="adding" @click="submit">
         Ajouter
       </BaseButton>
@@ -34,18 +37,33 @@
         class="flex items-center justify-between px-4 py-3 text-sm"
       >
         <span class="font-mono">{{ entry.discordId }}</span>
-        <span class="text-slate-500">{{ formatDay(entry.createdAt) }}</span>
+        <span class="flex items-center gap-3 text-slate-500">
+          <span>{{ teamLabel(entry.team) }}</span>
+          <span>{{ formatDay(entry.createdAt) }}</span>
+        </span>
       </li>
     </BaseList>
   </BaseSection>
 </template>
 
 <script setup lang="ts">
+import { TEAM_IDS } from '~~/shared/utils/teams'
+import type { TeamId } from '~~/shared/utils/teams'
+
 // La liste des Discord IDs autorisés. La garde serveur est ce qui protège ;
 // cet écran ne fait que lire et ajouter. Voir specs/admin.md.
 const { entries, failed, add, adding, loading } = await useWhitelist()
 
 const discordId = ref('')
+
+// « Sans équipe » est un choix : l'appartenance reste facultative, et l'admin
+// peut inviter sans trancher tout de suite.
+const NO_TEAM = 'none'
+const team = ref<string>(NO_TEAM)
+const teamOptions = [
+  { value: NO_TEAM, label: teamLabel(null) },
+  ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
+]
 const addFailed = ref(false)
 
 // Pas de « liste vide » quand la lecture a échoué : ce serait la même phrase
@@ -59,7 +77,7 @@ async function submit(): Promise<void> {
     return
   }
 
-  const added = await add(discordId.value)
+  const added = await add(discordId.value, team.value === NO_TEAM ? null : (team.value as TeamId))
 
   addFailed.value = !added
   if (added) {

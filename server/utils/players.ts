@@ -4,6 +4,7 @@ import { phaseOf } from './mechanics'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { Phase } from './mechanics'
+import type { TeamId } from '../../shared/utils/teams'
 
 /**
  * Les fiches joueurs de l'administration : où en est chacun, d'un seul coup
@@ -30,6 +31,8 @@ export interface PlayerCard {
   cooldownUntil: string | null
   /** Contestations de ce joueur encore à arbitrer. */
   pendingDisputes: number
+  /** Son équipe, null tant que l'admin ne l'a pas placé. Voir specs/equipes.md. */
+  team: TeamId | null
 }
 
 /**
@@ -104,5 +107,6 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     floorTotal: row.floorTotal,
     cooldownUntil: row.user.cooldownUntil?.toISOString() ?? null,
     pendingDisputes: row.pendingDisputes,
+    team: row.user.team,
   }))
 }

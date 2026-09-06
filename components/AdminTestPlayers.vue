@@ -29,6 +29,7 @@
         :test-player="testPlayer"
         :busy="acting"
         :now="now"
+        @set-team="(team: TeamId | null) => act(() => setTeam(testPlayer.userId, team))"
         @grant-spell="(spell: SpellId) => act(() => grantSpell(testPlayer.userId, spell))"
         @advance="(count: number, correct: boolean) => act(() => advance(testPlayer.userId, count, correct))"
         @rewind="(count: number) => act(() => rewind(testPlayer.userId, count))"
@@ -47,6 +48,7 @@
 // vraies parties — l'onglet Joueurs n'en montre aucun.
 // Voir specs/admin.md#joueurs-test.
 import type { SpellId } from '~~/shared/utils/spells'
+import type { TeamId } from '~~/shared/utils/teams'
 
 const {
   testPlayers,
@@ -61,6 +63,7 @@ const {
   sendToCooldown,
   skipCooldown,
   grantLife,
+  setTeam,
   reset,
 } = await useAdminTestPlayers()
 

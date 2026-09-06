@@ -62,8 +62,8 @@ describe('whitelist admin', () => {
     expect(response.status).toBe(200)
     const { entries } = await response.json()
     expect(entries).toEqual([
-      { discordId: '222', createdAt: '2026-09-02T10:00:00.000Z' },
-      { discordId: '111', createdAt: '2026-09-01T10:00:00.000Z' },
+      { discordId: '222', team: null, createdAt: '2026-09-02T10:00:00.000Z' },
+      { discordId: '111', team: null, createdAt: '2026-09-01T10:00:00.000Z' },
     ])
   })
 

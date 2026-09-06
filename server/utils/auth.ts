@@ -19,8 +19,9 @@ export type LoginResult =
 
 /**
  * Whitelist first: a Discord ID that isn't whitelisted creates no account.
- * Otherwise create the player (floor 1, 3 lives, not admin) or re-sync their
- * username/email/avatar without ever touching their game state.
+ * Otherwise create the player (floor 1, 3 lives, not admin, l'équipe décidée à
+ * l'invitation) or re-sync their username/email/avatar without ever touching
+ * their game state — ni leur équipe.
  */
 export async function loginWithDiscord(
   db: Database,
@@ -46,6 +47,10 @@ export async function loginWithDiscord(
       isAdmin: false,
       currentFloor: 1,
       lives: 3,
+      // L'équipe décidée à l'invitation, et seulement à la création : une
+      // whitelist rééditée ne déplace personne, la fiche joueur fait foi
+      // ensuite. Voir specs/equipes.md.
+      team: allowed.team,
     })
     .onConflictDoUpdate({
       target: users.discordId,

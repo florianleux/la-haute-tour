@@ -2,6 +2,7 @@ import { useWriteThenRead } from './useWriteThenRead'
 import type { Ref } from 'vue'
 import type { PlayersResponse } from '~~/server/api/admin/players/index.get'
 import type { PlayerCard } from '~~/server/utils/players'
+import type { TeamId } from '~~/shared/utils/teams'
 
 /** Cache key of the roster read: one name, so nobody re-types the string. */
 export const ADMIN_PLAYERS_KEY = 'admin-players'
@@ -15,6 +16,8 @@ export interface AdminPlayers {
   acting: Ref<boolean>
   skipCooldown: (userId: number) => Promise<boolean>
   grantLife: (userId: number) => Promise<boolean>
+  /** Met le joueur dans une équipe, ou l'en retire avec null. */
+  setTeam: (userId: number, team: TeamId | null) => Promise<boolean>
   refresh: () => Promise<void>
 }
 
@@ -38,6 +41,7 @@ export async function useAdminPlayers(): Promise<AdminPlayers> {
     acting,
     skipCooldown: userId => send(`/api/admin/players/${userId}/skip-cooldown`, 'POST'),
     grantLife: userId => send(`/api/admin/players/${userId}/grant-life`, 'POST'),
+    setTeam: (userId, team) => send(`/api/admin/players/${userId}/team`, 'PUT', { team }),
     refresh,
   }
 }

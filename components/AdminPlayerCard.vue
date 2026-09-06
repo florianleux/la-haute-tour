@@ -25,6 +25,12 @@
         </dt>
         <dd>{{ player.lives }}</dd>
       </div>
+      <div class="flex justify-between gap-4">
+        <dt class="text-slate-500">
+          Équipe
+        </dt>
+        <dd>{{ teamLabel(player.team) }}</dd>
+      </div>
       <div v-if="waiting && remaining" class="flex justify-between gap-4">
         <dt class="text-slate-500">
           Déblocage dans
@@ -60,10 +66,21 @@
         Rendre une vie
       </BaseButton>
     </div>
+
+    <BaseSelect
+      :model-value="player.team ?? NO_TEAM"
+      class="mt-3 w-full"
+      :options="teamOptions"
+      :disabled="busy"
+      aria-label="Équipe du joueur"
+      @update:model-value="value => $emit('setTeam', value === NO_TEAM ? null : (value as TeamId))"
+    />
   </BaseTile>
 </template>
 
 <script setup lang="ts">
+import { TEAM_IDS } from '~~/shared/utils/teams'
+import type { TeamId } from '~~/shared/utils/teams'
 import type { PlayerCard } from '~~/server/utils/players'
 
 const props = defineProps<{
@@ -76,7 +93,16 @@ const props = defineProps<{
   now: number
 }>()
 
-defineEmits<{ skipCooldown: [], grantLife: [] }>()
+defineEmits<{ skipCooldown: [], grantLife: [], setTeam: [TeamId | null] }>()
+
+// « Sans équipe » est un choix comme un autre : l'appartenance est facultative,
+// et l'admin doit pouvoir l'ôter. Voir specs/equipes.md.
+const NO_TEAM = 'none'
+
+const teamOptions = [
+  { value: NO_TEAM, label: teamLabel(null) },
+  ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
+]
 
 const { waiting, remaining } = usePlayerWait(toRef(props, 'player'), toRef(props, 'now'))
 </script>

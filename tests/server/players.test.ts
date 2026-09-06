@@ -46,6 +46,8 @@ describe('fiches joueurs', () => {
       floorTotal: 4,
       cooldownUntil: null,
       pendingDisputes: 0,
+      // Personne n\'est placé tant que l\'admin ne le fait pas.
+      team: null,
     }])
   })
 

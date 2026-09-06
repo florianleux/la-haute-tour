@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { CHEST_STATES, SPELL_FACES, SPELL_IDS } from '../../shared/utils/spells'
+import { TEAM_IDS } from '../../shared/utils/teams'
 
 /**
  * Discord IDs allowed to sign up. Filled manually (admin UI or raw SQL).
@@ -9,6 +10,17 @@ import { CHEST_STATES, SPELL_FACES, SPELL_IDS } from '../../shared/utils/spells'
  */
 export const whitelist = sqliteTable('whitelist', {
   discordId: text('discord_id').primaryKey(),
+  /**
+   * L'équipe que le joueur aura en arrivant. Choisie au moment où l'admin
+   * autorise l'ID : c'est le seul instant où l'on sait pourquoi on l'invite, et
+   * décider là évite d'avoir à y repenser à sa première connexion.
+   *
+   * Elle ne sert qu'une fois, à la création du compte. Ensuite c'est la fiche
+   * joueur qui fait foi : rééditer la whitelist ne déplace personne, sinon elle
+   * défarait en silence ce que l'admin a décidé après coup.
+   * Voir specs/equipes.md.
+   */
+  team: text('team', { enum: TEAM_IDS }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -37,6 +49,13 @@ export const users = sqliteTable('users', {
    * tirage des cibles d'un vrai lanceur. Voir specs/admin.md#joueurs-test.
    */
   isTest: integer('is_test', { mode: 'boolean' }).notNull().default(false),
+  /**
+   * L'équipe du joueur, assignée à la main par l'admin. Null tant qu'il n'en a
+   * pas : l'appartenance est facultative, l'admin lui-même n'en a pas. Elle ne
+   * sert qu'à dériver allié ou ennemi au moment d'un lancer — la relation, elle,
+   * ne se stocke jamais. Voir specs/equipes.md.
+   */
+  team: text('team', { enum: TEAM_IDS }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /** When the wait ends. Null outside a wait. The phase derives from it. */
