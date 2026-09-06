@@ -51,6 +51,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Lancer** | `cast` | L'action de consommer un sort de son inventaire vers une catégorie de cible. |
 | **Cible** | `target` | Le joueur que le tirage désigne. Jamais choisi nominativement. |
 | **Catégorie de cible** | `targetKind` | Ce que le lanceur choisit, faute de choisir une personne : `self`, `ally` ou `foe`. |
+| **Équipe** | `team` | L'une des deux appartenances, assignée par l'admin. Elle ne sert qu'à dériver allié ou ennemi au moment d'un lancer. Facultative : l'admin n'en a pas. Voir [`equipes.md`](./equipes.md). |
 | **Magie blanche** | `boon` | La face positive d'un sort, appliquée sur soi ou un allié. |
 | **Magie noire** | `curse` | La face négative, appliquée sur un ennemi. Miroir systématique de la face blanche. |
 | **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non. |
@@ -73,6 +74,7 @@ Le mot **session** n'appartient pas au vocabulaire du domaine : il désigne uniq
 - [`admin.md`](./admin.md) — Administration : flag admin, dashboard, file de contestation, CRUD questions.
 - [`architecture.md`](./architecture.md) — Stack technique, données, authentification, forme de l'API, hébergement.
 - [`bonus.md`](./bonus.md) — Sorts, question loot, coffres et Mimic. Le seul système qui fasse communiquer deux parties entre elles.
+- [`equipes.md`](./equipes.md) — Les deux équipes, leur assignation, et la dérivation allié/ennemi dont la magie noire dépend.
 
 ## Règles chiffrées
 

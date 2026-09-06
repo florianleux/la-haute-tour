@@ -9,7 +9,7 @@ Deux systèmes distincts, non hiérarchiques :
 - **Sorts** — le seul objet qu'on obtient en jouant. Se lancent sur soi, sur un allié ou sur un ennemi.
 - **Talismans** — passifs équipés en continu. **Hors périmètre**, voir la fin du document.
 
-Les équipes sont traitées à part, dans `equipes.md`, qui reste à écrire.
+Les équipes sont traitées à part, dans [`equipes.md`](./equipes.md).
 
 ## Sorts
 
@@ -301,13 +301,12 @@ Jouable et testable avant que les équipes existent.
 mécanique existante différente ; les brancher un par un sur une boucle qui tourne
 déjà est plus sûr que tout d'un coup.
 
-**T3 — le PvP.** `equipes.md` écrit d'abord, puis équipe sur le joueur, catégories
-Allié et Ennemi, magie noire, limite de deux effets négatifs, tirage pondéré par
-rang, journal nominatif.
+**T3 — le PvP.** [`equipes.md`](./equipes.md) est écrit ; restent l'équipe sur le
+joueur, les catégories Allié et Ennemi, la magie noire, la limite de deux effets
+négatifs, le tirage pondéré par rang et le journal nominatif.
 
 ## Points encore à spécifier
 
-- `equipes.md` n'existe pas. Bloquant pour T3, pour rien avant.
 - Le multiplicateur noir de Répit est posé à ×2 par symétrie avec Chronomancie ;
   le catalogue d'origine disait +50 %. À confirmer.
 - Les libellés des cinq sorts. Les identifiants étant figés, ça ne bloque rien.
