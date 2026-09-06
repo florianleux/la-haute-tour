@@ -38,6 +38,19 @@ describe('bascule d incarnation', () => {
     expect(reloads()).toEqual(['/'])
   })
 
+  // Le bug : incarner puis revenir à soi, c'est deux fois `/`. Nuxt avale le
+  // second rechargement vers le même chemin dans les dix secondes — garde-fou
+  // anti-boucle — et la page restait sur la partie de l'autre, sélecteur grisé.
+  it('recharge à chaque bascule, y compris la seconde dans la foulée', async () => {
+    const { actAs } = useImpersonation()
+
+    await actAs(2)
+    await actAs(null)
+
+    expect(reloads()).toEqual(['/', '/'])
+    expect(calls()).not.toContain('reload avalé /')
+  })
+
   it('ne recharge rien quand le serveur refuse, et le dit', async () => {
     breakNetwork()
     const { actAs, failed, pending } = useImpersonation()

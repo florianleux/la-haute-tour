@@ -46,6 +46,9 @@ export const testUser: SessionUser = {
 
 export const testAdmin: SessionUser = { ...testUser, id: 2, username: 'saruman', isAdmin: true }
 
+/** La fenêtre pendant laquelle Nuxt refuse de recharger deux fois le même chemin. */
+const RELOAD_GUARD_MS = 10_000
+
 /**
  * Les auto-imports de Nuxt n'existent pas sous Vitest — même procédé que
  * installNitroGlobals, côté application. Middlewares et composables s'importent
@@ -65,6 +68,7 @@ export function installAppGlobals(): FakeNuxt {
   const refresh = vi.fn(async (): Promise<void> => {})
   let fetchRejection: unknown = null
   let fetchResponse: unknown = { ok: true }
+  let lastReload: { path: string, expires: number } | null = null
 
   const identity = computed<MeResponse | null>(
     () => (payloads.get(CURRENT_USER_KEY) as MeResponse | undefined) ?? null,
@@ -118,9 +122,22 @@ export function installAppGlobals(): FakeNuxt {
       payloads.clear()
       calls.push('clear cache')
     },
-    reloadNuxtApp: ({ path }: { path?: string } = {}): void => {
-      calls.push(`reload ${path ?? 'current'}`)
-      reloads.push(path ?? 'current')
+    // Le garde-fou de Nuxt est modélisé, parce que c'est lui qui mord : le vrai
+    // `reloadNuxtApp` retient le dernier rechargement en sessionStorage et avale
+    // le suivant vers le même chemin pendant dix secondes, sauf `force`. Un faux
+    // qui recharge toujours laisserait passer précisément le bug qu'on a eu.
+    reloadNuxtApp: ({ path, force }: { path?: string, force?: boolean } = {}): void => {
+      const target = path ?? 'current'
+      const swallowed = lastReload?.path === target && lastReload.expires > Date.now()
+
+      if (swallowed && !force) {
+        calls.push(`reload avalé ${target}`)
+        return
+      }
+
+      lastReload = { path: target, expires: Date.now() + RELOAD_GUARD_MS }
+      calls.push(`reload ${target}`)
+      reloads.push(target)
     },
     useRequestHeaders: () => ({}),
     getCurrentScope,
@@ -185,6 +202,7 @@ export function installAppGlobals(): FakeNuxt {
       refresh.mockImplementation(async () => {})
       fetchRejection = null
       fetchResponse = { ok: true }
+      lastReload = null
       signOut()
     },
   }

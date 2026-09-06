@@ -39,7 +39,13 @@ export function useImpersonation(): Impersonation {
     // vidé de son état. Un rechargement complet rebâtit tout — identité, état
     // de jeu, inventaire — sous la nouvelle personne, sans énumérer ce qu'il
     // faut jeter. Le jeu étant la page d'accueil, c'est là qu'on atterrit.
-    reloadNuxtApp({ path: '/', persistState: false })
+    //
+    // `force` parce que Nuxt garde en sessionStorage le dernier rechargement et
+    // avale le suivant vers le même chemin pendant dix secondes — un garde-fou
+    // contre les boucles. Ici deux bascules d'affilée sont légitimes : incarner
+    // puis revenir à soi, c'est deux fois `/`. Sans lui, la seconde ne partait
+    // pas, et le sélecteur restait grisé sur la partie de l'autre.
+    reloadNuxtApp({ path: '/', persistState: false, force: true })
 
     // Pas de remise à zéro de `pending` : la page s'en va, et le sélecteur doit
     // rester inerte jusqu'à ce qu'elle parte.

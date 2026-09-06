@@ -127,8 +127,12 @@
         <BaseHint class="mt-2">
           {{ secondsLeft }} s
         </BaseHint>
+        <!-- Le champ prend le clavier dès que la question paraît : Entrée envoie
+             la réponse, puis enchaîne, et on ne sort jamais du clavier entre deux
+             questions. Voir specs/ecrans.md#jeu. -->
         <BaseInput
           v-model="typed"
+          autofocus
           label="Ta réponse"
           class="mt-4"
         />
