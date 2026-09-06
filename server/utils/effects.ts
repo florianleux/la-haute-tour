@@ -259,11 +259,14 @@ function actsOnCurrentWait(row: EffectRow, user: User): boolean {
 }
 
 /**
- * L'effet est ancré sur la tentative que le joueur joue *encore*. Les vies
- * comptent autant que l'ancre : sans elles la tentative est finie, et l'effet
- * avec, même si la suivante n'est pas encore ouverte — entre les deux, il y a
- * toute une attente.
+ * L'effet est ancré sur la tentative que le joueur joue *encore*.
+ *
+ * L'ancre seule en décide, et non les vies : une tentative ne se clôt qu'au
+ * moment où la suivante s'ouvre — l'attente et le rattrapage qui la suivent en
+ * font partie, et c'est ce que `closeAttempt()` inscrit. Une Chronomancie doit
+ * donc tenir jusque sur les questions de rattrapage, jouées à zéro vie.
+ * Voir server/utils/journey.ts et specs/bonus.md#ancrage-et-durée-de-vie.
  */
 function stillRunning(anchoredAt: Date, user: User): boolean {
-  return anchoredAt.getTime() === user.attemptStartedAt.getTime() && user.lives > 0
+  return anchoredAt.getTime() === user.attemptStartedAt.getTime()
 }

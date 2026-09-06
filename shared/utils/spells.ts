@@ -7,7 +7,7 @@
  * écran, parce qu'eux sont provisoires et n'ont pas à traverser la frontière.
  * Voir specs/bonus.md#catalogue.
  */
-export const SPELL_IDS = ['VITALITY', 'RESPITE'] as const
+export const SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY'] as const
 
 export type SpellId = typeof SPELL_IDS[number]
 
@@ -18,7 +18,7 @@ export type SpellId = typeof SPELL_IDS[number]
  * alors que « consommé qu'il produise un effet ou non » parle d'un sort dont
  * l'effet existe mais tombe à vide. Voir specs/bonus.md#livraison.
  */
-export const CASTABLE_SPELL_IDS = ['VITALITY', 'RESPITE'] as const
+export const CASTABLE_SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY'] as const
 
 export type CastableSpellId = typeof CASTABLE_SPELL_IDS[number]
 

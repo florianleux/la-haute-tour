@@ -13,6 +13,10 @@ function respite(face: SpellEffect['face'], count = 1): SpellEffect[] {
   return Array.from({ length: count }, () => ({ spell: 'RESPITE' as const, face }))
 }
 
+function chronomancy(face: SpellEffect['face'], count = 1): SpellEffect[] {
+  return Array.from({ length: count }, () => ({ spell: 'CHRONOMANCY' as const, face }))
+}
+
 describe('jeu de règles', () => {
   it('sert les valeurs par défaut du premier étage', () => {
     expect(rulesForFloor(1)).toMatchObject({
@@ -29,6 +33,7 @@ describe('jeu de règles', () => {
       questionsPerChest: 50,
       mimicChance: 0.05,
       respiteFactor: 2,
+      chronomancyFactor: 2,
     })
   })
 
@@ -110,5 +115,45 @@ describe('règles modulées par les effets', () => {
 
     expect(modulated.lives).toBe(rules.lives + 1)
     expect(modulated.cooldownMs).toBe(rules.cooldownMs / rules.respiteFactor)
+  })
+
+  // Chronomancie porte sur les deux timers : l'effet vaut pour toute la
+  // tentative, ascension et rattrapage compris.
+  // Voir specs/bonus.md#catalogue.
+  it('double les deux timers en Chronomancie blanche', () => {
+    const modulated = rulesWithEffects(rules, chronomancy('boon'))
+
+    expect(modulated.ascentTimerMs).toBe(rules.ascentTimerMs * rules.chronomancyFactor)
+    expect(modulated.recoveryTimerMs).toBe(rules.recoveryTimerMs * rules.chronomancyFactor)
+  })
+
+  it('les divise en Chronomancie noire', () => {
+    const modulated = rulesWithEffects(rules, chronomancy('curse'))
+
+    expect(modulated.ascentTimerMs).toBe(rules.ascentTimerMs / rules.chronomancyFactor)
+    expect(modulated.recoveryTimerMs).toBe(rules.recoveryTimerMs / rules.chronomancyFactor)
+  })
+
+  it('multiplie les Chronomancie entre elles', () => {
+    expect(rulesWithEffects(rules, chronomancy('curse', 2)).ascentTimerMs)
+      .toBe(rules.ascentTimerMs / (rules.chronomancyFactor ** 2))
+  })
+
+  it('compose les deux faces de Chronomancie plutôt que de les annuler d office', () => {
+    const both = [...chronomancy('boon', 2), ...chronomancy('curse')]
+
+    expect(rulesWithEffects(rules, both).ascentTimerMs)
+      .toBe(rules.ascentTimerMs * rules.chronomancyFactor)
+  })
+
+  it('n amène jamais un timer à zéro, quel qu en soit l empilement', () => {
+    expect(rulesWithEffects(rules, chronomancy('curse', 20)).ascentTimerMs).toBeGreaterThan(0)
+  })
+
+  it('ne touche à rien d autre que les deux timers', () => {
+    const { ascentTimerMs: _a, recoveryTimerMs: _r, ...rest } = rulesWithEffects(rules, chronomancy('boon'))
+    const { ascentTimerMs: _fa, recoveryTimerMs: _fr, ...floorRest } = rules
+
+    expect(rest).toEqual(floorRest)
   })
 })

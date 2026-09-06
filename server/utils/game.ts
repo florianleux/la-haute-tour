@@ -15,7 +15,7 @@ import {
 import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
-import { rulesForFloor } from './rules'
+import { rulesForFloor, rulesWithEffects } from './rules'
 import {
   acceptedAnswers,
   disputes,
@@ -161,6 +161,22 @@ function phaseOfSnapshot(snapshot: PlayerSnapshot, hasLiveReservation: boolean, 
     seen: snapshot.user.floorSeen,
     floorTotal: snapshot.floorTotal,
   }, now)
+}
+
+/**
+ * Les règles telles que ce joueur les joue : celles de son étage, modulées par
+ * les effets ancrés sur la tentative qu'il est en train de jouer.
+ *
+ * Les effets viennent de l'instantané, chargés dans le même lot que sa
+ * réservation : un timer modulé ne coûte donc aucune lecture de plus. Seuls les
+ * actifs comptent — ce qui attend la prochaine tentative ne module pas celle-ci.
+ * Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+function playedRules(snapshot: PlayerSnapshot, floor = snapshot.user.currentFloor): FloorRules {
+  return rulesWithEffects(
+    rulesForFloor(floor),
+    snapshot.effects.filter(effect => effect.state === 'active'),
+  )
 }
 
 /** Une question encore en jeu, c'est-à-dire réservée et non résolue. */
@@ -705,7 +721,9 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   }
 
   if (phase === 'floorEnd') {
-    await crossFloor(db, fresh, now)
+    // Les règles de l'étage d'au-dessus : les effets ancrés le suivent, l'étage
+    // change sous eux.
+    await crossFloor(db, fresh, playedRules(current, fresh.currentFloor + 1), now)
 
     // L'étage a changé, donc le décompte des questions vues et le total de
     // l'étage avec lui : on relit plutôt que de rapiécer un instantané qui ne
@@ -714,10 +732,10 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   }
 
   if (fresh.lives <= 0) {
-    return advanceRecovery(db, fresh, now)
+    return advanceRecovery(db, fresh, playedRules(current), now)
   }
 
-  const drawn = await drawAndReserve(db, fresh, now)
+  const drawn = await drawAndReserve(db, fresh, playedRules(current), now)
 
   if (!drawn) {
     // L'étage se compte des questions non vues qu'il n'a plus : le deck a bougé
@@ -818,7 +836,7 @@ export async function openPlayerChest(
  * Appelée sur la phase `floorEnd`, qui garantit qu'un étage suivant existe.
  * Voir specs/mecanique.md#fin-détage.
  */
-async function crossFloor(db: Database, user: User, now: Date): Promise<void> {
+async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date): Promise<void> {
   const currentFloor = user.currentFloor + 1
 
   // Franchir est un seul acte : en trois écritures séparées, une interruption
@@ -842,7 +860,7 @@ async function crossFloor(db: Database, user: User, now: Date): Promise<void> {
   if (user.lives > 0) {
     // Étage neuf : le curseur repart de zéro, donc la première question de
     // l'étage est la première de rang supérieur à 0.
-    await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, now)
+    await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, rules, now)
   }
 }
 
@@ -856,14 +874,19 @@ interface DrawnQuestion {
  * Sert la question suivante du deck, celle que le curseur du joueur désigne.
  * Rend null quand l'étage est épuisé — c'est ce qui fait le palier.
  */
-async function drawAndReserve(db: Database, user: User, now: Date): Promise<DrawnQuestion | null> {
+async function drawAndReserve(
+  db: Database,
+  user: User,
+  rules: FloorRules,
+  now: Date,
+): Promise<DrawnQuestion | null> {
   const [question] = await upcomingQuestions(db, user, 1)
 
   if (!question) {
     return null
   }
 
-  const expiresAt = new Date(now.getTime() + rulesForFloor(user.currentFloor).ascentTimerMs)
+  const expiresAt = new Date(now.getTime() + rules.ascentTimerMs)
 
   // Le curseur avance avec la question servie. C'est lui qui porte la place du
   // joueur dans le deck, et non sa réservation : un rattrapage écrase celle-ci
@@ -906,13 +929,16 @@ async function reserve(
  * even once the threshold is reached: it is the only place a pooled question moves
  * towards leaving the pool. See specs/mecanique.md#déroulement-du-rattrapage.
  */
-async function advanceRecovery(db: Database, user: User, now: Date): Promise<GameState> {
+async function advanceRecovery(
+  db: Database,
+  user: User,
+  rules: FloorRules,
+  now: Date,
+): Promise<GameState> {
   const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
   if (waiting) {
     return buildState(db, user.id, now)
   }
-
-  const rules = rulesForFloor(user.currentFloor)
 
   if (!await hasRecoveryRun(db, user.id)) {
     const drawn = await db

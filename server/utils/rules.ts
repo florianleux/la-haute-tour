@@ -1,4 +1,4 @@
-import type { SpellEffect } from '../../shared/utils/spells'
+import type { SpellEffect, SpellId } from '../../shared/utils/spells'
 
 /**
  * The one rule set of the game. No number of the game lives anywhere else: a
@@ -60,6 +60,13 @@ export interface FloorRules {
    * Voir specs/bonus.md#cumul.
    */
   respiteFactor: number
+  /**
+   * Ce par quoi une Chronomancie multiplie les timers — ou les divise, en magie
+   * noire. Multiplicatif comme Répit, et pour la même raison : aucun empilement
+   * ne ramène un timer à zéro, donc aucun plancher n'est nécessaire.
+   * Voir specs/bonus.md#cumul.
+   */
+  chronomancyFactor: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -80,6 +87,7 @@ const DEFAULT_RULES: FloorRules = {
   mimicChance: 0.05,
   vitalityLives: 1,
   respiteFactor: 2,
+  chronomancyFactor: 2,
 }
 
 /**
@@ -103,21 +111,33 @@ export function rulesForFloor(floor: number): FloorRules {
  * Voir specs/mecanique.md#ce-que-les-sorts-modifient et specs/bonus.md#cumul.
  */
 export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): FloorRules {
-  const vitality = effects.filter(effect => effect.spell === 'VITALITY')
-  const respite = effects.filter(effect => effect.spell === 'RESPITE')
+  const vitality = netOf(effects, 'VITALITY')
+  const respite = netOf(effects, 'RESPITE')
+  const chronomancy = netOf(effects, 'CHRONOMANCY')
 
   return {
     ...rules,
-    lives: vitality.reduce(
-      (lives, { face }) => lives + (face === 'boon' ? rules.vitalityLives : -rules.vitalityLives),
-      rules.lives,
-    ),
-    // Multiplicatif, là où Vitalité est additive : le mode de cumul est propre à
-    // chaque sort. Diviser plutôt que soustraire est ce qui empêche l'attente
-    // d'atteindre zéro, quel que soit l'empilement.
-    cooldownMs: respite.reduce(
-      (ms, { face }) => (face === 'boon' ? ms / rules.respiteFactor : ms * rules.respiteFactor),
-      rules.cooldownMs,
-    ),
+    // Additive : le mode de cumul est propre à chaque sort.
+    lives: rules.lives + vitality * rules.vitalityLives,
+    // Multiplicatifs : diviser plutôt que soustraire est ce qui empêche une
+    // attente ou un timer d'atteindre zéro, quel que soit l'empilement. Le blanc
+    // raccourcit l'attente et rallonge les timers — d'où les sens opposés.
+    cooldownMs: rules.cooldownMs / rules.respiteFactor ** respite,
+    // Toute la tentative, ascension et rattrapage : Chronomancie ne porte pas
+    // sur une question mais sur celles qu'ouvre la tentative où elle s'ancre.
+    ascentTimerMs: rules.ascentTimerMs * rules.chronomancyFactor ** chronomancy,
+    recoveryTimerMs: rules.recoveryTimerMs * rules.chronomancyFactor ** chronomancy,
   }
+}
+
+/**
+ * Ce qu'un empilement d'un même sort pèse : une face blanche compte pour un, une
+ * noire pour moins un. Les deux faces se composent — elles ne s'annulent pas
+ * d'office, c'est l'arithmétique du sort qui décide de ce que ça donne.
+ * Voir specs/bonus.md#cumul.
+ */
+function netOf(effects: SpellEffect[], spell: SpellId): number {
+  return effects
+    .filter(effect => effect.spell === spell)
+    .reduce((net, { face }) => net + (face === 'boon' ? 1 : -1), 0)
 }

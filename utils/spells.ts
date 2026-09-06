@@ -8,6 +8,7 @@ import type { SpellId } from '~~/shared/utils/spells'
 const SPELL_LABELS: Record<SpellId, string> = {
   VITALITY: 'Vitalité',
   RESPITE: 'Répit',
+  CHRONOMANCY: 'Chronomancie',
 }
 
 export function spellLabel(spell: SpellId): string {
