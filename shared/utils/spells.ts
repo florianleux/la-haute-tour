@@ -7,7 +7,7 @@
  * écran, parce qu'eux sont provisoires et n'ont pas à traverser la frontière.
  * Voir specs/bonus.md#catalogue.
  */
-export const SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY', 'INDULGENCE'] as const
+export const SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY', 'INDULGENCE', 'PURGE'] as const
 
 export type SpellId = typeof SPELL_IDS[number]
 
@@ -18,7 +18,7 @@ export type SpellId = typeof SPELL_IDS[number]
  * alors que « consommé qu'il produise un effet ou non » parle d'un sort dont
  * l'effet existe mais tombe à vide. Voir specs/bonus.md#livraison.
  */
-export const CASTABLE_SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY', 'INDULGENCE'] as const
+export const CASTABLE_SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY', 'INDULGENCE', 'PURGE'] as const
 
 export type CastableSpellId = typeof CASTABLE_SPELL_IDS[number]
 
@@ -30,12 +30,13 @@ export function isCastable(spell: SpellId): spell is CastableSpellId {
  * Les sorts dont le déclencheur est l'attente elle-même, et non la tentative
  * suivante : leur effet trouve de quoi mordre tout de suite, et ils meurent avec
  * l'attente où ils sont partis — Répit en recalcule l'échéance, Indulgence
- * rallonge le rattrapage qu'elle ouvre.
+ * rallonge le rattrapage qu'elle ouvre, Purge vide une ligne du Pool Échecs à
+ * l'instant même.
  *
  * Les autres attendent la prochaine tentative et s'ancrent dessus.
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
-export const WAIT_BOUND_SPELL_IDS = ['RESPITE', 'INDULGENCE'] as const
+export const WAIT_BOUND_SPELL_IDS = ['RESPITE', 'INDULGENCE', 'PURGE'] as const
 
 export function isWaitBound(spell: SpellId): boolean {
   return (WAIT_BOUND_SPELL_IDS as readonly SpellId[]).includes(spell)

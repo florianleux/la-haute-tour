@@ -1,6 +1,6 @@
-import { and, desc, eq, isNull, notExists } from 'drizzle-orm'
+import { and, desc, eq, isNull, notExists, sql } from 'drizzle-orm'
 import { rulesForFloor, rulesWithEffects } from './rules'
-import { activeEffects, inventory, users } from '../db/schema'
+import { activeEffects, inventory, missedPool, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -31,8 +31,13 @@ export interface CastView {
 }
 
 /**
- * Lancer un sort. L'exemplaire quitte l'inventaire, l'effet attend la prochaine
- * tentative de sa cible — le sort est consommé qu'il produise un effet ou non.
+ * Lancer un sort. L'exemplaire quitte l'inventaire et le sort est consommé,
+ * qu'il produise un effet ou non.
+ *
+ * Ce que l'effet attend dépend du sort : Vitalité et Chronomancie s'ancrent sur
+ * la prochaine tentative de la cible, tandis que Répit, Indulgence et Purge
+ * trouvent leur déclencheur dans l'attente en cours et agissent tout de suite.
+ * Voir shared/utils/spells.ts et specs/bonus.md#ancrage-et-durée-de-vie.
  *
  * Seule la catégorie Soi existe aujourd'hui : la cible est le lanceur, et la
  * face est donc blanche. Allié et Ennemi arrivent avec les équipes.
@@ -69,7 +74,7 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
   // attente-là, et c'est la contrainte d'unicité qui refuse l'effet en double.
   // Les deux gardes disent la même chose, chacune de son côté du lot : un
   // second lancer ne coûte donc rien et ne pose rien.
-  await db.batch([
+  const [, posed] = await db.batch([
     db.delete(inventory).where(and(
       eq(inventory.id, copy.id),
       notExists(alreadyCast(db, caster.id, spell, startedAt)),
@@ -84,8 +89,17 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
         castAt: now,
         castCooldownStartedAt: startedAt,
       })
-      .onConflictDoNothing(),
+      .onConflictDoNothing()
+      .returning({ id: activeEffects.id }),
   ])
+
+  // Rien de posé : le second lancer d'un même sort dans la même attente n'a rien
+  // consommé, il ne doit rien produire non plus. Ce qui suit écrit — une Purge
+  // rejouée viderait une seconde ligne du Pool Échecs pour un exemplaire qui,
+  // lui, est resté en poche.
+  if (!posed.length) {
+    return
+  }
 
   // Répit trouve son déclencheur déjà là : l'attente en cours se recalcule tout
   // de suite, sur l'écran même d'où le sort est parti. Recalculé plutôt que
@@ -95,12 +109,47 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
   if (spell === 'RESPITE') {
     await reshapeCooldown(db, caster, startedAt)
   }
+
+  // Purge n'attend rien et ne module rien : elle vide une ligne du Pool Échecs
+  // à l'instant du lancer. Voir specs/bonus.md#catalogue.
+  if (spell === 'PURGE') {
+    await purgeFromPool(db, caster)
+  }
 }
 
 /**
- * L'échéance de l'attente, refaite à partir de son début et de tout ce qui a été
- * posé sur elle. Idempotente : un second lancer qui n'a rien consommé rend la
- * même échéance, donc un double-clic ne raccourcit rien deux fois.
+ * Une question du Pool Échecs de l'étage courant, tirée au hasard, en sort sans
+ * avoir été rejouée — le seul chemin du jeu pour ça.
+ *
+ * Elle en sort comme elle en sortirait par le seuil de réussites : la ligne du
+ * pool part, le passage reste vu. La progression d'étage ne bouge donc pas.
+ *
+ * Sur un pool vide, il n'y a rien à retirer et le sort est gaspillé — sans
+ * erreur, et sans vérification préalable au lancer : on ne bloque pas le
+ * ciblage. Voir specs/bonus.md#catalogue.
+ */
+async function purgeFromPool(db: Database, target: User): Promise<void> {
+  const onThisFloor = and(
+    eq(missedPool.userId, target.id),
+    eq(missedPool.floor, target.currentFloor),
+  )
+
+  // Tirage et retrait en une seule instruction. En deux — lire puis supprimer —
+  // deux lanceurs simultanés pourraient désigner la même ligne et n'en sortir
+  // qu'une, là où la spec en promet deux. Voir specs/bonus.md#cumul.
+  await db.delete(missedPool).where(and(
+    onThisFloor,
+    eq(missedPool.questionId, sql`(select ${missedPool.questionId} from ${missedPool}
+      where ${missedPool.userId} = ${target.id}
+        and ${missedPool.floor} = ${target.currentFloor}
+      order by RANDOM() limit 1)`),
+  ))
+}
+
+/**
+ * L'échéance de l'attente, refaite à partir de son début et de tout ce qui est
+ * posé sur elle — jamais grignotée depuis ce qu'il en restait. Deux Répit
+ * divisent donc la durée d'origine par quatre, dans l'ordre qu'on voudra.
  */
 async function reshapeCooldown(db: Database, target: User, startedAt: Date): Promise<void> {
   // Ce que cette attente-ci dure, et non ce que le jeu de règles dit d'une
