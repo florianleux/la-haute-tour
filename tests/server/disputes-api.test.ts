@@ -138,6 +138,20 @@ describe('contestation par l API', () => {
     expect(response.status).toBe(404)
   })
 
+  // Un identifiant qui ne peut désigner aucune contestation est une erreur du
+  // client, pas une cible introuvable. Même lecture d'identifiant que les gestes
+  // sur un joueur. Voir server/utils/routes.ts.
+  it.each(['0', '-1', 'hier'])('refuse l identifiant %s en 400', async (id) => {
+    const response = await settle(jsonRequest(
+      `http://test/disputes/${id}`,
+      'PUT',
+      { verdict: 'rejected' },
+      adminCookie,
+    ))
+
+    expect(response.status).toBe(400)
+  })
+
   it('ne conteste pas pour un autre joueur', async () => {
     const other = await createPlayer(db, { discordId: '888', username: 'frodo' })
     await db.update(users).set({ lives: 3 }).where(eq(users.id, other))

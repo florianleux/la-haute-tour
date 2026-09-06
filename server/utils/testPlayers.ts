@@ -1,7 +1,9 @@
 import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { useDatabase } from '../db/client'
 import { upcomingQuestions } from './deck'
 import { cooldownFrom } from './mechanics'
-import { playerFromRoute, requirePlayer } from './players'
+import { requirePlayer } from './players'
+import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
 import {
   activeEffects,
@@ -40,17 +42,12 @@ export async function requireTestPlayer(db: Database, id: number): Promise<User>
 }
 
 /**
- * Le joueur test que la route désigne : le joueur que la route désigne, puis la
- * garde. La lecture du paramètre vit dans `playerFromRoute()`, avec les gestes
- * qui visent un joueur ordinaire — il n'y a qu'un identifiant de route, donc
- * qu'une définition de ce qu'il vaut.
+ * Le joueur test que la route désigne. La lecture du paramètre vit dans
+ * `numericRouteId()`, avec les gestes qui visent un joueur ordinaire — il n'y a
+ * qu'un identifiant de route, donc qu'une définition de ce qu'il vaut.
  */
 export async function testPlayerFromRoute(event: H3Event): Promise<User> {
-  const player = await playerFromRoute(event)
-
-  assertTestPlayer(player)
-
-  return player
+  return requireTestPlayer(useDatabase(), numericRouteId(event, 'Joueur inconnu'))
 }
 
 export async function listTestPlayers(db: Database): Promise<User[]> {

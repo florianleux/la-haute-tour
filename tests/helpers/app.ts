@@ -97,7 +97,13 @@ export function installAppGlobals(): FakeNuxt {
       _handler: unknown,
       options?: { default?: () => unknown },
     ) => ({
-      data: computed(() => (payloads.has(key) ? payloads.get(key) : options?.default?.() ?? null)),
+      // Assignable comme le vrai : une écriture qui rend la nouvelle vue la pose
+      // ici plutôt que de relire. Un computed en lecture seule ferait passer ces
+      // composables-là pour muets. Voir composables/useWriteThenReplace.ts.
+      data: computed({
+        get: () => (payloads.has(key) ? payloads.get(key) : options?.default?.() ?? null),
+        set: (value: unknown) => payloads.set(key, value),
+      }),
       error: computed(() => errors.get(key) ?? null),
       status: ref('idle'),
       refresh,

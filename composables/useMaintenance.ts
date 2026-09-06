@@ -25,7 +25,13 @@ export async function useMaintenance(): Promise<Maintenance> {
     { default: (): MaintenanceResponse => ({ since: null }) },
   )
 
-  const { pending, failed: actionFailed, send } = useWriteThenReplace(data)
+  const { pending: writing, failed: actionFailed, send } = useWriteThenReplace(data)
+
+  // Le geste ne s'arrête pas à l'écriture : quand elle est refusée, il relit. Le
+  // bouton doit rester occupé jusque-là — relâché à l'écriture, il cesserait de
+  // tourner pendant que l'interrupteur change encore d'étiquette sous les yeux
+  // de l'admin.
+  const rereading = ref(false)
 
   async function set(closed: boolean): Promise<boolean> {
     const sent = await send(() => $fetch<MaintenanceResponse>('/api/admin/maintenance', {
@@ -38,7 +44,9 @@ export async function useMaintenance(): Promise<Maintenance> {
     }
 
     // L'état affiché ne doit pas rester sur ce qu'on espérait : on relit.
+    rereading.value = true
     await refresh()
+    rereading.value = false
 
     return false
   }
@@ -46,7 +54,7 @@ export async function useMaintenance(): Promise<Maintenance> {
   return {
     since: computed(() => data.value?.since ?? null),
     failed: computed(() => Boolean(error.value) || actionFailed.value),
-    pending,
+    pending: computed(() => writing.value || rereading.value),
     set,
   }
 }

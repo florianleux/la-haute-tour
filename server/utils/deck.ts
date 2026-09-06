@@ -42,17 +42,14 @@ export async function floorSize(db: Database, floor: number, now: Date): Promise
 }
 
 /**
- * Où le joueur en est du deck : la place qu'il occupe à son étage. Ce n'est pas
- * sa réservation qui la porte — un rattrapage l'écrase avec une question du Pool
- * Échecs, dont le rang n'a rien à voir — mais son curseur.
- */
-export type DeckPosition = Pick<User, 'currentFloor' | 'floorCursor'>
-
-/**
  * Les questions que le joueur n'a pas encore rencontrées à son étage, dans
- * l'ordre du deck : celles dont le rang dépasse son curseur. Un saut dans
- * l'index, `limit` lignes lues, quel que soit le nombre de questions que
+ * l'ordre du deck : celles dont le rang dépasse son curseur d'étage. Un saut
+ * dans l'index, `limit` lignes lues, quel que soit le nombre de questions que
  * l'étage contient.
+ *
+ * C'est le curseur qui dit où le joueur en est, et non sa réservation — un
+ * rattrapage écrase celle-ci avec une question du Pool Échecs, dont le rang n'a
+ * rien à voir. Voir specs/spec.md#glossaire, « Curseur d'étage ».
  *
  * Rend une liste vide quand l'étage est épuisé — c'est ce qui fait le palier.
  *
@@ -63,15 +60,15 @@ export type DeckPosition = Pick<User, 'currentFloor' | 'floorCursor'>
  */
 export async function upcomingQuestions(
   db: Database,
-  position: DeckPosition,
+  user: Pick<User, 'currentFloor' | 'floorCursor'>,
   limit: number,
 ): Promise<Question[]> {
   return db
     .select()
     .from(questions)
     .where(and(
-      eq(questions.floor, position.currentFloor),
-      gt(questions.rank, position.floorCursor),
+      eq(questions.floor, user.currentFloor),
+      gt(questions.rank, user.floorCursor),
     ))
     .orderBy(asc(questions.rank))
     .limit(limit)

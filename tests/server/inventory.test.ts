@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
 import { inventory, reservations } from '../../server/db/schema'
+import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -123,7 +124,7 @@ describe('inventaire des sorts', () => {
     expect(response.status).toBe(403)
     const [held] = await db.select().from(reservations).where(eq(reservations.userId, userId))
     expect(held.resolvedAt).toBeNull()
-    expect((await loadPlayer(db, userId)).lives).toBe(3)
+    expect((await loadPlayer(db, userId)).lives).toBe(rulesForFloor(1).lives)
   })
 
   describe('lancer', () => {

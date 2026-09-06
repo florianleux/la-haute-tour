@@ -171,13 +171,26 @@ function holdsQuestion(snapshot: PlayerSnapshot): boolean {
   return snapshot.reservation !== undefined && snapshot.reservation.resolvedAt === null
 }
 
+/**
+ * Les questions vues à l'étage où se tient le joueur, comptées dans la requête
+ * qui le lit. Écrite une fois : l'instantané complet et la phase seule la
+ * portent tous les deux, et deux copies dériveraient sur ce que « vue à l'étage
+ * courant » veut dire.
+ */
+const seenOnCurrentFloor = sql<number>`(select count(*) from ${seenQuestions}
+  where ${seenQuestions.userId} = ${users.id}
+    and ${seenQuestions.floor} = ${users.currentFloor})`
+
+/** Une question encore en jeu : réservée, non résolue. Comptée de même. */
+const liveReservationCount = sql<number>`(select count(*) from ${reservations}
+  where ${reservations.userId} = ${users.id}
+    and ${reservations.resolvedAt} is null)`
+
 async function loadSnapshot(db: Database, userId: number, now: Date): Promise<PlayerSnapshot> {
   const [row] = await db
     .select({
       user: users,
-      seen: sql<number>`(select count(*) from ${seenQuestions}
-        where ${seenQuestions.userId} = ${users.id}
-          and ${seenQuestions.floor} = ${users.currentFloor})`,
+      seen: seenOnCurrentFloor,
       attemptSeen: sql<number>`(select count(*) from ${seenQuestions}
         where ${seenQuestions.userId} = ${users.id}
           and ${seenQuestions.seenAt} >= ${users.attemptStartedAt})`,
@@ -557,18 +570,15 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * protège — ouvrir la page Sorts coûtait une vie au joueur dont le chrono venait
  * de tomber. Voir server/utils/inventory.ts.
  *
- * Un aller-retour, contre deux pour l'état complet : la taille de l'étage se lit
- * au deck, qui la garde en mémoire. Voir server/utils/deck.ts.
+ * Une requête, contre deux pour l'état complet — plus celle de la taille de
+ * l'étage, que le deck sert de mémoire tant qu'elle n'a pas péri.
+ * Voir server/utils/deck.ts.
  */
 export async function readPhase(db: Database, user: User, now: Date): Promise<Phase> {
   const [row] = await db
     .select({
-      seen: sql<number>`(select count(*) from ${seenQuestions}
-        where ${seenQuestions.userId} = ${users.id}
-          and ${seenQuestions.floor} = ${users.currentFloor})`,
-      liveReservations: sql<number>`(select count(*) from ${reservations}
-        where ${reservations.userId} = ${users.id}
-          and ${reservations.resolvedAt} is null)`,
+      seen: seenOnCurrentFloor,
+      liveReservations: liveReservationCount,
     })
     .from(users)
     .where(eq(users.id, user.id))
