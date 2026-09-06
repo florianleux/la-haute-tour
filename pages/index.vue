@@ -1,15 +1,5 @@
 <template>
-  <BaseCard v-if="closed" title="Le jeu est fermé">
-    <template #lead>
-      Une maintenance est en cours. Reviens dans un moment : ta progression, tes
-      vies et ton attente sont intactes.
-    </template>
-    <BaseHint class="mt-6">
-      Le temps d'attente, lui, continue de s'écouler — tu ne perds rien à patienter.
-    </BaseHint>
-  </BaseCard>
-
-  <BaseCard v-else-if="state?.recoveryResult === 'resumed'" title="Rattrapage réussi">
+  <BaseCard v-if="state?.recoveryResult === 'resumed'" title="Rattrapage réussi">
     <template #lead>
       Tes vies sont restaurées. Tu peux reprendre l'ascension.
     </template>
@@ -338,13 +328,6 @@ watch(() => state.value?.verdict, (verdict) => {
     refreshDisputes()
   }
 })
-
-// Le jeu est fermé par l'administration, et ce joueur n'est pas admin. Une
-// question déjà servie et son verdict restent lisibles : c'est le passage à la
-// suite qui n'existe plus. Voir specs/admin.md#maintenance.
-const closed = computed(() =>
-  Boolean(state.value?.maintenance) && !screen.value?.question && !screen.value?.verdict,
-)
 
 // L'écran d'attente sert aussi au rattrapage prêt à démarrer : même fiche de
 // révision, même file de contestation, mais le compteur cède la place au

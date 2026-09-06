@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gameScreen, isAnswering, nextActionLabel } from '../../utils/phase'
+import { blockedByMaintenance, gameScreen, isAnswering, nextActionLabel } from '../../utils/phase'
 import type { GameState } from '../../server/utils/game'
 
 function state(overrides: Partial<GameState>): GameState {
@@ -199,5 +199,30 @@ describe('une question tourne', () => {
 
       expect(gameScreen(built).shortenedWait).toBe(false)
     })
+  })
+})
+
+describe('barrage de maintenance', () => {
+  it('ne bloque rien tant que le jeu est ouvert', () => {
+    expect(blockedByMaintenance(state({ maintenance: false }), '/')).toBe(false)
+    expect(blockedByMaintenance(state({ maintenance: false }), '/sorts')).toBe(false)
+  })
+
+  it('bloque toutes les pages hors le jeu lui-même', () => {
+    expect(blockedByMaintenance(state({ maintenance: true }), '/sorts')).toBe(true)
+    expect(blockedByMaintenance(state({ maintenance: true }), '/profil')).toBe(true)
+  })
+
+  it('laisse finir une question ou un verdict déjà en cours, sur le jeu', () => {
+    expect(blockedByMaintenance(state({ maintenance: true, question }), '/')).toBe(false)
+    expect(blockedByMaintenance(state({ maintenance: true, verdict }), '/')).toBe(false)
+  })
+
+  it('bloque le jeu lui-même hors question ou verdict en cours', () => {
+    expect(blockedByMaintenance(state({ maintenance: true }), '/')).toBe(true)
+  })
+
+  it('est faux quand l état n est pas encore lu', () => {
+    expect(blockedByMaintenance(null, '/')).toBe(false)
   })
 })

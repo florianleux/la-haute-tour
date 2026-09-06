@@ -68,8 +68,13 @@ et se teinte pendant l'incarnation — on ne doit jamais se demander de qui on
 regarde la partie.
 
 - **Le jeu prend l'admin pour le joueur test** : il n'est plus admin à ses yeux,
-  subit la maintenance comme n'importe qui, et tout ce qu'il joue est écrit sous
-  l'identité du joueur test. C'est ce qui rend le point de vue fidèle.
+  et tout ce qu'il joue est écrit sous l'identité du joueur test. C'est ce qui
+  rend le point de vue fidèle.
+- **Sauf la maintenance** : un joueur test la passe outre, comme l'admin. La
+  fermeture sert à travailler sur la partie sans qu'elle avance sous les mains —
+  or c'est justement pendant une maintenance qu'on incarne un joueur test pour
+  vérifier ce qu'on vient de changer. La bloquer aussi contredirait l'usage
+  qu'elle est censée servir. Voir [`maintenance`](#maintenance).
 - **Les pouvoirs d'admin restent au vrai compte** : l'accès à `/admin` et le
   sélecteur ne disparaissent pas, sinon l'incarnation serait sans retour.
 - **Réservée aux joueurs test.** Incarner un vrai joueur reviendrait à jouer sa
@@ -127,4 +132,5 @@ données — sans qu'une partie avance sous les mains.
   jeu est fermé. Suspendre demanderait de décaler chaque échéance à la réouverture,
   et de décider ce qu'on fait de celles déjà échues — pour un gain nul, l'attente
   étant faite pour s'écouler sans le joueur.
-- L'admin, lui, joue normalement : c'est tout l'intérêt de l'interrupteur.
+- L'admin, lui, joue normalement : c'est tout l'intérêt de l'interrupteur. Un
+  joueur test aussi, incarné ou non : voir [`Incarnation`](#incarnation).

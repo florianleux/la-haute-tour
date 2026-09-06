@@ -145,6 +145,20 @@ export function gameScreen(state: GameState): GameScreen {
   }
 }
 
+/**
+ * Vrai partout sauf sur le jeu quand une question ou son verdict reste à finir :
+ * c'est le seul endroit où une interaction commencée avant la fermeture doit
+ * pouvoir se terminer. Décide pour toutes les pages à la fois — le layout
+ * l'applique, aucune page n'a à le redire. Voir specs/admin.md#maintenance.
+ */
+export function blockedByMaintenance(state: GameState | null, path: string): boolean {
+  if (!state?.maintenance) {
+    return false
+  }
+
+  return !(path === '/' && (state.question !== null || state.verdict !== null))
+}
+
 /** Le résultat ne s'annonce qu'à la fin, jamais question par question. */
 function recoveryLine(recovery: NonNullable<GameState['recovery']>): RecoveryLine {
   const over = recovery.played >= recovery.total

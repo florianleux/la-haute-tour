@@ -559,7 +559,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     floorTotal: snapshot.floorTotal,
     attemptSeen: user.attemptSeen,
     chest: null as ChestView | null,
-    maintenance: snapshot.gameClosed && !user.isAdmin,
+    maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
     // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une
     // icône, et ce qui module les règles doit se voir là où il agit.
     effects: snapshot.effects,
@@ -714,10 +714,11 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
   let fresh = snapshot.user
 
-  // Le jeu est fermé : plus aucune question n'est servie. Ce qui est commencé se
-  // finit par d'autres chemins — répondre et ouvrir son coffre restent permis, et
-  // le verdict se lit. Voir specs/admin.md#maintenance.
-  if (snapshot.gameClosed && !snapshot.user.isAdmin) {
+  // Le jeu est fermé : plus aucune question n'est servie, sauf à l'admin et aux
+  // joueurs test — la maintenance ne doit pas empêcher de tester. Ce qui est
+  // commencé se finit par d'autres chemins — répondre et ouvrir son coffre
+  // restent permis, et le verdict se lit. Voir specs/admin.md#maintenance.
+  if (snapshot.gameClosed && !snapshot.user.isAdmin && !snapshot.user.isTest) {
     return stateFrom(db, snapshot, now)
   }
 

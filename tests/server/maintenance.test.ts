@@ -125,6 +125,21 @@ describe('maintenance', () => {
     })
   })
 
+  describe('le joueur test', () => {
+    it('continue de jouer', async () => {
+      const testPlayer = await loadPlayer(db, await createPlayer(db, {
+        discordId: 'test-1',
+        isTest: true,
+      }))
+      await setMaintenance(db, true, NOW)
+
+      const state = await serveNextQuestion(db, testPlayer, NOW)
+
+      expect(state.maintenance).toBe(false)
+      expect(state.question).not.toBeNull()
+    })
+  })
+
   describe('les attentes', () => {
     it('ne sont pas suspendues : l échéance ne bouge pas', async () => {
       const waiting = await createPlayer(db, {
