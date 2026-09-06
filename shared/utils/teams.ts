@@ -30,15 +30,6 @@ export const TARGET_KINDS = ['self', 'ally', 'foe'] as const
 export type TargetKind = typeof TARGET_KINDS[number]
 
 /**
- * Les catégories qu'un lanceur peut viser aujourd'hui. La magie noire attend son
- * ticket : proposée avant d'exister, elle consommerait un exemplaire pour rien —
- * même raison que `CASTABLE_SPELL_IDS`. Voir specs/bonus.md#livraison.
- */
-export const CASTABLE_TARGET_KINDS = ['self', 'ally'] as const
-
-export type CastableTargetKind = typeof CASTABLE_TARGET_KINDS[number]
-
-/**
  * Les catégories qui désignent quelqu'un d'autre, et qu'un tirage doit donc
  * résoudre. `self` n'en est pas : la cible y est déjà connue.
  */

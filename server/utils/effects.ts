@@ -1,13 +1,14 @@
 import { and, desc, eq, isNull, ne, notExists, sql } from 'drizzle-orm'
+import { isBorneBy } from './mechanics'
 import { rulesForFloor, rulesWithEffects } from './rules'
 import { drawTarget } from './targets'
 import { activeEffects, inventory, missedPool, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
-import { faceFor, isWaitBound } from '../../shared/utils/spells'
+import { faceFor } from '../../shared/utils/spells'
 import type { SpellFace, SpellId } from '../../shared/utils/spells'
-import type { CastableTargetKind } from '../../shared/utils/teams'
+import type { TargetKind } from '../../shared/utils/teams'
 
 /**
  * Un effet tel qu'un écran le montre : quel sort, quelle face, de qui, et s'il
@@ -55,8 +56,9 @@ export interface ReceivedView {
  * qu'il produise un effet ou non.
  *
  * Le lanceur choisit une **catégorie**, jamais une personne : sur soi, la cible
- * est lui-même ; sur un allié, le serveur la tire. Un pool éligible vide ne
- * désigne personne — le sort part quand même et ne fait rien.
+ * est lui-même ; sur un allié ou un ennemi, le serveur la tire, et la face suit
+ * — blanche sur les deux premières, noire sur la dernière. Un pool éligible vide
+ * ne désigne personne — le sort part quand même et ne fait rien.
  * Voir specs/bonus.md#tirage-de-la-cible.
  *
  * Ce que l'effet attend dépend du sort : Vitalité et Chronomancie s'ancrent sur
@@ -74,7 +76,7 @@ export async function castSpell(
   db: Database,
   caster: User,
   spell: SpellId,
-  kind: CastableTargetKind,
+  kind: TargetKind,
   now: Date,
   random: () => number = Math.random,
 ): Promise<void> {
@@ -88,9 +90,10 @@ export async function castSpell(
     return
   }
 
-  // Sans équipe, la catégorie Allié ne désigne aucun pool : le lancer n'existe
-  // pas pour ce joueur-là, il n'est donc pas dépensé. L'écran ne le lui propose
-  // déjà pas ; ceci ferme l'URL. Voir specs/equipes.md#le-joueur-sans-équipe.
+  // Sans équipe, ni Allié ni Ennemi ne désigne de pool : ces lancers n'existent
+  // pas pour ce joueur-là, ils ne sont donc pas dépensés. L'écran ne les lui
+  // propose déjà pas ; ceci ferme l'URL.
+  // Voir specs/equipes.md#le-joueur-sans-équipe.
   if (kind !== 'self' && caster.team === null) {
     return
   }
@@ -148,11 +151,13 @@ export async function castSpell(
     return
   }
 
-  // Purge n'attend rien et ne module rien : elle vide une ligne du Pool Échecs
-  // à l'instant du lancer. Le pool d'un allié existe quelle que soit sa phase,
-  // donc elle mord même sur qui n'attend pas. Voir specs/bonus.md#catalogue.
+  // Purge n'attend rien et ne module rien : elle mord le Pool Échecs à l'instant
+  // du lancer. Le pool existe quelle que soit la phase de la cible, donc elle
+  // agit même sur qui n'attend pas. Sa face décide de ce qu'elle y fait : la
+  // blanche en sort une question, la noire remet à zéro le compteur de réussites
+  // de l'une d'elles. Voir specs/bonus.md#catalogue.
   if (spell === 'PURGE') {
-    await purgeFromPool(db, target)
+    await purgePool(db, target, faceFor(kind))
   }
 
   // Répit, lui, ne déplace que ce qui existe : l'échéance de la cible. Sur un
@@ -167,32 +172,43 @@ export async function castSpell(
 }
 
 /**
- * Une question du Pool Échecs de l'étage courant, tirée au hasard, en sort sans
- * avoir été rejouée — le seul chemin du jeu pour ça.
+ * Ce que Purge fait au Pool Échecs de l'étage courant, selon sa face.
  *
- * Elle en sort comme elle en sortirait par le seuil de réussites : la ligne du
- * pool part, le passage reste vu. La progression d'étage ne bouge donc pas.
+ * Blanche, une question tirée au hasard en sort sans avoir été rejouée — le seul
+ * chemin du jeu pour ça. Elle en sort comme elle en sortirait par le seuil de
+ * réussites : la ligne du pool part, le passage reste vu, la progression d'étage
+ * ne bouge pas.
  *
- * Sur un pool vide, il n'y a rien à retirer et le sort est gaspillé — sans
+ * Noire, la question reste et c'est son **compteur de réussites** qui retombe à
+ * zéro : tout le rattrapage déjà fait sur elle est à refaire.
+ *
+ * Sur un pool vide il n'y a rien à mordre, et le sort est gaspillé — sans
  * erreur, et sans vérification préalable au lancer : on ne bloque pas le
  * ciblage. Voir specs/bonus.md#catalogue.
  */
-async function purgeFromPool(db: Database, target: User): Promise<void> {
+async function purgePool(db: Database, target: User, face: SpellFace): Promise<void> {
   const onThisFloor = and(
     eq(missedPool.userId, target.id),
     eq(missedPool.floor, target.currentFloor),
   )
 
-  // Tirage et retrait en une seule instruction. En deux — lire puis supprimer —
-  // deux lanceurs simultanés pourraient désigner la même ligne et n'en sortir
+  // Tirage et coup en une seule instruction. En deux — lire puis écrire — deux
+  // lanceurs simultanés pourraient désigner la même ligne et n'en toucher
   // qu'une, là où la spec en promet deux. Voir specs/bonus.md#cumul.
-  await db.delete(missedPool).where(and(
+  const drawn = and(
     onThisFloor,
     eq(missedPool.questionId, sql`(select ${missedPool.questionId} from ${missedPool}
       where ${missedPool.userId} = ${target.id}
         and ${missedPool.floor} = ${target.currentFloor}
       order by RANDOM() limit 1)`),
-  ))
+  )
+
+  if (face === 'curse') {
+    await db.update(missedPool).set({ poolSuccesses: 0 }).where(drawn)
+    return
+  }
+
+  await db.delete(missedPool).where(drawn)
 }
 
 /**
@@ -312,8 +328,7 @@ export type EffectRow = Awaited<EffectsQuery>[number]
  */
 export function toEffectViews(rows: EffectRow[], user: User): EffectView[] {
   return rows
-    .filter(row => actsOnCurrentWait(row, user))
-    .filter(row => row.anchoredAt === null || stillRunning(row.anchoredAt, user))
+    .filter(row => isBorneBy(row, user))
     .map(({ spell, face, casterName, anchoredAt }) => ({
       spell,
       face,
@@ -437,32 +452,3 @@ export async function anchorEffects(db: Database, user: User, startedAt: Date): 
   return rulesWithEffects(rulesForFloor(user.currentFloor), pending)
 }
 
-/**
- * Un sort lié à l'attente a agi sur celle pendant laquelle il est parti, et
- * meurt avec elle : il n'attend aucune tentative, contrairement aux autres. Le
- * garder visible ensuite ferait annoncer une attente écourtée qu'il n'a pas
- * touchée, ou rallongerait un rattrapage qu'il n'a pas ouvert — c'est là ce que
- * « ponctuel » veut dire. Voir specs/bonus.md#ancrage-et-durée-de-vie.
- */
-function actsOnCurrentWait(row: EffectRow, user: User): boolean {
-  if (!isWaitBound(row.spell)) {
-    return true
-  }
-
-  return user.cooldownStartedAt !== null
-    && row.targetCooldownStartedAt !== null
-    && row.targetCooldownStartedAt.getTime() === user.cooldownStartedAt.getTime()
-}
-
-/**
- * L'effet est ancré sur la tentative que le joueur joue *encore*.
- *
- * L'ancre seule en décide, et non les vies : une tentative ne se clôt qu'au
- * moment où la suivante s'ouvre — l'attente et le rattrapage qui la suivent en
- * font partie, et c'est ce que `closeAttempt()` inscrit. Une Chronomancie doit
- * donc tenir jusque sur les questions de rattrapage, jouées à zéro vie.
- * Voir server/utils/journey.ts et specs/bonus.md#ancrage-et-durée-de-vie.
- */
-function stillRunning(anchoredAt: Date, user: User): boolean {
-  return anchoredAt.getTime() === user.attemptStartedAt.getTime()
-}

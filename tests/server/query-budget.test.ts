@@ -141,7 +141,7 @@ describe('budget de requêtes des chemins chauds', () => {
       setDatabase(db)
     })
 
-    /** Un joueur en attente, avec des coéquipiers à toucher. */
+    /** Un joueur en attente, avec des coéquipiers et des adversaires à toucher. */
     async function caster(): Promise<User> {
       const id = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'CRIMSON', floorSeen: 1 })
 
@@ -149,12 +149,15 @@ describe('budget de requêtes des chemins chauds', () => {
         await createPlayer(db, {
           discordId: `mate-${i}`,
           username: `mate-${i}`,
-          team: 'CRIMSON',
+          team: i % 2 === 0 ? 'CRIMSON' : 'AZURE',
           floorSeen: 1,
         })
       }
 
-      await db.insert(inventory).values({ userId: id, spell: 'VITALITY', obtainedAt: NOW })
+      await db.insert(inventory).values([
+        { userId: id, spell: 'VITALITY' as const, obtainedAt: NOW },
+        { userId: id, spell: 'VITALITY' as const, obtainedAt: NOW },
+      ])
 
       return loadPlayer(db, id)
     }
@@ -177,6 +180,17 @@ describe('budget de requêtes des chemins chauds', () => {
       // Phase, inventaire lu, exemplaire consommé, cible tirée, effet posé, puis
       // la page rendue. Une cible de plus dans l'équipe n'en ajoute aucun.
       expect(queries()).toBeLessThanOrEqual(7)
+    })
+
+    // La magie noire écarte les saturés : ce filtre est une requête pour tout le
+    // pool, jamais une par ennemi. Voir specs/bonus.md#limite-deffets-négatifs.
+    it('ne paie pas le filtre des saturés à l ennemi', async () => {
+      const player = await caster()
+      queries()
+
+      await castFromInventory(db, player, 'VITALITY', 'foe', NOW)
+
+      expect(queries()).toBeLessThanOrEqual(8)
     })
   })
 

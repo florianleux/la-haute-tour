@@ -55,8 +55,7 @@
                 Bientôt lançable
               </BaseHint>
               <!-- Une catégorie par bouton, jamais une personne : le joueur ne
-                   choisit pas qui il touche. La liste vient du catalogue des
-                   catégories lançables — Ennemi s'y ajoutera sans toucher ici.
+                   choisit pas qui il touche, seulement de quel côté il frappe.
                    Voir specs/bonus.md#tirage-de-la-cible. -->
               <div v-else class="flex shrink-0 gap-2">
                 <BaseButton
@@ -136,12 +135,12 @@
 <script setup lang="ts">
 // L'inventaire, le lancer et les deux journaux — pendant l'attente et là
 // seulement. Le lancer vise une catégorie, jamais une personne : soi, ou un
-// allié que le serveur tire et ne nomme qu'après.
+// allié ou un ennemi que le serveur tire et ne nomme qu'après.
 // Voir specs/ecrans.md#sorts et specs/bonus.md#tirage-de-la-cible.
 import { isCastable } from '~~/shared/utils/spells'
 import type { SpellId } from '~~/shared/utils/spells'
-import { CASTABLE_TARGET_KINDS } from '~~/shared/utils/teams'
-import type { CastableTargetKind } from '~~/shared/utils/teams'
+import { TARGET_KINDS } from '~~/shared/utils/teams'
+import type { TargetKind } from '~~/shared/utils/teams'
 import type { CastView } from '~~/server/utils/effects'
 
 definePageMeta({
@@ -161,7 +160,7 @@ const {
   castFailed,
   castsLeft,
   castsPerCooldown,
-  canTargetAllies,
+  canTargetOthers,
   cast,
 } = await useInventory()
 
@@ -178,24 +177,24 @@ const waitRemaining = computed(() =>
   (state.value?.cooldownUntil ? formatRemaining(state.value.cooldownUntil, now.value) : ''),
 )
 
-// Les catégories proposées : Soi toujours, Allié seulement à qui a une équipe —
-// sans elle, elle ne désignerait aucun pool.
+// Les catégories proposées : Soi toujours, Allié et Ennemi seulement à qui a une
+// équipe — sans elle, elles ne désigneraient aucun pool.
 // Voir specs/equipes.md#le-joueur-sans-équipe.
-const offeredTargets = computed<CastableTargetKind[]>(
-  () => CASTABLE_TARGET_KINDS.filter(kind => kind === 'self' || canTargetAllies.value),
+const offeredTargets = computed<TargetKind[]>(
+  () => TARGET_KINDS.filter(kind => kind === 'self' || canTargetOthers.value),
 )
 
 // Quelle catégorie est en vol : un bouton par catégorie, et seul celui qu'on a
 // pressé tourne.
-const castingOn = ref<CastableTargetKind | null>(null)
+const castingOn = ref<TargetKind | null>(null)
 
 // Ce que le dernier lancer a touché, et la catégorie visée. Le journal le porte
 // aussi, mais c'est ici que le joueur le lit sans chercher : la cible n'était
 // pas annoncée avant, elle l'est maintenant. La catégorie voyage avec, pour que
 // le joueur ne lise pas son propre nom quand il s'est visé lui-même.
-const lastCast = ref<{ view: CastView, kind: CastableTargetKind } | null>(null)
+const lastCast = ref<{ view: CastView, kind: TargetKind } | null>(null)
 
-async function castOn(spell: SpellId, kind: CastableTargetKind): Promise<void> {
+async function castOn(spell: SpellId, kind: TargetKind): Promise<void> {
   castingOn.value = kind
   lastCast.value = null
 

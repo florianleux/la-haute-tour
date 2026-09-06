@@ -1,6 +1,6 @@
 import { isAnswerAccepted } from './answers'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { SPELL_IDS } from '../../shared/utils/spells'
+import { isWaitBound, SPELL_IDS } from '../../shared/utils/spells'
 import type { FloorRules } from './rules'
 import type { SpellId } from '../../shared/utils/spells'
 import type { DrawnTargetKind } from '../../shared/utils/teams'
@@ -71,6 +71,57 @@ export function hasStarted(
   hasLiveReservation: boolean,
 ): boolean {
   return hasLiveReservation || user.currentFloor > 1 || user.floorSeen > 0
+}
+
+/** Ce qu'il faut d'un effet pour dire s'il est encore porté. */
+export interface BorneEffect {
+  spell: SpellId
+  anchoredAt: Date | null
+  targetCooldownStartedAt: Date | null
+}
+
+/**
+ * Cet effet est-il encore porté par ce joueur-là ? Un effet ancré ne vit que le
+ * temps de la tentative qui l'a réveillé, et un sort lié à l'attente que le
+ * temps de l'attente qu'il vise.
+ *
+ * Écrit une fois : l'écran montre ce que le joueur porte, et le tirage écarte
+ * qui en porte déjà deux de négatifs — deux lectures de la même question, qui
+ * doivent répondre pareil. Voir specs/bonus.md#limite-deffets-négatifs.
+ */
+export function isBorneBy(effect: BorneEffect, user: User): boolean {
+  return actsOnCurrentWait(effect, user)
+    && (effect.anchoredAt === null || stillRunning(effect.anchoredAt, user))
+}
+
+/**
+ * Un sort lié à l'attente a agi sur celle pendant laquelle il est parti, et
+ * meurt avec elle : il n'attend aucune tentative, contrairement aux autres. Le
+ * garder visible ensuite ferait annoncer une attente écourtée qu'il n'a pas
+ * touchée, ou rallongerait un rattrapage qu'il n'a pas ouvert — c'est là ce que
+ * « ponctuel » veut dire. Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+function actsOnCurrentWait(effect: BorneEffect, user: User): boolean {
+  if (!isWaitBound(effect.spell)) {
+    return true
+  }
+
+  return user.cooldownStartedAt !== null
+    && effect.targetCooldownStartedAt !== null
+    && effect.targetCooldownStartedAt.getTime() === user.cooldownStartedAt.getTime()
+}
+
+/**
+ * L'effet est ancré sur la tentative que le joueur joue *encore*.
+ *
+ * L'ancre seule en décide, et non les vies : une tentative ne se clôt qu'au
+ * moment où la suivante s'ouvre — l'attente et le rattrapage qui la suivent en
+ * font partie, et c'est ce que `closeAttempt()` inscrit. Une Chronomancie doit
+ * donc tenir jusque sur les questions de rattrapage, jouées à zéro vie.
+ * Voir server/utils/journey.ts et specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+function stillRunning(anchoredAt: Date, user: User): boolean {
+  return anchoredAt.getTime() === user.attemptStartedAt.getTime()
 }
 
 /**
@@ -327,9 +378,16 @@ export function canDrawRecovery(poolSize: number, rules: FloorRules): boolean {
   return poolSize >= rules.poolSizeForRecovery && poolSize >= rules.recoveryQuestions
 }
 
-/** Une seule bonne réponse suffit à repartir — le seuil vit dans les règles. */
-export function resumesRecovery(successes: number, rules: FloorRules): boolean {
-  return successes >= rules.recoverySuccessesToResume
+/**
+ * Une seule bonne réponse suffit à repartir — le seuil vit dans les règles, et
+ * une Indulgence noire l'y porte au nombre de questions tirées.
+ *
+ * Borné par ce que le rattrapage a réellement tiré : le pool s'arrête à ce qu'il
+ * contient, et un perfect exigé sur plus de questions qu'il n'y en a serait
+ * inatteignable. Voir specs/bonus.md#catalogue.
+ */
+export function resumesRecovery(successes: number, drawn: number, rules: FloorRules): boolean {
+  return successes >= Math.min(rules.recoverySuccessesToResume, drawn)
 }
 
 export interface RecoveryVerdict {
@@ -342,8 +400,13 @@ export interface RecoveryVerdict {
  * Ce que vaut un rattrapage une fois toutes ses questions jouées : une seule
  * bonne réponse rend les vies, aucune relance une attente plus courte.
  */
-export function judgeRecovery(successes: number, rules: FloorRules, now: Date): RecoveryVerdict {
-  const resumes = resumesRecovery(successes, rules)
+export function judgeRecovery(
+  successes: number,
+  drawn: number,
+  rules: FloorRules,
+  now: Date,
+): RecoveryVerdict {
+  const resumes = resumesRecovery(successes, drawn, rules)
 
   return {
     resumes,

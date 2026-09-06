@@ -14,7 +14,7 @@ import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { CastView, ReceivedView } from './effects'
 import type { SpellId } from '../../shared/utils/spells'
-import type { CastableTargetKind } from '../../shared/utils/teams'
+import type { TargetKind } from '../../shared/utils/teams'
 
 export interface InventoryEntryView {
   spell: SpellId
@@ -35,11 +35,13 @@ export interface InventoryView {
    */
   received: ReceivedView[]
   /**
-   * Le joueur peut-il viser un allié ? Faux tant qu'il n'a pas d'équipe : la
-   * catégorie ne désignerait aucun pool, et l'écran ne la propose donc pas.
+   * Le joueur peut-il viser quelqu'un d'autre — allié ou ennemi ? Faux tant
+   * qu'il n'a pas d'équipe : les deux catégories ne désigneraient aucun pool, et
+   * l'écran ne les propose donc pas. Un seul drapeau pour les deux, parce que
+   * c'est la même absence qui les ferme.
    * Voir specs/equipes.md#le-joueur-sans-équipe.
    */
-  canTargetAllies: boolean
+  canTargetOthers: boolean
   /**
    * Ce qu'il reste de lancers pour l'attente en cours. L'écran l'affiche et
    * éteint ses boutons à zéro : la règle se voit avant le clic, elle ne se
@@ -78,7 +80,7 @@ export async function castFromInventory(
   db: Database,
   user: User,
   spell: SpellId,
-  kind: CastableTargetKind,
+  kind: TargetKind,
   now: Date,
 ): Promise<InventoryView> {
   await requireCooldown(db, user, now)
@@ -134,6 +136,6 @@ async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
     received: toReceivedViews(received),
     castsLeft: await castsLeftThisWait(db, user),
     castsPerCooldown: rulesForFloor(user.currentFloor).castsPerCooldown,
-    canTargetAllies: user.team !== null,
+    canTargetOthers: user.team !== null,
   }
 }

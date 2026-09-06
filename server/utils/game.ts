@@ -259,8 +259,18 @@ async function hasRecoveryRun(db: Database, userId: number): Promise<boolean> {
   return row.value > 0
 }
 
-/** The tally of the recovery under way, or null when none is. */
-async function recoveryProgress(db: Database, user: User): Promise<RecoveryProgress | null> {
+/**
+ * The tally of the recovery under way, or null when none is.
+ *
+ * Les règles viennent de l'appelant, et ce sont celles que le joueur **joue** :
+ * le seuil de reprise n'est pas celui de l'étage dès qu'une Indulgence noire est
+ * posée. Voir specs/bonus.md#catalogue.
+ */
+async function recoveryProgress(
+  db: Database,
+  user: User,
+  rules: FloorRules,
+): Promise<RecoveryProgress | null> {
   const drawn = await db
     .select()
     .from(recoveryQuestions)
@@ -272,17 +282,19 @@ async function recoveryProgress(db: Database, user: User): Promise<RecoveryProgr
 
   const played = drawn.filter(row => row.correct !== null)
   const successes = played.filter(row => row.correct).length
-  const rules = rulesForFloor(user.currentFloor)
 
   return {
     total: drawn.length,
     played: played.length,
     successes,
-    resumes: resumesRecovery(successes, rules),
+    // Le seuil se lit dans les règles **jouées** : une Indulgence noire exige un
+    // perfect, et c'est ici que le joueur le lit avant de finir.
+    // Voir specs/bonus.md#catalogue.
+    resumes: resumesRecovery(successes, drawn.length, rules),
     // Comparé à ce que l'étage donne d'ordinaire : le tirage s'arrête à la
     // taille du pool, donc un rattrapage rallongé peut compter moins de
     // questions qu'un autre — c'est l'écart à la règle qui le dit, pas un seuil.
-    lengthened: drawn.length > rules.recoveryQuestions,
+    lengthened: drawn.length > rulesForFloor(user.currentFloor).recoveryQuestions,
   }
 }
 
@@ -539,7 +551,9 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     question: null as ServedQuestion | null,
     verdict: null as Verdict | null,
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
-    recovery: user.lives <= 0 ? await recoveryProgress(db, user) : null,
+    // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
+    // faut un perfect pour repartir.
+    recovery: user.lives <= 0 ? await recoveryProgress(db, user, playedRules(snapshot)) : null,
     recoveryResult: null as 'resumed' | 'failed' | null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
@@ -988,7 +1002,7 @@ async function advanceRecovery(
     .limit(1)
 
   if (!nextUp) {
-    return finishRecovery(db, user, now)
+    return finishRecovery(db, user, rules, now)
   }
 
   await reserve(
@@ -1007,10 +1021,14 @@ async function advanceRecovery(
  * Every drawn question is played: one right answer gives the lives back, none sends
  * the player into a shorter wait before another recovery.
  */
-async function finishRecovery(db: Database, user: User, now: Date): Promise<GameState> {
-  const rules = rulesForFloor(user.currentFloor)
-  const progress = await recoveryProgress(db, user)
-  const verdict = judgeRecovery(progress?.successes ?? 0, rules, now)
+async function finishRecovery(
+  db: Database,
+  user: User,
+  rules: FloorRules,
+  now: Date,
+): Promise<GameState> {
+  const progress = await recoveryProgress(db, user, rules)
+  const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, rules, now)
 
   await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))
   await db.delete(reservations).where(eq(reservations.userId, user.id))

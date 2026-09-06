@@ -71,12 +71,12 @@ describe('inventaire des sorts', () => {
     const withoutTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(alone)))
     const withTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(teamed)))
 
-    expect((await withoutTeam.json()).canTargetAllies).toBe(false)
+    expect((await withoutTeam.json()).canTargetOthers).toBe(false)
 
     // Le classement de progression ne sort jamais du serveur : la page ne porte
     // que ce qui la remplit. Voir specs/ecrans.md#ce-quaucun-écran-joueur-ne-montre.
     expect(Object.keys(await withTeam.json()).sort()).toEqual([
-      'canTargetAllies',
+      'canTargetOthers',
       'castsLeft',
       'castsPerCooldown',
       'entries',
@@ -219,16 +219,36 @@ describe('inventaire des sorts', () => {
       expect(response.status).toBe(403)
     })
 
-    // La magie noire n'existe pas encore : proposée, elle consommerait un
-    // exemplaire pour rien. Voir specs/bonus.md#livraison.
-    it('rejette une catégorie de cible que le tirage ne sait pas résoudre', async () => {
+    it('rejette une catégorie de cible qui n existe pas', async () => {
       const userId = await createPlayer(db, IN_COOLDOWN)
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'everyone' }, cookie))
+
+      expect(response.status).toBe(400)
+    })
+
+    // La face suit la catégorie : noire sur un ennemi, sans que le client ait
+    // rien à en dire. Voir specs/bonus.md#catégories-de-cible.
+    it('applique la face noire sur un ennemi', async () => {
+      await createQuestion(db)
+      await createQuestion(db)
+      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'CRIMSON', floorSeen: 1 })
+      await createPlayer(db, {
+        discordId: 'foe',
+        username: 'saroumane',
+        team: 'AZURE',
+        floorSeen: 1,
+      })
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')
 
       const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'foe' }, cookie))
 
-      expect(response.status).toBe(400)
+      expect(response.status).toBe(200)
+      expect((await response.json()).log)
+        .toMatchObject([{ spell: 'VITALITY', face: 'curse', targetName: 'saroumane' }])
     })
 
     it('révèle la cible tirée au retour du lancer, et la dit à la cible', async () => {

@@ -13,7 +13,7 @@ const owned: InventoryView = {
   received: [],
   castsLeft: 2,
   castsPerCooldown: 2,
-  canTargetAllies: true,
+  canTargetOthers: true,
 }
 
 /** Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en plus. */
@@ -24,7 +24,7 @@ const afterCast: InventoryView = {
   received: [],
   castsLeft: 1,
   castsPerCooldown: 2,
-  canTargetAllies: true,
+  canTargetOthers: true,
 }
 
 describe('inventaire du joueur', () => {
@@ -70,9 +70,9 @@ describe('inventaire du joueur', () => {
   it('envoie la catégorie de cible et lit le nom qui revient', async () => {
     serve(INVENTORY_KEY, owned)
     answerWith(afterCast)
-    const { log, received, canTargetAllies, cast } = await useInventory()
+    const { log, received, canTargetOthers, cast } = await useInventory()
 
-    expect(canTargetAllies.value).toBe(true)
+    expect(canTargetOthers.value).toBe(true)
     expect(received.value).toEqual([])
 
     await cast('VITALITY', 'ally')

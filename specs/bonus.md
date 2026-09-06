@@ -109,8 +109,19 @@ sort.
 ### Limite d'effets négatifs
 
 - Un joueur ne porte jamais **plus de deux effets négatifs actifs**.
+- « Porté » se lit exactement comme sur son écran : ce qui attend sa prochaine
+  tentative, ce qui court sur celle en cours, et — pour les sorts liés à
+  l'attente — ce qui vise l'attente où il se tient. Un effet mort avec la
+  tentative qu'il a servie ne compte plus.
 - Au-delà, il est **retiré du tirage**, silencieusement, côté serveur. Le lanceur n'a
   rien à voir : le ciblage étant déjà aléatoire, il n'y a aucune UI à prévoir.
+- Tous les ennemis éligibles étant saturés, le pool est vide comme s'il n'y avait
+  personne : le sort part, l'exemplaire est dépensé, et rien n'est touché.
+- La limite se tient **au tirage**, donc par une lecture : deux lanceurs qui
+  frappent la même cible au même instant peuvent lui en poser une de trop. C'est
+  assumé — un timer divisé une fois de plus ne casse rien, et le multiplicatif
+  ne descend jamais à zéro. La seule conséquence qui ne se rattrape pas, une
+  tentative à zéro vie, est fermée par un plancher à une vie.
 - **Aucune limite sur les effets positifs.** Ils sont bornés de fait par le nombre
   d'alliés et par la règle des deux lancers par attente.
 
@@ -149,6 +160,10 @@ C'est ce qui donne son sens au fait de lancer depuis l'écran d'attente : la cib
 | **Répit** | prochaine attente ÷2 | prochaine attente ×2 |
 
 Chronomancie porte sur **toute la tentative**, pas sur une seule question.
+
+« Perfect exigé » veut dire : autant de bonnes réponses que de questions tirées.
+Le seuil suit donc l'Indulgence blanche quand les deux se posent — deux fois plus
+de questions, toutes à réussir.
 
 Purge blanche peut faire descendre le Pool Échecs sous le seuil de déclenchement du
 rattrapage, et donc **annuler le rattrapage**. C'est assumé : vider son pool est un
@@ -336,11 +351,10 @@ Jouable et testable avant que les équipes existent.
 mécanique existante différente ; les brancher un par un sur une boucle qui tourne
 déjà est plus sûr que tout d'un coup.
 
-**T3 — le PvP.** [`equipes.md`](./equipes.md) est écrit. L'équipe sur le joueur,
-la catégorie **Allié**, le tirage pondéré par rang et le journal nominatif des
-deux côtés sont livrés. Restent la catégorie **Ennemi** et la magie noire, avec
-la limite de deux effets négatifs — la catégorie est refusée d'ici là plutôt que
-proposée, un lancer sans effet coûtant un exemplaire pour rien.
+**T3 — le PvP.** Livré : l'équipe sur le joueur, les catégories **Allié** et
+**Ennemi**, le tirage pondéré par rang dans les deux sens, la magie noire des
+cinq sorts, la limite de deux effets négatifs et le journal nominatif des deux
+côtés. Voir [`equipes.md`](./equipes.md).
 
 ## Points encore à spécifier
 

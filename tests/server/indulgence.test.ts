@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { inventory, missedPool, recoveryQuestions } from '../../server/db/schema'
+import { acceptedAnswers, activeEffects, inventory, missedPool, recoveryQuestions } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { castSpell } from '../../server/utils/effects'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -114,6 +114,76 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
 
     expect(await drawn()).toHaveLength(rules.poolSizeForRecovery)
     expect((await readGameState(db, await reload(), WAIT_OVER)).phase).toBe('recovery')
+  })
+
+  // La face noire, jouée jusqu'au bout : elle n'allonge pas le tirage, elle
+  // exige que tout soit juste. Voir specs/bonus.md#catalogue.
+  describe('sa face noire', () => {
+    async function curse(): Promise<void> {
+      await db.insert(inventory).values({ userId: player.id, spell: 'INDULGENCE', obtainedAt: NOW })
+      await castSpell(db, await reload(), 'INDULGENCE', 'self', NOW)
+      // La face suit la catégorie ; on grave la noire à la main, un joueur ne
+      // pouvant pas se maudire lui-même. Voir shared/utils/spells.ts.
+      await db
+        .update(activeEffects)
+        .set({ face: 'curse' })
+        .where(eq(activeEffects.userId, player.id))
+    }
+
+    /** Répond juste à `count` questions du rattrapage, faux aux suivantes. */
+    async function play(right: number, wrong: number): Promise<void> {
+      for (let i = 0; i < right; i++) {
+        const questionId = (await db
+          .select()
+          .from(recoveryQuestions)
+          .where(eq(recoveryQuestions.userId, player.id))
+          .orderBy(recoveryQuestions.position))
+          .find(row => row.correct === null)!.questionId
+        const [accepted] = await db
+          .select()
+          .from(acceptedAnswers)
+          .where(eq(acceptedAnswers.questionId, questionId))
+
+        await submitAnswer(db, await reload(), accepted.text, WAIT_OVER)
+        await serveNextQuestion(db, await reload(), WAIT_OVER)
+      }
+
+      for (let i = 0; i < wrong; i++) {
+        await submitAnswer(db, await reload(), 'faux', WAIT_OVER)
+        await serveNextQuestion(db, await reload(), WAIT_OVER)
+      }
+    }
+
+    it('exige que tout soit juste : une bonne réponse ne suffit plus', async () => {
+      await fillPool(rules.recoveryQuestions * 3)
+      await curse()
+      await startRecovery()
+
+      await play(1, 0)
+
+      expect((await readGameState(db, await reload(), WAIT_OVER)).recovery)
+        .toMatchObject({ successes: 1, resumes: false })
+    })
+
+    it('ne rend pas les vies au rattrapage entamé puis manqué', async () => {
+      await fillPool(rules.recoveryQuestions * 3)
+      await curse()
+      await startRecovery()
+
+      await play(1, rules.recoveryQuestions - 1)
+
+      expect((await reload()).lives).toBe(0)
+    })
+
+    it('les rend quand tout est juste', async () => {
+      await fillPool(rules.recoveryQuestions * 3)
+      await curse()
+      await startRecovery()
+
+      await play(rules.recoveryQuestions, 0)
+
+      expect((await reload()).lives).toBe(rules.lives)
+    })
   })
 
   it('laisse le seuil de bonnes réponses là où il est', async () => {

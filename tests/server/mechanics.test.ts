@@ -201,7 +201,7 @@ describe('tirage d un rattrapage', () => {
 
 describe('verdict d un rattrapage', () => {
   it('rend les vies dès une bonne réponse', () => {
-    expect(judgeRecovery(1, rules, NOW)).toEqual({
+    expect(judgeRecovery(1, rules.recoveryQuestions, rules, NOW)).toEqual({
       resumes: true,
       livesAfter: rules.lives,
       cooldownUntil: null,
@@ -209,7 +209,7 @@ describe('verdict d un rattrapage', () => {
   })
 
   it('relance une attente plus courte quand rien n a été juste', () => {
-    expect(judgeRecovery(0, rules, NOW)).toEqual({
+    expect(judgeRecovery(0, rules.recoveryQuestions, rules, NOW)).toEqual({
       resumes: false,
       livesAfter: 0,
       cooldownUntil: new Date(NOW.getTime() + rules.cooldownAfterFailedRecoveryMs),

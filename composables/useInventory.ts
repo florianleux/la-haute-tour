@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import type { InventoryEntryView, InventoryView } from '~~/server/utils/inventory'
 import type { CastView, ReceivedView } from '~~/server/utils/effects'
 import type { SpellId } from '~~/shared/utils/spells'
-import type { CastableTargetKind } from '~~/shared/utils/teams'
+import type { TargetKind } from '~~/shared/utils/teams'
 
 /** Cache key of the inventory read: one name, so nobody re-types the string. */
 export const INVENTORY_KEY = 'inventory'
@@ -16,8 +16,8 @@ export interface InventoryRead {
   log: Ref<CastView[]>
   /** Ce qu'il a reçu des autres, du plus récent au plus ancien. */
   received: Ref<ReceivedView[]>
-  /** Vrai quand le joueur a une équipe : sans elle, la catégorie Allié ne vise rien. */
-  canTargetAllies: Ref<boolean>
+  /** Vrai quand le joueur a une équipe : sans elle, ni allié ni ennemi n'existe. */
+  canTargetOthers: Ref<boolean>
   /** Vrai quand la lecture a échoué : un inventaire vide n'est pas la même nouvelle. */
   failed: Ref<boolean>
   /** Ce qu'il reste de lancers pour l'attente en cours. */
@@ -32,7 +32,7 @@ export interface InventoryRead {
    * Lance un sort sur une catégorie de cible et réaffiche l'inventaire que le
    * serveur renvoie — le journal y dit qui a été touché.
    */
-  cast: (spell: SpellId, target: CastableTargetKind) => Promise<void>
+  cast: (spell: SpellId, target: TargetKind) => Promise<void>
 }
 
 /**
@@ -56,7 +56,7 @@ export async function useInventory(): Promise<InventoryRead> {
    * serveur renvoie plutôt que de retirer l'exemplaire de son côté. C'est aussi
    * par là que la cible tirée se révèle — le journal revient avec son nom.
    */
-  async function cast(spell: SpellId, target: CastableTargetKind): Promise<void> {
+  async function cast(spell: SpellId, target: TargetKind): Promise<void> {
     casting.value = spell
 
     await send(() => $fetch<InventoryView>('/api/game/cast', {
@@ -73,7 +73,7 @@ export async function useInventory(): Promise<InventoryRead> {
     total: computed<number>(() => data.value?.total ?? 0),
     log: computed<CastView[]>(() => data.value?.log ?? []),
     received: computed<ReceivedView[]>(() => data.value?.received ?? []),
-    canTargetAllies: computed<boolean>(() => data.value?.canTargetAllies ?? false),
+    canTargetOthers: computed<boolean>(() => data.value?.canTargetOthers ?? false),
     castsLeft: computed<number>(() => data.value?.castsLeft ?? 0),
     castsPerCooldown: computed<number>(() => data.value?.castsPerCooldown ?? 0),
     failed: computed<boolean>(() => Boolean(error.value)),

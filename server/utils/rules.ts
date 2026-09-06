@@ -1,4 +1,4 @@
-import type { SpellEffect, SpellId } from '../../shared/utils/spells'
+import type { SpellEffect, SpellFace, SpellId } from '../../shared/utils/spells'
 
 /**
  * The one rule set of the game. No number of the game lives anywhere else: a
@@ -83,6 +83,16 @@ export interface FloorRules {
    * nombre, jamais sur l'identité. Voir specs/bonus.md#où-et-quand.
    */
   castsPerCooldown: number
+  /**
+   * Combien d'effets négatifs un joueur porte au plus. Au-delà, il sort du
+   * tirage des ennemis — silencieusement, le ciblage étant déjà aléatoire.
+   *
+   * C'est cette limite, et non un plancher sur les vies, qui garantit qu'une
+   * tentative démarre toujours avec au moins une vie : deux Vitalité noires au
+   * plus, sur trois vies. Aucune limite en face pour les effets positifs.
+   * Voir specs/bonus.md#limite-deffets-négatifs.
+   */
+  maxCurses: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -106,6 +116,7 @@ const DEFAULT_RULES: FloorRules = {
   chronomancyFactor: 2,
   indulgenceFactor: 2,
   castsPerCooldown: 2,
+  maxCurses: 2,
 }
 
 /**
@@ -133,14 +144,31 @@ export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): Flo
   const respite = netOf(effects, 'RESPITE')
   const chronomancy = netOf(effects, 'CHRONOMANCY')
   // Indulgence n'est pas symétrique : sa face noire exige un perfect, elle ne
-  // raccourcit pas le tirage. Seules les blanches comptent ici ; la noire arrive
-  // avec la magie noire. Voir specs/bonus.md#cumul.
+  // raccourcit pas le tirage. Seules les blanches comptent dans le nombre de
+  // questions. Voir specs/bonus.md#cumul.
   const indulgence = boonsOf(effects, 'INDULGENCE')
+  const perfectRequired = cursesOf(effects, 'INDULGENCE') > 0
+
+  // Arrondi à l'entier : on tire des questions, pas des fractions. Le tirage
+  // s'arrête de toute façon à ce que le pool contient.
+  const recoveryQuestions = Math.round(rules.recoveryQuestions * rules.indulgenceFactor ** indulgence)
 
   return {
     ...rules,
-    // Additive : le mode de cumul est propre à chaque sort.
-    lives: rules.lives + vitality * rules.vitalityLives,
+    recoveryQuestions,
+    // Le perfect exigé : autant de bonnes réponses que de questions tirées. Il
+    // est booléen, donc idempotent — deux Indulgence noires valent une. Et il se
+    // compose avec la blanche plutôt que de s'annuler : deux fois plus de
+    // questions, toutes à réussir. Voir specs/bonus.md#cumul.
+    recoverySuccessesToResume: perfectRequired ? recoveryQuestions : rules.recoverySuccessesToResume,
+    // Additive : le mode de cumul est propre à chaque sort. Le plancher n'est
+    // pas la règle — c'est la limite d'effets négatifs qui garantit qu'il reste
+    // une vie, et elle suffit tant qu'elle tient. Elle se tient au tirage, donc
+    // par une lecture : deux lanceurs qui frappent la même cible au même instant
+    // peuvent lui poser une malédiction de trop. Assumé pour tout le reste — un
+    // timer divisé une fois de plus ne casse rien — mais pas ici : une tentative
+    // à zéro vie ne se joue pas. Voir specs/bonus.md#limite-deffets-négatifs.
+    lives: Math.max(1, rules.lives + vitality * rules.vitalityLives),
     // Multiplicatifs : diviser plutôt que soustraire est ce qui empêche une
     // attente ou un timer d'atteindre zéro, quel que soit l'empilement. Le blanc
     // raccourcit l'attente et rallonge les timers — d'où les sens opposés.
@@ -149,10 +177,16 @@ export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): Flo
     // sur une question mais sur celles qu'ouvre la tentative où elle s'ancre.
     ascentTimerMs: rules.ascentTimerMs * rules.chronomancyFactor ** chronomancy,
     recoveryTimerMs: rules.recoveryTimerMs * rules.chronomancyFactor ** chronomancy,
-    // Arrondi à l'entier : on tire des questions, pas des fractions. Le tirage
-    // s'arrête de toute façon à ce que le pool contient.
-    recoveryQuestions: Math.round(rules.recoveryQuestions * rules.indulgenceFactor ** indulgence),
   }
+}
+
+/**
+ * Combien d'exemplaires d'un sort, d'une face donnée, sont posés. La brique des
+ * deux lectures qui suivent — un sort symétrique compte la différence, un sort
+ * qui ne l'est pas compte une face à part. Voir specs/bonus.md#cumul.
+ */
+function facesOf(effects: SpellEffect[], spell: SpellId, face: SpellFace): number {
+  return effects.filter(effect => effect.spell === spell && effect.face === face).length
 }
 
 /**
@@ -162,9 +196,7 @@ export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): Flo
  * Voir specs/bonus.md#cumul.
  */
 function netOf(effects: SpellEffect[], spell: SpellId): number {
-  return effects
-    .filter(effect => effect.spell === spell)
-    .reduce((net, { face }) => net + (face === 'boon' ? 1 : -1), 0)
+  return facesOf(effects, spell, 'boon') - facesOf(effects, spell, 'curse')
 }
 
 /**
@@ -174,5 +206,10 @@ function netOf(effects: SpellEffect[], spell: SpellId): number {
  * Voir specs/bonus.md#cumul.
  */
 function boonsOf(effects: SpellEffect[], spell: SpellId): number {
-  return effects.filter(effect => effect.spell === spell && effect.face === 'boon').length
+  return facesOf(effects, spell, 'boon')
+}
+
+/** Les seules faces noires d'un sort, pour la même raison que `boonsOf`. */
+function cursesOf(effects: SpellEffect[], spell: SpellId): number {
+  return facesOf(effects, spell, 'curse')
 }

@@ -35,6 +35,7 @@ describe('jeu de règles', () => {
       respiteFactor: 2,
       chronomancyFactor: 2,
       indulgenceFactor: 2,
+      maxCurses: 2,
       castsPerCooldown: 2,
     })
   })
@@ -193,5 +194,54 @@ describe('règles modulées par les effets', () => {
 
     expect(rulesWithEffects(rules, effects).recoveryQuestions)
       .toBe(rules.recoveryQuestions * rules.indulgenceFactor)
+  })
+
+  // Ce qu'elle fait à la place : exiger un perfect, c'est-à-dire autant de
+  // bonnes réponses que de questions tirées. Voir specs/bonus.md#catalogue.
+  it('exige un perfect au prochain rattrapage en Indulgence noire', () => {
+    const effects: SpellEffect[] = [{ spell: 'INDULGENCE', face: 'curse' }]
+    const modulated = rulesWithEffects(rules, effects)
+
+    expect(modulated.recoverySuccessesToResume).toBe(modulated.recoveryQuestions)
+  })
+
+  it('n exige un perfect qu une fois : deux noires valent une', () => {
+    const effects: SpellEffect[] = [
+      { spell: 'INDULGENCE', face: 'curse' },
+      { spell: 'INDULGENCE', face: 'curse' },
+    ]
+    const modulated = rulesWithEffects(rules, effects)
+
+    expect(modulated.recoveryQuestions).toBe(rules.recoveryQuestions)
+    expect(modulated.recoverySuccessesToResume).toBe(rules.recoveryQuestions)
+  })
+
+  // Les deux faces se composent : le sort de l'allié aggrave la situation
+  // plutôt que de l'adoucir — deux fois plus de questions, toutes à réussir.
+  // Voir specs/bonus.md#cumul.
+  it('compose la blanche et la noire en un perfect plus long', () => {
+    const effects: SpellEffect[] = [
+      { spell: 'INDULGENCE', face: 'boon' },
+      { spell: 'INDULGENCE', face: 'curse' },
+    ]
+    const modulated = rulesWithEffects(rules, effects)
+
+    expect(modulated.recoveryQuestions).toBe(rules.recoveryQuestions * rules.indulgenceFactor)
+    expect(modulated.recoverySuccessesToResume).toBe(modulated.recoveryQuestions)
+  })
+
+  // Deux effets négatifs au plus : c'est cette limite, et non un plancher, qui
+  // garantit qu'une tentative démarre avec au moins une vie.
+  // Voir specs/mecanique.md#ce-que-les-sorts-modifient.
+  it('laisse au moins une vie à la tentative, au plafond d effets négatifs', () => {
+    expect(rulesWithEffects(rules, vitality('curse', rules.maxCurses)).lives)
+      .toBeGreaterThanOrEqual(1)
+  })
+
+  // Le plafond se tient au tirage, donc par une lecture : deux lanceurs
+  // simultanés peuvent poser une malédiction de trop. Une tentative à zéro vie
+  // ne se jouant pas, le plancher rattrape ce cas-là et lui seul.
+  it('laisse une vie même à une malédiction de trop', () => {
+    expect(rulesWithEffects(rules, vitality('curse', rules.lives + 2)).lives).toBe(1)
   })
 })

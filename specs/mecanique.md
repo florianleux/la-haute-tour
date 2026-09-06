@@ -129,5 +129,9 @@ de 12 h allégée par deux Répit blancs vaut 3 h. Les modes de cumul diffèrent
 sort à l'autre — voir [`bonus.md`](./bonus.md#cumul).
 
 Aucun de ces facteurs ne peut réduire un timer ou une attente à zéro : ils sont
-multiplicatifs. Les vies, elles, s'additionnent, mais la limite de deux effets
-négatifs garantit qu'une tentative démarre toujours avec au moins une vie.
+multiplicatifs. Les vies, elles, s'additionnent, et c'est la limite de deux
+effets négatifs qui les tient au-dessus de zéro. Cette limite se lisant au
+tirage, un plancher à **une vie** ferme le cas où deux lanceurs simultanés en
+poseraient une de trop — il ne remplace pas la règle, il en garantit la seule
+conséquence qu'on ne peut pas rattraper.
+Voir [`bonus.md`](./bonus.md#limite-deffets-négatifs).

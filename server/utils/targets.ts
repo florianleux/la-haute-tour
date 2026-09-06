@@ -1,9 +1,11 @@
-import { and, asc, eq, isNull, ne } from 'drizzle-orm'
-import { deckFloors, reservations, users } from '../db/schema'
-import { drawByRank, hasStarted, phaseOf } from './mechanics'
+import { and, asc, eq, inArray, isNull, ne, or } from 'drizzle-orm'
+import { activeEffects, deckFloors, reservations, users } from '../db/schema'
+import { drawByRank, hasStarted, isBorneBy, phaseOf } from './mechanics'
+import { rulesForFloor } from './rules'
 import { bondBetween } from '../../shared/utils/teams'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
+import type { SpellFace } from '../../shared/utils/spells'
 import type { DrawnTargetKind } from '../../shared/utils/teams'
 
 /**
@@ -61,14 +63,68 @@ export async function drawTarget(
     // Voir specs/ecrans.md#ce-quaucun-écran-joueur-ne-montre.
     .orderBy(asc(users.currentFloor), asc(users.floorSeen), asc(users.createdAt), asc(users.id))
 
-  const eligible = rows
+  const reachable = rows
     // La relation se lit d'un seul endroit, jamais réécrite ici : c'est elle qui
     // scelle les deux mondes autant qu'elle dit la couleur.
     .filter(row => bondBetween(caster, row.user) === kind)
     .filter(row => isEligible(row, now))
     .map(row => row.user)
 
+  // Le filtre des saturés passe **avant** le classement : un joueur retiré du
+  // pool n'y occupe plus de rang, donc ne pèse plus dans la distribution.
+  // Voir specs/bonus.md#limite-deffets-négatifs.
+  const eligible = kind === 'foe' ? await unsaturated(db, reachable) : reachable
+
   return drawByRank(eligible, kind, random)
+}
+
+/**
+ * Ceux qui peuvent encore encaisser une magie noire : un joueur ne porte jamais
+ * plus de `maxCurses` effets négatifs à la fois. Au-delà il sort du tirage,
+ * silencieusement — le ciblage étant déjà aléatoire, le lanceur n'a rien à
+ * savoir, et il n'y a aucune UI à prévoir.
+ *
+ * Conséquence assumée : qui ne meurt pas ne consomme pas ses effets, occupe ses
+ * places et s'en trouve protégé. Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+async function unsaturated(db: Database, candidates: User[]): Promise<User[]> {
+  if (!candidates.length) {
+    return candidates
+  }
+
+  // Ce `where` ne tranche pas, il allège la facture : il écarte les
+  // malédictions mortes — ancrées sur une tentative révolue — pour ne pas payer
+  // des lignes qu'on jetterait ensuite. C'est `isBorneBy` qui décide, plus bas.
+  //
+  // L'invariant qui les lie : ce filtre doit rester **plus large** que le
+  // prédicat. Élargir ce qu'un joueur porte se fait donc là-bas seul ; le
+  // resserrer ici ferait disparaître des lignes que le prédicat aurait gardées.
+  const carried = await db
+    .select({
+      userId: activeEffects.userId,
+      spell: activeEffects.spell,
+      anchoredAt: activeEffects.anchoredAt,
+      targetCooldownStartedAt: activeEffects.targetCooldownStartedAt,
+    })
+    .from(activeEffects)
+    .innerJoin(users, eq(users.id, activeEffects.userId))
+    .where(and(
+      inArray(activeEffects.userId, candidates.map(candidate => candidate.id)),
+      eq(activeEffects.face, 'curse' satisfies SpellFace),
+      or(
+        isNull(activeEffects.anchoredAt),
+        eq(activeEffects.anchoredAt, users.attemptStartedAt),
+      ),
+    ))
+
+  return candidates.filter((candidate) => {
+    const borne = carried.filter(row =>
+      row.userId === candidate.id && isBorneBy(row, candidate),
+    )
+
+    // Le plafond est celui de la cible : c'est elle qui porte, pas le lanceur.
+    return borne.length < rulesForFloor(candidate.currentFloor).maxCurses
+  })
 }
 
 type Candidate = { user: User, floorTotal: number | null, heldQuestion: string | null }
