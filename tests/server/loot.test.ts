@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { missedPool, seenQuestions, users } from '../../server/db/schema'
+import { missedPool, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -34,14 +34,7 @@ describe('question loot', () => {
     const already = ids.slice(0, seen)
 
     if (already.length) {
-      await db.insert(seenQuestions).values(already.map(questionId => ({
-        userId: player.id,
-        questionId,
-        floor: 1,
-        correct: true,
-        seenAt: NOW,
-        submittedAnswer: 'Bordeaux',
-      })))
+      await markSeen(db, player.id, already, { floor: 1, seenAt: NOW, submittedAnswer: 'Bordeaux' })
     }
 
     return already

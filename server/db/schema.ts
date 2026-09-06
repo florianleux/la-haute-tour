@@ -70,6 +70,23 @@ export const users = sqliteTable('users', {
    */
   floorCursor: integer('floor_cursor').notNull().default(0),
   /**
+   * Questions vues à l'étage courant, portées plutôt que comptées. Remis à zéro
+   * en franchissant le palier.
+   *
+   * Le décompte se lisait par un `count(*)` sur les questions vues, à chaque
+   * lecture d'état : la base facture les lignes lues, et un étage de mille
+   * questions en coûtait jusqu'à mille pour en servir une. Ce nombre-là voyage
+   * maintenant avec le joueur, et s'écrit dans le même lot que la question vue
+   * qui le fait bouger. Voir specs/mecanique.md#ascension.
+   */
+  floorSeen: integer('floor_seen').notNull().default(0),
+  /**
+   * Questions vues depuis le début de la tentative en cours. Même raison d'être
+   * que `floorSeen` : porté, jamais compté. Remis à zéro à l'ouverture d'une
+   * tentative.
+   */
+  attemptSeen: integer('attempt_seen').notNull().default(0),
+  /**
    * Début de la tentative en cours — repoussé chaque fois que les vies
    * reviennent. C'est lui qui dit quelles erreurs sont encore contestables.
    *
@@ -400,6 +417,21 @@ export const settings = sqliteTable('settings', {
    */
   maintenanceSince: integer('maintenance_since', { mode: 'timestamp' }),
 }, table => [check('settings_single_row', sql`${table.id} = 1`)])
+
+/**
+ * Ce que chaque étage contient. Une propriété du deck, partagée par tous les
+ * joueurs et changée seulement quand l'administration l'édite — donc écrite une
+ * fois là, et lue en une ligne partout ailleurs.
+ *
+ * Elle se comptait à chaque lecture d'état. Un `count(*)` parcourt l'index de
+ * l'étage entier : mille lignes facturées pour apprendre un nombre qui ne bouge
+ * pas. Un cache mémoire ne sauvait rien — en serverless, chaque invocation
+ * froide repart d'un process neuf. Voir server/utils/deck.ts.
+ */
+export const deckFloors = sqliteTable('deck_floors', {
+  floor: integer('floor').primaryKey(),
+  total: integer('total').notNull().default(0),
+})
 
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect

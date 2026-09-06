@@ -3,7 +3,7 @@ import { eq, max } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../../server/db/schema'
-import { forgetDeckSizes } from '../../server/utils/deck'
+import { shiftFloorSize } from '../../server/utils/deck'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -11,9 +11,6 @@ import type { User } from '../../server/db/schema'
 export async function createTestDatabase(): Promise<Database> {
   const db = drizzle(createClient({ url: ':memory:' }), { schema })
   await migrate(db, { migrationsFolder: './drizzle' })
-  // La taille des étages est mémorisée par processus, pas par base : un test qui
-  // ouvre un monde neuf doit oublier le deck du précédent.
-  forgetDeckSizes()
   return db
 }
 
@@ -48,6 +45,11 @@ export async function createQuestion(db: Database, seed: QuestionSeed = {}): Pro
     .insert(schema.acceptedAnswers)
     .values((seed.accepted ?? ['Bordeaux']).map(text => ({ questionId: question.id, text })))
 
+  // Le compte de l'étage suit la question, comme l'administration le fait : un
+  // deck monté à la main dans un test doit décrire le même monde qu'en jeu.
+  // Voir server/utils/deck.ts.
+  await shiftFloorSize(db, floor, 1)
+
   return question.id
 }
 
@@ -68,6 +70,52 @@ export async function createPlayer(db: Database, state: PlayerState = {}): Promi
     .returning()
 
   return user.id
+}
+
+/** Ce qu'un test précise d'un passage : le reste a un défaut jouable. */
+type SeenState = Partial<Omit<typeof schema.seenQuestions.$inferInsert, 'userId' | 'questionId'>>
+
+/**
+ * Une question déjà vue par un joueur, décomptes compris.
+ *
+ * Le joueur porte ses questions vues plutôt que de les compter : les insérer
+ * sans faire bouger ses compteurs monterait un monde que le jeu ne peut pas
+ * produire, et le palier tomberait ailleurs qu'en vrai. Le helper tient
+ * l'invariant, comme `resolve()` le tient en jeu.
+ * Voir server/db/schema.ts et server/utils/game.ts.
+ */
+export async function markSeen(
+  db: Database,
+  userId: number,
+  questionIds: string | string[],
+  state: SeenState = {},
+): Promise<void> {
+  const ids = Array.isArray(questionIds) ? questionIds : [questionIds]
+
+  if (!ids.length) {
+    return
+  }
+
+  const player = await loadPlayer(db, userId)
+  const floor = state.floor ?? player.currentFloor
+
+  await db.insert(schema.seenQuestions).values(ids.map(questionId => ({
+    correct: true,
+    ...state,
+    userId,
+    questionId,
+    floor,
+  })))
+
+  await db
+    .update(schema.users)
+    .set({
+      // Seules les questions de l'étage où se tient le joueur comptent pour son
+      // palier ; sa tentative, elle, compte tout ce qu'il vient de voir.
+      floorSeen: floor === player.currentFloor ? player.floorSeen + ids.length : player.floorSeen,
+      attemptSeen: player.attemptSeen + ids.length,
+    })
+    .where(eq(schema.users.id, userId))
 }
 
 /**

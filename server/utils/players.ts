@@ -1,6 +1,6 @@
 import { asc, eq, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
-import { disputes, questions, reservations, seenQuestions, users } from '../db/schema'
+import { deckFloors, disputes, reservations, users } from '../db/schema'
 import { phaseOf } from './mechanics'
 import { numericRouteId } from './routes'
 import type { H3Event } from 'h3'
@@ -84,11 +84,10 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
   const rows = await db
     .select({
       user: users,
-      floorSeen: sql<number>`(select count(*) from ${seenQuestions}
-        where ${seenQuestions.userId} = ${users.id}
-          and ${seenQuestions.floor} = ${users.currentFloor})`,
-      floorTotal: sql<number>`(select count(*) from ${questions}
-        where ${questions.floor} = ${users.currentFloor})`,
+      // Le compte de l'étage se lit au deck, en une ligne jointe. Compté par
+      // sous-requête, il coûtait tout l'étage **par joueur listé** : mille
+      // lignes fois vingt fiches pour ouvrir l'onglet. Voir server/utils/deck.ts.
+      floorTotal: deckFloors.total,
       liveReservations: sql<number>`(select count(*) from ${reservations}
         where ${reservations.userId} = ${users.id}
           and ${reservations.resolvedAt} is null)`,
@@ -97,6 +96,7 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
           and ${disputes.status} = 'pending')`,
     })
     .from(users)
+    .leftJoin(deckFloors, eq(deckFloors.floor, users.currentFloor))
     // Les deux mondes ne se mélangent jamais : l'onglet Joueurs sert à arbitrer
     // de vraies parties, et y mêler des fantômes fausserait ce qu'on y lit.
     // Voir specs/admin.md#joueurs-test.
@@ -113,11 +113,11 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     phase: phaseOf({
       user: row.user,
       hasLiveReservation: row.liveReservations > 0,
-      seen: row.floorSeen,
-      floorTotal: row.floorTotal,
+      seen: row.user.floorSeen,
+      floorTotal: row.floorTotal ?? 0,
     }, now),
-    floorSeen: row.floorSeen,
-    floorTotal: row.floorTotal,
+    floorSeen: row.user.floorSeen,
+    floorTotal: row.floorTotal ?? 0,
     cooldownUntil: row.user.cooldownUntil?.toISOString() ?? null,
     pendingDisputes: row.pendingDisputes,
     team: row.user.team,

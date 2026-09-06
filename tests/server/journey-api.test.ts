@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { attempts, seenQuestions } from '../../server/db/schema'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { attempts } from '../../server/db/schema'
+import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 
@@ -29,13 +29,7 @@ describe('parcours du profil', () => {
 
   it('rend le parcours du joueur signé', async () => {
     const questionId = await createQuestion(db)
-    await db.insert(seenQuestions).values({
-      userId: playerId,
-      questionId,
-      floor: 1,
-      correct: true,
-      seenAt: NOW,
-    })
+    await markSeen(db, playerId, questionId, { floor: 1, seenAt: NOW })
     await db.insert(attempts).values({
       userId: playerId,
       startedAt: NOW,

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { missedPool, reservations, seenQuestions, users } from '../../server/db/schema'
+import { missedPool, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -24,7 +24,7 @@ describe('palier et fin de partie', () => {
   /** Une question de l'étage, déjà vue : c'est le décompte qui fait le palier. */
   async function seeQuestion(floor: number): Promise<string> {
     const questionId = await createQuestion(db, { floor, statement: `Question de l étage ${floor} ?` })
-    await db.insert(seenQuestions).values({ userId: player.id, questionId, floor, correct: true })
+    await markSeen(db, player.id, questionId, { floor })
     return questionId
   }
 
@@ -167,12 +167,7 @@ describe('palier et fin de partie', () => {
 
     it('n empêche pas la fin quand le Pool Échecs du dernier étage n est pas vide', async () => {
       const missedId = await createQuestion(db, { floor: FLOOR_COUNT, statement: 'Ratée au sommet ?' })
-      await db.insert(seenQuestions).values({
-        userId: player.id,
-        questionId: missedId,
-        floor: FLOOR_COUNT,
-        correct: false,
-      })
+      await markSeen(db, player.id, missedId, { floor: FLOOR_COUNT, correct: false })
       await db.insert(missedPool).values({
         userId: player.id,
         questionId: missedId,

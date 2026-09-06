@@ -35,6 +35,47 @@ function countQueries(db: Database): () => number {
   }
 }
 
+/**
+ * Le SQL réellement parti, mis à plat. Les allers-retours disent la latence ;
+ * ceci dit la facture — la base compte les **lignes lues**, et un `count(*)`
+ * parcourt tout ce qu'il compte.
+ */
+function captureSql(db: Database): () => string {
+  const statements: string[] = []
+  const client = (db as unknown as { $client: Record<'execute' | 'batch', (...args: unknown[]) => unknown> }).$client
+
+  const record = (arg: unknown): void => {
+    if (Array.isArray(arg)) {
+      arg.forEach(record)
+      return
+    }
+    if (typeof arg === 'string') {
+      statements.push(arg)
+      return
+    }
+    const sql = (arg as { sql?: unknown })?.sql
+    if (typeof sql === 'string') {
+      statements.push(sql)
+    }
+  }
+
+  for (const method of ['execute', 'batch'] as const) {
+    const original = client[method].bind(client)
+    Object.assign(client, {
+      [method]: (...args: unknown[]) => {
+        args.forEach(record)
+        return original(...args)
+      },
+    })
+  }
+
+  return () => {
+    const seen = statements.join('\n').toLowerCase()
+    statements.length = 0
+    return seen
+  }
+}
+
 const NOW = new Date('2026-09-03T12:00:00.000Z')
 
 describe('budget de requêtes des chemins chauds', () => {
@@ -78,5 +119,48 @@ describe('budget de requêtes des chemins chauds', () => {
     await submitAnswer(db, player, 'Toulouse', NOW)
 
     expect(queries()).toBeLessThanOrEqual(7)
+  })
+
+  /**
+   * Le cœur du problème : servir une question ne doit rien compter. Un
+   * `count(*)` parcourt les lignes qu'il compte — l'étage entier pour sa taille,
+   * tout ce que le joueur a déjà vu pour sa progression — et la base facture
+   * chacune. Ces trois nombres-là sont portés, jamais comptés.
+   * Voir server/db/schema.ts et server/utils/deck.ts.
+   */
+  describe('ne compte rien sur le chemin du joueur', () => {
+    const counting = /count\(\*\)\s+from\s+["`']?(questions|seen_questions)/
+
+    it('en servant la question suivante', async () => {
+      const sql = captureSql(db)
+      sql()
+
+      await serveNextQuestion(db, player, NOW)
+
+      const seen = sql()
+      expect(seen).toContain('select')
+      expect(seen).not.toMatch(counting)
+    })
+
+    it('en lisant l état de jeu', async () => {
+      await serveNextQuestion(db, player, NOW)
+      const sql = captureSql(db)
+      sql()
+
+      await readGameState(db, await loadPlayer(db, player.id), NOW)
+
+      expect(sql()).not.toMatch(counting)
+    })
+
+    it('en résolvant une réponse', async () => {
+      await serveNextQuestion(db, player, NOW)
+      const fresh = await loadPlayer(db, player.id)
+      const sql = captureSql(db)
+      sql()
+
+      await submitAnswer(db, fresh, 'Bordeaux', NOW)
+
+      expect(sql()).not.toMatch(counting)
+    })
   })
 })

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
 import { acceptedAnswers, missedPool, questions, seenQuestions } from '../../server/db/schema'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
 import {
   apiRequest,
   installNitroGlobals,
@@ -272,7 +272,7 @@ describe('questions admin', () => {
       const playerId = await createPlayer(db, { discordId: '111', username: 'frodo' })
       const id = await createQuestion(db)
       await createQuestion(db, { statement: 'Celle qui reste ?' })
-      await db.insert(seenQuestions).values({ userId: playerId, questionId: id, floor: 1, correct: false })
+      await markSeen(db, playerId, id, { floor: 1, correct: false })
       await db.insert(missedPool).values({
         userId: playerId,
         questionId: id,

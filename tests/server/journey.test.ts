@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { attempts, disputes, seenQuestions } from '../../server/db/schema'
+import { attempts, disputes } from '../../server/db/schema'
 import { closeAttempt, journeyStats } from '../../server/utils/journey'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -19,13 +19,7 @@ describe('parcours', () => {
   /** Une question vue, juste ou fausse, à la minute dite. */
   async function see(correct: boolean, minute: number, floor = 1): Promise<void> {
     const questionId = await createQuestion(db, { floor, statement: `Question ${minute} ?` })
-    await db.insert(seenQuestions).values({
-      userId: player.id,
-      questionId,
-      floor,
-      correct,
-      seenAt: new Date(NOW.getTime() + minute * 60_000),
-    })
+    await markSeen(db, player.id, questionId, { floor, correct, seenAt: new Date(NOW.getTime() + minute * 60_000) })
   }
 
   describe('clôture d une tentative', () => {

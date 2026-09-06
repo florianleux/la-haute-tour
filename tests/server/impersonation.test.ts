@@ -4,8 +4,8 @@ import { setDatabase } from '../../server/db/client'
 import { pendingDisputes } from '../../server/utils/disputes'
 import { focusLossTally } from '../../server/utils/focus'
 import { playerRoster } from '../../server/utils/players'
-import { disputes, focusLosses, seenQuestions, users } from '../../server/db/schema'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { disputes, focusLosses, users } from '../../server/db/schema'
+import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
 import {
   apiRequest,
   installNitroGlobals,
@@ -161,7 +161,7 @@ describe('incarnation d un joueur test', () => {
     it('tient les joueurs test hors de la file de contestation', async () => {
       const questionId = await createQuestion(db, { statement: 'Ratée ?', accepted: ['oui'] })
       for (const userId of [playerId, testPlayerId]) {
-        await db.insert(seenQuestions).values({ userId, questionId, floor: 1, correct: false, submittedAnswer: 'non' })
+        await markSeen(db, userId, questionId, { floor: 1, correct: false, submittedAnswer: 'non' })
         await db.insert(disputes).values({ userId, questionId, status: 'pending' })
       }
 

@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { disputes, inventory, seenQuestions } from '../../server/db/schema'
+import { disputes, inventory } from '../../server/db/schema'
 import { openDispute, settleDispute } from '../../server/utils/disputes'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { SPELL_IDS } from '../../shared/utils/spells'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { rolls } from '../helpers/random'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
@@ -43,14 +43,7 @@ describe('coffre de loot', () => {
       ids.push(await createQuestion(db, { statement: `Question ${i + 1} ?` }))
     }
 
-    await db.insert(seenQuestions).values(ids.slice(0, seen).map(questionId => ({
-      userId: player.id,
-      questionId,
-      floor: 1,
-      correct: true,
-      seenAt: NOW,
-      submittedAnswer: 'Bordeaux',
-    })))
+    await markSeen(db, player.id, ids.slice(0, seen), { floor: 1, seenAt: NOW, submittedAnswer: 'Bordeaux' })
 
     await serveNextQuestion(db, await reload(), NOW)
     await submitAnswer(db, await reload(), answer, NOW)

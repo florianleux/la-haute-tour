@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { missedPool, reservations, seenQuestions, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -232,12 +232,7 @@ describe('boucle d ascension', () => {
 
     it('atteint le palier quand toutes les questions de l étage sont vues', async () => {
       const questionId = await createQuestion(db)
-      await db.insert(seenQuestions).values({
-        userId: player.id,
-        questionId,
-        floor: 1,
-        correct: true,
-      })
+      await markSeen(db, player.id, questionId, { floor: 1 })
 
       const state = await readGameState(db, player, NOW)
 
@@ -247,12 +242,7 @@ describe('boucle d ascension', () => {
     it('atteint la fin de partie au dernier étage', async () => {
       await db.update(users).set({ currentFloor: 6 }).where(eq(users.id, player.id))
       const questionId = await createQuestion(db, { floor: 6 })
-      await db.insert(seenQuestions).values({
-        userId: player.id,
-        questionId,
-        floor: 6,
-        correct: true,
-      })
+      await markSeen(db, player.id, questionId, { floor: 6 })
 
       const state = await readGameState(db, await reload(), NOW)
 

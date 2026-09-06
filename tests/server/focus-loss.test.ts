@@ -4,7 +4,7 @@ import { focusLosses, missedPool, seenQuestions, users } from '../../server/db/s
 import { contestableErrors } from '../../server/utils/disputes'
 import { serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
@@ -78,14 +78,7 @@ describe('perte de focus', () => {
     // Un pool assez fourni, chaque question à une réussite de la sortie.
     for (let i = 0; i < rules.poolSizeForRecovery; i++) {
       const questionId = await createQuestion(db, { statement: `Ratée ${i} ?`, accepted: ['Bordeaux'] })
-      await db.insert(seenQuestions).values({
-        userId: player.id,
-        questionId,
-        floor: 1,
-        correct: false,
-        submittedAnswer: 'nawak',
-        seenAt: NOW,
-      })
+      await markSeen(db, player.id, questionId, { floor: 1, correct: false, submittedAnswer: 'nawak', seenAt: NOW })
       await db.insert(missedPool).values({
         userId: player.id,
         questionId,

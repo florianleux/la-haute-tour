@@ -5,8 +5,10 @@ import { FLOOR_COUNT } from '../shared/utils/floors'
 import {
   acceptedAnswers,
   categories,
+  deckFloors,
   questionCategories,
   questions,
+  users,
 } from '../server/db/schema'
 
 /**
@@ -180,6 +182,17 @@ export async function importQuestions(
     for (const row of questionRows) {
       byFloor.set(row.floor, (byFloor.get(row.floor) ?? 0) + 1)
     }
+
+    // Le compte de chaque étage s'écrit ici plutôt que de se laisser compter à
+    // chaque lecture d'état. Voir server/utils/deck.ts.
+    await tx.delete(deckFloors)
+    await tx.insert(deckFloors).values(
+      [...byFloor].map(([floor, total]) => ({ floor, total })),
+    )
+
+    // Le deck effacé a emporté les questions vues par cascade : les décomptes
+    // que les joueurs portaient ne décrivent plus rien.
+    await tx.update(users).set({ floorSeen: 0, attemptSeen: 0, floorCursor: 0 })
 
     return {
       questions: questionRows.length,

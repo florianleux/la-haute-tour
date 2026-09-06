@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { attempts, missedPool, recoveryQuestions, seenQuestions } from '../../server/db/schema'
 import { readGameState, readMissedPool, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -32,12 +32,7 @@ describe('attente et rattrapage', () => {
         answerLabel: `RÉPONSE ${i}`,
         accepted: [`reponse ${i}`],
       })
-      await db.insert(seenQuestions).values({
-        userId: player.id,
-        questionId,
-        floor: 1,
-        correct: false,
-      })
+      await markSeen(db, player.id, questionId, { floor: 1, correct: false })
       await db.insert(missedPool).values({
         userId: player.id,
         questionId,

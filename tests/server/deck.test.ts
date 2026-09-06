@@ -38,35 +38,28 @@ describe('taille d un étage', () => {
     }
   })
 
-  it('compte les questions de l étage', async () => {
+  it('dit ce que l étage contient', async () => {
     await createQuestion(db, { statement: 'Ailleurs ?', floor: 2 })
 
-    expect(await floorSize(db, 1, NOW)).toBe(4)
-    expect(await floorSize(db, 2, NOW)).toBe(1)
+    expect(await floorSize(db, 1)).toBe(4)
+    expect(await floorSize(db, 2)).toBe(1)
   })
 
-  it('ne redemande pas à la base ce qu elle vient de lui dire', async () => {
-    await floorSize(db, 1, NOW)
-    const queries = countQueries(db)
-
-    await floorSize(db, 1, NOW)
-    await floorSize(db, 1, new Date(NOW.getTime() + 1_000))
-
-    expect(queries()).toBe(0)
+  it('rend zéro pour un étage que le deck ne porte pas', async () => {
+    expect(await floorSize(db, 5)).toBe(0)
   })
 
-  it('relit une fois la mémoire périmée', async () => {
-    await floorSize(db, 1, NOW)
+  // Le nombre est lu, jamais compté : c'est tout l'intérêt. Le compter
+  // parcourait l'index de l'étage entier, à chaque lecture d'état.
+  it('se lit en une requête, quel que soit le deck', async () => {
     const queries = countQueries(db)
 
-    await floorSize(db, 1, new Date(NOW.getTime() + 60_000))
+    await floorSize(db, 1)
 
     expect(queries()).toBe(1)
   })
 
-  it('oublie ce qu elle savait quand une question entre au deck', async () => {
-    expect(await floorSize(db, 1, NOW)).toBe(4)
-
+  it('grandit quand une question entre au deck', async () => {
     await addQuestion(db, {
       statement: 'Une de plus ?',
       answerLabel: 'OUI',
@@ -74,18 +67,18 @@ describe('taille d un étage', () => {
       acceptedAnswers: ['oui'],
     })
 
-    // Sans invalidation, l'étage garderait sa taille d'avant et le palier
-    // tomberait une question trop tôt.
-    expect(await floorSize(db, 1, NOW)).toBe(5)
+    // Sans ce suivi, l'étage garderait sa taille d'avant et le palier tomberait
+    // une question trop tôt.
+    expect(await floorSize(db, 1)).toBe(5)
   })
 
-  it('oublie ce qu elle savait quand une question sort du deck', async () => {
+  it('rétrécit quand une question sort du deck', async () => {
     const id = await createQuestion(db, { statement: 'À supprimer ?' })
-    expect(await floorSize(db, 1, NOW)).toBe(5)
+    expect(await floorSize(db, 1)).toBe(5)
 
     await removeQuestion(db, id)
 
-    expect(await floorSize(db, 1, NOW)).toBe(4)
+    expect(await floorSize(db, 1)).toBe(4)
   })
 })
 

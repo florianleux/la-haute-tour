@@ -26,7 +26,10 @@ export async function openAttempt(db: Database, user: User, now: Date): Promise<
 
   await db
     .update(users)
-    .set({ lives: rules.lives, cooldownUntil: null, attemptStartedAt: now })
+    // Tentative neuve : son décompte de questions vues repart de zéro, dans la
+    // même écriture que son instant d'ouverture — les deux disent la même chose,
+    // ils ne peuvent pas se désaccorder. Voir server/db/schema.ts.
+    .set({ lives: rules.lives, cooldownUntil: null, attemptStartedAt: now, attemptSeen: 0 })
     .where(eq(users.id, user.id))
 
   return rules

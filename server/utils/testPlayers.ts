@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
 import { upcomingQuestions } from './deck'
 import { cooldownFrom } from './mechanics'
@@ -145,9 +145,15 @@ export async function advanceTestPlayer(
     seenAt: now,
   })))
 
+  // Le curseur et les décomptes avancent ensemble, comme en jeu : le joueur
+  // porte ses questions vues, il ne les compte pas. Voir server/db/schema.ts.
   const moveCursor = db
     .update(users)
-    .set({ floorCursor: upcoming[upcoming.length - 1].rank })
+    .set({
+      floorCursor: upcoming[upcoming.length - 1].rank,
+      floorSeen: sql`${users.floorSeen} + ${upcoming.length}`,
+      attemptSeen: sql`${users.attemptSeen} + ${upcoming.length}`,
+    })
     .where(eq(users.id, testPlayer.id))
 
   // Une erreur dépose la question au Pool Échecs, comme en jeu. Les deux lots
@@ -204,7 +210,14 @@ export async function rewindTestPlayer(db: Database, testPlayer: User, count: nu
       .delete(missedPool)
       .where(and(eq(missedPool.userId, testPlayer.id), inArray(missedPool.questionId, erased))),
     db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
-    db.update(users).set({ floorCursor: cursor }).where(eq(users.id, testPlayer.id)),
+    db
+      .update(users)
+      .set({
+        floorCursor: cursor,
+        floorSeen: sql`max(0, ${users.floorSeen} - ${erased.length})`,
+        attemptSeen: sql`max(0, ${users.attemptSeen} - ${erased.length})`,
+      })
+      .where(eq(users.id, testPlayer.id)),
   ])
 }
 
@@ -252,6 +265,8 @@ export async function resetTestPlayer(db: Database, testPlayer: User, now: Date)
         lives: rulesForFloor(1).lives,
         cooldownUntil: null,
         floorCursor: 0,
+        floorSeen: 0,
+        attemptSeen: 0,
         attemptStartedAt: now,
       })
       .where(eq(users.id, testPlayer.id)),

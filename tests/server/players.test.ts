@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { disputes, missedPool, seenQuestions } from '../../server/db/schema'
+import { disputes, missedPool } from '../../server/db/schema'
 import { playerRoster } from '../../server/utils/players'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 
@@ -29,10 +29,8 @@ describe('fiches joueurs', () => {
   it('rend la progression dans l étage et la phase d ascension', async () => {
     const questionIds = await seedFloor(db, 1, 4)
     const userId = await createPlayer(db, { currentFloor: 1, lives: 3 })
-    await db.insert(seenQuestions).values([
-      { userId, questionId: questionIds[0], floor: 1, correct: true, seenAt: NOW },
-      { userId, questionId: questionIds[1], floor: 1, correct: false, seenAt: NOW },
-    ])
+    await markSeen(db, userId, questionIds[0], { floor: 1, seenAt: NOW })
+    await markSeen(db, userId, questionIds[1], { floor: 1, correct: false, seenAt: NOW })
 
     expect(await playerRoster(db, NOW)).toEqual([{
       userId,
@@ -76,13 +74,7 @@ describe('fiches joueurs', () => {
   it('annonce le palier quand l étage est épuisé', async () => {
     const questionIds = await seedFloor(db, 1, 2)
     const userId = await createPlayer(db, { currentFloor: 1 })
-    await db.insert(seenQuestions).values(questionIds.map(questionId => ({
-      userId,
-      questionId,
-      floor: 1,
-      correct: true,
-      seenAt: NOW,
-    })))
+    await markSeen(db, userId, questionIds, { floor: 1, seenAt: NOW })
 
     expect((await playerRoster(db, NOW))[0]).toMatchObject({ phase: 'floorEnd', floorSeen: 2 })
   })

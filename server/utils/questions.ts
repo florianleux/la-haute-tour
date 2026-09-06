@@ -1,8 +1,8 @@
 import { and, asc, count, eq, inArray, like, max } from 'drizzle-orm'
 import { z } from 'zod'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { forgetDeckSizes } from './deck'
-import { acceptedAnswers, questions } from '../db/schema'
+import { recountSeenBy, shiftFloorSize } from './deck'
+import { acceptedAnswers, questions, seenQuestions } from '../db/schema'
 import type { Database } from '../db/client'
 
 /**
@@ -155,8 +155,10 @@ export async function addQuestion(db: Database, draft: QuestionDraft): Promise<A
     })
     .returning()
 
-  // L'étage vient de grandir : sa taille mémorisée ne vaut plus rien.
-  forgetDeckSizes()
+  // L'étage vient de grandir : son compte suit, dans le même lot que la
+  // question — comptés séparément, les deux pourraient se contredire.
+  // Voir server/utils/deck.ts.
+  await db.batch([shiftFloorSize(db, draft.floor, 1)])
 
   await replaceAcceptedAnswers(db, created.id, draft.acceptedAnswers)
 
@@ -196,13 +198,25 @@ export async function editQuestion(
  * joueur qui la tenait à l'instant même la voit disparaître de son écran.
  */
 export async function removeQuestion(db: Database, id: string): Promise<boolean> {
-  const deleted = await db.delete(questions).where(eq(questions.id, id)).returning()
+  // Qui l'avait vue, lu avant la suppression : la cascade emporte ces lignes-là,
+  // et un décompte porté ne peut pas deviner qu'il vient d'en perdre une.
+  const seenBy = await db
+    .select({ userId: seenQuestions.userId })
+    .from(seenQuestions)
+    .where(eq(seenQuestions.questionId, id))
+
+  const [deleted] = await db.delete(questions).where(eq(questions.id, id)).returning()
+
+  if (!deleted) {
+    return false
+  }
 
   // L'étage vient de rétrécir : le palier tomberait au mauvais endroit si on
-  // gardait l'ancienne taille. Voir server/utils/deck.ts.
-  forgetDeckSizes()
+  // gardait l'ancien compte. Voir server/utils/deck.ts.
+  await db.batch([shiftFloorSize(db, deleted.floor, -1)])
+  await recountSeenBy(db, [...new Set(seenBy.map(row => row.userId))])
 
-  return deleted.length > 0
+  return true
 }
 
 /**

@@ -1,44 +1,41 @@
-import { and, asc, count, eq, gt } from 'drizzle-orm'
-import { questions } from '../db/schema'
+import { and, asc, count, eq, gt, inArray, sql } from 'drizzle-orm'
+import { deckFloors, questions, seenQuestions, users } from '../db/schema'
 import type { Database } from '../db/client'
 import type { Question, User } from '../db/schema'
 
 /**
  * Combien de questions un étage contient.
  *
- * C'est une propriété du deck : partagée par tous les joueurs, et changée
- * seulement quand l'administration l'édite. Elle était pourtant recomptée à
- * chaque lecture d'état — 166 lignes lues aujourd'hui, 1000 quand le deck sera
- * plein, pour un nombre qui ne bouge pas. Turso facture les lignes lues.
+ * Lu, jamais compté : une ligne, quel que soit le deck. Un `count(*)` parcourt
+ * l'index de l'étage entier — mille lignes facturées pour un nombre qui ne
+ * bouge pas entre deux éditions de l'administration. Un cache mémoire ne
+ * sauvait rien : en serverless, chaque invocation froide repart d'un process
+ * neuf, donc d'un cache vide.
  *
- * Gardée en mémoire du processus : une instance qui vient de démarrer la relit
- * une fois, puis la sert sans requête. La péremption borne l'écart pour les
- * autres instances, que `forgetDeckSizes()` ne peut pas atteindre.
+ * Rend 0 pour un étage que le deck ne porte pas — la ligne n'existe que là où
+ * une question a été rangée.
  */
-const TTL_MS = 30_000
-
-interface KnownSize {
-  total: number
-  readAt: number
+export async function floorSize(db: Database, floor: number): Promise<number> {
+  return sizeOf(await floorSizeQuery(db, floor))
 }
 
-const sizes = new Map<number, KnownSize>()
+/**
+ * La même lecture, rendue plutôt qu'exécutée : l'instantané du joueur la fait
+ * voyager dans le même lot que sa réservation, pour que la taille de l'étage ne
+ * coûte pas un aller-retour réseau de plus par question.
+ * Voir tests/server/query-budget.test.ts.
+ */
+export function floorSizeQuery(db: Database, floor: number) {
+  return db
+    .select({ total: deckFloors.total })
+    .from(deckFloors)
+    .where(eq(deckFloors.floor, floor))
+    .limit(1)
+}
 
-export async function floorSize(db: Database, floor: number, now: Date): Promise<number> {
-  const known = sizes.get(floor)
-
-  if (known && now.getTime() - known.readAt < TTL_MS) {
-    return known.total
-  }
-
-  const [row] = await db
-    .select({ value: count() })
-    .from(questions)
-    .where(eq(questions.floor, floor))
-
-  sizes.set(floor, { total: row.value, readAt: now.getTime() })
-
-  return row.value
+/** Ce que ces lignes valent : le compte de l'étage, ou zéro s'il n'en a aucune. */
+export function sizeOf(rows: { total: number }[]): number {
+  return rows[0]?.total ?? 0
 }
 
 /**
@@ -75,10 +72,65 @@ export async function upcomingQuestions(
 }
 
 /**
- * À appeler dès qu'une question entre ou sort du deck. Sans ça, l'étage garderait
- * sa taille d'avant jusqu'à la péremption — et le palier tomberait au mauvais
- * endroit. Les tests s'en servent aussi pour repartir d'une mémoire vide.
+ * Le compte d'un étage bouge d'autant. Rendu comme requête plutôt qu'exécuté :
+ * l'édition du deck l'écrit dans le même lot que la question elle-même, sinon
+ * une interruption au milieu laisserait le compte en désaccord avec ce que
+ * l'étage contient.
+ *
+ * `delta` vaut +1 quand une question entre, -1 quand elle sort.
  */
-export function forgetDeckSizes(): void {
-  sizes.clear()
+export function shiftFloorSize(db: Database, floor: number, delta: number) {
+  return db
+    .insert(deckFloors)
+    .values({ floor, total: delta })
+    .onConflictDoUpdate({
+      target: deckFloors.floor,
+      set: { total: sql`${deckFloors.total} + ${delta}` },
+    })
+}
+
+/**
+ * Recale les décomptes de questions vues des joueurs nommés, depuis les lignes
+ * elles-mêmes.
+ *
+ * Nécessaire quand le deck bouge sous eux : supprimer une question efface par
+ * cascade les passages qu'elle a laissés, et un compteur porté ne peut pas
+ * deviner qu'il vient de perdre une ligne. Le coût d'un `count(*)` est ici sans
+ * conséquence — l'administration édite le deck, elle ne joue pas.
+ * Voir server/db/schema.ts.
+ */
+export async function recountSeenBy(db: Database, userIds: number[]): Promise<void> {
+  if (!userIds.length) {
+    return
+  }
+
+  await db
+    .update(users)
+    .set({
+      floorSeen: sql`(select count(*) from ${seenQuestions}
+        where ${seenQuestions.userId} = ${users.id}
+          and ${seenQuestions.floor} = ${users.currentFloor})`,
+      attemptSeen: sql`(select count(*) from ${seenQuestions}
+        where ${seenQuestions.userId} = ${users.id}
+          and ${seenQuestions.seenAt} >= ${users.attemptStartedAt})`,
+    })
+    .where(inArray(users.id, userIds))
+}
+
+/**
+ * Recompte les étages depuis les questions elles-mêmes. Le compte est tenu à
+ * chaque édition ; ceci est le filet — l'import de masse s'en sert plutôt que
+ * d'incrémenter des milliers de fois, et un doute se lève en l'appelant.
+ */
+export async function recountDeckFloors(db: Database): Promise<void> {
+  const totals = await db
+    .select({ floor: questions.floor, total: count() })
+    .from(questions)
+    .groupBy(questions.floor)
+
+  await db.delete(deckFloors)
+
+  if (totals.length) {
+    await db.insert(deckFloors).values(totals)
+  }
 }

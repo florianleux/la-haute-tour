@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { disputes, missedPool, seenQuestions, users } from '../../server/db/schema'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { disputes, missedPool, users } from '../../server/db/schema'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import {
   apiRequest,
   installNitroGlobals,
@@ -45,14 +45,7 @@ describe('contestation par l API', () => {
     )
 
     questionId = await createQuestion(db, { accepted: ['Bordeaux'] })
-    await db.insert(seenQuestions).values({
-      userId: playerId,
-      questionId,
-      floor: 1,
-      correct: false,
-      submittedAnswer: 'Bordo',
-      seenAt: NOW,
-    })
+    await markSeen(db, playerId, questionId, { floor: 1, correct: false, submittedAnswer: 'Bordo', seenAt: NOW })
     await db.insert(missedPool).values({
       userId: playerId,
       questionId,

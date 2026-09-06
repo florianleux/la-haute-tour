@@ -11,7 +11,7 @@ import {
   rollChest,
   resumesRecovery,
 } from './mechanics'
-import { floorSize, upcomingQuestions } from './deck'
+import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { rulesForFloor } from './rules'
@@ -139,12 +139,8 @@ export interface PlayerSnapshot {
   user: User
   /** Le jeu est fermé par l'administration. Vrai pour tout le monde, admins compris. */
   gameClosed: boolean
-  /** Questions seen on the current floor. */
-  seen: number
   /** Questions the current floor holds. */
   floorTotal: number
-  /** Questions seen since the current attempt started. */
-  attemptSeen: number
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
   effects: EffectView[]
   reservation?: Reservation
@@ -161,7 +157,7 @@ function phaseOfSnapshot(snapshot: PlayerSnapshot, hasLiveReservation: boolean, 
   return phaseOf({
     user: snapshot.user,
     hasLiveReservation,
-    seen: snapshot.seen,
+    seen: snapshot.user.floorSeen,
     floorTotal: snapshot.floorTotal,
   }, now)
 }
@@ -171,28 +167,10 @@ function holdsQuestion(snapshot: PlayerSnapshot): boolean {
   return snapshot.reservation !== undefined && snapshot.reservation.resolvedAt === null
 }
 
-/**
- * Les questions vues à l'étage où se tient le joueur, comptées dans la requête
- * qui le lit. Les deux lectures d'ici la portent — l'instantané complet et la
- * phase seule — et deux copies dériveraient sur ce que « vue à l'étage courant »
- * veut dire.
- *
- * L'onglet Joueurs en lit une cousine, sur tous les joueurs à la fois
- * (`server/utils/players.ts`). Elle reste là-bas : ce module-ci écrit, et c'est
- * précisément ce dont la lecture des fiches se tient à l'écart.
- */
-const seenOnCurrentFloor = sql<number>`(select count(*) from ${seenQuestions}
-  where ${seenQuestions.userId} = ${users.id}
-    and ${seenQuestions.floor} = ${users.currentFloor})`
-
-async function loadSnapshot(db: Database, userId: number, now: Date): Promise<PlayerSnapshot> {
+async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapshot> {
   const [row] = await db
     .select({
       user: users,
-      seen: seenOnCurrentFloor,
-      attemptSeen: sql<number>`(select count(*) from ${seenQuestions}
-        where ${seenQuestions.userId} = ${users.id}
-          and ${seenQuestions.seenAt} >= ${users.attemptStartedAt})`,
       // Lu avec le joueur plutôt qu'à part : la maintenance se consulte à chaque
       // lecture d'état, et un aller-retour de plus par question se paierait cher.
       gameClosed: sql<number>`coalesce((select ${settings.maintenanceSince} is not null
@@ -202,9 +180,10 @@ async function loadSnapshot(db: Database, userId: number, now: Date): Promise<Pl
     .where(eq(users.id, userId))
     .limit(1)
 
-  // La réservation et les effets voyagent dans le même lot : deux requêtes, un
-  // seul aller-retour réseau. Voir tests/server/query-budget.test.ts.
-  const [holding, effects] = await db.batch([
+  // La réservation, les effets et la taille de l'étage voyagent dans le même
+  // lot : trois requêtes, un seul aller-retour réseau.
+  // Voir tests/server/query-budget.test.ts.
+  const [holding, effects, deckFloor] = await db.batch([
     db
       .select({ reservation: reservations, question: questions })
       .from(reservations)
@@ -212,18 +191,20 @@ async function loadSnapshot(db: Database, userId: number, now: Date): Promise<Pl
       .where(eq(reservations.userId, userId))
       .limit(1),
     effectsQuery(db, userId),
+    floorSizeQuery(db, row.user.currentFloor),
   ])
 
   const [held] = holding
 
   return {
+    // Le joueur porte ses deux décomptes de questions vues, il ne les compte
+    // plus : les compter coûtait une ligne par question déjà vue, à chaque
+    // lecture d'état. Voir server/db/schema.ts.
     user: row.user,
-    seen: row.seen,
     effects: toEffectViews(effects, row.user),
-    // Lu au deck plutôt que recompté ici : c'est une constante entre deux
-    // éditions de l'administration. Voir server/utils/deck.ts.
-    floorTotal: await floorSize(db, row.user.currentFloor, now),
-    attemptSeen: row.attemptSeen,
+    // Lue au deck plutôt que comptée : une ligne, quel que soit l'étage.
+    // Voir server/utils/deck.ts.
+    floorTotal: sizeOf(deckFloor),
     gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
@@ -336,8 +317,6 @@ function isExpiredForUser(reservation: Reservation, user: User, now: Date): bool
 interface Resolution {
   user: User
   reservation: Reservation
-  /** 1 quand une question vient d'entrer dans les questions vues. */
-  seenDelta: number
 }
 
 /**
@@ -391,10 +370,12 @@ async function resolve(
     // Aucune vie perdue, aucune progression : le rattrapage ne joue que sur les
     // compteurs du Pool Échecs.
     await resolveRecovery(db, user, reservation.questionId, correct, now)
-    return { user, reservation: resolved, seenDelta: judgement.seenDelta }
+    return { user, reservation: resolved }
   }
 
-  await db
+  const { seenDelta, entersPool, livesAfter: lives, cooldownUntil } = judgement
+
+  const markSeen = db
     .insert(seenQuestions)
     .values({
       userId: user.id,
@@ -410,36 +391,52 @@ async function resolve(
     })
     .onConflictDoNothing()
 
-  if (!judgement.entersPool) {
-    return { user, reservation: resolved, seenDelta: judgement.seenDelta }
-  }
+  // Les compteurs de questions vues bougent dans le même lot que la question
+  // vue elle-même, et la vie perdue avec eux : écrits à part, une interruption
+  // au milieu laisserait le joueur avec un décompte qui ne décrit plus sa
+  // partie. Voir server/db/schema.ts.
+  const moved: Partial<User> = entersPool ? { lives, cooldownUntil } : {}
 
-  await db
-    .insert(missedPool)
-    .values({
-      userId: user.id,
-      questionId: reservation.questionId,
-      floor: user.currentFloor,
-      lastFailedAt: now,
-    })
-    // Already missed on this floor: the counter goes back to zero and the date moves up.
-    .onConflictDoUpdate({
-      target: [missedPool.userId, missedPool.questionId],
-      set: { poolSuccesses: 0, lastFailedAt: now },
-    })
-
-  const { livesAfter: lives, cooldownUntil } = judgement
-
-  await db
+  const advance = db
     .update(users)
-    .set({ lives, cooldownUntil })
+    .set({
+      ...moved,
+      floorSeen: sql`${users.floorSeen} + ${seenDelta}`,
+      attemptSeen: sql`${users.attemptSeen} + ${seenDelta}`,
+    })
     .where(eq(users.id, user.id))
 
-  return {
-    user: { ...user, lives, cooldownUntil },
-    reservation: resolved,
-    seenDelta: judgement.seenDelta,
+  const fresh: User = {
+    ...user,
+    ...moved,
+    floorSeen: user.floorSeen + seenDelta,
+    attemptSeen: user.attemptSeen + seenDelta,
   }
+
+  if (!entersPool) {
+    await db.batch([markSeen, advance])
+    return { user: fresh, reservation: resolved }
+  }
+
+  await db.batch([
+    markSeen,
+    db
+      .insert(missedPool)
+      .values({
+        userId: user.id,
+        questionId: reservation.questionId,
+        floor: user.currentFloor,
+        lastFailedAt: now,
+      })
+      // Already missed on this floor: the counter goes back to zero and the date moves up.
+      .onConflictDoUpdate({
+        target: [missedPool.userId, missedPool.questionId],
+        set: { poolSuccesses: 0, lastFailedAt: now },
+      }),
+    advance,
+  ])
+
+  return { user: fresh, reservation: resolved }
 }
 
 function servedQuestion(
@@ -483,7 +480,7 @@ function chestOf(reservation: Reservation): ChestView | null {
  */
 function servesLoot(snapshot: PlayerSnapshot, reservation: Reservation, rules: FloorRules): boolean {
   return isLootQuestion({
-    position: snapshot.seen + 1,
+    position: snapshot.user.floorSeen + 1,
     floorTotal: snapshot.floorTotal,
     mode: reservation.mode,
   }, rules)
@@ -497,7 +494,8 @@ function servesLoot(snapshot: PlayerSnapshot, reservation: Reservation, rules: F
  * they come back.
  */
 async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Promise<GameState> {
-  const { user, reservation, question, seen } = snapshot
+  const { user, reservation, question } = snapshot
+  const seen = user.floorSeen
 
   const base = {
     floor: user.currentFloor,
@@ -510,7 +508,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     recoveryResult: null as 'resumed' | 'failed' | null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
-    attemptSeen: snapshot.attemptSeen,
+    attemptSeen: user.attemptSeen,
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin,
     // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une
@@ -557,7 +555,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
 }
 
 async function buildState(db: Database, userId: number, now: Date): Promise<GameState> {
-  return stateFrom(db, await loadSnapshot(db, userId, now), now)
+  return stateFrom(db, await loadSnapshot(db, userId), now)
 }
 
 /**
@@ -572,29 +570,25 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * page Sorts faisait, c'est l'acter **une seconde fois, ailleurs**, sans que rien
  * ne l'annonce. Voir server/utils/inventory.ts.
  *
- * Une requête, contre deux pour l'état complet — plus celle de la taille de
- * l'étage, que le deck sert de mémoire tant qu'elle n'a pas péri.
- * Voir server/utils/deck.ts.
+ * Un seul aller-retour, et deux lignes lues : le joueur porte déjà son décompte
+ * de questions vues, il ne reste qu'à savoir s'il tient une question et ce que
+ * son étage contient. Voir server/utils/deck.ts.
  */
 export async function readPhase(db: Database, user: User, now: Date): Promise<Phase> {
-  const [row] = await db
-    .select({
-      seen: seenOnCurrentFloor,
-      // Une question encore en jeu : réservée, non résolue. Il n'y en a qu'une
-      // au plus — `userId` est la clé de la table — donc ce décompte vaut 0 ou 1.
-      liveReservations: sql<number>`(select count(*) from ${reservations}
-        where ${reservations.userId} = ${users.id}
-          and ${reservations.resolvedAt} is null)`,
-    })
-    .from(users)
-    .where(eq(users.id, user.id))
-    .limit(1)
+  const [holding, deckFloor] = await db.batch([
+    db
+      .select({ userId: reservations.userId })
+      .from(reservations)
+      .where(and(eq(reservations.userId, user.id), isNull(reservations.resolvedAt)))
+      .limit(1),
+    floorSizeQuery(db, user.currentFloor),
+  ])
 
   return phaseOf({
     user,
-    hasLiveReservation: row.liveReservations > 0,
-    seen: row.seen,
-    floorTotal: await floorSize(db, user.currentFloor, now),
+    hasLiveReservation: holding.length > 0,
+    seen: user.floorSeen,
+    floorTotal: sizeOf(deckFloor),
   }, now)
 }
 
@@ -604,7 +598,7 @@ export async function readPhase(db: Database, user: User, now: Date): Promise<Ph
  * whose deadline has passed — resolves it as the failure it already is.
  */
 export async function readGameState(db: Database, user: User, now: Date): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id, now)
+  const snapshot = await loadSnapshot(db, user.id)
   const { reservation } = snapshot
 
   // Same grace as an answer gets: a read landing a hair after the deadline must
@@ -622,8 +616,6 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
       ...snapshot,
       user: resolution.user,
       reservation: resolution.reservation,
-      seen: snapshot.seen + resolution.seenDelta,
-      attemptSeen: snapshot.attemptSeen + resolution.seenDelta,
     }, now)
   }
 
@@ -668,11 +660,10 @@ async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promis
  * question drawn at random among those they have not seen on this floor.
  */
 export async function serveNextQuestion(db: Database, user: User, now: Date): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id, now)
+  const snapshot = await loadSnapshot(db, user.id)
   const { reservation } = snapshot
   // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
   let fresh = snapshot.user
-  let seenDelta = 0
 
   // Le jeu est fermé : plus aucune question n'est servie. Ce qui est commencé se
   // finit par d'autres chemins — répondre et ouvrir son coffre restent permis, et
@@ -697,12 +688,11 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
 
     const resolution = await resolve(db, snapshot, reservation, '', now)
     fresh = resolution.user
-    seenDelta = resolution.seenDelta
   }
 
   // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
   // rattrapage, d'où le delta rendu par resolve() plutôt qu'un « +1 » supposé.
-  const current: PlayerSnapshot = { ...snapshot, user: fresh, seen: snapshot.seen + seenDelta, attemptSeen: snapshot.attemptSeen + seenDelta }
+  const current: PlayerSnapshot = { ...snapshot, user: fresh }
 
   // Le joueur vient de cliquer : plus aucune question n'est en jeu, celle qu'il
   // tenait est résolue.
@@ -769,7 +759,7 @@ export async function openPlayerChest(
   now: Date,
   random: () => number = Math.random,
 ): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id, now)
+  const snapshot = await loadSnapshot(db, user.id)
   const { reservation } = snapshot
   const rules = rulesForFloor(snapshot.user.currentFloor)
 
@@ -839,7 +829,10 @@ async function crossFloor(db: Database, user: User, now: Date): Promise<void> {
     db
       .delete(missedPool)
       .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor))),
-    db.update(users).set({ currentFloor }).where(eq(users.id, user.id)),
+    // Étage neuf : le décompte des questions vues repart de zéro avec lui.
+    // Écrit dans le même lot que l'étage, sinon un franchissement interrompu
+    // laisserait le joueur au palier suivant avec le décompte du précédent.
+    db.update(users).set({ currentFloor, floorSeen: 0 }).where(eq(users.id, user.id)),
   ])
 
   // Sans vie, on ne réserve rien : l'attente gagnée à l'étage d'en dessous
@@ -848,7 +841,7 @@ async function crossFloor(db: Database, user: User, now: Date): Promise<void> {
   if (user.lives > 0) {
     // Étage neuf : le curseur repart de zéro, donc la première question de
     // l'étage est la première de rang supérieur à 0.
-    await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0 }, now)
+    await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, now)
   }
 }
 
@@ -1095,7 +1088,7 @@ export async function submitAnswer(
   now: Date,
   source: AnswerSource = 'player',
 ): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id, now)
+  const snapshot = await loadSnapshot(db, user.id)
   const { reservation } = snapshot
 
   if (!reservation || reservation.resolvedAt) {
@@ -1121,7 +1114,5 @@ export async function submitAnswer(
     ...snapshot,
     user: resolution.user,
     reservation: resolution.reservation,
-    seen: snapshot.seen + resolution.seenDelta,
-    attemptSeen: snapshot.attemptSeen + resolution.seenDelta,
   }, now)
 }

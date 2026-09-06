@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, inventory, missedPool, recoveryQuestions, seenQuestions, users } from '../../server/db/schema'
+import { activeEffects, inventory, missedPool, recoveryQuestions, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { castSpell } from '../../server/utils/effects'
 import { grantLife } from '../../server/utils/lives'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
@@ -40,7 +40,7 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
   async function fillPool(size: number): Promise<void> {
     for (let i = 0; i < size; i++) {
       const questionId = await createQuestion(db, { statement: `Ratée ${i} ?`, accepted: [`reponse ${i}`] })
-      await db.insert(seenQuestions).values({ userId: player.id, questionId, floor: 1, correct: false })
+      await markSeen(db, player.id, questionId, { floor: 1, correct: false })
       await db.insert(missedPool).values({
         userId: player.id,
         questionId,
