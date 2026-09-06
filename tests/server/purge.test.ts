@@ -106,13 +106,25 @@ describe('Purge, sur le Pool Échecs', () => {
     expect(await db.select().from(inventory).where(eq(inventory.userId, player.id))).toHaveLength(0)
   })
 
-  it('n en retire qu une par lanceur et par attente', async () => {
+  // Ponctuel et sans interaction : deux lancers sortent deux questions.
+  // Voir specs/bonus.md#cumul.
+  it('en retire deux quand le joueur lance deux fois', async () => {
     await fillPool(4)
 
     await castPurge()
     await castPurge()
 
-    expect(await pool()).toHaveLength(3)
+    expect(await pool()).toHaveLength(2)
+  })
+
+  it('s arrête au budget de l attente : le troisième ne retire rien', async () => {
+    await fillPool(4)
+
+    await castPurge()
+    await castPurge()
+    await castPurge()
+
+    expect(await pool()).toHaveLength(2)
   })
 
   // Ponctuel, sans interaction : chaque lancer sort sa question, et deux
@@ -154,8 +166,8 @@ describe('Purge, sur le Pool Échecs', () => {
     expect(page.entries).toHaveLength(3)
   })
 
-  // Assumé : vider son pool est un objectif de jeu légitime, et « un exemplaire
-  // par attente » empêche de le vider d'un coup.
+  // Assumé : vider son pool est un objectif de jeu légitime, et les deux lancers
+  // par attente empêchent de le vider d'un coup.
   // Voir specs/bonus.md#catalogue.
   it('peut faire passer le pool sous le seuil, et l attente mène alors à une reprise', async () => {
     await fillPool(rules.poolSizeForRecovery)

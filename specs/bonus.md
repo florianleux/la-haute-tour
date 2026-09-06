@@ -19,10 +19,28 @@ Un Sort **se lance uniquement pendant l'attente** — jamais en ascension, ni en
 rattrapage, ni sur le profil. L'écran d'attente porte un accès vers
 une **page Sorts** dédiée, où le lancer se fait réellement.
 
-**Un seul exemplaire d'un même sort par attente**, par lanceur. Le catalogue en
-comptant cinq, une attente permet donc au plus cinq lancers. Cette règle donne
-aussi l'idempotence gratuitement : un double-clic, un second onglet ou une requête
-rejouée tombent sur elle et sont refusés, sans qu'aucun mécanisme dédié n'existe.
+**Deux lancers par attente**, par lanceur, quels qu'ils soient. Deux sorts
+différents ou deux fois le même : le plafond porte sur le nombre, jamais sur
+l'identité. Un joueur peut donc empiler deux Répit sur sa propre attente et la
+diviser par quatre, sans attendre les équipes.
+
+Le nombre restant se lit sur la page Sorts, et les boutons s'éteignent une fois
+les deux dépensés : la règle se voit avant le clic, elle ne se découvre pas
+après.
+
+Le plafond est tenu **côté serveur, en condition d'écriture** — sur la
+consommation de l'exemplaire, jamais sur une lecture préalable qui laisserait
+une fenêtre. Deux requêtes visant le même exemplaire ne peuvent donc pas le
+dépenser toutes les deux.
+
+Il ne donne en revanche plus l'idempotence, que l'ancienne règle offrait
+gratuitement : deux clics sur **deux sorts différents**, tirés en même temps,
+dépensent bien deux lancers, et deux lancers partis à la même milliseconde
+peuvent tous deux voir un budget encore libre. C'est le comportement attendu
+quand c'est volontaire ; c'est assumé quand ça ne l'est pas — le compteur
+affiché rend la dépense lisible, le bouton s'éteint pendant l'envoi, et le seul
+cas qui compte, le clic répété sur **le même** bouton, vise le même exemplaire :
+celui-là ne peut pas être dépensé deux fois.
 
 Un sort lancé est **consommé**, qu'il produise un effet ou non.
 
@@ -84,7 +102,7 @@ Elle l'est après.
 - Au-delà, il est **retiré du tirage**, silencieusement, côté serveur. Le lanceur n'a
   rien à voir : le ciblage étant déjà aléatoire, il n'y a aucune UI à prévoir.
 - **Aucune limite sur les effets positifs.** Ils sont bornés de fait par le nombre
-  d'alliés et par la règle « un exemplaire par attente ».
+  d'alliés et par la règle des deux lancers par attente.
 
 ### Ancrage et durée de vie
 
@@ -124,7 +142,7 @@ Chronomancie porte sur **toute la tentative**, pas sur une seule question.
 
 Purge blanche peut faire descendre le Pool Échecs sous le seuil de déclenchement du
 rattrapage, et donc **annuler le rattrapage**. C'est assumé : vider son pool est un
-objectif de jeu légitime, et la règle « un exemplaire par attente » empêche de le
+objectif de jeu légitime, et la règle des deux lancers par attente empêche de le
 vider d'un coup.
 
 **Les libellés sont provisoires.** Les identifiants de code, eux, sont figés
@@ -133,9 +151,10 @@ est une donnée séparée : le passage de naming ne coûtera ni migration ni ref
 
 ### Cumul
 
-Deux lanceurs peuvent poser le même sort sur la même cible — la limite d'un
-exemplaire par attente est par lanceur. **Le mode de cumul est propre à chaque
-sort**, il n'y a pas de règle globale.
+Un même sort peut se poser deux fois sur la même cible — par le même lanceur qui
+y dépense ses deux lancers, ou par deux lanceurs, le budget se comptant par
+lanceur. **Le mode de cumul est propre à chaque sort**, il n'y a pas de règle
+globale.
 
 | Sort | Mode | Empilé ×2 |
 |---|---|---|

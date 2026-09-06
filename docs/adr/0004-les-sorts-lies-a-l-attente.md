@@ -54,7 +54,7 @@ Ce qui suit du choix, et qu'il faut savoir : l'identité d'une attente est son
 **début** (`cooldownStartedAt`), jamais son échéance — Répit déplace celle-ci.
 C'est ce qui a motivé le renommage de `cast_cooldown_until` en
 `cast_cooldown_started_at`, sans quoi un second Répit du même lanceur aurait vu
-une autre attente et serait passé à travers « un exemplaire par attente ».
+une autre attente et serait passé à travers la limite de lancers par attente.
 
 Un sort ajouté au catalogue n'a donc qu'une question à se poser : son
 déclencheur est-il l'attente, ou la tentative suivante ? Le reste suit.

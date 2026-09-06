@@ -48,13 +48,17 @@ describe('inventaire des sorts', () => {
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       total: 3,
       entries: [
         { spell: 'VITALITY', count: 2 },
         { spell: 'RESPITE', count: 1 },
       ],
       log: [],
+      // La règle et ce qu'il en reste voyagent avec l'inventaire : l'écran les
+      // dit sans les recopier. Voir specs/bonus.md#où-et-quand.
+      castsLeft: 2,
+      castsPerCooldown: 2,
     })
   })
 
@@ -76,7 +80,7 @@ describe('inventaire des sorts', () => {
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ total: 0, entries: [], log: [] })
+    expect(await response.json()).toMatchObject({ total: 0, entries: [], log: [] })
   })
 
   it('ne montre rien à un autre joueur', async () => {
@@ -86,7 +90,7 @@ describe('inventaire des sorts', () => {
 
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(other)))
 
-    expect(await response.json()).toEqual({ total: 0, entries: [], log: [] })
+    expect(await response.json()).toMatchObject({ total: 0, entries: [], log: [] })
   })
 
   it('ferme la page hors attente, URL comprise', async () => {
@@ -147,7 +151,7 @@ describe('inventaire des sorts', () => {
       expect(page.log).toMatchObject([{ spell: 'VITALITY', face: 'boon', targetName: 'gandalf' }])
     })
 
-    it('refuse un second lancer du même sort sans erreur, en rendant l état courant', async () => {
+    it('accepte un second lancer du même sort, et le dit dans l état rendu', async () => {
       const userId = await createPlayer(db, IN_COOLDOWN)
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY', 'VITALITY')
@@ -157,8 +161,28 @@ describe('inventaire des sorts', () => {
 
       expect(response.status).toBe(200)
       const page = await response.json()
-      expect(page.entries).toEqual([{ spell: 'VITALITY', count: 1 }])
-      expect(page.log).toHaveLength(1)
+      expect(page.entries).toEqual([])
+      expect(page.log).toHaveLength(2)
+      expect(page.castsLeft).toBe(0)
+    })
+
+    // Le budget épuisé, le sort ne part pas et l'exemplaire reste en poche.
+    // Sans erreur : l'écran a déjà éteint le bouton, celui qui insiste est en
+    // retard, pas fautif. Voir specs/bonus.md#où-et-quand.
+    it('refuse le troisième lancer sans erreur, en rendant l état courant', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY', 'VITALITY', 'RESPITE')
+
+      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY' }, cookie))
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'RESPITE' }, cookie))
+
+      expect(response.status).toBe(200)
+      const page = await response.json()
+      expect(page.entries).toEqual([{ spell: 'RESPITE', count: 1 }])
+      expect(page.log).toHaveLength(2)
+      expect(page.castsLeft).toBe(0)
     })
 
     it('ne lance rien hors attente, URL comprise', async () => {

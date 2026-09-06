@@ -42,7 +42,7 @@ Tout l'état vit en base, jamais côté client :
 - **Flags de triche** — les soumissions déclenchées par une perte de focus.
 - **Inventaire** — les sorts possédés et non encore lancés. Doublons illimités.
 - **Effets actifs** — un effet posé sur un joueur, portant son sort, sa face, son lanceur et la date du lancer. Ancré sur la prochaine tentative de la cible, il meurt avec elle.
-- **Lancers** — ce qui est parti de chez qui, vers qui, et quand. C'est le journal, et c'est aussi lui qui fait respecter « un seul exemplaire d'un même sort par attente ».
+- **Lancers** — ce qui est parti de chez qui, vers qui, et quand. C'est le journal, et c'est aussi lui qui fait respecter les deux lancers par attente.
 - **Coffre** — un état porté par le verdict : *pas de coffre*, *fermé*, *ouvert avec son résultat*. Le tirage a lieu au clic et son résultat est persisté, sinon un rechargement relancerait le dé.
 
 Il n'existe **aucun compteur de loot**. Le statut de question loot se dérive du nombre de questions vues à l'étage, déjà stocké : un second compteur dirait le même nombre sous un autre nom, avec une désynchronisation possible en prime. Voir [`bonus.md`](./bonus.md#question-loot).

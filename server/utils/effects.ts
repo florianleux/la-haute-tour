@@ -42,9 +42,10 @@ export interface CastView {
  * Seule la catégorie Soi existe aujourd'hui : la cible est le lanceur, et la
  * face est donc blanche. Allié et Ennemi arrivent avec les équipes.
  *
- * Un lancer sans exemplaire à consommer, ou un second exemplaire du même sort
- * dans la même attente, ne fait rien et ne dit rien : l'appareil qui l'a envoyé
- * est en retard ou en double, pas fautif. Voir specs/bonus.md#où-et-quand.
+ * Un lancer sans exemplaire à consommer, ou une attente dont le budget est
+ * épuisé, ne fait rien et ne dit rien : l'appareil qui l'a envoyé est en retard
+ * ou en double, pas fautif. L'écran a déjà éteint le bouton.
+ * Voir specs/bonus.md#où-et-quand.
  */
 export async function castSpell(db: Database, caster: User, spell: SpellId, now: Date): Promise<void> {
   // Le lancer n'a lieu que pendant une attente, dont le **début** identifie
@@ -57,6 +58,8 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
     return
   }
 
+  const rules = rulesForFloor(caster.currentFloor)
+
   const [copy] = await db
     .select({ id: inventory.id })
     .from(inventory)
@@ -67,39 +70,35 @@ export async function castSpell(db: Database, caster: User, spell: SpellId, now:
     return
   }
 
-  // L'exemplaire d'abord, l'effet ensuite, dans le même lot : ensemble ou pas du
-  // tout, sinon un lancer à moitié fait poserait un effet gratuit.
-  //
-  // L'exemplaire n'est consommé que si rien n'est encore parti pour cette
-  // attente-là, et c'est la contrainte d'unicité qui refuse l'effet en double.
-  // Les deux gardes disent la même chose, chacune de son côté du lot : un
-  // second lancer ne coûte donc rien et ne pose rien.
-  const [, posed] = await db.batch([
-    db.delete(inventory).where(and(
+  // L'exemplaire ne part que si l'attente a encore du budget. La condition vit
+  // sur l'écriture et non sur une lecture préalable : deux requêtes visant le
+  // même exemplaire ne peuvent pas le consommer toutes les deux, et c'est le cas
+  // qui compte — le double-clic sur le même bouton. Deux sorts différents partis
+  // à la même milliseconde, eux, peuvent voir le même budget libre : assumé,
+  // l'écran affiche ce qu'il reste. Voir specs/bonus.md#où-et-quand.
+  const [spent] = await db
+    .delete(inventory)
+    .where(and(
       eq(inventory.id, copy.id),
-      notExists(alreadyCast(db, caster.id, spell, startedAt)),
-    )),
-    db
-      .insert(activeEffects)
-      .values({
-        userId: caster.id,
-        casterId: caster.id,
-        spell,
-        face: 'boon' satisfies SpellFace,
-        castAt: now,
-        castCooldownStartedAt: startedAt,
-      })
-      .onConflictDoNothing()
-      .returning({ id: activeEffects.id }),
-  ])
+      notExists(beyondBudget(db, caster.id, startedAt, rules.castsPerCooldown)),
+    ))
+    .returning({ id: inventory.id })
 
-  // Rien de posé : le second lancer d'un même sort dans la même attente n'a rien
-  // consommé, il ne doit rien produire non plus. Ce qui suit écrit — une Purge
-  // rejouée viderait une seconde ligne du Pool Échecs pour un exemplaire qui,
-  // lui, est resté en poche.
-  if (!posed.length) {
+  // Budget épuisé, ou exemplaire déjà parti : rien n'est consommé, donc rien
+  // n'est posé. Ce qui suit écrit — une Purge rejouée viderait une seconde ligne
+  // du Pool Échecs pour un exemplaire resté en poche.
+  if (!spent) {
     return
   }
+
+  await db.insert(activeEffects).values({
+    userId: caster.id,
+    casterId: caster.id,
+    spell,
+    face: 'boon' satisfies SpellFace,
+    castAt: now,
+    castCooldownStartedAt: startedAt,
+  })
 
   // Répit trouve son déclencheur déjà là : l'attente en cours se recalcule tout
   // de suite, sur l'écran même d'où le sort est parti. Recalculé plutôt que
@@ -179,16 +178,45 @@ async function reshapeCooldown(db: Database, target: User, startedAt: Date): Pro
     .where(eq(users.id, target.id))
 }
 
-/** Ce lanceur a-t-il déjà envoyé ce sort pendant cette attente ? */
-function alreadyCast(db: Database, casterId: number, spell: SpellId, startedAt: Date) {
+/**
+ * Le lancer de trop : celui qui occuperait le rang `cap` dans cette attente-là,
+ * en comptant de zéro. S'il existe déjà, le budget est épuisé.
+ *
+ * Dit par un décalage plutôt qu'un `count(*)` : c'est ce qui permet de le poser
+ * en condition d'écriture, là où une lecture préalable laisserait une fenêtre —
+ * et ça passe par le query builder, donc par la conversion d'horodatage que le
+ * schéma définit. Un `count(*)` écrit à la main comparerait une `Date` brute à
+ * des secondes, et ne trouverait jamais rien.
+ */
+function beyondBudget(db: Database, casterId: number, startedAt: Date, cap: number) {
   return db
     .select({ id: activeEffects.id })
     .from(activeEffects)
     .where(and(
       eq(activeEffects.casterId, casterId),
-      eq(activeEffects.spell, spell),
       eq(activeEffects.castCooldownStartedAt, startedAt),
     ))
+    .limit(1)
+    .offset(cap - 1)
+}
+
+/** Ce qu'il reste de lancers à ce joueur pour l'attente où il se tient. */
+export async function castsLeftThisWait(db: Database, caster: User): Promise<number> {
+  const { castsPerCooldown } = rulesForFloor(caster.currentFloor)
+
+  if (!caster.cooldownStartedAt) {
+    return 0
+  }
+
+  const [row] = await db
+    .select({ used: sql<number>`count(*)` })
+    .from(activeEffects)
+    .where(and(
+      eq(activeEffects.casterId, caster.id),
+      eq(activeEffects.castCooldownStartedAt, caster.cooldownStartedAt),
+    ))
+
+  return Math.max(0, castsPerCooldown - row.used)
 }
 
 /**

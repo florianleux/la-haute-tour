@@ -35,6 +35,7 @@ describe('jeu de règles', () => {
       respiteFactor: 2,
       chronomancyFactor: 2,
       indulgenceFactor: 2,
+      castsPerCooldown: 2,
     })
   })
 

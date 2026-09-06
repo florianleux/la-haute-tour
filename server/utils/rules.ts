@@ -77,6 +77,12 @@ export interface FloorRules {
    * rallonger. Voir specs/bonus.md#catalogue.
    */
   indulgenceFactor: number
+  /**
+   * Combien de sorts un joueur peut lancer pendant une même attente, quels
+   * qu'ils soient — deux fois le même y compris. Le plafond porte sur le
+   * nombre, jamais sur l'identité. Voir specs/bonus.md#où-et-quand.
+   */
+  castsPerCooldown: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -99,6 +105,7 @@ const DEFAULT_RULES: FloorRules = {
   respiteFactor: 2,
   chronomancyFactor: 2,
   indulgenceFactor: 2,
+  castsPerCooldown: 2,
 }
 
 /**

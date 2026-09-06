@@ -63,31 +63,26 @@ describe('Répit, sur l attente en cours', () => {
     expect((await reload()).cooldownStartedAt?.getTime()).toBe(STARTED_AT.getTime())
   })
 
-  // « Un exemplaire par attente » vaut par lanceur : deux Répit sur la même
-  // attente supposent deux lanceurs. Voir specs/bonus.md#cumul.
-  it('divise par quatre quand deux lanceurs s en mêlent', async () => {
-    const ally = await createPlayer(db, { discordId: 'ally', username: 'samsagace' })
-    await db.insert(activeEffects).values({
-      userId: player.id,
-      casterId: ally,
-      spell: 'RESPITE',
-      face: 'boon',
-      castAt: NOW,
-      castCooldownStartedAt: STARTED_AT,
-    })
-
+  // Deux lancers par attente, deux fois le même sort permis : un joueur peut
+  // donc diviser sa propre attente par quatre, sans attendre les équipes.
+  // Voir specs/bonus.md#cumul.
+  it('divise par quatre quand le joueur en lance deux', async () => {
+    await castRespite()
     await castRespite()
 
     expect((await reload()).cooldownUntil?.getTime())
       .toBe(STARTED_AT.getTime() + rules.cooldownMs / (rules.respiteFactor ** 2))
   })
 
-  it('ne consomme qu un exemplaire par attente, pour un même lanceur', async () => {
+  it('s arrête au budget de l attente : le troisième ne part pas', async () => {
+    await castRespite()
     await castRespite()
     await castRespite()
 
     const cast = await db.select().from(activeEffects).where(eq(activeEffects.userId, player.id))
-    expect(cast).toHaveLength(1)
+    expect(cast).toHaveLength(rules.castsPerCooldown)
+    expect((await reload()).cooldownUntil?.getTime())
+      .toBe(STARTED_AT.getTime() + rules.cooldownMs / (rules.respiteFactor ** 2))
   })
 
   it('se lit sur l état de jeu tout de suite', async () => {

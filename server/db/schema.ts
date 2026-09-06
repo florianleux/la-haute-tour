@@ -386,8 +386,8 @@ export const inventory = sqliteTable('inventory', {
  * est actif tant que la cible joue celle-là, et mort dès qu'elle en ouvre une
  * autre — consommé ou non, sans qu'aucun ménage n'ait à passer.
  *
- * Le lanceur est gardé pour deux raisons : la règle « un exemplaire d'un même
- * sort par attente, par lanceur », et le journal nominatif des deux côtés.
+ * Le lanceur est gardé pour deux raisons : le budget de lancers d'une attente,
+ * qui se compte par lanceur, et le journal nominatif des deux côtés.
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
 export const activeEffects = sqliteTable('active_effects', {
@@ -405,14 +405,15 @@ export const activeEffects = sqliteTable('active_effects', {
   castAt: integer('cast_at', { mode: 'timestamp' }).notNull(),
   /**
    * L'attente pendant laquelle le sort est parti, désignée par son **début** —
-   * un sort ne se lance que là, donc elle existe toujours. C'est elle qui porte
-   * la règle « un exemplaire par attente », et non l'attente d'un ancrage : un
-   * rattrapage entièrement manqué ouvre une **seconde** attente sans ouvrir de
-   * tentative, et le premier lancer y bloquerait sinon le second.
+   * un sort ne se lance que là, donc elle existe toujours. C'est elle qui compte
+   * les deux lancers permis, et qui borne la vie des sorts liés à l'attente. Et
+   * non l'attente d'un ancrage : un rattrapage entièrement manqué ouvre une
+   * **seconde** attente sans ouvrir de tentative, et le budget doit s'y remettre
+   * à zéro. Voir specs/bonus.md#où-et-quand.
    *
    * Son début et non son échéance : Répit déplace l'échéance, qui ne peut donc
-   * plus servir d'identité — un second Répit du même lanceur en verrait une
-   * autre et passerait à travers la contrainte. Le début, lui, ne bouge pas.
+   * pas servir d'identité — deux lancers y verraient deux attentes différentes.
+   * Le début, lui, ne bouge pas.
    */
   castCooldownStartedAt: integer('cast_cooldown_started_at', { mode: 'timestamp' })
     .notNull()
@@ -425,11 +426,11 @@ export const activeEffects = sqliteTable('active_effects', {
 }, table => [
   index('active_effects_user_idx').on(table.userId, table.anchoredAt),
   index('active_effects_caster_idx').on(table.casterId, table.castAt),
-  // « Un seul exemplaire d'un même sort par attente, par lanceur. » En faire une
-  // contrainte donne l'idempotence gratuitement — double-clic, second onglet ou
-  // requête rejouée tombent dessus. Voir specs/bonus.md#où-et-quand.
-  unique('active_effects_one_per_cooldown')
-    .on(table.casterId, table.spell, table.castCooldownStartedAt),
+  // Le budget de lancers d'une attente se compte sur ces trois colonnes. Aucune
+  // contrainte d'unicité : deux fois le même sort y sont désormais permis, et le
+  // plafond se tient à l'écriture — voir server/utils/effects.ts.
+  index('active_effects_caster_cooldown_idx')
+    .on(table.casterId, table.castCooldownStartedAt),
 ])
 
 /**

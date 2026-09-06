@@ -1,10 +1,24 @@
 <template>
   <BaseCard wide title="Tes sorts">
     <template #lead>
-      Ce que tes coffres t'ont donné. Un sort se lance sur toi, une seule fois
-      par attente. La plupart attendent ta prochaine tentative ; le Répit, lui,
-      raccourcit l'attente que tu es en train de vivre.
+      Ce que tes coffres t'ont donné. Tu peux lancer {{ castsPerCooldown }} sorts
+      par attente, quels qu'ils soient — deux fois le même si tu veux. La plupart
+      attendent ta prochaine tentative ; le Répit, lui, raccourcit l'attente que
+      tu es en train de vivre.
     </template>
+
+    <!-- Le budget se lit avant le clic : un bouton qu'on presse en vain est une
+         règle qu'on découvre trop tard. Voir specs/bonus.md#où-et-quand. -->
+    <BaseHint class="mt-4" :tone="castsLeft ? 'neutral' : 'warning'">
+      <template v-if="castsLeft">
+        Il te reste {{ castsLeft }} lancer{{ castsLeft > 1 ? 's' : '' }} pour
+        cette attente.
+      </template>
+      <template v-else>
+        Tu as dépensé tes {{ castsPerCooldown }} lancers : la prochaine attente
+        t'en rendra autant.
+      </template>
+    </BaseHint>
 
     <!-- Le seul retour instantané du système : l'échéance recule sous les yeux
          du joueur, sur l'écran d'où il vient de lancer.
@@ -43,6 +57,7 @@
               <BaseButton
                 v-else
                 variant="ghost"
+                :disabled="!castsLeft || casting !== null"
                 :loading="casting === entry.spell"
                 @click="castOnSelf(entry.spell)"
               >
@@ -93,7 +108,17 @@ definePageMeta({
   middleware: 'cooldown',
 })
 
-const { entries, total, log, failed, casting, castFailed, cast } = await useInventory()
+const {
+  entries,
+  total,
+  log,
+  failed,
+  casting,
+  castFailed,
+  castsLeft,
+  castsPerCooldown,
+  cast,
+} = await useInventory()
 
 // Le récapitulatif de ce qui attend la prochaine tentative vit sur l'écran de
 // jeu : un sort lancé d'ici doit s'y voir au retour, pas au rechargement

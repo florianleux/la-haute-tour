@@ -10,6 +10,8 @@ const owned: InventoryView = {
   entries: [{ spell: 'VITALITY', count: 2 }],
   total: 2,
   log: [],
+  castsLeft: 2,
+  castsPerCooldown: 2,
 }
 
 /** Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en plus. */
@@ -17,6 +19,8 @@ const afterCast: InventoryView = {
   entries: [{ spell: 'VITALITY', count: 1 }],
   total: 1,
   log: [{ spell: 'VITALITY', face: 'boon', targetName: 'gandalf', castAt: '2026-09-06T09:00:00.000Z' }],
+  castsLeft: 1,
+  castsPerCooldown: 2,
 }
 
 describe('inventaire du joueur', () => {
@@ -38,6 +42,22 @@ describe('inventaire du joueur', () => {
     expect(entries.value).toEqual([{ spell: 'VITALITY', count: 1 }])
     expect(total.value).toBe(1)
     expect(log.value).toHaveLength(1)
+  })
+
+  // Le budget vient du serveur comme le reste : la page l'affiche et éteint ses
+  // boutons dessus, elle ne le décompte pas d'elle-même.
+  // Voir specs/bonus.md#où-et-quand.
+  it('suit le budget de lancers que le serveur renvoie', async () => {
+    serve(INVENTORY_KEY, owned)
+    answerWith(afterCast)
+    const { castsLeft, castsPerCooldown, cast } = await useInventory()
+
+    expect(castsLeft.value).toBe(2)
+    expect(castsPerCooldown.value).toBe(2)
+
+    await cast('VITALITY')
+
+    expect(castsLeft.value).toBe(1)
   })
 
   it('signale un lancer refusé et laisse l inventaire intact', async () => {

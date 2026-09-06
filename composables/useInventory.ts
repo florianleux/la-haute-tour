@@ -15,6 +15,10 @@ export interface InventoryRead {
   log: Ref<CastView[]>
   /** Vrai quand la lecture a échoué : un inventaire vide n'est pas la même nouvelle. */
   failed: Ref<boolean>
+  /** Ce qu'il reste de lancers pour l'attente en cours. */
+  castsLeft: Ref<number>
+  /** Ce qu'une attente permet de lancers : la règle, dite au joueur. */
+  castsPerCooldown: Ref<number>
   /** Le sort dont le lancer est en vol, null au repos. */
   casting: Ref<SpellId | null>
   /** Vrai quand le dernier lancer n'est pas parti. */
@@ -60,6 +64,8 @@ export async function useInventory(): Promise<InventoryRead> {
     entries: computed<InventoryEntryView[]>(() => data.value?.entries ?? []),
     total: computed<number>(() => data.value?.total ?? 0),
     log: computed<CastView[]>(() => data.value?.log ?? []),
+    castsLeft: computed<number>(() => data.value?.castsLeft ?? 0),
+    castsPerCooldown: computed<number>(() => data.value?.castsPerCooldown ?? 0),
     failed: computed<boolean>(() => Boolean(error.value)),
     casting,
     castFailed,

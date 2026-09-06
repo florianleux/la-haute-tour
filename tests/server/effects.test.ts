@@ -53,14 +53,29 @@ describe('lancer et ancrage des effets', () => {
     ])
   })
 
-  it('refuse un second exemplaire du même sort dans la même attente', async () => {
+  // Deux lancers par attente, quels qu'ils soient — deux fois le même y compris.
+  // Le plafond porte sur le nombre, jamais sur l'identité.
+  // Voir specs/bonus.md#où-et-quand.
+  it('accepte deux fois le même sort dans une attente', async () => {
     await own('VITALITY', 'VITALITY')
 
     await cast('VITALITY')
     await cast('VITALITY')
 
+    expect(await copies()).toBe(0)
+    expect(await readEffects(userId)).toHaveLength(2)
+  })
+
+  it('refuse le troisième lancer d une même attente', async () => {
+    await own('VITALITY', 'VITALITY', 'RESPITE')
+
+    await cast('VITALITY')
+    await cast('VITALITY')
+    await cast('RESPITE')
+
+    // L'exemplaire de trop reste en poche : rien n'est dépensé pour rien.
     expect(await copies()).toBe(1)
-    expect(await readEffects(userId)).toHaveLength(1)
+    expect(await readEffects(userId)).toHaveLength(2)
   })
 
   it('rend le lancer à chaque nouvelle attente, tentative ouverte ou non', async () => {
@@ -117,8 +132,8 @@ describe('lancer et ancrage des effets', () => {
   })
 
   it('additionne deux Vitalité posées avant la même tentative', async () => {
-    // La règle « un exemplaire par attente » vaut par lanceur : deux lancers
-    // peuvent attendre la même tentative, et ils s'empilent.
+    // Le budget de lancers se compte par lanceur : deux lanceurs peuvent viser
+    // la même tentative, et leurs effets s'empilent.
     const other = await createPlayer(db, { discordId: '987654321', username: 'radagast' })
     await db.insert(activeEffects).values([
       { userId, casterId: userId, spell: 'VITALITY', face: 'boon', castAt: NOW, castCooldownStartedAt: COOLDOWN_UNTIL },

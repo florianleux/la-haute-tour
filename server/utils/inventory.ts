@@ -1,6 +1,7 @@
 import { count, eq, min } from 'drizzle-orm'
 import { readPhase } from './game'
-import { castSpell, readCastLog } from './effects'
+import { castSpell, castsLeftThisWait, readCastLog } from './effects'
+import { rulesForFloor } from './rules'
 import { inventory } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -19,6 +20,14 @@ export interface InventoryView {
   total: number
   /** Le journal du lanceur : ce qu'il a envoyé, et quand. */
   log: CastView[]
+  /**
+   * Ce qu'il reste de lancers pour l'attente en cours. L'écran l'affiche et
+   * éteint ses boutons à zéro : la règle se voit avant le clic, elle ne se
+   * découvre pas après. Voir specs/bonus.md#où-et-quand.
+   */
+  castsLeft: number
+  /** Ce qu'une attente permet de lancers, pour que l'écran dise la règle. */
+  castsPerCooldown: number
 }
 
 /**
@@ -91,5 +100,7 @@ async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
     entries: stacks.map(({ spell, owned }) => ({ spell, count: owned })),
     total: stacks.reduce((sum, stack) => sum + stack.owned, 0),
     log: await readCastLog(db, user),
+    castsLeft: await castsLeftThisWait(db, user),
+    castsPerCooldown: rulesForFloor(user.currentFloor).castsPerCooldown,
   }
 }
