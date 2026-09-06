@@ -73,6 +73,20 @@ describe('joueurs admin', () => {
     expect(response.status).toBe(404)
   })
 
+  // Un identifiant qui ne peut désigner personne est une erreur du client, pas
+  // une cible introuvable : le 400 ne se déguise pas en 404. Même règle que pour
+  // les gestes sur un joueur test — il n'y a qu'une lecture d'identifiant.
+  it.each(['0', '-3', 'gandalf'])('refuse l identifiant %s en 400', async (id) => {
+    const response = await grant(jsonRequest(
+      `http://test/players/${id}/grant-life`,
+      'POST',
+      undefined,
+      adminCookie,
+    ))
+
+    expect(response.status).toBe(400)
+  })
+
   it('passer l attente laisse une échéance dépassée, jamais nulle', async () => {
     const waiting = await createPlayer(db, {
       discordId: '555',

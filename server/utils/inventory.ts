@@ -1,5 +1,5 @@
 import { count, eq, min } from 'drizzle-orm'
-import { readGameState } from './game'
+import { readPhase } from './game'
 import { castSpell, readCastLog } from './effects'
 import { inventory } from '../db/schema'
 import type { Database } from '../db/client'
@@ -60,9 +60,12 @@ export async function castFromInventory(
  * Les Sorts n'existent que pendant l'attente : ni la page qui les montre, ni le
  * lancer qui les consomme n'ont de sens ailleurs — URL comprise, d'où le refus
  * ici et pas seulement dans la navigation. Voir specs/ecrans.md#sorts.
+ *
+ * La phase se lit par `readPhase`, et non par l'état complet : une garde ne doit
+ * pas faire avancer la partie qu'elle protège, et il n'y a qu'un fait à lire.
  */
 async function requireCooldown(db: Database, user: User, now: Date): Promise<void> {
-  const { phase } = await readGameState(db, user, now)
+  const phase = await readPhase(db, user, now)
 
   if (phase !== 'cooldown') {
     throw createError({ statusCode: 403, statusMessage: 'Les Sorts ne se lancent qu\'en attente' })

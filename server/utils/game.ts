@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm'
 import {
   canDrawRecovery,
   cooldownFrom,
@@ -11,7 +11,7 @@ import {
   rollChest,
   resumesRecovery,
 } from './mechanics'
-import { floorSize } from './deck'
+import { floorSize, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { rulesForFloor } from './rules'
@@ -549,6 +549,40 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
 }
 
 /**
+ * Où en est le joueur, et rien d'autre.
+ *
+ * Lecture pure, et c'est tout ce qui la distingue de `readGameState` : celle-ci
+ * ne résout aucune réservation expirée et ne clôt aucune attente échue. Une
+ * garde qui ne veut qu'un fait ne doit pas faire avancer la partie qu'elle
+ * protège — ouvrir la page Sorts coûtait une vie au joueur dont le chrono venait
+ * de tomber. Voir server/utils/inventory.ts.
+ *
+ * Un aller-retour, contre deux pour l'état complet : la taille de l'étage se lit
+ * au deck, qui la garde en mémoire. Voir server/utils/deck.ts.
+ */
+export async function readPhase(db: Database, user: User, now: Date): Promise<Phase> {
+  const [row] = await db
+    .select({
+      seen: sql<number>`(select count(*) from ${seenQuestions}
+        where ${seenQuestions.userId} = ${users.id}
+          and ${seenQuestions.floor} = ${users.currentFloor})`,
+      liveReservations: sql<number>`(select count(*) from ${reservations}
+        where ${reservations.userId} = ${users.id}
+          and ${reservations.resolvedAt} is null)`,
+    })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1)
+
+  return phaseOf({
+    user,
+    hasLiveReservation: row.liveReservations > 0,
+    seen: row.seen,
+    floorTotal: await floorSize(db, user.currentFloor, now),
+  }, now)
+}
+
+/**
  * Where the player stands. Reading draws no question and starts no clock: it hands
  * back the live reservation, the verdict waiting to be read, or — for a reservation
  * whose deadline has passed — resolves it as the failure it already is.
@@ -809,19 +843,11 @@ interface DrawnQuestion {
 }
 
 /**
- * Sert la question suivante du deck : la première de l'étage dont le rang dépasse
- * le curseur du joueur. Un saut dans l'index, **une ligne lue**, quel que soit le
- * nombre de questions que l'étage contient.
- *
+ * Sert la question suivante du deck, celle que le curseur du joueur désigne.
  * Rend null quand l'étage est épuisé — c'est ce qui fait le palier.
  */
 async function drawAndReserve(db: Database, user: User, now: Date): Promise<DrawnQuestion | null> {
-  const [question] = await db
-    .select()
-    .from(questions)
-    .where(and(eq(questions.floor, user.currentFloor), gt(questions.rank, user.floorCursor)))
-    .orderBy(asc(questions.rank))
-    .limit(1)
+  const [question] = await upcomingQuestions(db, user, 1)
 
   if (!question) {
     return null

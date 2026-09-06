@@ -1,3 +1,4 @@
+import { useWriteThenReplace } from './useWriteThenReplace'
 import type { Ref } from 'vue'
 import type { MaintenanceResponse } from '~~/server/api/admin/maintenance.post'
 
@@ -24,29 +25,22 @@ export async function useMaintenance(): Promise<Maintenance> {
     { default: (): MaintenanceResponse => ({ since: null }) },
   )
 
-  const pending = ref(false)
-  const actionFailed = ref(false)
+  const { pending, failed: actionFailed, send } = useWriteThenReplace(data)
 
   async function set(closed: boolean): Promise<boolean> {
-    pending.value = true
-    actionFailed.value = false
+    const sent = await send(() => $fetch<MaintenanceResponse>('/api/admin/maintenance', {
+      method: 'POST',
+      body: { closed },
+    }))
 
-    try {
-      data.value = await $fetch<MaintenanceResponse>('/api/admin/maintenance', {
-        method: 'POST',
-        body: { closed },
-      })
+    if (sent) {
       return true
     }
-    catch {
-      actionFailed.value = true
-      // L'état affiché ne doit pas rester sur ce qu'on espérait : on relit.
-      await refresh()
-      return false
-    }
-    finally {
-      pending.value = false
-    }
+
+    // L'état affiché ne doit pas rester sur ce qu'on espérait : on relit.
+    await refresh()
+
+    return false
   }
 
   return {

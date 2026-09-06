@@ -1,3 +1,4 @@
+import { useWriteThenReplace } from './useWriteThenReplace'
 import type { Ref } from 'vue'
 import type { InventoryEntryView, InventoryView } from '~~/server/utils/inventory'
 import type { CastView } from '~~/server/utils/effects'
@@ -32,8 +33,11 @@ export async function useInventory(): Promise<InventoryRead> {
     () => $fetch<InventoryView>('/api/game/inventory', useApiFetchOptions()),
   )
 
+  const { failed: castFailed, send } = useWriteThenReplace(data)
+
+  // Quel sort est en vol, plutôt qu'un simple « une écriture est en cours » : la
+  // page fait tourner le bouton de ce sort-là, pas la liste entière.
   const casting = ref<SpellId | null>(null)
-  const castFailed = ref(false)
 
   /**
    * Le lancer rend l'inventaire tel qu'il est ensuite : on réaffiche ce que le
@@ -42,21 +46,14 @@ export async function useInventory(): Promise<InventoryRead> {
    */
   async function cast(spell: SpellId): Promise<void> {
     casting.value = spell
-    castFailed.value = false
 
-    try {
-      data.value = await $fetch<InventoryView>('/api/game/cast', {
-        method: 'POST',
-        body: { spell },
-        ...useApiFetchOptions(),
-      })
-    }
-    catch {
-      castFailed.value = true
-    }
-    finally {
-      casting.value = null
-    }
+    await send(() => $fetch<InventoryView>('/api/game/cast', {
+      method: 'POST',
+      body: { spell },
+      ...useApiFetchOptions(),
+    }))
+
+    casting.value = null
   }
 
   return {

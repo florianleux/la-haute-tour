@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { useDatabase } from '~~/server/db/client'
 import { settleDispute } from '~~/server/utils/disputes'
+import { numericRouteId } from '~~/server/utils/routes'
 
 const bodySchema = z.object({
   verdict: z.enum(['accepted', 'rejected']),
@@ -13,13 +14,8 @@ const bodySchema = z.object({
 export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   await requireAdmin(event)
 
-  // Nitro ne route ici que si le segment existe ; le défaut n'est là que pour le typage.
-  const id = Number(getRouterParam(event, 'id') ?? '')
+  const id = numericRouteId(event, 'Contestation inconnue')
   const { verdict } = await readValidatedBody(event, bodySchema.parse)
-
-  if (!Number.isInteger(id)) {
-    throw createError({ statusCode: 400, statusMessage: 'Contestation inconnue' })
-  }
 
   await settleDispute(useDatabase(), id, verdict, new Date())
 

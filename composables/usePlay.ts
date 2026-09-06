@@ -1,4 +1,5 @@
 import { GAME_STATE_KEY } from './useGameState'
+import { useWriteThenReplace } from './useWriteThenReplace'
 import type { Ref } from 'vue'
 import type { AnswerSource } from '~~/server/utils/mechanics'
 import type { GameState } from '~~/server/utils/game'
@@ -27,29 +28,18 @@ export interface Play {
  */
 export function usePlay(): Play {
   const { data } = useNuxtData<GameState>(GAME_STATE_KEY)
-  const failed = ref(false)
-  const pending = ref(false)
+  const { pending, failed, send } = useWriteThenReplace(data)
 
-  async function act(url: string, body?: Record<string, string>): Promise<void> {
-    pending.value = true
-    failed.value = false
-
-    try {
-      data.value = await $fetch<GameState>(url, { method: 'POST', body })
-    }
-    catch {
-      failed.value = true
-    }
-    finally {
-      pending.value = false
-    }
+  /** Un coup du joueur : le serveur rend l'état d'après, la page l'affiche. */
+  async function move(url: string, body?: Record<string, string>): Promise<void> {
+    await send(() => $fetch<GameState>(url, { method: 'POST', body }))
   }
 
   return {
-    next: () => act('/api/game/next'),
-    answer: (text, source = 'player') => act('/api/game/answer', { answer: text, source }),
-    skipCooldown: () => act('/api/game/skip-cooldown'),
-    openChest: () => act('/api/game/chest'),
+    next: () => move('/api/game/next'),
+    answer: (text, source = 'player') => move('/api/game/answer', { answer: text, source }),
+    skipCooldown: () => move('/api/game/skip-cooldown'),
+    openChest: () => move('/api/game/chest'),
     failed,
     pending,
   }

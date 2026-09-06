@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { inventory } from '../../server/db/schema'
-import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
+import { inventory, reservations } from '../../server/db/schema'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { SpellId } from '../../shared/utils/spells'
@@ -102,6 +103,27 @@ describe('inventaire des sorts', () => {
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(403)
+  })
+
+  // La garde lit la phase, elle ne joue pas la partie : une réservation dont le
+  // chrono est tombé reste à résoudre par l'écran de jeu. Ouvrir cette page-ci ne
+  // doit coûter ni vie ni question. Voir server/utils/game.ts, readPhase().
+  it('ne résout pas la question expirée du joueur qui l ouvre', async () => {
+    const userId = await createPlayer(db)
+    const questionId = await createQuestion(db)
+    await db.insert(reservations).values({
+      userId,
+      questionId,
+      mode: 'ascent',
+      expiresAt: new Date(Date.now() - 60_000),
+    })
+
+    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+
+    expect(response.status).toBe(403)
+    const [held] = await db.select().from(reservations).where(eq(reservations.userId, userId))
+    expect(held.resolvedAt).toBeNull()
+    expect((await loadPlayer(db, userId)).lives).toBe(3)
   })
 
   describe('lancer', () => {

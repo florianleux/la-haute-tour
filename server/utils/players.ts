@@ -1,6 +1,9 @@
 import { asc, eq, sql } from 'drizzle-orm'
+import { useDatabase } from '../db/client'
 import { disputes, questions, reservations, seenQuestions, users } from '../db/schema'
 import { phaseOf } from './mechanics'
+import { numericRouteId } from './routes'
+import type { H3Event } from 'h3'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { Phase } from './mechanics'
@@ -47,6 +50,15 @@ export async function requirePlayer(db: Database, id: number): Promise<User> {
   }
 
   return player
+}
+
+/**
+ * Le joueur que la route désigne. Écrit une fois : huit gestes d'administration
+ * partagent la même lecture de paramètre, et deux copies divergeaient déjà sur
+ * ce qu'est un identifiant valide.
+ */
+export async function playerFromRoute(event: H3Event): Promise<User> {
+  return requirePlayer(useDatabase(), numericRouteId(event, 'Joueur inconnu'))
 }
 
 /**

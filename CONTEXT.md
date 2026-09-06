@@ -20,6 +20,8 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Combien vaut-elle ? | [`server/utils/rules.ts`](server/utils/rules.ts) — le jeu de règles, consultable par étage |
 | Que devient le joueur ? | [`server/utils/mechanics.ts`](server/utils/mechanics.ts) — les décisions, sans base de données |
 | Comment est-ce lu et écrit ? | [`server/utils/game.ts`](server/utils/game.ts) — lectures, écritures, réservation |
+| Où en est le joueur, sans rien changer ? | [`server/utils/game.ts`](server/utils/game.ts) — `readPhase()` : la phase seule, lecture pure, pour les gardes |
+| Quelle question vient ensuite ? | [`server/utils/deck.ts`](server/utils/deck.ts) — `upcomingQuestions()` : l'ordre du deck, partagé par l'ascension et les gestes d'admin |
 | Ce qu'affiche l'écran de jeu | [`utils/phase.ts`](utils/phase.ts) — `gameScreen()` : ce que la carte montre pour un état donné |
 | Ce que porte la barre d'icônes | [`utils/nav.ts`](utils/nav.ts) — `navIcons()` : lien, page courante, ou icône éteinte |
 | Ce que le joueur possède | [`server/utils/inventory.ts`](server/utils/inventory.ts) — l'inventaire, lisible en attente seulement |
@@ -28,6 +30,8 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Qui peut contester, et ce qu'accepter change | [`server/utils/disputes.ts`](server/utils/disputes.ts) |
 | Qui est allié, qui est ennemi | [`shared/utils/teams.ts`](shared/utils/teams.ts) — `bondBetween()` : une relation, jamais stockée |
 | Les joueurs test, et ce qu'on leur fait | [`server/utils/testPlayers.ts`](server/utils/testPlayers.ts) — création, gestes de réglage, monde scellé |
+| Qui vise un geste d'administration | [`server/utils/players.ts`](server/utils/players.ts) — `playerFromRoute()`, et `testPlayerFromRoute()` qui ajoute la garde |
+| Ce qu'une écriture du client réaffiche | [`composables/useWriteThenRead.ts`](composables/useWriteThenRead.ts) relit, [`composables/useWriteThenReplace.ts`](composables/useWriteThenReplace.ts) remplace par la réponse |
 | Qui joue vraiment, sous incarnation | [`server/utils/auth.ts`](server/utils/auth.ts) — `getSessionUser()` porte les droits, `getCurrentUser()` sert le jeu |
 | Ce que coûte un départ de page | [`server/utils/focus.ts`](server/utils/focus.ts) et la détection dans [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) |
 | Le deck vu par l'administration | [`server/utils/questions.ts`](server/utils/questions.ts) |

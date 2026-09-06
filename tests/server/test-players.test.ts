@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { and, eq } from 'drizzle-orm'
-import { inventory, missedPool, reservations, seenQuestions, users } from '../../server/db/schema'
-import { readGameState } from '../../server/utils/game'
+import { and, asc, eq } from 'drizzle-orm'
+import { inventory, missedPool, questions, reservations, seenQuestions, users } from '../../server/db/schema'
+import { readGameState, serveNextQuestion } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import {
   advanceTestPlayer,
@@ -95,6 +95,23 @@ describe('gestes sur un joueur test', () => {
       await advanceTestPlayer(db, await reload(), { count: 99, correct: true }, NOW)
 
       expect(await seen()).toBe(12)
+    })
+
+    // Le geste et l'ascension parcourent le même deck : ce que le jeu sert
+    // ensuite est la question qui suit, dans l'ordre, la dernière que le geste a
+    // marquée. C'est ce qui fait du raccourci une vraie situation de jeu.
+    // Voir server/utils/deck.ts.
+    it('laisse l ascension reprendre à la question suivante du deck', async () => {
+      const deck = await db
+        .select()
+        .from(questions)
+        .where(eq(questions.floor, 1))
+        .orderBy(asc(questions.rank))
+
+      await advanceTestPlayer(db, await reload(), { count: 5, correct: true }, NOW)
+      const state = await serveNextQuestion(db, await reload(), NOW)
+
+      expect(state.question?.id).toBe(deck[5].id)
     })
   })
 

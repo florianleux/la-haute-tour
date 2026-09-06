@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, gt, inArray } from 'drizzle-orm'
-import { useDatabase } from '../db/client'
+import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { upcomingQuestions } from './deck'
 import { cooldownFrom } from './mechanics'
+import { playerFromRoute, requirePlayer } from './players'
 import { rulesForFloor } from './rules'
 import {
   activeEffects,
@@ -31,34 +32,25 @@ import type { SpellId } from '../../shared/utils/spells'
  * qu'elle n'est pas de celles qu'on manipule.
  */
 export async function requireTestPlayer(db: Database, id: number): Promise<User> {
-  const [player] = await db.select().from(users).where(eq(users.id, id)).limit(1)
+  const player = await requirePlayer(db, id)
 
-  if (!player) {
-    throw createError({ statusCode: 404, statusMessage: 'Joueur introuvable' })
-  }
-
-  if (!player.isTest) {
-    throw createError({ statusCode: 403, statusMessage: 'Réservé aux joueurs test' })
-  }
+  assertTestPlayer(player)
 
   return player
 }
 
 /**
- * Le joueur test que la route désigne. Écrit une fois : six gestes partagent la
- * même lecture de paramètre, et six copies divergeraient sur ce qu'est un
- * identifiant valide.
+ * Le joueur test que la route désigne : le joueur que la route désigne, puis la
+ * garde. La lecture du paramètre vit dans `playerFromRoute()`, avec les gestes
+ * qui visent un joueur ordinaire — il n'y a qu'un identifiant de route, donc
+ * qu'une définition de ce qu'il vaut.
  */
 export async function testPlayerFromRoute(event: H3Event): Promise<User> {
-  const id = Number(getRouterParam(event, 'id') ?? '')
+  const player = await playerFromRoute(event)
 
-  // `Number('')` vaut 0, et 0 est un entier : sans le signe, une route sans
-  // identifiant serait acceptée puis rejetée plus loin, pour une autre raison.
-  if (!Number.isInteger(id) || id <= 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Joueur inconnu' })
-  }
+  assertTestPlayer(player)
 
-  return requireTestPlayer(useDatabase(), id)
+  return player
 }
 
 export async function listTestPlayers(db: Database): Promise<User[]> {
@@ -130,9 +122,9 @@ export interface AdvanceOptions {
 
 /**
  * Avancer dans l'étage sans le jouer : les `count` questions suivantes du deck
- * sont marquées vues. Le deck est parcouru par rang, à partir du curseur, exactement
- * comme l'ascension le fait — un joueur test avance donc dans le même ordre qu'un
- * vrai joueur, et s'arrête à ce que l'étage contient encore.
+ * sont marquées vues. Le parcours est celui de l'ascension, à la lettre — un
+ * joueur test avance donc dans le même ordre qu'un vrai joueur, et s'arrête à ce
+ * que l'étage contient encore. Voir server/utils/deck.ts.
  */
 export async function advanceTestPlayer(
   db: Database,
@@ -142,12 +134,7 @@ export async function advanceTestPlayer(
 ): Promise<void> {
   assertTestPlayer(testPlayer)
 
-  const upcoming = await db
-    .select({ id: questions.id, rank: questions.rank })
-    .from(questions)
-    .where(and(eq(questions.floor, testPlayer.currentFloor), gt(questions.rank, testPlayer.floorCursor)))
-    .orderBy(asc(questions.rank))
-    .limit(count)
+  const upcoming = await upcomingQuestions(db, testPlayer, count)
 
   if (!upcoming.length) {
     return
