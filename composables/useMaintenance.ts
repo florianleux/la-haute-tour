@@ -25,36 +25,41 @@ export async function useMaintenance(): Promise<Maintenance> {
     { default: (): MaintenanceResponse => ({ since: null }) },
   )
 
-  const { pending: writing, failed: actionFailed, send } = useWriteThenReplace(data)
+  const { failed: actionFailed, send } = useWriteThenReplace(data)
 
-  // Le geste ne s'arrête pas à l'écriture : quand elle est refusée, il relit. Le
-  // bouton doit rester occupé jusque-là — relâché à l'écriture, il cesserait de
-  // tourner pendant que l'interrupteur change encore d'étiquette sous les yeux
-  // de l'admin.
-  const rereading = ref(false)
+  // Le geste déborde l'écriture : refusée, elle relit. C'est donc lui qui porte
+  // le drapeau, d'un bout à l'autre — celui de l'écriture retomberait entre les
+  // deux, et le bouton cesserait de tourner pendant que l'interrupteur peut
+  // encore changer d'étiquette. Voir specs/ecrans.md.
+  const pending = ref(false)
 
   async function set(closed: boolean): Promise<boolean> {
-    const sent = await send(() => $fetch<MaintenanceResponse>('/api/admin/maintenance', {
-      method: 'POST',
-      body: { closed },
-    }))
+    pending.value = true
 
-    if (sent) {
-      return true
+    try {
+      const sent = await send(() => $fetch<MaintenanceResponse>('/api/admin/maintenance', {
+        method: 'POST',
+        body: { closed },
+      }))
+
+      if (sent) {
+        return true
+      }
+
+      // L'état affiché ne doit pas rester sur ce qu'on espérait : on relit.
+      await refresh()
+
+      return false
     }
-
-    // L'état affiché ne doit pas rester sur ce qu'on espérait : on relit.
-    rereading.value = true
-    await refresh()
-    rereading.value = false
-
-    return false
+    finally {
+      pending.value = false
+    }
   }
 
   return {
     since: computed(() => data.value?.since ?? null),
     failed: computed(() => Boolean(error.value) || actionFailed.value),
-    pending: computed(() => writing.value || rereading.value),
+    pending,
     set,
   }
 }

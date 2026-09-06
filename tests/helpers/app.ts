@@ -178,7 +178,11 @@ export function installAppGlobals(): FakeNuxt {
       navigations.length = 0
       reloads.length = 0
       calls.length = 0
-      refresh.mockClear()
+      // Remise à l'implémentation par défaut, et pas seulement au compteur
+      // d'appels : un test qui pilote la relecture la laisserait sinon en place
+      // pour tous les suivants du fichier.
+      refresh.mockReset()
+      refresh.mockImplementation(async () => {})
       fetchRejection = null
       fetchResponse = { ok: true }
       signOut()

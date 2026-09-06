@@ -173,18 +173,17 @@ function holdsQuestion(snapshot: PlayerSnapshot): boolean {
 
 /**
  * Les questions vues à l'étage où se tient le joueur, comptées dans la requête
- * qui le lit. Écrite une fois : l'instantané complet et la phase seule la
- * portent tous les deux, et deux copies dériveraient sur ce que « vue à l'étage
- * courant » veut dire.
+ * qui le lit. Les deux lectures d'ici la portent — l'instantané complet et la
+ * phase seule — et deux copies dériveraient sur ce que « vue à l'étage courant »
+ * veut dire.
+ *
+ * L'onglet Joueurs en lit une cousine, sur tous les joueurs à la fois
+ * (`server/utils/players.ts`). Elle reste là-bas : ce module-ci écrit, et c'est
+ * précisément ce dont la lecture des fiches se tient à l'écart.
  */
 const seenOnCurrentFloor = sql<number>`(select count(*) from ${seenQuestions}
   where ${seenQuestions.userId} = ${users.id}
     and ${seenQuestions.floor} = ${users.currentFloor})`
-
-/** Une question encore en jeu : réservée, non résolue. Comptée de même. */
-const liveReservationCount = sql<number>`(select count(*) from ${reservations}
-  where ${reservations.userId} = ${users.id}
-    and ${reservations.resolvedAt} is null)`
 
 async function loadSnapshot(db: Database, userId: number, now: Date): Promise<PlayerSnapshot> {
   const [row] = await db
@@ -565,10 +564,13 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * Où en est le joueur, et rien d'autre.
  *
  * Lecture pure, et c'est tout ce qui la distingue de `readGameState` : celle-ci
- * ne résout aucune réservation expirée et ne clôt aucune attente échue. Une
- * garde qui ne veut qu'un fait ne doit pas faire avancer la partie qu'elle
- * protège — ouvrir la page Sorts coûtait une vie au joueur dont le chrono venait
- * de tomber. Voir server/utils/inventory.ts.
+ * ne résout aucune réservation expirée et ne clôt aucune attente échue.
+ *
+ * Une garde qui ne veut qu'un fait ne doit pas faire avancer la partie qu'elle
+ * protège. Le chrono tombé coûte sa vie de toute façon, et c'est `/api/game/state`
+ * qui l'acte — c'est son travail, écrit dans son contrat. Ce que la garde de la
+ * page Sorts faisait, c'est l'acter **une seconde fois, ailleurs**, sans que rien
+ * ne l'annonce. Voir server/utils/inventory.ts.
  *
  * Une requête, contre deux pour l'état complet — plus celle de la taille de
  * l'étage, que le deck sert de mémoire tant qu'elle n'a pas péri.
@@ -578,7 +580,11 @@ export async function readPhase(db: Database, user: User, now: Date): Promise<Ph
   const [row] = await db
     .select({
       seen: seenOnCurrentFloor,
-      liveReservations: liveReservationCount,
+      // Une question encore en jeu : réservée, non résolue. Il n'y en a qu'une
+      // au plus — `userId` est la clé de la table — donc ce décompte vaut 0 ou 1.
+      liveReservations: sql<number>`(select count(*) from ${reservations}
+        where ${reservations.userId} = ${users.id}
+          and ${reservations.resolvedAt} is null)`,
     })
     .from(users)
     .where(eq(users.id, user.id))

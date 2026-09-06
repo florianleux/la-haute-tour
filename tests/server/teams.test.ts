@@ -125,6 +125,26 @@ describe('assignation d une équipe par l admin', () => {
     expect(await teamOf(playerId)).toBeNull()
   })
 
+  // Une requête mal formée se refuse pour ce qu'elle est, sans qu'un identifiant
+  // introuvable prenne les devants : le corps se lit avant d'aller chercher le
+  // joueur en base. Voir server/utils/routes.ts.
+  it('refuse le corps avant l identifiant, et l identifiant impossible en 400', async () => {
+    const badBody = await setTeam(
+      jsonRequest('http://test/players/4242/team', 'PUT', { team: 'VERTE' }, adminCookie),
+    )
+    expect(badBody.status).toBe(400)
+
+    const noSuchPlayer = await setTeam(
+      jsonRequest('http://test/players/4242/team', 'PUT', { team: 'CRIMSON' }, adminCookie),
+    )
+    expect(noSuchPlayer.status).toBe(404)
+
+    const impossibleId = await setTeam(
+      jsonRequest('http://test/players/0/team', 'PUT', { team: 'CRIMSON' }, adminCookie),
+    )
+    expect(impossibleId.status).toBe(400)
+  })
+
   it('naît sans équipe : rien n en attribue une tout seul', async () => {
     expect(await teamOf(playerId)).toBeNull()
   })

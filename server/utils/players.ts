@@ -53,9 +53,10 @@ export async function requirePlayer(db: Database, id: number): Promise<User> {
 }
 
 /**
- * Le joueur que la route désigne. Écrit une fois : huit gestes d'administration
- * partagent la même lecture de paramètre, et deux copies divergeaient déjà sur
- * ce qu'est un identifiant valide.
+ * Le joueur que la route désigne. La porte d'entrée de tout geste
+ * d'administration qui vise un joueur — `testPlayerFromRoute()` y ajoute sa
+ * garde. Écrit une fois : deux copies divergeaient déjà sur ce qu'est un
+ * identifiant valide, et une troisième est arrivée avec les équipes.
  */
 export async function playerFromRoute(event: H3Event): Promise<User> {
   return requirePlayer(useDatabase(), numericRouteId(event, 'Joueur inconnu'))

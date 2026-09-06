@@ -21,8 +21,11 @@ const bodySchema = z.object({
 export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   await requireAdmin(event)
 
-  const player = await playerFromRoute(event)
+  // Le corps d'abord : une requête mal formée se refuse sans aller lire un
+  // joueur en base, et garde son 400 plutôt que de se faire devancer par le 404
+  // d'un identifiant inconnu.
   const { team } = await readValidatedBody(event, bodySchema.parse)
+  const player = await playerFromRoute(event)
 
   await useDatabase().update(users).set({ team }).where(eq(users.id, player.id))
 

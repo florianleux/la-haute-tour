@@ -1,9 +1,11 @@
 import type { H3Event } from 'h3'
 
 /**
- * L'identifiant numérique que porte une route. Écrit une fois : trois gestes
- * d'administration le lisent, et les trois copies divergeaient déjà sur ce
- * qu'est un identifiant valide.
+ * L'identifiant numérique que porte une route. Écrit une fois : tout ce que
+ * l'administration désigne par un nombre passe par ici — les joueurs via
+ * `playerFromRoute()`, les contestations en direct. Les copies qu'il remplace
+ * divergeaient déjà sur ce qu'est un identifiant valide, et une de plus est
+ * arrivée avec les équipes pendant qu'on les retirait.
  *
  * `refusal` est le message rendu au client : il nomme ce que la route désigne —
  * un joueur, une contestation — pour que le refus dise de quoi il parle.
