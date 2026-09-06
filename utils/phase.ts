@@ -89,6 +89,8 @@ export interface RecoveryLine {
   position: number
   total: number
   successes: number
+  /** Une Indulgence a rallongé ce rattrapage : l'écran le dit. */
+  lengthened: boolean
   /** Le sort du rattrapage, annoncé une fois toutes les questions jouées. */
   result: 'resumed' | 'waiting' | null
 }
@@ -151,6 +153,7 @@ function recoveryLine(recovery: NonNullable<GameState['recovery']>): RecoveryLin
     position: Math.min(recovery.played + 1, recovery.total),
     total: recovery.total,
     successes: recovery.successes,
+    lengthened: recovery.lengthened,
     result: over ? (recovery.resumes ? 'resumed' : 'waiting') : null,
   }
 }

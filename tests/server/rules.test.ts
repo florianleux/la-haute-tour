@@ -34,6 +34,7 @@ describe('jeu de règles', () => {
       mimicChance: 0.05,
       respiteFactor: 2,
       chronomancyFactor: 2,
+      indulgenceFactor: 2,
     })
   })
 
@@ -155,5 +156,41 @@ describe('règles modulées par les effets', () => {
     const { ascentTimerMs: _fa, recoveryTimerMs: _fr, ...floorRest } = rules
 
     expect(rest).toEqual(floorRest)
+  })
+
+  it('double les questions tirées au rattrapage en Indulgence blanche', () => {
+    const effects: SpellEffect[] = [{ spell: 'INDULGENCE', face: 'boon' }]
+
+    expect(rulesWithEffects(rules, effects).recoveryQuestions)
+      .toBe(rules.recoveryQuestions * rules.indulgenceFactor)
+  })
+
+  // Le seuil qui autorise le rattrapage ne bouge pas : le relever ferait qu'une
+  // Indulgence empêche le rattrapage qu'elle est censée rallonger.
+  it('ne touche pas au seuil qui autorise le rattrapage', () => {
+    const effects: SpellEffect[] = [{ spell: 'INDULGENCE', face: 'boon' }]
+    const modulated = rulesWithEffects(rules, effects)
+
+    expect(modulated.poolSizeForRecovery).toBe(rules.poolSizeForRecovery)
+    expect(modulated.recoverySuccessesToResume).toBe(rules.recoverySuccessesToResume)
+  })
+
+  // La face noire d'Indulgence exige un perfect — elle ne raccourcit pas le
+  // tirage. La compter comme l'inverse du blanc descendait sous le seuil du
+  // rattrapage, qui se refusait alors d'ouvrir. Voir specs/bonus.md#cumul.
+  it('ne raccourcit pas le tirage en Indulgence noire', () => {
+    const effects: SpellEffect[] = [{ spell: 'INDULGENCE', face: 'curse' }]
+
+    expect(rulesWithEffects(rules, effects).recoveryQuestions).toBe(rules.recoveryQuestions)
+  })
+
+  it('compte la blanche même quand une noire l accompagne', () => {
+    const effects: SpellEffect[] = [
+      { spell: 'INDULGENCE', face: 'boon' },
+      { spell: 'INDULGENCE', face: 'curse' },
+    ]
+
+    expect(rulesWithEffects(rules, effects).recoveryQuestions)
+      .toBe(rules.recoveryQuestions * rules.indulgenceFactor)
   })
 })

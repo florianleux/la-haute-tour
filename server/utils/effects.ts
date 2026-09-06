@@ -4,6 +4,7 @@ import { activeEffects, inventory, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
+import { isWaitBound } from '../../shared/utils/spells'
 import type { SpellFace, SpellId } from '../../shared/utils/spells'
 
 /**
@@ -243,14 +244,14 @@ export async function anchorEffects(db: Database, user: User, startedAt: Date): 
 }
 
 /**
- * Un Répit a agi sur l'attente pendant laquelle il est parti, et meurt avec
- * elle : il n'attend aucune tentative, contrairement aux autres. Le garder
- * visible ensuite ferait annoncer une attente écourtée qu'il n'a pas touchée, et
- * poserait une icône d'effet actif sur une ascension qu'il ne module pas.
- * Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ * Un sort lié à l'attente a agi sur celle pendant laquelle il est parti, et
+ * meurt avec elle : il n'attend aucune tentative, contrairement aux autres. Le
+ * garder visible ensuite ferait annoncer une attente écourtée qu'il n'a pas
+ * touchée, ou rallongerait un rattrapage qu'il n'a pas ouvert — c'est là ce que
+ * « ponctuel » veut dire. Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
 function actsOnCurrentWait(row: EffectRow, user: User): boolean {
-  if (row.spell !== 'RESPITE') {
+  if (!isWaitBound(row.spell)) {
     return true
   }
 

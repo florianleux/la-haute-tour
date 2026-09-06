@@ -80,17 +80,17 @@ describe('écran de jeu', () => {
   })
 
   it('n annonce le sort du rattrapage qu une fois toutes ses questions jouées', () => {
-    const recovery = { total: 3, played: 1, successes: 1, resumes: true }
+    const recovery = { total: 3, played: 1, successes: 1, resumes: true, lengthened: false }
 
     expect(gameScreen(state({ phase: 'recovery', recovery, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 1, result: null })
+      .toEqual({ position: 2, total: 3, successes: 1, lengthened: false, result: null })
 
     expect(gameScreen(state({ phase: 'recovery', recovery: { ...recovery, played: 3 }, verdict })).recovery)
-      .toEqual({ position: 3, total: 3, successes: 1, result: 'resumed' })
+      .toEqual({ position: 3, total: 3, successes: 1, lengthened: false, result: 'resumed' })
 
     expect(gameScreen(state({
       phase: 'recovery',
-      recovery: { ...recovery, played: 3, successes: 0, resumes: false },
+      recovery: { ...recovery, played: 3, successes: 0, resumes: false, lengthened: false },
       verdict,
     })).recovery?.result).toBe('waiting')
   })
@@ -108,7 +108,7 @@ describe('action de la page de jeu', () => {
   })
 
   it('démarre, poursuit puis termine un rattrapage', () => {
-    const recovery = { total: 3, played: 0, successes: 0, resumes: false }
+    const recovery = { total: 3, played: 0, successes: 0, resumes: false, lengthened: false }
 
     expect(nextActionLabel(state({ phase: 'recovery' }))).toBe('Commencer le rattrapage')
     expect(nextActionLabel(state({ phase: 'recovery', recovery, verdict })))

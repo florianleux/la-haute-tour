@@ -9,6 +9,7 @@ const SPELL_LABELS: Record<SpellId, string> = {
   VITALITY: 'Vitalité',
   RESPITE: 'Répit',
   CHRONOMANCY: 'Chronomancie',
+  INDULGENCE: 'Indulgence',
 }
 
 export function spellLabel(spell: SpellId): string {

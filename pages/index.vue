@@ -123,6 +123,13 @@
         {{ screen.recovery.successes }} juste(s).
       </BaseHint>
 
+      <!-- Le joueur compte ses questions : sans cette ligne, un rattrapage plus
+           long qu'à l'ordinaire passe pour un bug. Voir specs/bonus.md#catalogue. -->
+      <BaseHint v-if="screen.recovery?.lengthened" tone="success">
+        Une Indulgence rallonge ce rattrapage : plus de questions tirées, donc
+        plus d'occasions de retrouver tes vies.
+      </BaseHint>
+
       <!-- Question en cours : aucune action à part répondre. -->
       <form v-if="screen.question" class="mt-6" @submit.prevent="run('submit', submit)">
         <!-- Le joueur sait avant de répondre que ce passage vaut un coffre.

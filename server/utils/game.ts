@@ -15,6 +15,7 @@ import {
 import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
+import { isWaitBound } from '../../shared/utils/spells'
 import { rulesForFloor, rulesWithEffects } from './rules'
 import {
   acceptedAnswers,
@@ -84,6 +85,12 @@ export interface RecoveryProgress {
   successes: number
   /** Whether finishing on this tally gives the lives back. */
   resumes: boolean
+  /**
+   * Le rattrapage a tiré plus de questions que l'étage n'en donne d'ordinaire —
+   * une Indulgence est passée par là. Dit au joueur, sinon il compte ses
+   * questions et croit à un bug. Voir specs/bonus.md#catalogue.
+   */
+  lengthened: boolean
 }
 
 export interface GameState {
@@ -168,14 +175,20 @@ function phaseOfSnapshot(snapshot: PlayerSnapshot, hasLiveReservation: boolean, 
  * les effets ancrés sur la tentative qu'il est en train de jouer.
  *
  * Les effets viennent de l'instantané, chargés dans le même lot que sa
- * réservation : un timer modulé ne coûte donc aucune lecture de plus. Seuls les
- * actifs comptent — ce qui attend la prochaine tentative ne module pas celle-ci.
+ * réservation : une règle modulée ne coûte donc aucune lecture de plus.
+ *
+ * Deux familles comptent, et deux seulement : ce qui est ancré sur la tentative
+ * en cours — Chronomancie, sur chaque question — et ce qui est lié à l'attente
+ * où le joueur se tient, qui trouve son déclencheur maintenant. Ce qui attend la
+ * prochaine tentative ne module pas celle-ci.
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
 function playedRules(snapshot: PlayerSnapshot, floor = snapshot.user.currentFloor): FloorRules {
   return rulesWithEffects(
     rulesForFloor(floor),
-    snapshot.effects.filter(effect => effect.state === 'active'),
+    // Les sorts liés à l'attente sont déjà bornés à celle du joueur : ce module
+    // ne sert que ceux-là. Voir server/utils/effects.ts.
+    snapshot.effects.filter(effect => effect.state === 'active' || isWaitBound(effect.spell)),
   )
 }
 
@@ -259,12 +272,17 @@ async function recoveryProgress(db: Database, user: User): Promise<RecoveryProgr
 
   const played = drawn.filter(row => row.correct !== null)
   const successes = played.filter(row => row.correct).length
+  const rules = rulesForFloor(user.currentFloor)
 
   return {
     total: drawn.length,
     played: played.length,
     successes,
-    resumes: resumesRecovery(successes, rulesForFloor(user.currentFloor)),
+    resumes: resumesRecovery(successes, rules),
+    // Comparé à ce que l'étage donne d'ordinaire : le tirage s'arrête à la
+    // taille du pool, donc un rattrapage rallongé peut compter moins de
+    // questions qu'un autre — c'est l'écart à la règle qui le dit, pas un seuil.
+    lengthened: drawn.length > rules.recoveryQuestions,
   }
 }
 
@@ -948,7 +966,10 @@ async function advanceRecovery(
       .orderBy(sql`RANDOM()`)
       .limit(rules.recoveryQuestions)
 
-    if (!canDrawRecovery(drawn.length, rules)) {
+    // Le seuil se lit dans les règles de l'étage, jamais dans les règles
+    // modulées : une Indulgence double le tirage, elle ne relève pas la barre
+    // d'entrée — sinon elle empêcherait le rattrapage qu'elle rallonge.
+    if (!canDrawRecovery(drawn.length, rulesForFloor(user.currentFloor))) {
       // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
       await resumeIfPoolTooSmall(db, user, now)
       return buildState(db, user.id, now)

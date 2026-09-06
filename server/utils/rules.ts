@@ -67,6 +67,16 @@ export interface FloorRules {
    * Voir specs/bonus.md#cumul.
    */
   chronomancyFactor: number
+  /**
+   * Ce par quoi une Indulgence multiplie les questions tirées au rattrapage.
+   * Borné de fait par la taille du Pool Échecs : on ne tire jamais plus de
+   * questions distinctes qu'il n'en contient.
+   *
+   * Ne touche pas au seuil qui autorise le rattrapage — `poolSizeForRecovery`
+   * reste ce qu'il est, sinon le sort empêcherait le rattrapage qu'il est censé
+   * rallonger. Voir specs/bonus.md#catalogue.
+   */
+  indulgenceFactor: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -88,6 +98,7 @@ const DEFAULT_RULES: FloorRules = {
   vitalityLives: 1,
   respiteFactor: 2,
   chronomancyFactor: 2,
+  indulgenceFactor: 2,
 }
 
 /**
@@ -114,6 +125,10 @@ export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): Flo
   const vitality = netOf(effects, 'VITALITY')
   const respite = netOf(effects, 'RESPITE')
   const chronomancy = netOf(effects, 'CHRONOMANCY')
+  // Indulgence n'est pas symétrique : sa face noire exige un perfect, elle ne
+  // raccourcit pas le tirage. Seules les blanches comptent ici ; la noire arrive
+  // avec la magie noire. Voir specs/bonus.md#cumul.
+  const indulgence = boonsOf(effects, 'INDULGENCE')
 
   return {
     ...rules,
@@ -127,6 +142,9 @@ export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): Flo
     // sur une question mais sur celles qu'ouvre la tentative où elle s'ancre.
     ascentTimerMs: rules.ascentTimerMs * rules.chronomancyFactor ** chronomancy,
     recoveryTimerMs: rules.recoveryTimerMs * rules.chronomancyFactor ** chronomancy,
+    // Arrondi à l'entier : on tire des questions, pas des fractions. Le tirage
+    // s'arrête de toute façon à ce que le pool contient.
+    recoveryQuestions: Math.round(rules.recoveryQuestions * rules.indulgenceFactor ** indulgence),
   }
 }
 
@@ -140,4 +158,14 @@ function netOf(effects: SpellEffect[], spell: SpellId): number {
   return effects
     .filter(effect => effect.spell === spell)
     .reduce((net, { face }) => net + (face === 'boon' ? 1 : -1), 0)
+}
+
+/**
+ * Les seules faces blanches d'un sort. Pour ceux dont les deux faces ne font pas
+ * la même chose en sens inverse : compter une noire pour moins un leur ferait
+ * produire un effet que la spec ne leur donne pas.
+ * Voir specs/bonus.md#cumul.
+ */
+function boonsOf(effects: SpellEffect[], spell: SpellId): number {
+  return effects.filter(effect => effect.spell === spell && effect.face === 'boon').length
 }
