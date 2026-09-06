@@ -26,27 +26,33 @@
           <li
             v-for="entry in entries"
             :key="entry.spell"
-            class="flex items-center justify-between gap-4 px-4 py-3"
+            class="px-4 py-3"
           >
-            <span class="font-medium">
-              {{ spellLabel(entry.spell) }}
-              <!-- Les doublons se comptent plutôt qu'ils ne s'alignent : un
-                   exemplaire ne se distingue d'un autre par rien. -->
-              <span class="ml-1 text-sm font-normal text-slate-400">×{{ entry.count }}</span>
-            </span>
-            <!-- Un sort dont l'effet n'existe pas encore attend son tour dans
-                 l'inventaire : le lancer coûterait un exemplaire pour rien. -->
-            <BaseHint v-if="!isCastable(entry.spell)">
-              Bientôt lançable
-            </BaseHint>
-            <BaseButton
-              v-else
-              variant="ghost"
-              :loading="casting === entry.spell"
-              @click="castOnSelf(entry.spell)"
-            >
-              Lancer sur moi
-            </BaseButton>
+            <div class="flex items-center justify-between gap-4">
+              <span class="font-medium">
+                {{ spellLabel(entry.spell) }}
+                <!-- Les doublons se comptent plutôt qu'ils ne s'alignent : un
+                     exemplaire ne se distingue d'un autre par rien. -->
+                <span class="ml-1 text-sm font-normal text-slate-400">×{{ entry.count }}</span>
+              </span>
+              <!-- Un sort dont l'effet n'existe pas encore attend son tour dans
+                   l'inventaire : le lancer coûterait un exemplaire pour rien. -->
+              <BaseHint v-if="!isCastable(entry.spell)">
+                Bientôt lançable
+              </BaseHint>
+              <BaseButton
+                v-else
+                variant="ghost"
+                :loading="casting === entry.spell"
+                @click="castOnSelf(entry.spell)"
+              >
+                Lancer sur moi
+              </BaseButton>
+            </div>
+
+            <!-- Ce que le sort fait, avant de le dépenser : un exemplaire lancé
+                 ne revient pas. -->
+            <SpellEffects :spell="entry.spell" class="mt-0.5" />
           </li>
         </BaseList>
       </BaseSection>

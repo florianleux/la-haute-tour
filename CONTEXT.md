@@ -36,8 +36,23 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Ce que coûte un départ de page | [`server/utils/focus.ts`](server/utils/focus.ts) et la détection dans [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) |
 | Le deck vu par l'administration | [`server/utils/questions.ts`](server/utils/questions.ts) |
 | Le temps et les envois du jeu | [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) — décompte, envoi, passage à la suite |
+| Les mots montrés au joueur | [`utils/`](utils/), un fichier par terme — [`spells.ts`](utils/spells.ts) (noms et effets des sorts), [`teams.ts`](utils/teams.ts), [`phase.ts`](utils/phase.ts), [`nav.ts`](utils/nav.ts) |
 | Pourquoi ce choix ? | [`docs/adr/`](docs/adr/) |
 | Comment on écrit le code | [`CLAUDE.md`](CLAUDE.md) |
+
+## L'identifiant est figé, le libellé ne l'est pas
+
+Un terme du domaine a deux noms. L'**identifiant** — `RESPITE`, `CRIMSON`,
+`cooldown` — est celui du glossaire : le schéma le grave, le serveur le sert, il
+traverse la frontière réseau. Le **libellé** — « Répit », « Cramoisi », « En
+attente » — n'est qu'un mot d'écran : il vit dans `utils/`, côté client, et
+renommer ne coûte alors ni migration ni refactor.
+
+Les descriptions suivent le libellé, pas l'identifiant : ce que fait un sort se
+lit dans [`utils/spells.ts`](utils/spells.ts), jamais dans une réponse d'API.
+
+La prose des écrans, elle, reste dans les templates : ce sont des phrases
+attachées à un écran, pas des termes du catalogue.
 
 ## Séparation qui porte le reste
 
