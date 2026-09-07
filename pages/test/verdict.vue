@@ -6,10 +6,9 @@
     :contestable="contestable"
     :contesting="false"
     :left-the-page="leftThePage"
-    :chest-opening="false"
     :advancing="false"
     @dispute="() => {}"
-    @chest="() => {}"
+    @enter-chest="() => {}"
     @advance="() => {}"
   />
 </template>

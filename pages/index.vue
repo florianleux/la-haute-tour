@@ -30,7 +30,17 @@
     :skipping="isRunning('skipCooldown')"
     :advancing="isRunning('advance')"
     @skip-cooldown="run('skipCooldown', skipCooldown)"
-    @advance="run('advance', advance)"
+    @advance="goNext"
+  />
+
+  <TowerChestCard
+    v-else-if="viewingChest && state && screen && screen.chest"
+    :chest="screen.chest"
+    :action="screen.action"
+    :opening="isRunning('chest')"
+    :advancing="isRunning('advance')"
+    @open="openTheChest"
+    @advance="goNext"
   />
 
   <TowerResultCard
@@ -41,11 +51,10 @@
     :contestable="Boolean(screen.verdict && isContestable(screen.verdict.questionId))"
     :contesting="Boolean(screen.verdict && contestingId === screen.verdict.questionId)"
     :left-the-page="leftThePage"
-    :chest-opening="isRunning('chest')"
     :advancing="isRunning('advance')"
     @dispute="screen.verdict && dispute(screen.verdict.questionId)"
-    @chest="run('chest', openChest)"
-    @advance="run('advance', advance)"
+    @enter-chest="viewingChest = true"
+    @advance="goNext"
   />
 
   <BaseCard v-else>
@@ -166,6 +175,10 @@ const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 type PlayAction = 'submit' | 'advance' | 'skipCooldown' | 'chest'
 const running = ref<PlayAction | null>(null)
 
+// L'écran de coffre (TowerChestCard) est un aller purement client, ouvert
+// depuis le verdict quand un coffre attend — jamais depuis le serveur.
+const viewingChest = ref(false)
+
 function isRunning(action: PlayAction): boolean {
   return pending.value && running.value === action
 }
@@ -179,7 +192,7 @@ async function run(action: PlayAction, move: () => Promise<void>): Promise<void>
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, Entrée répond.
 const canAdvance = computed(() => Boolean(screen.value?.action) && !screen.value?.question && !pending.value)
-useAdvanceOnEnter(canAdvance, () => run('advance', advance))
+useAdvanceOnEnter(canAdvance, goNext)
 
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
 // désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
@@ -212,4 +225,23 @@ const waiting = computed(() =>
   || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
 )
 
+// Le seul chemin qui entre ici avec viewingChest à vrai est TowerChestCard une
+// fois le coffre ouvert — refermer l'écran est donc toujours correct, quelle
+// que soit la destination (nouvelle question, palier, fin de partie). Couvre
+// aussi le raccourci Entrée (useAdvanceOnEnter), qui n'a qu'un seul point
+// d'entrée pour « avancer ».
+async function goNext(): Promise<void> {
+  await run('advance', advance)
+  viewingChest.value = false
+}
+
+async function openTheChest(): Promise<void> {
+  await run('chest', openChest)
+  // Un Mimic bascule directement en attente — TowerWaitCard le montre, pas cet
+  // écran. Rien à révéler ici dans ce cas : on referme derrière soi.
+  // Voir specs/bonus.md#coffre-et-mimic.
+  if (waiting.value) {
+    viewingChest.value = false
+  }
+}
 </script>

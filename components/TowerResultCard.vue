@@ -63,21 +63,14 @@
             Contester cette question
           </button>
 
-          <!-- Voir specs/bonus.md#coffre-et-mimic. -->
-          <template v-if="screen.chest?.opened">
-            <p
-              v-if="screen.chest.mimic"
-              class="text-[1.3cqw] font-semibold text-rose-700"
-            >
-              Un mimic. Aucun objet, et toutes tes vies d'un coup.
-            </p>
-            <p
-              v-else-if="screen.chest.spell"
-              class="text-[1.3cqw] font-semibold text-emerald-700"
-            >
-              Le coffre contenait <strong>{{ spellLabel(screen.chest.spell) }}</strong>. Il rejoint ton inventaire.
-            </p>
-          </template>
+          <!-- Le coffre s'ouvre sur un écran à part (TowerChestCard) : ici
+               seulement l'annonce qu'il y en a un. Voir specs/bonus.md#coffre-et-mimic. -->
+          <p
+            v-if="screen.chest && !screen.chest.opened"
+            class="text-[1.3cqw] font-semibold text-emerald-700"
+          >
+            Tu as gagné un coffre.
+          </p>
 
           <!-- Voir specs/ecrans.md#jeu. -->
           <p
@@ -127,8 +120,9 @@
         </span>
       </div>
 
-      <!-- Le bouton du bas : ouvrir le coffre tant qu'il l'est pas, sinon l'action
-           suivante — jamais les deux en même temps. Voir utils/phase.ts. -->
+      <!-- Le bouton du bas : « Suivant » mène à l'écran de coffre tant qu'il est
+           fermé, sinon c'est l'action suivante — jamais les deux en même temps.
+           Voir utils/phase.ts. -->
       <TowerCardButton
         v-if="bottomAction"
         :label="bottomAction.label"
@@ -155,23 +149,22 @@ const props = defineProps<{
   contestable: boolean
   contesting: boolean
   leftThePage: boolean
-  chestOpening: boolean
   advancing: boolean
 }>()
 
-const emit = defineEmits<{ dispute: [], chest: [], advance: [] }>()
+const emit = defineEmits<{ dispute: [], 'enter-chest': [], advance: [] }>()
 
 // Même traitement que TowerQuestionCard : espace insécable avant la
 // ponctuation double du français, sinon un point d'interrogation esseulé se
 // retrouve seul sur sa ligne.
 const statement = computed(() => props.screen.verdict?.statement.replace(/ ([?!:;])/g, ' $1') ?? '')
 
-// Le coffre fermé retient le joueur : l'ouvrir est le seul bouton du bas tant
-// qu'il ne l'est pas, l'action suivante ne paraît qu'une fois qu'il l'est.
-// Voir specs/bonus.md#coffre-et-mimic.
+// Le coffre fermé retient le joueur, mais ce n'est plus ce bouton qui
+// l'ouvre : « Suivant » mène à un écran à part (TowerChestCard), l'ouverture
+// elle-même y a son propre bouton « OUVRIR ». Voir specs/bonus.md#coffre-et-mimic.
 const bottomAction = computed(() => {
   if (props.screen.chest && !props.screen.chest.opened) {
-    return { label: 'Ouvrir le coffre', loading: props.chestOpening, run: () => emit('chest') }
+    return { label: 'Suivant', loading: false, run: () => emit('enter-chest') }
   }
 
   if (props.screen.action) {

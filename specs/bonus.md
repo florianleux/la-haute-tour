@@ -266,15 +266,16 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
 
 ## Coffre et Mimic
 
-- Question loot **répondue juste** → un **coffre** apparaît sur l'écran verdict. Le
-  joueur doit l'**ouvrir explicitement**, par un clic distinct de « suivant », avant
-  de passer à la question suivante.
+- Question loot **répondue juste** → un **coffre** est annoncé sur l'écran verdict.
+  Le joueur doit l'**ouvrir explicitement**, sur un écran à part atteint par
+  « suivant », avant de passer à la question suivante.
 - Question loot **ratée** → échec ordinaire, pas de coffre.
 - **Coffre normal (95 %)** → un Sort tiré au hasard dans le catalogue rejoint
   l'inventaire. Doublons illimités.
 - **Mimic (5 %)** → aucun objet : **toutes les vies de la tentative en cours sont
   retirées d'un coup**, traité comme une perte de dernière vie ordinaire.
-- Le résultat s'affiche en bas de l'écran verdict.
+- Le résultat s'affiche sur l'écran de coffre (ou, pour un Mimic, sur l'attente
+  qu'il ouvre aussitôt).
 
 **Le tirage a lieu au clic, côté serveur, et son résultat est persisté sur le
 verdict.** Le verdict porte donc trois états : *pas de coffre*, *coffre fermé*,
@@ -313,13 +314,14 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
   elle est désactivée, comme toute la barre l'est tant qu'un chrono tourne.
 - **Page Sorts** : inventaire, lancer, journaux. Accessible en attente uniquement.
   L'inventaire n'est donc pas consultable hors attente — le joueur voit passer son
-  objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
+  objet sur l'écran de coffre, puis le retrouve à sa prochaine mort.
   Chaque sort porte un bouton **par catégorie de cible** — jamais un nom, et jamais
   une liste de joueurs. La catégorie Allié n'apparaît qu'à qui a une équipe : sans
   elle, elle ne désignerait aucun pool. Voir [`equipes.md`](./equipes.md#le-joueur-sans-équipe).
 - **Écran d'attente** : récapitulatif des effets qui attendent la prochaine tentative,
   en plus du Pool Échecs et des contestations qu'il porte déjà.
-- **Écran verdict d'ascension** : le coffre, et son résultat une fois ouvert.
+- **Écran verdict d'ascension** : l'annonce du coffre. **Écran de coffre** : son
+  résultat une fois ouvert.
 - **Ascension** : une icône par effet actif, sur les questions concernées.
 
 ## Talismans — hors périmètre

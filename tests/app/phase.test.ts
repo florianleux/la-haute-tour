@@ -60,7 +60,7 @@ describe('écran de jeu', () => {
       question: null,
       verdict,
       phase: 'ascent',
-      action: 'Question suivante',
+      action: 'Suivant',
     })
   })
 
@@ -99,7 +99,7 @@ describe('écran de jeu', () => {
 
 describe('action de la page de jeu', () => {
   it('enchaîne sur la question suivante après un verdict d ascension', () => {
-    expect(nextActionLabel(state({ phase: 'ascent', verdict }))).toBe('Question suivante')
+    expect(nextActionLabel(state({ phase: 'ascent', verdict }))).toBe('Suivant')
   })
 
   it('propose de franchir le palier, verdict de la dernière question compris', () => {
@@ -113,7 +113,7 @@ describe('action de la page de jeu', () => {
 
     expect(nextActionLabel(state({ phase: 'recovery' }))).toBe('Commencer le rattrapage')
     expect(nextActionLabel(state({ phase: 'recovery', recovery, verdict })))
-      .toBe('Question suivante')
+      .toBe('Suivant')
     expect(nextActionLabel(state({ phase: 'recovery', recovery: { ...recovery, played: 3 } })))
       .toBe('Terminer le rattrapage')
   })
@@ -136,7 +136,7 @@ describe('coffre sur l écran de verdict', () => {
 
     expect(gameScreen(state({ verdict, chest: opened }))).toMatchObject({
       chest: opened,
-      action: 'Question suivante',
+      action: 'Suivant',
     })
   })
 
