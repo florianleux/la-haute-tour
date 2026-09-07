@@ -8,6 +8,13 @@ const PAGES_DIR = fileURLToPath(new URL('../../pages', import.meta.url))
 /** specs/ecrans.md : les seuls écrans atteignables sans compte. */
 const OPEN_PAGES = ['login.vue', 'refus.vue']
 
+/**
+ * Un banc de design, réservé à l'admin comme le reste sous `admin:true`, mais
+ * hors de `/admin` : ce n'est pas une ressource d'administration, juste un
+ * écran de réglage visuel. Voir components/TowerQuestionCard.vue.
+ */
+const OTHER_ADMIN_PAGES = ['test/play.vue']
+
 function pageFiles(): string[] {
   return readdirSync(PAGES_DIR, { recursive: true })
     .map(String)
@@ -31,6 +38,6 @@ describe('pages fermées par défaut', () => {
     const adminPages = pageFiles().filter(file => file.startsWith('admin')).sort()
 
     expect(adminPages.length).toBeGreaterThan(0)
-    expect(pagesDeclaring('admin')).toEqual(adminPages)
+    expect(pagesDeclaring('admin')).toEqual([...adminPages, ...OTHER_ADMIN_PAGES].sort())
   })
 })

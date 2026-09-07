@@ -8,6 +8,18 @@
     </BaseButton>
   </BaseCard>
 
+  <TowerQuestionCard
+    v-else-if="state?.phase === 'ascent' && screen?.question"
+    :state="state"
+    :question="screen.question"
+    :model-value="typed"
+    :seconds-left="secondsLeft"
+    :submitting="isRunning('submit')"
+    :effects="screen.activeEffects"
+    @update:model-value="typed = $event"
+    @submit="run('submit', submit)"
+  />
+
   <BaseCard v-else-if="waiting" wide :title="state?.phase === 'cooldown' ? 'Attente' : 'Rattrapage'">
     <template #lead>
       <template v-if="state?.phase === 'cooldown'">
