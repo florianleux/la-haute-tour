@@ -62,6 +62,9 @@ export interface ServedQuestion {
 export interface Verdict {
   /** La question jugée — c'est elle que le joueur conteste, s'il conteste. */
   questionId: string
+  /** Rappelée sur l'écran de résultat : le joueur ne se souvient pas forcément
+   *  de l'énoncé le temps de lire son verdict. */
+  statement: string
   correct: boolean
   /** What the player is shown on failure; never used for matching. */
   answerLabel: string
@@ -577,6 +580,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     if (reservation.resolvedAt) {
       base.verdict = {
         questionId: reservation.questionId,
+        statement: question.statement,
         correct: reservation.correct ?? false,
         answerLabel: question.answerLabel,
         submittedAnswer: reservation.submittedAnswer ?? '',

@@ -64,6 +64,7 @@ const state = ref<GameState>({
     ? null
     : {
         questionId: 'test-verdict',
+        statement: 'Quel est le point culminant d\'Afrique ?',
         correct: false,
         answerLabel: 'Le Kilimandjaro',
         submittedAnswer: 'Le Mont Blanc',

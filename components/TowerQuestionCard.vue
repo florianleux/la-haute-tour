@@ -11,73 +11,10 @@
       class="relative mx-auto w-full bg-[url(/images/game-card.webp)] bg-contain bg-center bg-no-repeat"
       style="aspect-ratio: 1980 / 775; container-type: inline-size;"
     >
-      <!-- Étage / Palier / Série : centrés dans les rubans verts, à gauche du parchemin. -->
-      <p
-        class="absolute left-[3%] top-[8%] w-[14%] text-right text-[1.1cqw] font-bold uppercase tracking-widest text-emerald-950/70">
-        Étage
-      </p>
-      <p class="absolute left-[3%] top-[7%] w-[14%] text-right text-[5.4cqw] font-bold text-emerald-950">
-        {{ state.floor }}
-      </p>
-
-      <p
-        class="absolute left-[3%] top-[38%] w-[14%] text-right text-[1cqw] font-bold uppercase tracking-widest text-emerald-950/70">
-        Palier
-      </p>
-
-      <span class="absolute left-[3%] top-[39%] w-[14%] text-right text-[3.3cqw] font-bold text-emerald-950">{{
-        state.floorSeen }}</span>
-      <span class="absolute left-[3%] top-[49%] w-[14%] text-right text-[1.1cqw] text-emerald-950">/{{ state.floorTotal
-      }}</span>
-
-      <p
-        class="absolute left-[3%] top-[68.5%] w-[14%] text-right text-[1cqw] font-bold uppercase tracking-widest text-emerald-950/70">
-        Série
-      </p>
-      <p class="absolute left-[3%] top-[70.5%] w-[14%] text-right text-[2.7cqw] font-bold text-emerald-950">
-        {{ state.attemptSeen }}
-      </p>
-
-      <!-- Vies / Bonus / Malus : centrés dans les rubans roses, à droite du parchemin. -->
-      <p
-        class="absolute left-[83%] top-[8%] w-[14%] text-left text-[1.1cqw] font-bold uppercase tracking-widest text-rose-950/70">
-        Vies
-      </p>
-      <p class="absolute left-[82.6%] top-[12%] w-[14%] text-left text-[4cqw] leading-none">
-        <span
-          v-for="n in 3"
-          :key="n"
-          :class="n <= state.lives ? 'text-rose-950' : 'text-rose-950/30'"
-        >♥</span>
-      </p>
-
-      <p
-        class="absolute left-[83%] top-[38%] w-[14%] text-left text-[1cqw] font-bold uppercase tracking-widest text-rose-950/70">
-        Bonus
-      </p>
-      <div class="absolute left-[82.6%] top-[43%] flex w-[14%] justify-start gap-1.5">
-        <template v-if="boons.length">
-          <TowerEffectPip
-            v-for="(effect, i) in boons"
-            :key="i"
-            :effect="effect"
-          />
-        </template>
-      </div>
-
-      <p
-        class="absolute left-[83%] top-[68.5%] w-[14%] text-left text-[1cqw] font-bold uppercase tracking-widest text-rose-950/70">
-        Malus
-      </p>
-      <div class="absolute left-[82.6%] top-[72.5%] flex w-[14%] justify-start gap-1.5">
-        <template v-if="curses.length">
-          <TowerEffectPip
-            v-for="(effect, i) in curses"
-            :key="i"
-            :effect="effect"
-          />
-        </template>
-      </div>
+      <TowerStatsRibbons
+        :state="state"
+        :effects="effects"
+      />
 
       <p
         v-if="question.lootQuestion"
@@ -86,7 +23,8 @@
         Question loot — réponds juste et tu ouvres un coffre.
       </p>
 
-      <p class="absolute left-1/2 top-[40%] flex h-[45%] w-[52%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-y-auto text-center text-[2.2cqw] leading-relaxed text-amber-800">
+      <p
+        class="absolute left-1/2 top-[40%] flex h-[45%] w-[52%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-y-auto text-center text-[2.5cqw] leading-relaxed text-amber-800">
         {{ statement }}
       </p>
 
@@ -97,7 +35,7 @@
         placeholder="Votre réponse..."
         type="text"
         autocomplete="off"
-        class="absolute left-1/2 top-[72%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded border border-[#d2860070] text-amber-800 text-center bg-white px-[1.5cqw] py-[1.2cqw] text-[1.8cqw]  placeholder:italic placeholder:text-[#ecd6b3] focus:border-amber-0 focus:outline-none"
+        class="absolute left-1/2 top-[75%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded border border-[#d2860070] text-amber-800 text-center bg-white px-[1.5cqw] py-[1.2cqw] text-[1.8cqw]  placeholder:italic placeholder:text-[#ecd6b3] focus:border-amber-0 focus:outline-none"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @keydown.enter.prevent="$emit('submit')"
       >
@@ -114,23 +52,11 @@
         </span>
       </div>
 
-      <!-- Le bouton Valider, à cheval sur le bord bas du cadre. Le positionnement
-           (translate de calage) vit sur ce conteneur ; le hover (scale) vit sur le
-           bouton lui-même, pour ne pas composer les deux transforms — sinon le
-           texte dérive légèrement de son repère au survol. -->
-      <div
-        class="absolute bottom-0 left-1/2 z-20 w-[32%] -translate-x-1/2 translate-y-1/2"
-        style="aspect-ratio: 634 / 175;"
-      >
-        <button
-          type="button"
-          :disabled="submitting"
-          class="flex h-full w-full appearance-none items-center justify-center border-0 bg-[url(/images/submit-button.webp)] bg-contain bg-center bg-no-repeat pb-2 text-[3.3cqw] font-semibold uppercase leading-none tracking-wider text-amber-600 outline-none transition-[transform,filter] ease-out will-change-transform hover:scale-110 hover:brightness-110 active:scale-105 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:brightness-100 disabled:opacity-60 enabled:cursor-pointer"
-          @click="$emit('submit')"
-        >
-          Valider
-        </button>
-      </div>
+      <TowerCardButton
+        label="Valider"
+        :disabled="submitting"
+        @click="$emit('submit')"
+      />
     </div>
   </div>
 </template>
@@ -165,9 +91,6 @@ const field = useTemplateRef<HTMLInputElement>('field')
 onMounted(() => {
   field.value?.focus()
 })
-
-const boons = computed(() => props.effects.filter(effect => effect.face === 'boon'))
-const curses = computed(() => props.effects.filter(effect => effect.face === 'curse'))
 
 // Espace insécable avant la ponctuation double du français : sans ça, un
 // point d'interrogation esseulé se retrouve seul sur sa ligne dès que le

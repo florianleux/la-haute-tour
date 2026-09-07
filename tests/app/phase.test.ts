@@ -34,7 +34,7 @@ describe('entrée dans la partie', () => {
   })
 })
 
-const verdict = { questionId: 'q1', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true }
+const verdict = { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true }
 
 const question = {
   id: 'q1',

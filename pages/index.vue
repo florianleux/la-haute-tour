@@ -33,6 +33,21 @@
     @advance="run('advance', advance)"
   />
 
+  <TowerResultCard
+    v-else-if="state && screen && (screen.verdict || screen.phase === 'floorEnd' || screen.phase === 'gameOver')"
+    :state="state"
+    :screen="screen"
+    :effects="screen.activeEffects"
+    :contestable="Boolean(screen.verdict && isContestable(screen.verdict.questionId))"
+    :contesting="Boolean(screen.verdict && contestingId === screen.verdict.questionId)"
+    :left-the-page="leftThePage"
+    :chest-opening="isRunning('chest')"
+    :advancing="isRunning('advance')"
+    @dispute="screen.verdict && dispute(screen.verdict.questionId)"
+    @chest="run('chest', openChest)"
+    @advance="run('advance', advance)"
+  />
+
   <BaseCard v-else>
     <BaseNotice v-if="readFailed">
       Impossible de lire ta partie. Recharge la page.
@@ -95,95 +110,8 @@
         </BaseButton>
       </form>
 
-      <!-- Le verdict se lit dans toutes les phases : la question qui a fini
-           l'étage ou coûté la dernière vie est celle dont la réponse reste à
-           découvrir. Le palier et la fin s'affichent par-dessus, pas à sa place. -->
-      <template v-if="screen.verdict">
-        <BaseHeadline class="mt-6" :tone="screen.verdict.correct ? 'success' : 'danger'">
-          {{ screen.verdict.correct ? 'Juste !' : 'Faux.' }}
-        </BaseHeadline>
-        <BaseHint class="mt-2">
-          Réponse : <AnswerLabel :label="screen.verdict.answerLabel" />
-        </BaseHint>
-        <BaseHint class="mt-1">
-          Ta réponse : {{ screen.verdict.submittedAnswer || '(rien)' }}
-        </BaseHint>
-        <BaseHint v-if="screen.verdict.lifeLost" class="mt-1" tone="danger">
-          Tu perds une vie.
-        </BaseHint>
-
-        <!-- Un joueur honnête doit pouvoir comprendre, plutôt que de croire à un
-             bug. Voir specs/anti-triche.md#perte-de-focus. -->
-        <BaseHint v-if="leftThePage" class="mt-3" tone="warning">
-          Tu as quitté la page : ta réponse a été envoyée en l'état.
-        </BaseHint>
-
-        <!-- Le désaccord se dit ici, au moment où il naît. L'écran de verdict
-             n'est pas chronométré : contester n'ouvre aucune brèche. -->
-        <BaseButton
-          v-if="isContestable(screen.verdict.questionId)"
-          variant="ghost"
-          class="mt-3"
-          :loading="contestingId === screen.verdict.questionId"
-          @click="dispute(screen.verdict.questionId)"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4" aria-hidden="true">
-            <path d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1Zm10.5-4.5a1 1 0 0 0-1.4 0l-.6.6a1 1 0 0 0 0 1.4 5 5 0 0 1 0 7l.6.6a1 1 0 0 0 1.4 0l.6-.6a1 1 0 0 0 0-1.4 3 3 0 0 1 0-4.2l-.6-.6a1 1 0 0 0 0-1.4Z" />
-          </svg>
-          Contester cette question
-        </BaseButton>
-
-        <!-- Le coffre, en bas du verdict. L'ouvrir est un clic distinct de
-             « suivant » : tant qu'il est fermé, rien d'autre n'avance.
-             Voir specs/bonus.md#coffre-et-mimic. -->
-        <template v-if="screen.chest">
-          <BaseButton
-            v-if="!screen.chest.opened"
-            block
-            class="mt-6"
-            :loading="isRunning('chest')"
-            @click="run('chest', openChest)"
-          >
-            Ouvrir le coffre
-          </BaseButton>
-          <ChestResult v-else :chest="screen.chest" class="mt-6" />
-        </template>
-
-        <!-- Le résultat du rattrapage s'annonce à la fin, pas question par question. -->
-        <BaseHint
-          v-if="screen.recovery?.result"
-          class="mt-3"
-          :tone="screen.recovery.result === 'resumed' ? 'success' : 'warning'"
-        >
-          {{ screen.recovery.result === 'resumed'
-            ? 'Rattrapage réussi : tes vies sont restaurées.'
-            : 'Aucune bonne réponse : une nouvelle attente commence.' }}
-        </BaseHint>
-      </template>
-
-      <!-- Palier : l'étage est bouclé. Le franchir est ce qui incrémente
-           l'étage, donc un rafraîchissement rejoue cet écran au lieu de le
-           sauter. Voir specs/mecanique.md#fin-détage. -->
-      <template v-if="screen.phase === 'floorEnd'">
-        <BaseHeadline class="mt-6">
-          Étage {{ state.floor }} terminé.
-        </BaseHeadline>
-        <BaseHint class="mt-2">
-          Tu as vu toutes ses questions. Ce que tu y as raté reste à cet étage :
-          le suivant repart d'une fiche vierge.
-        </BaseHint>
-      </template>
-
-      <!-- Fin de partie : phase terminale, sans classement. -->
-      <template v-else-if="screen.phase === 'gameOver'">
-        <BaseHeadline class="mt-6" tone="success">
-          Tu as fini La Haute Tour.
-        </BaseHeadline>
-        <BaseHint class="mt-2">
-          Tous les étages sont derrière toi. Bravo.
-        </BaseHint>
-      </template>
-
+      <!-- Verdict, palier et fin de partie vivent dans TowerResultCard, plus haut
+           dans cette page : hors de ce fallback, jamais atteints ici. -->
       <BaseButton
         v-if="screen.action"
         block
