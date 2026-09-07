@@ -31,6 +31,7 @@ function gameState(overrides: Partial<GameState> = {}): GameState {
     phase: 'ascent',
     floor: 1,
     lives: 3,
+    maxLives: 3,
     started: true,
     question: null,
     verdict: null,

@@ -1,55 +1,109 @@
 <template>
-  <div class="relative mx-auto flex w-full max-w-3xl items-center justify-center py-16">
-    <div class="absolute right-[calc(50%+17rem)] top-20 z-0 flex flex-col gap-9">
-      <BaseRibbon
-        tone="forest"
-        side="left"
-      >
-        <p class="text-[0.5em] uppercase font-bold tracking-widest opacity-80">Étage</p>
-        <p class=" text-xl font-bold">{{ state.floor }}</p>
-      </BaseRibbon>
-      <BaseRibbon
-        side="left"
-        tone="forest"
-      >
-        <p class="text-[0.5em] uppercase font-bold tracking-widest opacity-80">Palier</p>
-        <p> <span class=" text-xl font-bold">{{ state.floorSeen }}</span>
-          <span class="text-[0.6em]">/ {{ state.floorTotal }}</span>
-        </p>
-      </BaseRibbon>
-      <BaseRibbon
-        tone="forest"
-        side="left"
-      >
-        <p class="text-[0.5em] uppercase font-bold tracking-widest opacity-80">Série en cours</p>
-        <p class=" text-xl font-bold">{{ state.attemptSeen }}</p>
-      </BaseRibbon>
-    </div>
+  <div class="fixed inset-0 z-0 bg-white bg-cover bg-center" />
+  <!-- <div class="fixed inset-0 z-0 bg-[url(/images/play-bg.webp)] bg-cover bg-center" /> -->
 
-    <!-- La carte parchemin : bordure or épaisse, coins gravés, tout le reste en
-         Tailwind — seule la forme des bannières (BaseRibbon) sort des utilitaires,
-         un clip-path n'ayant pas d'équivalent utility. Voir CLAUDE.md#styling. -->
+  <div class="relative -mt-40 z-10 mx-auto w-full max-w-4xl py-16">
     <div
-      class="relative z-10 w-full max-w-xl rounded-sm border-2 border-amber-300 bg-white px-11 pb-10 pt-10 text-stone-800 shadow-[0_0_0_10px_var(--color-amber-400),0_0_0_13px_var(--color-amber-200),0_22px_20px_rgba(0,0,0,0.35)]"
+      class="relative mx-auto w-full bg-[url(/images/game-card.webp)] bg-contain bg-center bg-no-repeat"
+      style="aspect-ratio: 1980 / 775;"
     >
-      <div
-        class="absolute left-1/2 -top-1 z-20 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-8 border-amber-400 bg-white "
+      <!-- Étage / Palier / Série : centrés dans les rubans verts, à gauche du parchemin. -->
+      <p
+        class="absolute left-[3%] top-[8%] w-[14%] text-right text-[0.6em] font-bold uppercase tracking-widest text-emerald-950/70">
+        Étage
+      </p>
+      <p class="absolute left-[3%] top-[10%] w-[14%] text-right text-5xl font-bold text-emerald-950">
+        {{ state.floor }}
+      </p>
+
+      <p
+        class="absolute left-[3%] top-[38%] w-[14%] text-right text-[0.55em] font-bold uppercase tracking-widest text-emerald-950/70">
+        Palier
+      </p>
+
+      <span class="absolute left-[3%] text-right top-[40%] w-[14%] text-emerald-950 text-3xl font-bold">{{
+        state.floorSeen }}</span>
+      <span class="absolute left-[3%] top-[49%] w-[14%] text-right text-emerald-950 text-[0.6em]"> /{{ state.floorTotal
+      }}</span>
+
+
+      <p
+        class="absolute left-[3%] top-[68.5%] w-[14%] text-right text-[0.55em] font-bold uppercase tracking-widest text-emerald-950/70">
+        Série
+      </p>
+      <p class="absolute left-[3%] top-[70.5%] w-[14%] text-right text-2xl font-bold text-emerald-950">
+        {{ state.attemptSeen }}
+      </p>
+
+      <!-- Vies / Bonus / Malus : centrés dans les rubans roses, à droite du parchemin. -->
+      <p
+        class="absolute left-[83%] top-[8%] w-[14%] text-left text-[0.6em] font-bold uppercase tracking-widest text-rose-950/70">
+        Vies
+      </p>
+      <p class="absolute left-[82.6%] top-[12%] w-[14%] text-left text-4xl leading-none">
+        <span
+          v-for="n in 3"
+          :key="n"
+          :class="n <= state.lives ? 'text-rose-950' : 'text-rose-950/30'"
+        >♥</span>
+      </p>
+
+      <p
+        class="absolute left-[83%] top-[38%] w-[14%] text-left text-[0.55em] font-bold uppercase tracking-widest text-rose-950/70"
       >
-        <span class=" text-4xl font-bold tabular-nums text-amber-600">{{ secondsLeft }}</span>
+        Bonus
+      </p>
+      <div
+        class="absolute left-[82.6%] top-[43%] flex w-[14%] justify-start gap-1.5"
+      >
+        <template v-if="boons.length">
+          <TowerEffectPip
+            v-for="(effect, i) in boons"
+            :key="i"
+            :effect="effect"
+          />
+        </template>
+        <span
+          v-else
+          class="text-rose-950/50"
+        >—</span>
       </div>
 
       <p
-        v-if="question.lootQuestion"
-        class="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-700"
+        class="absolute left-[83%] top-[68.5%] w-[14%] text-left text-[0.55em] font-bold uppercase tracking-widest text-rose-950/70"
       >
-        Question loot — réponds juste et tu ouvres un coffre.
+        Malus
       </p>
-
-      <div class="flex min-h-32 items-center rounded bg-white/50 p-3">
-        <p class=" text-xl leading-relaxed text-amber-800">{{ question.statement }}</p>
+      <div
+        class="absolute left-[82.6%] top-[72.5%] flex w-[14%] justify-start gap-1.5"
+      >
+        <template v-if="curses.length">
+          <TowerEffectPip
+            v-for="(effect, i) in curses"
+            :key="i"
+            :effect="effect"
+          />
+        </template>
+        <span
+          v-else
+          class="text-rose-950/50"
+        >—</span>
       </div>
 
-      <div class="mt-6">
+      <div
+        class="absolute left-[20%] top-[6%] flex h-[88%] w-[60%] flex-col justify-center gap-6 overflow-y-auto px-4 text-stone-800"
+      >
+        <p
+          v-if="question.lootQuestion"
+          class="text-center text-xs font-semibold uppercase tracking-wide text-emerald-700"
+        >
+          Question loot — réponds juste et tu ouvres un coffre.
+        </p>
+
+        <p class="text-center text-xl leading-relaxed text-amber-800">
+          {{ question.statement }}
+        </p>
+
         <input
           id="tower-answer"
           ref="field"
@@ -57,70 +111,47 @@
           placeholder="Votre réponse..."
           type="text"
           autocomplete="off"
-          class="w-full rounded border placeholder:italic placeholder:text-md placeholder:text-[#ecd6b3]  border-amber-300 bg-white px-4 py-3  text-lg text-stone-800 focus:border-amber-0 focus:outline-none"
+          class="w-full rounded border placeholder:italic placeholder:text-md placeholder:text-[#ecd6b3] border-amber-300 bg-white px-4 py-3 text-lg text-stone-800 focus:border-amber-0 focus:outline-none"
           @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
           @keydown.enter.prevent="$emit('submit')"
         >
       </div>
 
-      <div class="relative z-20 -mb-20 mt-8 flex justify-center">
-        <button
-          type="button"
-          :disabled="submitting"
-          class="rounded-full border-8 border-amber-400 bg-white px-10 py-2.5 text-xl font-semibold uppercase tracking-wider text-amber-600  transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-          @click="$emit('submit')"
+      <!-- Le médaillon du chrono, à cheval sur le bord haut du cadre. -->
+      <div
+        class="absolute left-1/2 top-[-10%] z-20 w-[25%] -translate-x-1/2 translate-y-[-45%] bg-[url(/images/game-timer.webp)] bg-contain bg-center bg-no-repeat"
+        style="aspect-ratio: 616 / 357;"
+      >
+        <span
+          class="absolute left-1/2 top-[68%] -translate-x-1/2 -translate-y-1/2 text-3xl font-bold tabular-nums text-amber-600 pb-2"
         >
-          Valider
-        </button>
+          {{ secondsLeft }}
+        </span>
       </div>
-    </div>
 
-    <div class="absolute left-[calc(50%+17rem)] top-20 z-0 flex flex-col gap-9">
-      <BaseRibbon side="right">
-        <p class="text-[0.5em] uppercase font-bold tracking-widest opacity-80">Vies</p>
-        <p class="text-2xl leading-none">
-          <span
-            v-for="n in state.lives"
-            :key="n"
-          >♥</span>
-        </p>
-      </BaseRibbon>
-      <BaseRibbon
-        v-if="boons.length"
-        side="right"
+      <!-- Le bouton Valider, à cheval sur le bord bas du cadre. -->
+      <button
+        type="button"
+        :disabled="submitting"
+        class="absolute bottom-0 left-1/2 z-20 flex w-[32%] pb-2 -translate-x-1/2 translate-y-1/2 items-center justify-center bg-[url(/images/submit-button.webp)] bg-contain bg-center bg-no-repeat text-3xl font-semibold uppercase tracking-wider text-amber-600 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+        style="aspect-ratio: 634 / 175;"
+        @click="$emit('submit')"
       >
-        <p class="text-[0.5em] uppercase font-bold tracking-widest opacity-80">Bonus</p>
-        <div class="mt-1 flex justify-center gap-1.5">
-          <TowerEffectPip
-            v-for="(effect, i) in boons"
-            :key="i"
-            :effect="effect"
-          />
-        </div>
-      </BaseRibbon>
-      <BaseRibbon
-        v-if="curses.length"
-        side="right"
-      >
-        <p class="text-[0.5em] uppercase font-bold tracking-widest opacity-80">Malus</p>
-        <div class="mt-1 flex justify-center gap-1.5">
-          <TowerEffectPip
-            v-for="(effect, i) in curses"
-            :key="i"
-            :effect="effect"
-          />
-        </div>
-      </BaseRibbon>
+        Valider
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 // L'écran de question en ascension, reskin parchemin/médiéval — voulu pour cet
-// écran précis et lui seul, le reste de l'app reste sur le thème sombre. Écrit
-// à part de BaseButton/BaseInput, dont les classes portent justement l'autre
-// thème : les reprendre ici les recouvrirait en ligne, ce que CLAUDE.md
-// interdit — plus simple de sortir du système Base* pour cet écran isolé.
+// écran précis et lui seul, le reste de l'app reste sur le thème sombre. Le
+// cadre, le médaillon du chrono et le bouton sont des illustrations
+// (public/images/), text et input positionnés en absolu, proportionnellement
+// à leurs dimensions. Écrit à part de BaseButton/BaseInput, dont les classes
+// portent justement l'autre thème : les reprendre ici les recouvrirait en
+// ligne, ce que CLAUDE.md interdit — plus simple de sortir du système Base*
+// pour cet écran isolé.
 import type { GameState, ServedQuestion } from '~~/server/utils/game'
 import type { EffectView } from '~~/server/utils/effects'
 
@@ -140,7 +171,6 @@ const field = useTemplateRef<HTMLInputElement>('field')
 onMounted(() => {
   field.value?.focus()
 })
-
 
 const boons = computed(() => props.effects.filter(effect => effect.face === 'boon'))
 const curses = computed(() => props.effects.filter(effect => effect.face === 'curse'))

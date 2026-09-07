@@ -11,6 +11,7 @@ const served: GameState = {
   phase: 'ascent',
   floor: 1,
   lives: 3,
+  maxLives: 3,
   started: true,
   question: {
     id: 'q1',

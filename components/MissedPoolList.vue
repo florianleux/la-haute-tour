@@ -1,16 +1,14 @@
 <template>
   <BaseSection :title="`Tes erreurs de l'étage (${total})`">
-    <template #aside>
-      <BaseButton variant="ghost" @click="toggleOrder">
-        {{ order === 'desc' ? 'Plus récentes d\'abord' : 'Plus anciennes d\'abord' }}
-      </BaseButton>
-    </template>
 
     <BaseNotice v-if="failed">
       Impossible de charger tes erreurs. Recharge la page.
     </BaseNotice>
 
-    <BaseList :empty="emptyMessage" class="mt-4">
+    <BaseList
+      :empty="emptyMessage"
+      class="mt-4"
+    >
       <li
         v-for="entry in entries"
         :key="entry.questionId"
@@ -39,7 +37,10 @@
           </template>
 
           <!-- Contestation refusée : texte seul -->
-          <span v-else-if="entry.disputeStatus === 'rejected'" class="text-xs text-amber-400">
+          <span
+            v-else-if="entry.disputeStatus === 'rejected'"
+            class="text-xs text-amber-400"
+          >
             Contestation refusée
           </span>
 
@@ -51,8 +52,16 @@
             aria-label="Contester cette question"
             @click="onContest(entry.questionId)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5" aria-hidden="true">
-              <path d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1Zm10.5-4.5a1 1 0 0 0-1.4 0l-.6.6a1 1 0 0 0 0 1.4 5 5 0 0 1 0 7l.6.6a1 1 0 0 0 1.4 0l.6-.6a1 1 0 0 0 0-1.4 3 3 0 0 1 0-4.2l-.6-.6a1 1 0 0 0 0-1.4Z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              class="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1Zm10.5-4.5a1 1 0 0 0-1.4 0l-.6.6a1 1 0 0 0 0 1.4 5 5 0 0 1 0 7l.6.6a1 1 0 0 0 1.4 0l.6-.6a1 1 0 0 0 0-1.4 3 3 0 0 1 0-4.2l-.6-.6a1 1 0 0 0 0-1.4Z"
+              />
             </svg>
           </button>
         </div>
@@ -60,8 +69,14 @@
     </BaseList>
 
     <!-- Sentinelle de défilement : la page suivante se charge en arrivant dessus. -->
-    <div ref="sentinel" class="h-4" />
-    <BaseLoading v-if="loading" class="mt-2">
+    <div
+      ref="sentinel"
+      class="h-4"
+    />
+    <BaseLoading
+      v-if="loading"
+      class="mt-2"
+    >
       Chargement des erreurs…
     </BaseLoading>
   </BaseSection>

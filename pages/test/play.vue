@@ -17,7 +17,7 @@
 // question tirée au hasard du deck et des chiffres arbitraires à la place d'une
 // vraie partie — pour régler le visuel sans dépendre d'une tentative réelle ni
 // perdre à l'écoulement du chrono. Admin seulement. Voir components/TowerQuestionCard.vue.
-import { SPELL_FACES, SPELL_IDS } from '~~/shared/utils/spells'
+import { SPELL_IDS } from '~~/shared/utils/spells'
 import type { EffectView } from '~~/server/utils/effects'
 import type { GameState, ServedQuestion } from '~~/server/utils/game'
 import type { AdminQuestionsResponse } from '~~/server/api/admin/questions/index.get'
@@ -43,16 +43,23 @@ onBeforeUnmount(() => {
 
 const CASTER_NAMES = ['Gandalf', 'Bilbo', 'Frodo', 'Aragorn', 'Éowyn', 'Legolas']
 
-function randomEffect(): EffectView {
+function randomEffect(face: EffectView['face']): EffectView {
   return {
     spell: SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
-    face: SPELL_FACES[Math.floor(Math.random() * SPELL_FACES.length)],
+    face,
     casterName: CASTER_NAMES[Math.floor(Math.random() * CASTER_NAMES.length)],
     state: 'active',
   }
 }
 
-const effects = ref<EffectView[]>(Array.from({ length: 4 }, randomEffect))
+// Deux au plus de chaque : c'est le maximum que l'écran doit encaisser, pas
+// une moyenne. Voir components/TowerQuestionCard.vue.
+const boonCount = Math.floor(Math.random() * 3)
+const curseCount = Math.floor(Math.random() * 3)
+const effects = ref<EffectView[]>([
+  ...Array.from({ length: boonCount }, () => randomEffect('boon')),
+  ...Array.from({ length: curseCount }, () => randomEffect('curse')),
+])
 
 const question = ref<ServedQuestion | null>(null)
 
@@ -86,7 +93,10 @@ if (total.value?.total) {
 const state = ref<GameState>({
   phase: 'ascent',
   floor: 1,
-  lives: 3,
+  // En ascension, jamais zéro : à zéro vie, le joueur est en attente, pas en
+  // train de répondre. Voir server/utils/mechanics.ts.
+  lives: 1 + Math.floor(Math.random() * 3),
+  maxLives: 3,
   started: true,
   question: null,
   verdict: null,

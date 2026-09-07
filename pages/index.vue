@@ -20,83 +20,18 @@
     @submit="run('submit', submit)"
   />
 
-  <BaseCard v-else-if="waiting" wide :title="state?.phase === 'cooldown' ? 'Attente' : 'Rattrapage'">
-    <template #lead>
-      <template v-if="state?.phase === 'cooldown'">
-        Tu as perdu ta dernière vie. Reprise dans {{ waitRemaining }}.
-      </template>
-      <template v-else>
-        Ton attente est terminée. Tu peux lancer ton rattrapage.
-      </template>
-    </template>
-
-    <BaseHint v-if="state?.recoveryResult === 'failed'" class="mt-3" tone="warning">
-      Rattrapage raté : aucune bonne réponse. Une nouvelle attente commence.
-    </BaseHint>
-
-    <!-- Une attente écourtée reste une attente : à son échéance, c'est le
-         rattrapage qui s'ouvre, pas l'ascension. Le dire ici évite au joueur de
-         croire qu'il reprend. Voir specs/bonus.md#catalogue. -->
-    <BaseHint v-if="screen?.shortenedWait" class="mt-3" tone="success">
-      Un Répit a raccourci ton attente. Elle mène au rattrapage comme une attente
-      pleine — plus tôt, c'est tout.
-    </BaseHint>
-
-    <BaseLoading v-if="loading" class="mt-4">
-      Mise à jour de ta partie…
-    </BaseLoading>
-
-    <BaseButton
-      v-if="isAdmin && state?.phase === 'cooldown'"
-      variant="ghost"
-      class="mt-4"
-      :loading="isRunning('skipCooldown')"
-      @click="run('skipCooldown', skipCooldown)"
-    >
-      Passer l'attente
-    </BaseButton>
-
-    <!-- Un Mimic fait basculer en attente au moment même où le joueur l'ouvre :
-         son résultat se lit donc ici, pas sur l'écran de verdict qu'il vient de
-         quitter. Seulement pendant l'attente qu'il a ouverte : le rattrapage qui
-         suit n'a plus à la rappeler. Voir specs/bonus.md#coffre-et-mimic. -->
-    <ChestResult
-      v-if="state?.phase === 'cooldown' && screen?.chest?.opened"
-      :chest="screen.chest"
-      class="mt-6"
-    />
-
-    <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
-         prochaine tentative, le Répit a déjà agi sur l'attente qu'il lit.
-         Voir specs/bonus.md#ancrage-et-durée-de-vie. -->
-    <BaseSection v-if="screen?.pendingEffects.length" title="Ce qui est sur toi" class="mt-8">
-      <template #lead>
-        Ces sorts s'appliquent à ta prochaine tentative et disparaîtront avec elle —
-        sauf le Répit, qui agit sur l'attente en cours.
-      </template>
-      <EffectList :effects="screen.pendingEffects" class="mt-3" />
-    </BaseSection>
-
-    <!-- Juste, elle peut l'être : un Mimic envoie ici sur une bonne réponse. -->
-    <BaseHint v-if="screen?.verdict && !screen.verdict.correct" class="mt-6">
-      Dernière question ratée — réponse :
-      <AnswerLabel :label="screen.verdict.answerLabel" />
-    </BaseHint>
-
-    <div class="mt-8">
-      <MissedPoolList />
-    </div>
-
-    <BaseButton
-      v-if="state?.phase === 'recovery'"
-      block
-      class="mt-8"
-      :loading="isRunning('advance')"
-      @click="run('advance', advance)"
-    >
-      Commencer le rattrapage
-    </BaseButton>
-  </BaseCard>
+  <TowerWaitCard
+    v-else-if="waiting && state && screen"
+    :state="state"
+    :screen="screen"
+    :wait-remaining="waitRemaining"
+    :loading="loading"
+    :is-admin="isAdmin"
+    :skipping="isRunning('skipCooldown')"
+    :advancing="isRunning('advance')"
+    @skip-cooldown="run('skipCooldown', skipCooldown)"
+    @advance="run('advance', advance)"
+  />
 
   <BaseCard v-else>
     <BaseNotice v-if="readFailed">
