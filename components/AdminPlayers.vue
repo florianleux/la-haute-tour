@@ -26,6 +26,7 @@
         :now="now"
         @skip-cooldown="act('skipCooldown', player.userId)"
         @grant-life="act('grantLife', player.userId)"
+        @reset="act('reset', player.userId)"
         @set-team="(team: TeamId | null) => onTeam(player.userId, team)"
       />
     </div>
@@ -37,7 +38,7 @@
 // aucune partie. Voir specs/admin.md#gestion-des-joueurs.
 import type { TeamId } from '~~/shared/utils/teams'
 
-const { players, failed, loading, acting, skipCooldown, grantLife, setTeam } = await useAdminPlayers()
+const { players, failed, loading, acting, skipCooldown, grantLife, setTeam, resetPlayer } = await useAdminPlayers()
 
 const actionFailed = ref(false)
 
@@ -57,7 +58,7 @@ const emptyMessage = computed(
     : 'Aucun joueur inscrit pour l\'instant.'),
 )
 
-type PlayerAction = 'skipCooldown' | 'grantLife'
+type PlayerAction = 'skipCooldown' | 'grantLife' | 'reset'
 
 /** Le bouton exact sur lequel on vient de cliquer : lui seul montre son loader. */
 const running = ref<{ userId: number, action: PlayerAction } | null>(null)
@@ -71,9 +72,15 @@ async function onTeam(userId: number, team: TeamId | null): Promise<void> {
   actionFailed.value = !await setTeam(userId, team)
 }
 
+const ACTIONS: Record<PlayerAction, (userId: number) => Promise<boolean>> = {
+  skipCooldown,
+  grantLife,
+  reset: resetPlayer,
+}
+
 async function act(action: PlayerAction, userId: number): Promise<void> {
   running.value = { userId, action }
-  actionFailed.value = !await (action === 'skipCooldown' ? skipCooldown(userId) : grantLife(userId))
+  actionFailed.value = !await ACTIONS[action](userId)
   running.value = null
 }
 </script>

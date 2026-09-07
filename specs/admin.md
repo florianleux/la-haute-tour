@@ -41,7 +41,8 @@
 - **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
 - **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
-- **Deux gestes** : *passer l'attente* et *rendre une vie*. Ils appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
+- **Trois gestes** : *passer l'attente*, *rendre une vie*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
+- **Repartir de zéro** efface la partie du joueur (étage, vies, inventaire, questions vues et ratées, effets, contestations en cours n'y survivent pas) et le remet à l'étage 1, vies pleines — même geste que pour un joueur test (voir plus bas), sans le monde scellé qui les sépare : celui-ci touche un vrai compte. Pensé pour un joueur bloqué ou testé en solo, pas pour un usage courant en partie live.
 - L'avatar est le hash renvoyé par Discord à la connexion, resynchronisé à chaque login. Faute de hash, l'avatar par défaut du compte.
 
 ## Joueurs test

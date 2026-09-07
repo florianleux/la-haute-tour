@@ -2,16 +2,13 @@ import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
 import { upcomingQuestions } from './deck'
 import { cooldownFields, cooldownFrom } from './mechanics'
-import { requirePlayer } from './players'
+import { requirePlayer, resetPlayer } from './players'
 import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
 import {
-  activeEffects,
-  attempts,
   inventory,
   missedPool,
   questions,
-  recoveryQuestions,
   reservations,
   seenQuestions,
   users,
@@ -244,34 +241,13 @@ export async function sendToCooldown(db: Database, testPlayer: User, now: Date):
  * Effacer la partie d'un joueur test et le rendre neuf. Tous les effets partent
  * avec elle, donc écrire `attemptStartedAt` ici ne peut désaccorder aucune ancre
  * — c'est la seule raison pour laquelle ce geste peut se passer d'openAttempt().
- * Voir server/utils/journey.ts.
+ * La remise à zéro elle-même est partagée avec un vrai joueur : voir
+ * `resetPlayer()` dans server/utils/players.ts. Voir server/utils/journey.ts.
  */
 export async function resetTestPlayer(db: Database, testPlayer: User, now: Date): Promise<void> {
   assertTestPlayer(testPlayer)
 
-  await db.batch([
-    db.delete(seenQuestions).where(eq(seenQuestions.userId, testPlayer.id)),
-    db.delete(missedPool).where(eq(missedPool.userId, testPlayer.id)),
-    db.delete(inventory).where(eq(inventory.userId, testPlayer.id)),
-    db.delete(activeEffects).where(eq(activeEffects.userId, testPlayer.id)),
-    db.delete(activeEffects).where(eq(activeEffects.casterId, testPlayer.id)),
-    db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, testPlayer.id)),
-    db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
-    db.delete(attempts).where(eq(attempts.userId, testPlayer.id)),
-    db
-      .update(users)
-      .set({
-        currentFloor: 1,
-        lives: rulesForFloor(1).lives,
-        cooldownUntil: null,
-        cooldownStartedAt: null,
-        floorCursor: 0,
-        floorSeen: 0,
-        attemptSeen: 0,
-        attemptStartedAt: now,
-      })
-      .where(eq(users.id, testPlayer.id)),
-  ])
+  await resetPlayer(db, testPlayer, now)
 }
 
 /**

@@ -1,8 +1,20 @@
 import { asc, eq, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
-import { deckFloors, disputes, reservations, users } from '../db/schema'
+import {
+  activeEffects,
+  attempts,
+  deckFloors,
+  disputes,
+  inventory,
+  missedPool,
+  recoveryQuestions,
+  reservations,
+  seenQuestions,
+  users,
+} from '../db/schema'
 import { phaseOf } from './mechanics'
 import { numericRouteId } from './routes'
+import { rulesForFloor } from './rules'
 import type { H3Event } from 'h3'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -122,4 +134,37 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     pendingDisputes: row.pendingDisputes,
     team: row.user.team,
   }))
+}
+
+/**
+ * Effacer la partie d'un joueur et le rendre neuf : étage 1, vies pleines, plus
+ * rien vu ni raté. D'abord écrit pour les joueurs test (`resetTestPlayer`, qui
+ * s'appuie dessus), et ouvert depuis à un vrai joueur bloqué ou testé en
+ * solo — la remise à zéro ne dépend de rien qui soit propre à l'un des deux
+ * mondes. Voir specs/admin.md#gestion-des-joueurs.
+ */
+export async function resetPlayer(db: Database, player: User, now: Date): Promise<void> {
+  await db.batch([
+    db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
+    db.delete(missedPool).where(eq(missedPool.userId, player.id)),
+    db.delete(inventory).where(eq(inventory.userId, player.id)),
+    db.delete(activeEffects).where(eq(activeEffects.userId, player.id)),
+    db.delete(activeEffects).where(eq(activeEffects.casterId, player.id)),
+    db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),
+    db.delete(reservations).where(eq(reservations.userId, player.id)),
+    db.delete(attempts).where(eq(attempts.userId, player.id)),
+    db
+      .update(users)
+      .set({
+        currentFloor: 1,
+        lives: rulesForFloor(1).lives,
+        cooldownUntil: null,
+        cooldownStartedAt: null,
+        floorCursor: 0,
+        floorSeen: 0,
+        attemptSeen: 0,
+        attemptStartedAt: now,
+      })
+      .where(eq(users.id, player.id)),
+  ])
 }

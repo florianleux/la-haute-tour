@@ -65,6 +65,14 @@
       >
         Rendre une vie
       </BaseButton>
+      <BaseButton
+        variant="ghost"
+        :loading="running === 'reset'"
+        :disabled="busy"
+        @click="$emit('reset')"
+      >
+        Repartir de zéro
+      </BaseButton>
     </div>
 
     <BaseSelect
@@ -88,12 +96,12 @@ const props = defineProps<{
   /** Un geste est en vol, ici ou sur une autre fiche : tout attend la relecture. */
   busy: boolean
   /** Le geste lancé depuis cette fiche — lui seul montre son loader. */
-  running: 'skipCooldown' | 'grantLife' | null
+  running: 'skipCooldown' | 'grantLife' | 'reset' | null
   /** L'horloge de la liste, pour que le délai restant descende tout seul. */
   now: number
 }>()
 
-defineEmits<{ skipCooldown: [], grantLife: [], setTeam: [TeamId | null] }>()
+defineEmits<{ skipCooldown: [], grantLife: [], reset: [], setTeam: [TeamId | null] }>()
 
 // « Sans équipe » est un choix comme un autre : l'appartenance est facultative,
 // et l'admin doit pouvoir l'ôter. Voir specs/equipes.md.
