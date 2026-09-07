@@ -16,7 +16,8 @@ import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { isWaitBound } from '../../shared/utils/spells'
-import { rulesForFloor, rulesWithEffects } from './rules'
+import { rulesForFloor } from './rules'
+import { rulesWithEffects } from './spellbook'
 import {
   acceptedAnswers,
   disputes,

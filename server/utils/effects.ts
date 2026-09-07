@@ -1,8 +1,9 @@
 import { and, desc, eq, isNull, ne, notExists, sql } from 'drizzle-orm'
 import { isBorneBy } from './mechanics'
-import { rulesForFloor, rulesWithEffects } from './rules'
+import { rulesForFloor } from './rules'
+import { rulesWithEffects, SPELLS } from './spellbook'
 import { drawTarget } from './targets'
-import { activeEffects, inventory, missedPool, users } from '../db/schema'
+import { activeEffects, inventory, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -134,12 +135,13 @@ export async function castSpell(
   // La cible n'est tirée qu'une fois l'exemplaire consommé : un lancer refusé
   // par le budget ne doit pas désigner quelqu'un pour rien.
   const target = kind === 'self' ? caster : await drawTarget(db, caster, kind, now, random)
+  const face = faceFor(kind)
 
   await db.insert(activeEffects).values({
     userId: target?.id ?? null,
     casterId: caster.id,
     spell,
-    face: faceFor(kind),
+    face,
     castAt: now,
     castCooldownStartedAt: startedAt,
     // L'attente de la cible, et non celle du lancer : ce sont deux instants
@@ -151,97 +153,14 @@ export async function castSpell(
     return
   }
 
-  // Purge n'attend rien et ne module rien : elle mord le Pool Échecs à l'instant
-  // du lancer. Le pool existe quelle que soit la phase de la cible, donc elle
-  // agit même sur qui n'attend pas. Sa face décide de ce qu'elle y fait : la
-  // blanche en sort une question, la noire remet à zéro le compteur de réussites
-  // de l'une d'elles. Voir specs/bonus.md#catalogue.
-  if (spell === 'PURGE') {
-    await purgePool(db, target, faceFor(kind))
+  // Ce que le sort fait à l'instant du lancer, s'il fait quelque chose : le
+  // grimoire le possède, un sort = une entrée. Vitalité et Chronomancie n'agissent
+  // pas à l'instant — leur effet s'ancre sur la tentative suivante. Purge mord le
+  // Pool Échecs, Répit recalcule l'échéance. Voir server/utils/spellbook.ts.
+  const entry = SPELLS[spell]
+  if (entry?.actInstantly) {
+    await entry.actInstantly(db, target, face)
   }
-
-  // Répit, lui, ne déplace que ce qui existe : l'échéance de la cible. Sur un
-  // allié en pleine ascension, il n'y a rien à raccourcir et le sort est
-  // gaspillé — même logique qu'un pool vide.
-  // Recalculée plutôt que raccourcie, et depuis le début de l'attente : deux
-  // Répit divisent la durée d'origine par quatre, au lieu de grignoter deux fois
-  // ce qu'il restait. Voir specs/bonus.md#catalogue.
-  if (spell === 'RESPITE' && target.cooldownStartedAt) {
-    await reshapeCooldown(db, target, target.cooldownStartedAt)
-  }
-}
-
-/**
- * Ce que Purge fait au Pool Échecs de l'étage courant, selon sa face.
- *
- * Blanche, une question tirée au hasard en sort sans avoir été rejouée — le seul
- * chemin du jeu pour ça. Elle en sort comme elle en sortirait par le seuil de
- * réussites : la ligne du pool part, le passage reste vu, la progression d'étage
- * ne bouge pas.
- *
- * Noire, la question reste et c'est son **compteur de réussites** qui retombe à
- * zéro : tout le rattrapage déjà fait sur elle est à refaire.
- *
- * Sur un pool vide il n'y a rien à mordre, et le sort est gaspillé — sans
- * erreur, et sans vérification préalable au lancer : on ne bloque pas le
- * ciblage. Voir specs/bonus.md#catalogue.
- */
-async function purgePool(db: Database, target: User, face: SpellFace): Promise<void> {
-  const onThisFloor = and(
-    eq(missedPool.userId, target.id),
-    eq(missedPool.floor, target.currentFloor),
-  )
-
-  // Tirage et coup en une seule instruction. En deux — lire puis écrire — deux
-  // lanceurs simultanés pourraient désigner la même ligne et n'en toucher
-  // qu'une, là où la spec en promet deux. Voir specs/bonus.md#cumul.
-  const drawn = and(
-    onThisFloor,
-    eq(missedPool.questionId, sql`(select ${missedPool.questionId} from ${missedPool}
-      where ${missedPool.userId} = ${target.id}
-        and ${missedPool.floor} = ${target.currentFloor}
-      order by RANDOM() limit 1)`),
-  )
-
-  if (face === 'curse') {
-    await db.update(missedPool).set({ poolSuccesses: 0 }).where(drawn)
-    return
-  }
-
-  await db.delete(missedPool).where(drawn)
-}
-
-/**
- * L'échéance de l'attente, refaite à partir de son début et de tout ce qui est
- * posé sur elle — jamais grignotée depuis ce qu'il en restait. Deux Répit
- * divisent donc la durée d'origine par quatre, dans l'ordre qu'on voudra.
- */
-async function reshapeCooldown(db: Database, target: User, startedAt: Date): Promise<void> {
-  // Ce que cette attente-ci dure, et non ce que le jeu de règles dit d'une
-  // attente : celle qui suit un rattrapage entièrement manqué est plus courte,
-  // et la recalculer sur les douze heures de l'autre la rallongerait.
-  const baseMs = target.cooldownBaseMs
-
-  if (baseMs === null) {
-    return
-  }
-
-  const onThisWait = await db
-    .select({ spell: activeEffects.spell, face: activeEffects.face })
-    .from(activeEffects)
-    .where(and(
-      eq(activeEffects.userId, target.id),
-      eq(activeEffects.targetCooldownStartedAt, startedAt),
-    ))
-
-  // Le jeu de règles module la durée, on lui donne celle de cette attente-là.
-  const rules = { ...rulesForFloor(target.currentFloor), cooldownMs: baseMs }
-  const { cooldownMs } = rulesWithEffects(rules, onThisWait)
-
-  await db
-    .update(users)
-    .set({ cooldownUntil: new Date(startedAt.getTime() + cooldownMs) })
-    .where(eq(users.id, target.id))
 }
 
 /**

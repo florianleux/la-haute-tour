@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { rulesForFloor, rulesWithEffects } from '../../server/utils/rules'
+import { rulesForFloor } from '../../server/utils/rules'
+import { rulesWithEffects } from '../../server/utils/spellbook'
 import type { SpellEffect } from '../../shared/utils/spells'
 
 const rules = rulesForFloor(1)
