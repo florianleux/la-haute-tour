@@ -10,7 +10,7 @@
          Sous `sm`, le cadre passe au portrait mobile-play-card.webp (rubans
          sous le cadre plutôt qu'à côté) — voir components/StatsRibbons.vue. -->
     <div
-      class="relative mx-auto aspect-428/855 w-full @container bg-[url(/images/mobile-play-card.webp)] bg-contain bg-center bg-no-repeat sm:aspect-1980/775 sm:bg-[url(/images/game-card.webp)]"
+      class="group relative mx-auto aspect-428/855 w-full @container bg-[url(/images/mobile-play-card.webp)] bg-contain bg-center bg-no-repeat sm:aspect-1980/775 sm:bg-[url(/images/game-card.webp)]"
     >
       <StatsRibbons
         :state="state"
@@ -24,8 +24,13 @@
         Question loot — réponds juste et tu ouvres un coffre.
       </p>
 
+      <!-- Le clavier virtuel rétrécit la fenêtre visible sur mobile : le
+           navigateur remonte le champ dans le cadre, poussant la question hors
+           champ. `group-has-[#answer:focus]` la recale plus haut et la
+           réduit tant que le clavier est ouvert — pas de JS, pas de mesure de
+           hauteur de clavier, juste l'état du focus. -->
       <p
-        class="absolute left-1/2 top-[35%] flex h-[35%] w-[84%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-y-auto text-center text-[6cqw] leading-relaxed text-amber-800 sm:top-[40%] sm:h-[45%] sm:w-[52%] sm:text-[2.5cqw]">
+        class="absolute left-1/2 top-[35%] flex h-[35%] w-[84%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-y-auto text-center text-[6cqw] leading-relaxed text-amber-800 transition-all max-sm:group-has-[#answer:focus]:top-[16%] max-sm:group-has-[#answer:focus]:h-[18%] max-sm:group-has-[#answer:focus]:text-[3.4cqw] sm:top-[40%] sm:h-[45%] sm:w-[52%] sm:text-[2.5cqw]">
         {{ statement }}
       </p>
 
