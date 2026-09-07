@@ -30,7 +30,7 @@
            réduit tant que le clavier est ouvert — pas de JS, pas de mesure de
            hauteur de clavier, juste l'état du focus. -->
       <p
-        class="absolute left-1/2 top-[35%] flex h-[35%] w-[84%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-y-auto text-center text-[6cqw] leading-relaxed text-amber-800 transition-all max-sm:group-has-[#answer:focus]:top-[16%] max-sm:group-has-[#answer:focus]:h-[18%] max-sm:group-has-[#answer:focus]:text-[3.4cqw] sm:top-[40%] sm:h-[45%] sm:w-[52%] sm:text-[2.5cqw]">
+        class="absolute left-1/2 top-[35%] flex h-[35%] w-[84%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-y-auto text-center text-[6cqw] leading-relaxed text-amber-800 transition-all max-sm:group-has-[#answer:focus]:top-[46%] max-sm:group-has-[#answer:focus]:h-[18%] max-sm:group-has-[#answer:focus]:text-[5cqw] max-sm:group-has-[#answer:focus]:leading-[1.1em] sm:top-[40%] sm:h-[45%] sm:w-[52%] sm:text-[2.5cqw]">
         {{ statement }}
       </p>
 
