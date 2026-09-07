@@ -97,8 +97,15 @@ defineEmits<{ 'update:modelValue': [string], submit: [] }>()
 
 const field = useTemplateRef<HTMLInputElement>('field')
 
+// Le focus auto ouvre le clavier physique sans y toucher — utile sur desktop,
+// où Entrée enchaîne les questions sans jamais en sortir. Sur mobile, il n'y a
+// pas de clavier physique : ce même focus ouvrirait le clavier virtuel tout
+// seul à chaque question, ce que personne n'a demandé. Seuil aligné sur les
+// classes `sm:` du reste du composant.
 onMounted(() => {
-  field.value?.focus()
+  if (window.matchMedia('(min-width: 640px)').matches) {
+    field.value?.focus()
+  }
 })
 
 // Espace insécable avant la ponctuation double du français : sans ça, un
