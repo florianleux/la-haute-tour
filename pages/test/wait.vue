@@ -1,5 +1,5 @@
 <template>
-  <TowerWaitCard
+  <WaitCard
     :state="state"
     :screen="screen"
     wait-remaining="4m 12s"
@@ -14,9 +14,9 @@
 
 <script setup lang="ts">
 // Banc de design de l'écran d'attente : même composant qu'en jeu
-// (TowerWaitCard), mais un état tiré au hasard à chaque chargement plutôt
+// (WaitCard), mais un état tiré au hasard à chaque chargement plutôt
 // qu'une vraie partie — pour régler le visuel sans dépendre d'une attente
-// réelle. Modifier TowerWaitCard modifie donc aussi bien cette page que la
+// réelle. Modifier WaitCard modifie donc aussi bien cette page que la
 // vraie. Admin seulement. Voir pages/test/play.vue pour le même principe.
 import { SPELL_FACES, SPELL_IDS } from '~~/shared/utils/spells'
 import type { EffectView } from '~~/server/utils/effects'

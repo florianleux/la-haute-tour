@@ -3,15 +3,15 @@
   <!-- <div class="fixed inset-0 z-0 bg-[url(/images/play-bg.webp)] bg-cover bg-center" /> -->
 
   <div class="relative -mt-40 z-10 mx-auto w-full max-w-4xl py-16">
-    <!-- Même squelette que TowerQuestionCard : le résultat d'une question est le
+    <!-- Même squelette que QuestionCard : le résultat d'une question est le
          même écran que la question elle-même, pas un autre. Voir
-         components/TowerQuestionCard.vue pour le détail des choix (cqw,
+         components/QuestionCard.vue pour le détail des choix (cqw,
          container-type, sortie du système Base*). -->
     <div
       class="relative mx-auto w-full bg-[url(/images/game-card.webp)] bg-contain bg-center bg-no-repeat"
       style="aspect-ratio: 1980 / 775; container-type: inline-size;"
     >
-      <TowerStatsRibbons
+      <StatsRibbons
         :state="state"
         :effects="effects"
       />
@@ -63,7 +63,7 @@
             Contester cette question
           </button>
 
-          <!-- Le coffre s'ouvre sur un écran à part (TowerChestCard) : ici
+          <!-- Le coffre s'ouvre sur un écran à part (ChestCard) : ici
                seulement l'annonce qu'il y en a un. Voir specs/bonus.md#coffre-et-mimic. -->
           <p
             v-if="screen.chest && !screen.chest.opened"
@@ -123,7 +123,7 @@
       <!-- Le bouton du bas : « Suivant » mène à l'écran de coffre tant qu'il est
            fermé, sinon c'est l'action suivante — jamais les deux en même temps.
            Voir utils/phase.ts. -->
-      <TowerCardButton
+      <CardButton
         v-if="bottomAction"
         :label="bottomAction.label"
         :disabled="bottomAction.loading"
@@ -136,7 +136,7 @@
 
 <script setup lang="ts">
 // L'écran de résultat : verdict d'une question, palier franchi ou fin de
-// partie — même structure que TowerQuestionCard, parce que c'est le même
+// partie — même structure que QuestionCard, parce que c'est le même
 // écran de jeu qui continue de parler, pas un autre. Voir specs/ecrans.md#jeu.
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen } from '~~/utils/phase'
@@ -154,13 +154,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{ dispute: [], 'enter-chest': [], advance: [] }>()
 
-// Même traitement que TowerQuestionCard : espace insécable avant la
+// Même traitement que QuestionCard : espace insécable avant la
 // ponctuation double du français, sinon un point d'interrogation esseulé se
 // retrouve seul sur sa ligne.
 const statement = computed(() => props.screen.verdict?.statement.replace(/ ([?!:;])/g, ' $1') ?? '')
 
 // Le coffre fermé retient le joueur, mais ce n'est plus ce bouton qui
-// l'ouvre : « Suivant » mène à un écran à part (TowerChestCard), l'ouverture
+// l'ouvre : « Suivant » mène à un écran à part (ChestCard), l'ouverture
 // elle-même y a son propre bouton « OUVRIR ». Voir specs/bonus.md#coffre-et-mimic.
 const bottomAction = computed(() => {
   if (props.screen.chest && !props.screen.chest.opened) {

@@ -1,5 +1,5 @@
 <template>
-  <TowerResultCard
+  <ResultCard
     :state="state"
     :screen="screen"
     :effects="state.effects"
@@ -15,9 +15,9 @@
 
 <script setup lang="ts">
 // Banc de design de l'écran de résultat : même composant qu'en jeu
-// (TowerResultCard), mais un verdict tiré au hasard à chaque chargement
+// (ResultCard), mais un verdict tiré au hasard à chaque chargement
 // plutôt qu'une vraie partie — pour régler le visuel sans dépendre d'une
-// question réellement jouée. Modifier TowerResultCard modifie donc aussi bien
+// question réellement jouée. Modifier ResultCard modifie donc aussi bien
 // cette page que la vraie. Admin seulement. Voir pages/test/play.vue et
 // pages/test/wait.vue pour le même principe.
 import { SPELL_FACES, SPELL_IDS } from '~~/shared/utils/spells'

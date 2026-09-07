@@ -8,7 +8,7 @@
     </BaseButton>
   </BaseCard>
 
-  <TowerQuestionCard
+  <QuestionCard
     v-else-if="state?.phase === 'ascent' && screen?.question"
     :state="state"
     :question="screen.question"
@@ -20,7 +20,7 @@
     @submit="run('submit', submit)"
   />
 
-  <TowerWaitCard
+  <WaitCard
     v-else-if="waiting && state && screen"
     :state="state"
     :screen="screen"
@@ -33,7 +33,7 @@
     @advance="goNext"
   />
 
-  <TowerChestCard
+  <ChestCard
     v-else-if="viewingChest && state && screen && screen.chest"
     :chest="screen.chest"
     :action="screen.action"
@@ -43,7 +43,7 @@
     @advance="goNext"
   />
 
-  <TowerResultCard
+  <ResultCard
     v-else-if="state && screen && (screen.verdict || screen.phase === 'floorEnd' || screen.phase === 'gameOver')"
     :state="state"
     :screen="screen"
@@ -119,7 +119,7 @@
         </BaseButton>
       </form>
 
-      <!-- Verdict, palier et fin de partie vivent dans TowerResultCard, plus haut
+      <!-- Verdict, palier et fin de partie vivent dans ResultCard, plus haut
            dans cette page : hors de ce fallback, jamais atteints ici. -->
       <BaseButton
         v-if="screen.action"
@@ -175,7 +175,7 @@ const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 type PlayAction = 'submit' | 'advance' | 'skipCooldown' | 'chest'
 const running = ref<PlayAction | null>(null)
 
-// L'écran de coffre (TowerChestCard) est un aller purement client, ouvert
+// L'écran de coffre (ChestCard) est un aller purement client, ouvert
 // depuis le verdict quand un coffre attend — jamais depuis le serveur.
 const viewingChest = ref(false)
 
@@ -225,7 +225,7 @@ const waiting = computed(() =>
   || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
 )
 
-// Le seul chemin qui entre ici avec viewingChest à vrai est TowerChestCard une
+// Le seul chemin qui entre ici avec viewingChest à vrai est ChestCard une
 // fois le coffre ouvert — refermer l'écran est donc toujours correct, quelle
 // que soit la destination (nouvelle question, palier, fin de partie). Couvre
 // aussi le raccourci Entrée (useAdvanceOnEnter), qui n'a qu'un seul point
@@ -237,7 +237,7 @@ async function goNext(): Promise<void> {
 
 async function openTheChest(): Promise<void> {
   await run('chest', openChest)
-  // Un Mimic bascule directement en attente — TowerWaitCard le montre, pas cet
+  // Un Mimic bascule directement en attente — WaitCard le montre, pas cet
   // écran. Rien à révéler ici dans ce cas : on referme derrière soi.
   // Voir specs/bonus.md#coffre-et-mimic.
   if (waiting.value) {

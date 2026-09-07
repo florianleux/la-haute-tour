@@ -3,10 +3,10 @@
   <!-- <div class="fixed inset-0 z-0 bg-[url(/images/play-bg.webp)] bg-cover bg-center" /> -->
 
   <div class="relative -mt-40 z-10 mx-auto w-full max-w-4xl py-16">
-    <!-- Même squelette que TowerQuestionCard/TowerResultCard, sans rubans ni
+    <!-- Même squelette que QuestionCard/ResultCard, sans rubans ni
          médaillon : cet écran ne porte ni les chiffres de la partie (déjà lus
          sur le verdict qui précède) ni de verdict à afficher. Juste le coffre.
-         Voir components/TowerQuestionCard.vue pour le détail des choix (cqw,
+         Voir components/QuestionCard.vue pour le détail des choix (cqw,
          container-type, sortie du système Base*). -->
     <div
       class="relative mx-auto w-full bg-[url(/images/game-card.webp)] bg-contain bg-center bg-no-repeat"
@@ -39,14 +39,14 @@
         </template>
       </div>
 
-      <TowerCardButton
+      <CardButton
         v-if="!chest.opened"
         label="OUVRIR"
         :disabled="opening"
         size="sm"
         @click="$emit('open')"
       />
-      <TowerCardButton
+      <CardButton
         v-else
         :label="action ?? 'Suivant'"
         :disabled="advancing"
@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 // L'ouverture du coffre, à part du verdict qui l'a annoncée : cliquer
-// « Suivant » sur TowerResultCard mène ici, « OUVRIR » déclenche le tirage
+// « Suivant » sur ResultCard mène ici, « OUVRIR » déclenche le tirage
 // serveur, et une fois révélé, ce même bouton fait avancer la partie.
 // Voir specs/bonus.md#coffre-et-mimic.
 import type { ChestView } from '~~/server/utils/game'

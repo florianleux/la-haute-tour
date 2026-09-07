@@ -11,7 +11,7 @@ const OPEN_PAGES = ['login.vue', 'refus.vue']
 /**
  * Un banc de design, réservé à l'admin comme le reste sous `admin:true`, mais
  * hors de `/admin` : ce n'est pas une ressource d'administration, juste un
- * écran de réglage visuel. Voir components/TowerQuestionCard.vue.
+ * écran de réglage visuel. Voir components/QuestionCard.vue.
  */
 const OTHER_ADMIN_PAGES = ['test/play.vue', 'test/wait.vue', 'test/verdict.vue', 'test/chest.vue']
 

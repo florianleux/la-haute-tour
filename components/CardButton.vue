@@ -20,8 +20,8 @@
 </template>
 
 <script setup lang="ts">
-// Le bouton en médaillon du bas de carte : « Valider » sur TowerQuestionCard,
-// « Ouvrir le coffre » / l'action suivante sur TowerResultCard — même
+// Le bouton en médaillon du bas de carte : « Valider » sur QuestionCard,
+// « Ouvrir le coffre » / l'action suivante sur ResultCard — même
 // illustration, même mécanique de hover, seuls le libellé et la taille de
 // texte changent (`size`, le verdict tient un texte plus court).
 withDefaults(defineProps<{

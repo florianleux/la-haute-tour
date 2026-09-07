@@ -38,7 +38,7 @@
   </p>
   <div class="absolute left-[82.6%] top-[43%] flex w-[14%] justify-start gap-1.5">
     <template v-if="boons.length">
-      <TowerEffectPip
+      <EffectPip
         v-for="(effect, i) in boons"
         :key="i"
         :effect="effect"
@@ -51,7 +51,7 @@
   </p>
   <div class="absolute left-[82.6%] top-[72.5%] flex w-[14%] justify-start gap-1.5">
     <template v-if="curses.length">
-      <TowerEffectPip
+      <EffectPip
         v-for="(effect, i) in curses"
         :key="i"
         :effect="effect"
@@ -62,9 +62,9 @@
 
 <script setup lang="ts">
 // Les rubans latéraux (Étage/Palier/Série à gauche, Vies/Bonus/Malus à
-// droite) : partagés entre TowerQuestionCard et TowerResultCard, mêmes
+// droite) : partagés entre QuestionCard et ResultCard, mêmes
 // chiffres lus depuis le même GameState de part et d'autre. Positions en %,
-// tailles en cqw : voir components/TowerQuestionCard.vue pour le détail des
+// tailles en cqw : voir components/QuestionCard.vue pour le détail des
 // choix (container-type sur l'ancêtre commun).
 import type { GameState } from '~~/server/utils/game'
 import type { EffectView } from '~~/server/utils/effects'

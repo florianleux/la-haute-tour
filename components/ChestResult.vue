@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 // Ce qu'un coffre ouvert a donné. Repris uniquement sur l'écran d'attente,
-// pour le cas Mimic — TowerChestCard porte sa propre copie de ces mêmes
+// pour le cas Mimic — ChestCard porte sa propre copie de ces mêmes
 // messages pour l'ouverture normale, hors du système Base* dont celui-ci
 // dépend. Voir specs/bonus.md#coffre-et-mimic.
 import type { ChestView } from '~~/server/utils/game'

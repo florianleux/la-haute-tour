@@ -1,5 +1,5 @@
 <template>
-  <TowerChestCard
+  <ChestCard
     :chest="chest"
     :action="action"
     :opening="false"
@@ -11,9 +11,9 @@
 
 <script setup lang="ts">
 // Banc de design de l'écran de coffre : même composant qu'en jeu
-// (TowerChestCard), mais un état tiré au hasard à chaque chargement plutôt
+// (ChestCard), mais un état tiré au hasard à chaque chargement plutôt
 // qu'une vraie ouverture — pour régler le visuel sans dépendre d'une question
-// loot réellement jouée. Modifier TowerChestCard modifie donc aussi bien
+// loot réellement jouée. Modifier ChestCard modifie donc aussi bien
 // cette page que la vraie. Admin seulement. Voir pages/test/verdict.vue pour
 // le même principe.
 import { SPELL_IDS } from '~~/shared/utils/spells'

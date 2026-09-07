@@ -98,7 +98,7 @@
 <script setup lang="ts">
 // L'écran d'attente — cooldown comme rattrapage prêt à démarrer. Partagé entre
 // la vraie partie (pages/index.vue) et son banc de design (pages/test/wait.vue) :
-// modifier l'un modifie l'autre, comme TowerQuestionCard pour l'ascension.
+// modifier l'un modifie l'autre, comme QuestionCard pour l'ascension.
 // Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen } from '~~/utils/phase'

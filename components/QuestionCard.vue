@@ -11,7 +11,7 @@
       class="relative mx-auto w-full bg-[url(/images/game-card.webp)] bg-contain bg-center bg-no-repeat"
       style="aspect-ratio: 1980 / 775; container-type: inline-size;"
     >
-      <TowerStatsRibbons
+      <StatsRibbons
         :state="state"
         :effects="effects"
       />
@@ -29,7 +29,7 @@
       </p>
 
       <input
-        id="tower-answer"
+        id="answer"
         ref="field"
         :value="modelValue"
         placeholder="Votre réponse..."
@@ -52,7 +52,7 @@
         </span>
       </div>
 
-      <TowerCardButton
+      <CardButton
         label="Valider"
         :disabled="submitting"
         @click="$emit('submit')"

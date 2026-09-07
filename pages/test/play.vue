@@ -1,5 +1,5 @@
 <template>
-  <TowerQuestionCard
+  <QuestionCard
     v-if="state && question"
     :state="state"
     :question="question"
@@ -16,7 +16,7 @@
 // Banc de design de l'écran de question : mêmes composants qu'en jeu, mais une
 // question tirée au hasard du deck et des chiffres arbitraires à la place d'une
 // vraie partie — pour régler le visuel sans dépendre d'une tentative réelle ni
-// perdre à l'écoulement du chrono. Admin seulement. Voir components/TowerQuestionCard.vue.
+// perdre à l'écoulement du chrono. Admin seulement. Voir components/QuestionCard.vue.
 import { SPELL_IDS } from '~~/shared/utils/spells'
 import type { EffectView } from '~~/server/utils/effects'
 import type { GameState, ServedQuestion } from '~~/server/utils/game'
@@ -53,7 +53,7 @@ function randomEffect(face: EffectView['face']): EffectView {
 }
 
 // Deux au plus de chaque : c'est le maximum que l'écran doit encaisser, pas
-// une moyenne. Voir components/TowerQuestionCard.vue.
+// une moyenne. Voir components/QuestionCard.vue.
 const boonCount = Math.floor(Math.random() * 3)
 const curseCount = Math.floor(Math.random() * 3)
 const effects = ref<EffectView[]>([
