@@ -1,16 +1,13 @@
 <template>
-  <div class="fixed inset-0 z-0 bg-white bg-cover bg-center" />
-  <!-- <div class="fixed inset-0 z-0 bg-[url(/images/play-bg.webp)] bg-cover bg-center" /> -->
+  <!-- <div class="fixed inset-0 z-0 bg-white bg-cover bg-center" /> -->
+  <div class="fixed inset-0 z-0 bg-[url(/images/play-bg.webp)] bg-cover bg-center" />
 
-  <div class="relative -mt-40 z-10 mx-auto w-full max-w-4xl py-16">
+  <div class="relative -mt-16 z-10 mx-auto w-full max-w-4xl py-8 sm:-mt-40 sm:py-16">
     <!-- Même squelette que QuestionCard : le résultat d'une question est le
          même écran que la question elle-même, pas un autre. Voir
          components/QuestionCard.vue pour le détail des choix (cqw,
-         container-type, sortie du système Base*). -->
-    <div
-      class="relative mx-auto w-full bg-[url(/images/game-card.webp)] bg-contain bg-center bg-no-repeat"
-      style="aspect-ratio: 1980 / 775; container-type: inline-size;"
-    >
+         container-type, sortie du système Base*, bascule mobile/desktop). -->
+    <div class="relative mx-auto aspect-428/855 w-full @container bg-[url(/images/mobile-play-card.webp)] bg-contain bg-center bg-no-repeat sm:aspect-1980/775 sm:bg-[url(/images/game-card.webp)]">
       <StatsRibbons
         :state="state"
         :effects="effects"
@@ -18,9 +15,7 @@
 
       <!-- Le parchemin : verdict de la question qui vient de se jouer, palier ou
            fin de partie s'ils s'annoncent par-dessus. -->
-      <div
-        class="absolute left-1/2 top-[36%] flex h-[70%] w-[56%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[1.2cqw] overflow-y-auto text-center"
-      >
+      <div class="absolute left-1/2 top-[32%] flex h-[58%] w-[84%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[1.2cqw] overflow-y-auto text-center sm:top-[36%] sm:h-[70%] sm:w-[56%]">
         <template v-if="screen.verdict">
           <p
             class="text-[3cqw] font-bold"
@@ -126,6 +121,7 @@
       <CardButton
         v-if="bottomAction"
         :label="bottomAction.label"
+        anchor="card-bottom"
         :disabled="bottomAction.loading"
         size="sm"
         @click="bottomAction.run"
