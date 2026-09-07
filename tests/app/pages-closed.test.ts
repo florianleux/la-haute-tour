@@ -13,7 +13,7 @@ const OPEN_PAGES = ['login.vue', 'refus.vue']
  * hors de `/admin` : ce n'est pas une ressource d'administration, juste un
  * écran de réglage visuel. Voir components/TowerQuestionCard.vue.
  */
-const OTHER_ADMIN_PAGES = ['test/play.vue', 'test/wait.vue']
+const OTHER_ADMIN_PAGES = ['test/play.vue', 'test/wait.vue', 'test/verdict.vue']
 
 function pageFiles(): string[] {
   return readdirSync(PAGES_DIR, { recursive: true })
