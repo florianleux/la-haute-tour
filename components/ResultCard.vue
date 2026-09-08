@@ -7,98 +7,96 @@
          même écran que la question elle-même, pas un autre. Voir
          components/QuestionCard.vue pour le détail des choix (cqw,
          container-type, sortie du système Base*, bascule mobile/desktop). -->
-    <div class="relative mx-auto aspect-428/855 w-full @container bg-[url(/images/mobile-play-card.webp)] bg-contain bg-center bg-no-repeat sm:aspect-1980/775 sm:bg-[url(/images/game-card.webp)]">
+    <div
+      class="relative mx-auto aspect-428/855 w-full @container bg-[url(/images/mobile-play-card.webp)] bg-contain bg-center bg-no-repeat sm:aspect-1980/775 sm:bg-[url(/images/game-card.webp)]"
+    >
       <StatsRibbons
         :state="state"
         :effects="effects"
       />
 
-      <!-- Le parchemin : verdict de la question qui vient de se jouer, palier ou
-           fin de partie s'ils s'annoncent par-dessus. -->
-      <div class="absolute left-1/2 top-[32%] flex h-[58%] w-[84%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[1.2cqw] overflow-y-auto text-center sm:top-[36%] sm:h-[70%] sm:w-[56%]">
-        <template v-if="screen.verdict">
-          <p
-            class="text-[7cqw] font-bold sm:text-[3cqw]"
-            :class="screen.verdict.correct ? 'text-emerald-700' : 'text-rose-700'"
-          >
-            {{ screen.verdict.correct ? 'Correct !' : 'Incorrect...' }}
-          </p>
-          <p class="text-[5.2cqw] leading-relaxed text-amber-800 sm:text-[2.2cqw]">
-            {{ statement }}
-          </p>
-          <p class="-mt-2 text-[3.8cqw] text-amber-800 sm:text-[1.6cqw]">
-            <strong>{{ screen.verdict.answerLabel }}</strong>
-          </p>
-          <p class="text-[3.3cqw] text-amber-800/80 sm:text-[1.4cqw]">
-            Ta réponse : {{ screen.verdict.submittedAnswer || '(rien)' }}
-          </p>
-          <p
-            v-if="screen.verdict.lifeLost"
-            class="text-[3.3cqw] font-semibold text-rose-700 sm:text-[1.4cqw]"
-          >
-            Tu perds une vie.
-          </p>
+      <template v-if="screen.verdict">
+        <p
+          class="absolute left-1/2 top-[18%] w-[84%] -translate-x-1/2 text-center text-[7cqw] font-bold sm:left-1/2 sm:top-[14%] sm:w-[56%] sm:text-[2.5cqw]"
+          :class="screen.verdict.correct ? 'text-emerald-700' : 'text-rose-700'"
+        >
+          {{ screen.verdict.correct ? 'Correct !' : 'Incorrect...' }}
+        </p>
+        <p
+          class="absolute left-1/2 top-[30%] flex h-[28%] w-[84%] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-y-auto text-center text-[5.2cqw]  leading text-amber-800 sm:top-[38%] sm:h-[30%] sm:w-[56%] sm:text-[1.8cqw]">
+          {{ statement }}
 
-          <!-- Voir specs/anti-triche.md#perte-de-focus. -->
-          <p
-            v-if="leftThePage"
-            class="text-[2.8cqw] text-amber-700 sm:text-[1.2cqw]"
-          >
-            Tu as quitté la page : ta réponse a été envoyée en l'état.
-          </p>
+        </p>
+        <p
+          class="absolute uppercase left-1/2 top-[52%] w-[84%] -translate-x-1/2 text-center text-[3.8cqw] text-amber-800 sm:top-[52%] sm:w-[56%] sm:text-[2.2cqw]">
+          <strong>{{ screen.verdict.answerLabel }}</strong>
+        </p>
+        <p
+          class="absolute left-1/2 top-[60%] w-[84%] -translate-x-1/2 text-center text-[3.3cqw] text-amber-800/80 sm:top-[60%] sm:w-[56%] sm:text-[1.4cqw]">
+          Ta réponse : {{ screen.verdict.submittedAnswer || '(rien)' }}
+        </p>
+        <p
+          v-if="screen.verdict.lifeLost"
+          class="absolute left-1/2 top-[68%] w-[84%] -translate-x-1/2 text-center text-[3.3cqw] font-semibold text-rose-700 sm:top-[68%] sm:w-[56%] sm:text-[2.2cqw]"
+        >
+          Tu perds une vie !
+        </p>
+        <button
+          v-if="contestable"
+          type="button"
+          :disabled="contesting"
+          class="absolute left-1/2 top-[78%] w-[84%] -translate-x-1/2 cursor-pointer text-center text-[2.8cqw] font-semibold text-amber-700 underline underline-offset-2 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60 sm:top-[77%] sm:w-[56%] sm:text-[1.3cqw]"
+          @click="$emit('dispute')"
+        >
+          Contester cette question
+        </button>
 
-          <!-- Voir specs/validation.md. -->
-          <button
-            v-if="contestable"
-            type="button"
-            :disabled="contesting"
-            class="cursor-pointer text-[2.8cqw] font-semibold text-amber-700 underline underline-offset-2 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60 sm:text-[1.2cqw]"
-            @click="$emit('dispute')"
-          >
-            Contester cette question
-          </button>
+        <!-- Voir specs/validation.md. -->
 
-          <!-- Le coffre s'ouvre sur un écran à part (ChestCard) : ici
-               seulement l'annonce qu'il y en a un. Voir specs/bonus.md#coffre-et-mimic. -->
-          <p
-            v-if="screen.chest && !screen.chest.opened"
-            class="text-[3cqw] font-semibold text-emerald-700 sm:text-[1.3cqw]"
-          >
-            Tu as gagné un coffre.
-          </p>
+        <!-- Le coffre s'ouvre sur un écran à part (ChestCard) : ici
+             seulement l'annonce qu'il y en a un. Voir specs/bonus.md#coffre-et-mimic. -->
+        <p
+          v-if="screen.chest && !screen.chest.opened"
+          class="absolute left-1/2 top-[80%] w-[84%] -translate-x-1/2 text-center text-[3cqw] font-semibold text-emerald-700 sm:top-[86%] sm:w-[56%] sm:text-[1.3cqw]"
+        >
+          Tu as gagné un coffre.
+        </p>
 
-          <!-- Voir specs/ecrans.md#jeu. -->
-          <p
-            v-if="screen.recovery?.result"
-            class="text-[3cqw] font-semibold sm:text-[1.3cqw]"
-            :class="screen.recovery.result === 'resumed' ? 'text-emerald-700' : 'text-amber-700'"
-          >
-            {{ screen.recovery.result === 'resumed'
-              ? 'Rattrapage réussi : tes vies sont restaurées.'
-              : 'Aucune bonne réponse : une nouvelle attente commence.' }}
-          </p>
-        </template>
+        <!-- Voir specs/ecrans.md#jeu. -->
+        <p
+          v-if="screen.recovery?.result"
+          class="absolute left-1/2 top-[86%] w-[84%] -translate-x-1/2 text-center text-[3cqw] font-semibold sm:top-[92%] sm:w-[56%] sm:text-[1.3cqw]"
+          :class="screen.recovery.result === 'resumed' ? 'text-emerald-700' : 'text-amber-700'"
+        >
+          {{ screen.recovery.result === 'resumed'
+            ? 'Rattrapage réussi : tes vies sont restaurées.'
+            : 'Aucune bonne réponse : une nouvelle attente commence.' }}
+        </p>
+      </template>
 
-        <!-- Voir specs/mecanique.md#fin-détage. -->
-        <template v-if="screen.phase === 'floorEnd'">
-          <p class="text-[4.6cqw] font-bold text-amber-800 sm:text-[2cqw]">
-            Étage {{ state.floor }} terminé.
-          </p>
-          <p class="text-[3cqw] text-amber-800/80 sm:text-[1.3cqw]">
-            Tu as vu toutes ses questions. Ce que tu y as raté reste à cet étage :
-            le suivant repart d'une fiche vierge.
-          </p>
-        </template>
+      <!-- Voir specs/mecanique.md#fin-détage. -->
+      <template v-if="screen.phase === 'floorEnd'">
+        <p
+          class="absolute left-1/2 top-[35%] w-[84%] -translate-x-1/2 text-center text-[4.6cqw] font-bold text-amber-800 sm:top-[42%] sm:w-[56%] sm:text-[2cqw]">
+          Étage {{ state.floor }} terminé.
+        </p>
+        <p
+          class="absolute left-1/2 top-[45%] w-[84%] -translate-x-1/2 text-center text-[3cqw] text-amber-800/80 sm:top-[52%] sm:w-[56%] sm:text-[1.3cqw]">
+          Tu as vu toutes ses questions. Ce que tu y as raté reste à cet étage :
+          le suivant repart d'une fiche vierge.
+        </p>
+      </template>
 
-        <template v-else-if="screen.phase === 'gameOver'">
-          <p class="text-[4.6cqw] font-bold text-emerald-700 sm:text-[2cqw]">
-            Tu as fini La Haute Tour.
-          </p>
-          <p class="text-[3cqw] text-amber-800/80 sm:text-[1.3cqw]">
-            Tous les étages sont derrière toi. Bravo.
-          </p>
-        </template>
-      </div>
+      <template v-else-if="screen.phase === 'gameOver'">
+        <p
+          class="absolute left-1/2 top-[35%] w-[84%] -translate-x-1/2 text-center text-[4.6cqw] font-bold text-emerald-700 sm:top-[42%] sm:w-[56%] sm:text-[2cqw]">
+          Tu as fini La Haute Tour.
+        </p>
+        <p
+          class="absolute left-1/2 top-[45%] w-[84%] -translate-x-1/2 text-center text-[3cqw] text-amber-800/80 sm:top-[52%] sm:w-[56%] sm:text-[1.3cqw]">
+          Tous les étages sont derrière toi. Bravo.
+        </p>
+      </template>
 
       <!-- Le médaillon, à cheval sur le bord haut du cadre : juste/faux au lieu du
            chrono, il n'y a plus de temps qui court sur un verdict. Même
