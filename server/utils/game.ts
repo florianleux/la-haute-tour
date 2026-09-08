@@ -11,6 +11,7 @@ import {
   phaseOf,
   rollChest,
   resumesRecovery,
+  sealedRecovery,
 } from './mechanics'
 import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
@@ -87,6 +88,11 @@ export interface RecoveryProgress {
   total: number
   played: number
   successes: number
+  /** Whether the verdict is already locked in: quota reached (success) or
+   *  mathematically impossible to reach it with the remaining questions (failure).
+   *  The recovery stops right here — the remaining questions are not played.
+   *  See specs/mecanique.md#déroulement-du-rattrapage. */
+  sealed: boolean
   /** Whether finishing on this tally gives the lives back. */
   resumes: boolean
   /**
@@ -113,11 +119,11 @@ export interface GameState {
   /** Tally of the recovery under way, null outside one. */
   recovery: RecoveryProgress | null
   /**
-   * Le sort du dernier rattrapage, posé une fois toutes ses questions jouées.
+   * Le sort du dernier rattrapage, posé une fois ses questions jouées.
    * Un écran intermédiaire le lit avant que le joueur ne reprenne l'ascension
    * (succès) ou ne voie sa nouvelle attente (échec). Effacé au clic suivant.
    */
-  recoveryResult: 'resumed' | 'failed' | null
+  recoveryResult: 'failed' | null
   /** Questions vues à l'étage courant. */
   floorSeen: number
   /** Questions que l'étage courant contient. */
@@ -298,6 +304,7 @@ async function recoveryProgress(
     // perfect, et c'est ici que le joueur le lit avant de finir.
     // Voir specs/bonus.md#catalogue.
     resumes: resumesRecovery(successes, drawn.length, rules),
+    sealed: sealedRecovery(successes, played.length, drawn.length, rules),
     // Comparé à ce que l'étage donne d'ordinaire : le tirage s'arrête à la
     // taille du pool, donc un rattrapage rallongé peut compter moins de
     // questions qu'un autre — c'est l'écart à la règle qui le dit, pas un seuil.
@@ -562,7 +569,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
     // faut un perfect pour repartir.
     recovery: user.lives <= 0 ? await recoveryProgress(db, user, playedRules(snapshot)) : null,
-    recoveryResult: null as 'resumed' | 'failed' | null,
+    recoveryResult: null as 'failed' | null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
     attemptSeen: user.attemptSeen,
@@ -967,9 +974,9 @@ async function reserve(
 
 /**
  * The player has no lives left. Either the wait is still running — nothing to do —
- * or a recovery starts, continues, or ends here. Every drawn question is played,
- * even once the threshold is reached: it is the only place a pooled question moves
- * towards leaving the pool. See specs/mecanique.md#déroulement-du-rattrapage.
+ * or a recovery starts, continues, or ends here. The recovery stops as soon as
+ * the verdict is sealed: quota reached (success) or mathematically impossible
+ * (failure). See specs/mecanique.md#déroulement-du-rattrapage.
  */
 async function advanceRecovery(
   db: Database,
@@ -1004,6 +1011,16 @@ async function advanceRecovery(
     )
   }
 
+  // Le verdict est scellé — quota atteint ou mathématiquement impossible — : on
+  // ne sert pas la question suivante, le rattrapage s'arrête là. Les questions
+  // non jouées restent dans le Pool Échecs sans progression de leur compteur.
+  // Voir specs/mecanique.md#déroulement-du-rattrapage.
+  const progress = await recoveryProgress(db, user, rules)
+
+  if (progress !== null && progress.sealed) {
+    return finishRecovery(db, user, rules, now)
+  }
+
   const [nextUp] = await db
     .select()
     .from(recoveryQuestions)
@@ -1028,8 +1045,11 @@ async function advanceRecovery(
 }
 
 /**
- * Every drawn question is played: one right answer gives the lives back, none sends
- * the player into a shorter wait before another recovery.
+ * Settles the recovery verdict — lives back on success, a shorter wait on failure
+ * — and, on success, chains directly to ascent by drawing the next question.
+ * No intermediate screen: the verdict of the sealing question carries the
+ * message, and the button « Reprendre » leads straight to the next question.
+ * See specs/mecanique.md#déroulement-du-rattrapage.
  */
 async function finishRecovery(
   db: Database,
@@ -1050,17 +1070,24 @@ async function finishRecovery(
     // décompte du verdict, qui ne connaît que les règles de l'étage.
     await closeAttempt(db, user, now)
     await openAttempt(db, user, now)
-  }
-  else {
-    await db
-      .update(users)
-      .set({ lives: verdict.livesAfter, ...cooldownFields(verdict.cooldownUntil, now) })
-      .where(eq(users.id, user.id))
+
+    // Le rattrapage réussi enchaîne directement sur l'ascension : plus d'écran
+    // intermédiaire. drawAndReserve ne lit que currentFloor et floorCursor,
+    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit.
+    await drawAndReserve(db, user, rules, now)
+
+    return buildState(db, user.id, now)
   }
 
-  // Le verdict du rattrapage se lit sur un écran à part, pas sur la dernière
-  // question : il voyage avec l'état jusqu'à ce que le joueur reprenne.
-  return { ...await buildState(db, user.id, now), recoveryResult: verdict.resumes ? 'resumed' : 'failed' }
+  await db
+    .update(users)
+    .set({ lives: verdict.livesAfter, ...cooldownFields(verdict.cooldownUntil, now) })
+    .where(eq(users.id, user.id))
+
+  // Le verdict du rattrapage se lit sur le verdict de la question qui l'a
+  // scellé, puis sur l'écran d'attente qui suit : il voyage avec l'état
+  // jusqu'à ce que le joueur reprenne.
+  return { ...await buildState(db, user.id, now), recoveryResult: 'failed' }
 }
 
 export interface MissedPoolEntryView {

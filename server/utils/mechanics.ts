@@ -390,6 +390,24 @@ export function resumesRecovery(successes: number, drawn: number, rules: FloorRu
   return successes >= Math.min(rules.recoverySuccessesToResume, drawn)
 }
 
+/**
+ * Le verdict du rattrapage est-il scellé — soit parce que le quota de bonnes
+ * réponses est atteint (succès), soit parce qu'il est mathématiquement
+ * impossible de l'atteindre avec les questions restantes (échec). Dans les deux
+ * cas, les questions non jouées ne se jouent pas.
+ * Voir specs/mecanique.md#déroulement-du-rattrapage.
+ */
+export function sealedRecovery(
+  successes: number,
+  played: number,
+  total: number,
+  rules: FloorRules,
+): boolean {
+  const threshold = Math.min(rules.recoverySuccessesToResume, total)
+  const remaining = total - played
+  return successes >= threshold || successes + remaining < threshold
+}
+
 export interface RecoveryVerdict {
   resumes: boolean
   livesAfter: number

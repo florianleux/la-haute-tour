@@ -27,6 +27,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Pool Échecs** | `missedPool` | Questions ratées de l'étage courant, en attente de rattrapage. Persistant, jamais remis à zéro tant qu'on reste à l'étage. |
 | **Réussites** | `poolSuccesses` | Nombre de bonnes réponses consécutives obtenues en rattrapage sur une question du Pool Échecs. Une mauvaise réponse le remet à zéro ; le seuil atteint fait sortir la question du pool. |
 | **Rattrapage** | `recovery` | Retest de quelques questions du Pool Échecs, à l'issue de l'attente, pour retrouver ses vies. |
+| **Scellé** | `sealed` | Le verdict du rattrapage est scellé : le quota de bonnes réponses est atteint (succès) ou mathématiquement impossible à atteindre avec les questions restantes (échec). Le rattrapage s'arrête — les questions non jouées restent dans le Pool Échecs sans progression de leur compteur. |
 | **Attente** | `cooldown` | Délai forcé après la perte de la dernière vie, avant de pouvoir reprendre ou rattraper. |
 | **Début d'attente** | `cooldownStartedAt` | L'instant où l'attente en cours a commencé. C'est de lui que Répit la recalcule, et c'est lui qui l'identifie auprès des effets — son échéance, elle, se déplace. |
 | **Durée d'attente** | `cooldownBaseMs` | Ce que l'attente en cours dure avant qu'aucun sort ne la touche. Portée par le joueur : elles ne durent pas toutes pareil, celle d'un rattrapage manqué étant plus courte. |

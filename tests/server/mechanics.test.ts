@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canDrawRecovery, drawByRank, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, rollChest, phaseOf } from '../../server/utils/mechanics'
+import { canDrawRecovery, drawByRank, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, rollChest, phaseOf, sealedRecovery } from '../../server/utils/mechanics'
 import { SPELL_IDS } from '../../shared/utils/spells'
 import { rulesForFloor } from '../../server/utils/rules'
 import { rolls } from '../helpers/random'
@@ -214,6 +214,31 @@ describe('verdict d un rattrapage', () => {
       livesAfter: 0,
       cooldownUntil: new Date(NOW.getTime() + rules.cooldownAfterFailedRecoveryMs),
     })
+  })
+})
+
+describe('verdict scellé', () => {
+  const total = 3
+  const threshold = rules.recoverySuccessesToResume
+
+  it('est scellé dès que le quota de bonnes réponses est atteint', () => {
+    expect(sealedRecovery(threshold, 1, total, rules)).toBe(true)
+    expect(sealedRecovery(threshold, 2, total, rules)).toBe(true)
+  })
+
+  it('est scellé quand le quota est mathématiquement impossible', () => {
+    // Seuil = 1 : scellé seulement quand tout est joué sans aucune juste.
+    expect(sealedRecovery(0, total, total, rules)).toBe(true)
+    // Seuil = 3 (perfectRequired) : 1 juste, 1 reste, 1 + 1 < 3 → scellé.
+    const perfect = { ...rules, recoverySuccessesToResume: 3 }
+    expect(sealedRecovery(1, 2, 3, perfect)).toBe(true)
+    // 1 juste, 2 restent, 1 + 2 = 3 ≥ 3 → encore possible → pas scellé.
+    expect(sealedRecovery(1, 1, 3, perfect)).toBe(false)
+  })
+
+  it('n est pas scellé tant que le quota reste atteignable', () => {
+    expect(sealedRecovery(0, 1, total, rules)).toBe(false)
+    expect(sealedRecovery(0, 2, total, rules)).toBe(false)
   })
 })
 

@@ -54,15 +54,14 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 1. Dernière vie perdue → **attente**.
 2. À l'échéance de l'attente :
    - Pool Échecs **plus petit que le nombre de questions à tirer** → vies restaurées, reprise immédiate, nouvelle tentative.
-   - Pool Échecs **assez fourni** → **rattrapage** : des questions distinctes tirées au hasard du Pool Échecs de l'étage courant.
-     - **Au moins une bonne réponse** → vies restaurées, reprise immédiate, nouvelle tentative.
-     - **Aucune bonne réponse** → l'attente repart pour une durée réduite, puis le rattrapage se rejoue. Sans limite.
+    - Pool Échecs **assez fourni** → **rattrapage** : des questions distinctes tirées au hasard du Pool Échecs de l'étage courant.
+      - Le rattrapage s'arrête dès que le verdict est **scellé** (voir ci-dessous). Succès → vies restaurées, reprise immédiate, nouvelle tentative. Échec → l'attente repart pour une durée réduite, puis le rattrapage se rejoue. Sans limite.
 
 ### Déroulement du rattrapage
 
 - **Feedback immédiat après chaque question** : le joueur sait tout de suite s'il a bon ou faux et voit la bonne réponse, puis passe à la suivante. Même mécanique qu'en ascension.
-- **Toutes les questions se jouent**, même une fois le seuil de réussite atteint : c'est le seul endroit du jeu où une question du Pool Échecs peut progresser vers sa sortie. S'arrêter plus tôt priverait le joueur de ce progrès.
-- Le résultat s'annonce à la fin.
+- **Le rattrapage s'arrête dès que le verdict est scellé** — succès (quota de bonnes réponses atteint) ou échec (quota mathématiquement impossible à atteindre avec les questions restantes). Les questions non jouées restent dans le Pool Échecs sans que leur compteur de réussites progresse : c'est le tradeoff assumé d'un arrêt précoce, le joueur récupère ses vies plus vite mais le pool dégonfle moins vite.
+- Le verdict du rattrapage s'annonce sur l'écran de la question qui le scelle : « Rattrapage réussi » + bouton « Reprendre » qui enchaîne sur l'ascension, ou « Rattrapage raté » + bouton « Terminer le rattrapage » qui enchaîne sur l'attente.
 - Les questions de rattrapage sont déjà vues : elles ne font pas avancer la progression, seulement les compteurs du Pool Échecs.
 - **Timer par question** plus généreux qu'en ascension. Voir [`anti-triche.md`](./anti-triche.md).
 

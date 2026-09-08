@@ -69,8 +69,8 @@
           :class="screen.recovery.result === 'resumed' ? 'text-emerald-700' : 'text-amber-700'"
         >
           {{ screen.recovery.result === 'resumed'
-            ? 'Rattrapage réussi : tes vies sont restaurées.'
-            : 'Aucune bonne réponse : une nouvelle attente commence.' }}
+            ? RECOVERY_SUCCESS_MESSAGE
+            : RECOVERY_FAILURE_MESSAGE }}
         </p>
       </template>
 
@@ -137,6 +137,7 @@
 // écran de jeu qui continue de parler, pas un autre. Voir specs/ecrans.md#jeu.
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen } from '~~/utils/phase'
+import { RECOVERY_FAILURE_MESSAGE, RECOVERY_SUCCESS_MESSAGE } from '~~/utils/phase'
 import type { EffectView } from '~~/server/utils/effects'
 
 const props = defineProps<{

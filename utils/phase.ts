@@ -35,9 +35,17 @@ export function nextActionLabel(state: GameState): string {
       return "Commencer le rattrapage";
     }
 
-    return recoveryLine(state.recovery).result === null
-      ? "Suivant"
-      : "Terminer le rattrapage";
+    const result = recoveryLine(state.recovery).result;
+
+    if (result === "resumed") {
+      return "Reprendre";
+    }
+
+    if (result === "waiting") {
+      return "Terminer le rattrapage";
+    }
+
+    return "Suivant";
   }
 
   if (state.phase === "floorEnd") {
@@ -84,6 +92,11 @@ export interface GameScreen {
   shortenedWait: boolean;
 }
 
+/** Les libellés du verdict de rattrapage, affichés sur le verdict de la
+ *  question qui le scelle et sur l'écran d'attente qui suit. */
+export const RECOVERY_SUCCESS_MESSAGE = "Rattrapage réussi : tes vies sont restaurées.";
+export const RECOVERY_FAILURE_MESSAGE = "Rattrapage raté : une nouvelle attente commence.";
+
 export interface RecoveryLine {
   /** La question en cours, de 1 au total. */
   position: number;
@@ -91,7 +104,8 @@ export interface RecoveryLine {
   successes: number;
   /** Une Indulgence a rallongé ce rattrapage : l'écran le dit. */
   lengthened: boolean;
-  /** Le sort du rattrapage, annoncé une fois toutes les questions jouées. */
+  /** Le sort du rattrapage, annoncé dès que le verdict est scellé — quota
+   *  atteint (succès) ou mathématiquement impossible (échec). */
   result: "resumed" | "waiting" | null;
 }
 
@@ -171,11 +185,12 @@ export function blockedByMaintenance(
   return !(path === "/" && (state.question !== null || state.verdict !== null));
 }
 
-/** Le résultat ne s'annonce qu'à la fin, jamais question par question. */
+/** Le résultat s'annonce dès que le verdict est scellé : quota atteint ou
+ *  mathématiquement impossible. Les questions restantes ne se jouent pas. */
 function recoveryLine(
   recovery: NonNullable<GameState["recovery"]>,
 ): RecoveryLine {
-  const over = recovery.played >= recovery.total;
+  const over = recovery.sealed;
 
   return {
     position: Math.min(recovery.played + 1, recovery.total),

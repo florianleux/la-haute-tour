@@ -1,15 +1,6 @@
 <template>
-  <BaseCard v-if="state?.recoveryResult === 'resumed'" title="Rattrapage réussi">
-    <template #lead>
-      Tes vies sont restaurées. Tu peux reprendre l'ascension.
-    </template>
-    <BaseButton block class="mt-8" :loading="isRunning('advance')" @click="run('advance', advance)">
-      Reprendre l'ascension
-    </BaseButton>
-  </BaseCard>
-
   <QuestionCard
-    v-else-if="state?.phase === 'ascent' && screen?.question"
+    v-if="state?.phase === 'ascent' && screen?.question"
     :state="state"
     :question="screen.question"
     :model-value="typed"

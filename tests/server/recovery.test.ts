@@ -222,31 +222,18 @@ describe('attente et rattrapage', () => {
       expect(await db.select().from(seenQuestions)).toHaveLength(before.length)
     })
 
-    it('joue toutes les questions tirées, même après le seuil de réussite atteint', async () => {
+    it('s arrête dès le quota atteint et enchaîne sur l ascension', async () => {
       await serveNextQuestion(db, player, afterCooldown)
 
-      for (let i = 0; i < rules.recoveryQuestions - 1; i++) {
-        await answerServed(true, afterCooldown)
-        const state = await serveNextQuestion(db, await reload(), afterCooldown)
-        expect(state.phase).toBe('recovery')
-        expect(state.question).not.toBeNull()
-        expect(state.recovery).toMatchObject({ played: i + 1 })
-      }
-    })
-
-    it('rend les vies dès qu une réponse a été juste, une fois tout joué', async () => {
-      await serveNextQuestion(db, player, afterCooldown)
+      // Une bonne réponse suffit (seuil = 1) : le verdict est scellé, les
+      // questions restantes ne se jouent pas, l'ascension reprend directement.
       await answerServed(true, afterCooldown)
-
-      for (let i = 0; i < rules.recoveryQuestions - 1; i++) {
-        await serveNextQuestion(db, await reload(), afterCooldown)
-        await answerServed(false, afterCooldown)
-      }
 
       const state = await serveNextQuestion(db, await reload(), afterCooldown)
 
       expect(state.phase).toBe('ascent')
       expect(state.lives).toBe(rules.lives)
+      expect(state.question).not.toBeNull()
       expect(await db.select().from(recoveryQuestions)).toHaveLength(0)
       expect(await db.select().from(attempts)).toHaveLength(1)
     })

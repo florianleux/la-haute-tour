@@ -80,20 +80,21 @@ describe('écran de jeu', () => {
     })
   })
 
-  it('n annonce le sort du rattrapage qu une fois toutes ses questions jouées', () => {
-    const recovery = { total: 3, played: 1, successes: 1, resumes: true, lengthened: false }
+  it('annonce le sort du rattrapage dès que le verdict est scellé', () => {
+    const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, lengthened: false }
 
-    expect(gameScreen(state({ phase: 'recovery', recovery, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 1, lengthened: false, result: null })
+    expect(gameScreen(state({ phase: 'recovery', recovery: ongoing, verdict })).recovery)
+      .toEqual({ position: 2, total: 3, successes: 0, lengthened: false, result: null })
 
-    expect(gameScreen(state({ phase: 'recovery', recovery: { ...recovery, played: 3 }, verdict })).recovery)
-      .toEqual({ position: 3, total: 3, successes: 1, lengthened: false, result: 'resumed' })
+    const resumed = { total: 3, played: 1, successes: 1, resumes: true, sealed: true, lengthened: false }
 
-    expect(gameScreen(state({
-      phase: 'recovery',
-      recovery: { ...recovery, played: 3, successes: 0, resumes: false, lengthened: false },
-      verdict,
-    })).recovery?.result).toBe('waiting')
+    expect(gameScreen(state({ phase: 'recovery', recovery: resumed, verdict })).recovery)
+      .toEqual({ position: 2, total: 3, successes: 1, lengthened: false, result: 'resumed' })
+
+    const failed = { total: 3, played: 3, successes: 0, resumes: false, sealed: true, lengthened: false }
+
+    expect(gameScreen(state({ phase: 'recovery', recovery: failed, verdict })).recovery?.result)
+      .toBe('waiting')
   })
 })
 
@@ -109,12 +110,18 @@ describe('action de la page de jeu', () => {
   })
 
   it('démarre, poursuit puis termine un rattrapage', () => {
-    const recovery = { total: 3, played: 0, successes: 0, resumes: false, lengthened: false }
+    const ongoing = { total: 3, played: 0, successes: 0, resumes: false, sealed: false, lengthened: false }
 
     expect(nextActionLabel(state({ phase: 'recovery' }))).toBe('Commencer le rattrapage')
-    expect(nextActionLabel(state({ phase: 'recovery', recovery, verdict })))
+    expect(nextActionLabel(state({ phase: 'recovery', recovery: ongoing, verdict })))
       .toBe('Suivant')
-    expect(nextActionLabel(state({ phase: 'recovery', recovery: { ...recovery, played: 3 } })))
+
+    const resumed = { total: 3, played: 1, successes: 1, resumes: true, sealed: true, lengthened: false }
+    expect(nextActionLabel(state({ phase: 'recovery', recovery: resumed, verdict })))
+      .toBe('Reprendre')
+
+    const failed = { total: 3, played: 3, successes: 0, resumes: false, sealed: true, lengthened: false }
+    expect(nextActionLabel(state({ phase: 'recovery', recovery: failed, verdict })))
       .toBe('Terminer le rattrapage')
   })
 })

@@ -89,9 +89,9 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 
 ### `recovery` — rattrapage
 
-Même présentation que l'ascension : une question à la fois, un champ libre, un compte à rebours, puis un verdict avec la bonne réponse. Toutes les questions se jouent, même une fois le seuil de réussite atteint.
+Même présentation que l'ascension : une question à la fois, un champ libre, un compte à rebours, puis un verdict avec la bonne réponse. Le rattrapage s'arrête dès que le verdict est scellé — quota atteint (succès) ou quota mathématiquement impossible (échec).
 
-Le résultat s'annonce à la fin : vies restaurées et reprise, ou nouvelle attente puis nouveau rattrapage.
+Le verdict du rattrapage s'annonce sur l'écran de la question qui le scelle : « Rattrapage réussi » + bouton « Reprendre » qui enchaîne sur l'ascension, ou « Rattrapage raté » + bouton « Terminer le rattrapage » qui enchaîne sur l'attente.
 
 ### `floorEnd` — palier
 

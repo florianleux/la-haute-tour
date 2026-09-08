@@ -95,16 +95,16 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
       await castVitality()
       await fillPool(rules.poolSizeForRecovery)
 
-      // L'attente s'achève, le rattrapage se joue jusqu'au bout : toutes ses
-      // questions se jouent, une seule bonne réponse suffit à repartir.
+      // L'attente s'achève, le rattrapage se joue : une seule bonne réponse
+      // suffit (seuil = 1), le rattrapage est scellé et la tentative suivante
+      // s'ouvre avec la Vitalité.
       await serveNextQuestion(db, await reload(), afterCooldown)
 
-      for (let i = 0; i < rules.recoveryQuestions; i++) {
-        const served = await readGameState(db, await reload(), afterCooldown)
-        const index = Number((served.question?.statement ?? '').replace(/\D/g, ''))
-        await submitAnswer(db, await reload(), `reponse ${index}`, afterCooldown)
-        await serveNextQuestion(db, await reload(), afterCooldown)
-      }
+      const served = await readGameState(db, await reload(), afterCooldown)
+      const index = Number((served.question?.statement ?? '').replace(/\D/g, ''))
+      await submitAnswer(db, await reload(), `reponse ${index}`, afterCooldown)
+
+      await serveNextQuestion(db, await reload(), afterCooldown)
 
       expect((await reload()).lives).toBe(rules.lives + 1)
     })

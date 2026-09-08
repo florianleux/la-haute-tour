@@ -17,7 +17,7 @@
       class="mt-3"
       tone="warning"
     >
-      Rattrapage raté : aucune bonne réponse. Une nouvelle attente commence.
+      {{ RECOVERY_FAILURE_MESSAGE }}
     </BaseHint>
 
     <!-- Une attente écourtée reste une attente : à son échéance, c'est le
@@ -99,6 +99,7 @@
 // Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen } from '~~/utils/phase'
+import { RECOVERY_FAILURE_MESSAGE } from '~~/utils/phase'
 
 defineProps<{
   state: GameState
