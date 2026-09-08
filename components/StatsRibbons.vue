@@ -17,18 +17,18 @@
   </p>
 
   <span
-    class="absolute left-[5%] top-[82%] w-[24%] text-center text-[7cqw] font-bold text-emerald-950 sm:left-[3%] sm:top-[7%] sm:w-[14%] sm:text-right sm:text-[5.4cqw]"
+    class="absolute left-[5%] top-[82%] w-[24%] text-center text-[7cqw] font-bold text-emerald-950 sm:left-[3%] sm:top-[39%] sm:w-[14%] sm:text-right sm:text-[3.3cqw]"
   >{{ state.floorSeen }}</span>
   <span
-    class="hidden sm:absolute left-[19%] top-[83%] w-[10%] text-left text-[2.4cqw] text-emerald-950 sm:left-[3%] sm:top-[49%] sm:w-[14%] sm:text-right sm:text-[1.1cqw]"
+    class=" invisible sm:visible  sm:absolute left-[19%] top-[83%] w-[10%] text-left text-[2.4cqw] text-emerald-950 sm:left-[3%] sm:top-[49%] sm:w-[14%] sm:text-right sm:text-[1.1cqw]"
   >/{{ state.floorTotal }}</span>
 
   <p
-    class="absolute left-[5%] top-[87%] w-[24%] text-center text-[3.4cqw] font-bold uppercase tracking-widest text-emerald-950/70 sm:left-[3%] sm:top-[38%] sm:w-[14%] sm:text-right sm:text-[1cqw]">
+    class="absolute left-[5%] top-[87%] w-[24%] text-center text-[3.4cqw] font-bold uppercase tracking-widest text-emerald-950/70 sm:left-[3%] sm:top-[68.5%] sm:w-[14%] sm:text-right sm:text-[1cqw]">
     Série
   </p>
   <p
-    class="absolute left-[5%] top-[88%] w-[24%] text-center text-[7cqw] font-bold text-emerald-950 sm:left-[3%] sm:top-[7%] sm:w-[14%] sm:text-right sm:text-[5.4cqw]">
+    class="absolute left-[5%] top-[88%] w-[24%] text-center text-[7cqw] font-bold text-emerald-950 sm:left-[3%] sm:top-[69%]  sm:w-[14%] sm:text-right sm:text-[3.3cqw]">
     {{ state.attemptSeen }}
   </p>
 

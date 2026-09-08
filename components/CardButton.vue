@@ -11,7 +11,7 @@
     <button
       type="button"
       :disabled="disabled"
-      class="sm:text-[3.3cqw] text-[6.6cqw]  flex h-full w-full appearance-none items-center justify-center border-0 bg-[url(/images/submit-button.webp)] bg-contain bg-center bg-no-repeat pb-2 font-semibold uppercase leading-none tracking-wider text-amber-600 outline-none transition-[transform,filter] ease-out will-change-transform hover:scale-110 hover:brightness-110 active:scale-105 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:brightness-100 disabled:opacity-60 enabled:cursor-pointer "
+      class="sm:text-[3.3cqw] text-[6.6cqw]  flex h-full w-full appearance-none items-center justify-center border-0 bg-[url(/images/submit-button.webp)] bg-contain bg-center bg-no-repeat pb-2 font-semibold uppercase leading-none tracking-wider text-amber-600 outline-none transition-[transform,filter] ease-out will-change-transform hover:scale-110 hover:brightness-110 active:scale-105 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:brightness-100 enabled:cursor-pointer "
       @click="$emit('click')"
     >
       {{ label }}

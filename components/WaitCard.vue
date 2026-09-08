@@ -88,9 +88,6 @@
       Commencer le rattrapage
     </BaseButton>
 
-    <div class="mt-8">
-      <MissedPoolList />
-    </div>
 
   </BaseCard>
 </template>
