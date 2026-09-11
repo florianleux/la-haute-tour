@@ -21,6 +21,7 @@ function state(overrides: Partial<GameState>): GameState {
     chest: null,
     maintenance: false,
     effects: [],
+    unlocked: [],
     ...overrides,
   }
 }
@@ -42,22 +43,22 @@ function stateOf(icons: NavIcon[], key: NavIconKey): string | undefined {
 }
 
 describe('composition de la barre', () => {
-  it('porte la tour, la baguette et le profil pour un joueur', () => {
+  it('porte la tour, la baguette, la coupe et le profil pour un joueur', () => {
     const icons = navIcons({ path: '/profil', isAdmin: false, game: state({}) })
 
-    expect(keys(icons)).toEqual(['tower', 'wand', 'profile'])
+    expect(keys(icons)).toEqual(['tower', 'wand', 'trophy', 'profile'])
   })
 
   it('ajoute le bouclier pour un admin', () => {
     const icons = navIcons({ path: '/profil', isAdmin: true, game: state({}) })
 
-    expect(keys(icons)).toEqual(['tower', 'wand', 'profile', 'admin'])
+    expect(keys(icons)).toEqual(['tower', 'wand', 'trophy', 'profile', 'admin'])
   })
 
   it('reste debout tant que l état de jeu n a pas été lu', () => {
     const icons = navIcons({ path: '/profil', isAdmin: false, game: null })
 
-    expect(keys(icons)).toEqual(['tower', 'wand', 'profile'])
+    expect(keys(icons)).toEqual(['tower', 'wand', 'trophy', 'profile'])
     expect(stateOf(icons, 'tower')).toBe('link')
   })
 })
@@ -91,7 +92,10 @@ describe('chrono qui tourne', () => {
       game: state({ phase: 'ascent', question }),
     })
 
-    expect(icons.map(icon => icon.state)).toEqual(['disabled', 'disabled', 'disabled', 'disabled'])
+    // « Toute la barre », et non un nombre d icônes : ce qu on veut tenir est
+    // qu aucune ne reste allumée, quelles qu elles soient.
+    expect(icons.length).toBeGreaterThan(0)
+    expect(icons.every(icon => icon.state === 'disabled')).toBe(true)
   })
 
   it('éteint toute la barre pendant une question de rattrapage', () => {
@@ -101,7 +105,8 @@ describe('chrono qui tourne', () => {
       game: state({ phase: 'recovery', lives: 0, question }),
     })
 
-    expect(icons.map(icon => icon.state)).toEqual(['disabled', 'disabled', 'disabled'])
+    expect(icons.length).toBeGreaterThan(0)
+    expect(icons.every(icon => icon.state === 'disabled')).toBe(true)
   })
 
   it('laisse la barre vivante ailleurs, même si une question est restée en cache', () => {

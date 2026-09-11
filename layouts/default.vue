@@ -5,6 +5,9 @@
     </template>
     <template v-else>
       <TopNav />
+      <!-- Dans le `v-else` comme la barre : la maintenance ferme tout, et il n'y
+           a rien à annoncer à qui ne peut pas jouer. -->
+      <AchievementToasts />
       <slot />
     </template>
   </main>

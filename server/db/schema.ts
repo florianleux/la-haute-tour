@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { ACHIEVEMENT_IDS } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { CHEST_STATES, SPELL_FACES, SPELL_IDS } from '../../shared/utils/spells'
 import { TEAM_IDS } from '../../shared/utils/teams'
@@ -120,6 +121,39 @@ export const users = sqliteTable('users', {
   attemptStartedAt: integer('attempt_started_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`0`),
+  /**
+   * Bonnes réponses d'affilée dans la tentative en cours, sans qu'aucune vie ait
+   * été perdue. Remis à zéro par une erreur, par un Mimic, et par l'ouverture
+   * d'une tentative.
+   *
+   * C'est aussi lui qui prouve l'étage sans faute : l'atteindre sur la taille de
+   * l'étage au moment du palier ne peut arriver qu'en une seule traite, puisque
+   * tout ce qui coupe l'étage le remet à zéro. Un second champ pour le dire
+   * pourrait le contredire. Voir specs/succes.md#étage-sans-faute.
+   */
+  streak: integer('streak').notNull().default(0),
+  /**
+   * Questions vues depuis toujours, tous étages et toutes tentatives confondus.
+   * Ne redescend jamais, pas même à la remise à zéro d'un joueur.
+   *
+   * Porté plutôt que compté, pour la raison qui vaut à `floorSeen`. Et il ne se
+   * déduit pas des questions vues : celles-ci ne gardent qu'une ligne par
+   * question, à vie.
+   */
+  seenTotal: integer('seen_total').notNull().default(0),
+  /**
+   * Le dernier jour où le joueur a résolu une question, en `YYYY-MM-DD` et au
+   * fuseau Europe/Paris — celui que les écrans utilisent déjà, voir utils/date.ts.
+   *
+   * Une date en texte plutôt qu'un horodatage : ce qu'on compare est un jour, et
+   * le stocker sous la forme où on le compare évite de rejouer le découpage à
+   * chaque lecture. Voir specs/succes.md#assiduité.
+   */
+  lastPlayedDay: text('last_played_day'),
+  /** Jours joués distincts. */
+  daysPlayed: integer('days_played').notNull().default(0),
+  /** Jours joués qui se suivent, le dernier compris. */
+  playStreak: integer('play_streak').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -461,7 +495,29 @@ export const settings = sqliteTable('settings', {
    * temps elle a fermé.
    */
   maintenanceSince: integer('maintenance_since', { mode: 'timestamp' }),
+  /**
+   * Le premier joueur à avoir franchi l'étage 1, pour tout le jeu. Réclamé une
+   * seule fois, par une écriture qui ne passe que tant que la colonne est nulle :
+   * personne ne le reprend ensuite, et aucun classement n'a eu à exister pour le
+   * désigner. Ni les joueurs test ni l'admin ne peuvent le réclamer.
+   * Voir specs/succes.md#premier-sur-le-serveur.
+   */
+  firstAscensionUserId: integer('first_ascension_user_id').references(() => users.id, { onDelete: 'set null' }),
 }, table => [check('settings_single_row', sql`${table.id} = 1`)])
+
+/**
+ * Les succès débloqués, un par ligne, acquis à vie. La clé composite dit tout :
+ * un succès ne se débloque qu'une fois, et l'insert n'a donc qu'à ignorer les
+ * conflits pour être idempotent — ce qu'il rend alors est exactement ce qui vient
+ * d'être gagné. Voir specs/succes.md.
+ */
+export const achievements = sqliteTable('achievements', {
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  achievement: text('achievement', { enum: ACHIEVEMENT_IDS }).notNull(),
+  unlockedAt: integer('unlocked_at', { mode: 'timestamp' }).notNull(),
+}, table => [primaryKey({ columns: [table.userId, table.achievement] })])
 
 /**
  * Ce que chaque étage contient. Une propriété du deck, partagée par tous les
@@ -493,3 +549,4 @@ export type FocusLoss = typeof focusLosses.$inferSelect
 export type InventoryEntry = typeof inventory.$inferSelect
 export type ActiveEffect = typeof activeEffects.$inferSelect
 export type Settings = typeof settings.$inferSelect
+export type Achievement = typeof achievements.$inferSelect

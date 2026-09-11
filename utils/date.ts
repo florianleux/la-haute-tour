@@ -1,3 +1,5 @@
+import { GAME_TIME_ZONE } from '~~/shared/utils/time'
+
 /**
  * A date as the player reads it. Explicit time zone: without it the string
  * rendered by the server and the one rendered by the browser can fall on two
@@ -5,7 +7,7 @@
  */
 const dayFormat = new Intl.DateTimeFormat('fr-FR', {
   dateStyle: 'long',
-  timeZone: 'Europe/Paris',
+  timeZone: GAME_TIME_ZONE,
 })
 
 export function formatDay(iso: string): string {
@@ -16,7 +18,7 @@ export function formatDay(iso: string): string {
 const dayTimeFormat = new Intl.DateTimeFormat('fr-FR', {
   dateStyle: 'long',
   timeStyle: 'short',
-  timeZone: 'Europe/Paris',
+  timeZone: GAME_TIME_ZONE,
 })
 
 export function formatDayTime(iso: string): string {

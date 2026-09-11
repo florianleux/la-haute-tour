@@ -177,7 +177,10 @@ describe('boucle d ascension', () => {
 
       const again = await submitAnswer(db, await reload(), 'Bordeaux', new Date(NOW.getTime() + 4_000))
 
-      expect(again).toEqual(first)
+      // Tout est identique sauf ce que la requête vient d écrire : la seconde
+      // n écrit rien, donc n annonce rien. C est ce qui empêche un succès d être
+      // annoncé deux fois. Voir specs/succes.md#affichage.
+      expect(again).toEqual({ ...first, unlocked: [] })
       expect((await reload()).lives).toBe(2)
     })
 

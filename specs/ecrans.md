@@ -2,13 +2,15 @@
 
 ## Principes
 
-- **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers les Sorts, un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
+- **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers les Sorts, une coupe vers les Succès, un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
 - **Chaque icône a trois états.** **Lien** quand la page est atteignable d'ici. **Actif** quand c'est la page qu'on regarde : elle est mise en avant et ne mène nulle part, comme dans un en-tête ordinaire — on ne clique pas vers là où on est déjà. **Désactivé** quand on ne peut pas y aller maintenant : éteinte et inerte. La barre ne disparaît jamais ; ce sont ses liens qui s'éteignent.
 - **Le jeu est la page d'accueil.** `/` est la partie : c'est là qu'on atterrit en se connectant, là qu'on retombe en rechargeant, et il n'existe pas de vestibule devant. Un joueur qui n'a jamais commencé y trouve l'invitation à le faire ; les autres, leur phase. Rien à traverser pour jouer.
 - **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, fin — vit sur cette page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
 - **Étage et vies ne s'affichent que pendant le jeu**, là où ils bougent. Nulle part ailleurs.
 - **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension comme en rattrapage — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente ou le palier, rien ne tourne et la barre redevient vivante.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
+- **Un déblocage de Succès s'annonce par un toast**, et c'est la seule chose du jeu qui flotte par-dessus un écran. Il passe seul, sans rien demander : un succès n'appelle aucune décision, donc il ne doit rien interrompre. Il n'apparaît que sur les déblocages qui arrivent pendant la partie — ceux que le joueur n'était pas là pour voir se découvrent sur leur page. Voir [`succes.md`](./succes.md#affichage).
+- **Les Succès ont leur icône dans la barre**, une coupe, entre la baguette et le buste. Elle ne s'éteint que pendant une question, comme le reste : la page se consulte à tout moment, contrairement aux Sorts qui n'existent qu'en attente. Un lien posé sur un écran de jeu aurait été introuvable — un joueur actif n'en voit aucun, sa page étant toujours prise par sa question, son verdict ou son attente.
 - **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'en attente, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette est donc **désactivée hors attente** — visible partout, cliquable là seulement. Elle annonce ainsi une page qui existe, à un moment qui viendra.
 
 ## Inventaire
@@ -20,6 +22,7 @@
 | Jeu | `/` — 5 phases, page d'accueil | non |
 | Profil | `/profil` | non |
 | Sorts | `/sorts` — en attente seulement | non |
+| Succès | `/succes` — par la barre | non |
 | Dashboard admin | `/admin` | non, réservé admin |
 | File de contestation | `/admin` | non, réservé admin |
 | Questions | `/admin` | non, réservé admin |

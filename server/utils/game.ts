@@ -13,6 +13,15 @@ import {
   resumesRecovery,
   sealedRecovery,
 } from './mechanics'
+import {
+  achievementsQuery,
+  claimFirstAscent,
+  earnedByAnswer,
+  earnedByCrossing,
+  earnedByFloorDone,
+  playedToday,
+  unlock,
+} from './achievements'
 import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
@@ -33,6 +42,7 @@ import {
   users,
 } from '../db/schema'
 import type { EffectView } from './effects'
+import type { AchievementId } from '../../shared/utils/achievements'
 import type { AnswerSource, Phase } from './mechanics'
 import type { FloorRules } from './rules'
 import type { ChestState, SpellId } from '../../shared/utils/spells'
@@ -147,6 +157,13 @@ export interface GameState {
    * l'ascension affiche une icône. Voir specs/bonus.md#écrans.
    */
   effects: EffectView[]
+  /**
+   * Les succès que **cette requête** vient d'écrire, et rien d'autre : partout
+   * ailleurs le tableau est vide. C'est ce qui empêche l'annonce de se rejouer —
+   * un rechargement ou une relecture n'écrit rien, donc n'annonce rien, sans
+   * qu'aucune garde n'ait à s'en souvenir. Voir specs/succes.md#affichage.
+   */
+  unlocked: AchievementId[]
 }
 
 /**
@@ -164,6 +181,12 @@ export interface PlayerSnapshot {
   floorTotal: number
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
   effects: EffectView[]
+  /**
+   * Les succès déjà acquis. Lus avec le reste parce que c'est en les connaissant
+   * qu'on sait lesquels sont neufs : sans eux, chaque réponse au-delà du premier
+   * palier de série réécrirait des succès que le joueur a déjà.
+   */
+  achievements: AchievementId[]
   reservation?: Reservation
   /** The reserved question, loaded with the reservation. */
   question?: Question
@@ -223,10 +246,10 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
     .where(eq(users.id, userId))
     .limit(1)
 
-  // La réservation, les effets et la taille de l'étage voyagent dans le même
-  // lot : trois requêtes, un seul aller-retour réseau.
+  // La réservation, les effets, la taille de l'étage et les succès acquis
+  // voyagent dans le même lot : quatre requêtes, un seul aller-retour réseau.
   // Voir tests/server/query-budget.test.ts.
-  const [holding, effects, deckFloor] = await db.batch([
+  const [holding, effects, deckFloor, unlocked] = await db.batch([
     db
       .select({ reservation: reservations, question: questions })
       .from(reservations)
@@ -235,6 +258,7 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
       .limit(1),
     effectsQuery(db, userId),
     floorSizeQuery(db, row.user.currentFloor),
+    achievementsQuery(db, userId),
   ])
 
   const [held] = holding
@@ -249,9 +273,36 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
     // Voir server/utils/deck.ts.
     floorTotal: sizeOf(deckFloor),
     gameClosed: row.gameClosed === 1,
+    achievements: unlocked.map(entry => entry.achievement),
     reservation: held?.reservation,
     question: held?.question,
   }
+}
+
+/**
+ * Grave ceux de ces succès qui manquent encore au joueur, et rend ceux qui
+ * viennent réellement d'être écrits.
+ *
+ * Le retranchement est ce qui rend l'écriture rare : les fonctions de décision
+ * rendent des **seuils atteints**, donc elles redisent à chaque question tout ce
+ * qui a déjà été gagné. Sans lui, une écriture partirait à chaque réponse au lieu
+ * d'une poignée par partie — et l'instantané porte déjà de quoi trancher, sans
+ * rien relire. Voir server/utils/achievements.ts.
+ */
+function grant(
+  db: Database,
+  snapshot: PlayerSnapshot,
+  earned: AchievementId[],
+  now: Date,
+): Promise<AchievementId[]> {
+  const held = new Set(snapshot.achievements)
+
+  return unlock(db, snapshot.user.id, earned.filter(id => !held.has(id)), now)
+}
+
+/** Recolle à un état ce que la requête vient de débloquer, sans toucher au reste. */
+function withUnlocked(state: GameState, unlocked: AchievementId[]): GameState {
+  return unlocked.length ? { ...state, unlocked } : state
 }
 
 async function poolSize(db: Database, user: User): Promise<number> {
@@ -333,7 +384,7 @@ async function resolveRecovery(
   questionId: string,
   correct: boolean,
   now: Date,
-): Promise<void> {
+): Promise<{ leavesPool: boolean }> {
   await db
     .update(recoveryQuestions)
     .set({ correct })
@@ -349,7 +400,7 @@ async function resolveRecovery(
     .limit(1)
 
   if (!entry) {
-    return
+    return { leavesPool: false }
   }
 
   const membership = and(
@@ -360,13 +411,15 @@ async function resolveRecovery(
 
   if (move.leaves) {
     await db.delete(missedPool).where(membership)
-    return
+    return { leavesPool: true }
   }
 
   await db
     .update(missedPool)
     .set({ poolSuccesses: move.poolSuccesses, lastFailedAt: move.lastFailedAt })
     .where(membership)
+
+  return { leavesPool: false }
 }
 
 /** La même question, lue à travers les règles de l'étage où se tient le joueur. */
@@ -378,6 +431,8 @@ function isExpiredForUser(reservation: Reservation, user: User, now: Date): bool
 interface Resolution {
   user: User
   reservation: Reservation
+  /** Les succès que cette résolution a réellement gravés. Voir specs/succes.md. */
+  unlocked: AchievementId[]
 }
 
 /**
@@ -427,11 +482,41 @@ async function resolve(
     chest,
   }
 
+  // Le jour joué s'estampille pour toute question résolue, rattrapage compris :
+  // une journée passée entièrement à rattraper est une journée jouée. Rend null
+  // quand le joueur a déjà joué aujourd'hui, et il n'y a alors rien à écrire.
+  // Voir specs/succes.md#assiduité.
+  const played = playedToday(user, now)
+
   if (reservation.mode === 'recovery') {
     // Aucune vie perdue, aucune progression : le rattrapage ne joue que sur les
-    // compteurs du Pool Échecs.
-    await resolveRecovery(db, user, reservation.questionId, correct, now)
-    return { user, reservation: resolved }
+    // compteurs du Pool Échecs. Les compteurs de progression passent donc
+    // inchangés — ce qu'ils portaient déjà est de toute façon déjà acquis.
+    const { leavesPool } = await resolveRecovery(db, user, reservation.questionId, correct, now)
+    const recovering: User = { ...user, ...played }
+
+    if (played) {
+      await db.update(users).set(played).where(eq(users.id, user.id))
+    }
+
+    const earned = [
+      ...earnedByAnswer({
+        correct,
+        empty: answer === '',
+        died: false,
+        streak: recovering.streak,
+        seenTotal: recovering.seenTotal,
+        daysPlayed: recovering.daysPlayed,
+        playStreak: recovering.playStreak,
+      }),
+      ...leavesPool ? ['POOL_CLEARED' as const] : [],
+    ]
+
+    return {
+      user: recovering,
+      reservation: resolved,
+      unlocked: await grant(db, snapshot, earned, now),
+    }
   }
 
   const { seenDelta, entersPool, livesAfter: lives, cooldownUntil } = judgement
@@ -458,10 +543,20 @@ async function resolve(
   // partie. Voir server/db/schema.ts.
   const moved: Partial<User> = entersPool ? { lives, ...cooldownFields(cooldownUntil, now) } : {}
 
+  // La série se casse sur l'erreur et repart de la bonne réponse. C'est elle qui
+  // portera le sans-faute de l'étage, d'où sa place dans le même lot que la
+  // question vue : les deux ne peuvent pas se désaccorder.
+  const counted = {
+    seenTotal: user.seenTotal + seenDelta,
+    streak: correct ? user.streak + 1 : 0,
+  }
+
   const advance = db
     .update(users)
     .set({
       ...moved,
+      ...played,
+      ...counted,
       floorSeen: sql`${users.floorSeen} + ${seenDelta}`,
       attemptSeen: sql`${users.attemptSeen} + ${seenDelta}`,
     })
@@ -470,13 +565,41 @@ async function resolve(
   const fresh: User = {
     ...user,
     ...moved,
+    ...played,
+    ...counted,
     floorSeen: user.floorSeen + seenDelta,
     attemptSeen: user.attemptSeen + seenDelta,
   }
 
+  // L'étage s'achève sur la question qui le complète, et c'est là que son
+  // sans-faute et la fin de la tour se gagnent — pas au clic qui franchit le
+  // palier. Au dernier étage il n'y a plus de clic : `gameOver` ne porte aucune
+  // action, personne ne repasse. Voir utils/phase.ts.
+  const floorDone = fresh.floorSeen >= snapshot.floorTotal
+
+  const earned = [
+    ...earnedByAnswer({
+      correct,
+      empty: answer === '',
+      died: cooldownUntil !== null,
+      streak: fresh.streak,
+      seenTotal: fresh.seenTotal,
+      daysPlayed: fresh.daysPlayed,
+      playStreak: fresh.playStreak,
+    }),
+    ...floorDone
+      ? earnedByFloorDone({
+          floor: user.currentFloor,
+          floorTotal: snapshot.floorTotal,
+          streak: fresh.streak,
+        })
+      : [],
+  ]
+
   if (!entersPool) {
     await db.batch([markSeen, advance])
-    return { user: fresh, reservation: resolved }
+
+    return { user: fresh, reservation: resolved, unlocked: await grant(db, snapshot, earned, now) }
   }
 
   await db.batch([
@@ -497,7 +620,7 @@ async function resolve(
     advance,
   ])
 
-  return { user: fresh, reservation: resolved }
+  return { user: fresh, reservation: resolved, unlocked: await grant(db, snapshot, earned, now) }
 }
 
 function servedQuestion(
@@ -578,6 +701,9 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une
     // icône, et ce qui module les règles doit se voir là où il agit.
     effects: snapshot.effects,
+    // Vide par défaut, et rempli par la seule fonction qui vient d'écrire :
+    // un état construit sans rien débloquer n'annonce rien.
+    unlocked: [] as AchievementId[],
   }
 
   if (reservation && question) {
@@ -677,11 +803,16 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
 
     // Rien d'autre n'a bougé : l'attente ne peut pas s'achever dans la seconde où
     // elle démarre. On rend ce qui vient d'être écrit.
-    return stateFrom(db, {
+    //
+    // Une lecture qui écrit annonce ce qu'elle a écrit : le délai écoulé pendant
+    // que l'onglet était fermé débloque pour de bon, et l'annoncer ici est la
+    // seule occasion de le dire. Elle ne se répétera pas — la réservation est
+    // résolue, ce chemin ne repasse plus.
+    return withUnlocked(await stateFrom(db, {
       ...snapshot,
       user: resolution.user,
       reservation: resolution.reservation,
-    }, now)
+    }, now), resolution.unlocked)
   }
 
   // Une attente qui vient de s'achever est le seul cas où une lecture a quelque
@@ -729,6 +860,10 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   const { reservation } = snapshot
   // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
   let fresh = snapshot.user
+  // Ce que la résolution ci-dessous aura débloqué, à recoller sur l'état rendu :
+  // le clic « suivant » résout la question expirée qu'il trouve, et ce qu'elle
+  // débloque n'a pas d'autre occasion d'être annoncé.
+  let unlocked: AchievementId[] = []
 
   // Le jeu est fermé : plus aucune question n'est servie, sauf à l'admin et aux
   // joueurs test — la maintenance ne doit pas empêcher de tester. Ce qui est
@@ -754,6 +889,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
 
     const resolution = await resolve(db, snapshot, reservation, '', now)
     fresh = resolution.user
+    unlocked = resolution.unlocked
   }
 
   // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
@@ -764,24 +900,27 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // tenait est résolue.
   const phase = phaseOfSnapshot(current, false, now)
 
-  // La tour est finie : phase terminale, rien à tirer, rien à franchir.
+  // La tour est finie : phase terminale, rien à tirer, rien à franchir. Rien à
+  // débloquer non plus — la fin du jeu s'est gagnée sur la question qui l'a
+  // atteinte, parce que cet écran-ci n'a aucune action et que personne n'y
+  // repasse. Voir specs/succes.md#progression.
   if (phase === 'gameOver') {
-    return stateFrom(db, current, now)
+    return withUnlocked(await stateFrom(db, current, now), unlocked)
   }
 
   if (phase === 'floorEnd') {
     // Les règles de l'étage d'au-dessus : les effets ancrés le suivent, l'étage
     // change sous eux.
-    await crossFloor(db, fresh, playedRules(current, fresh.currentFloor + 1), now)
+    const crossed = await crossFloor(db, current, fresh, playedRules(current, fresh.currentFloor + 1), now)
 
     // L'étage a changé, donc le décompte des questions vues et le total de
     // l'étage avec lui : on relit plutôt que de rapiécer un instantané qui ne
     // décrit plus le joueur. Cinq fois par partie, pas par question.
-    return buildState(db, user.id, now)
+    return withUnlocked(await buildState(db, user.id, now), [...unlocked, ...crossed])
   }
 
   if (fresh.lives <= 0) {
-    return advanceRecovery(db, fresh, playedRules(current), now)
+    return withUnlocked(await advanceRecovery(db, current, fresh, playedRules(current), now), unlocked)
   }
 
   const drawn = await drawAndReserve(db, fresh, playedRules(current), now)
@@ -791,12 +930,12 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
     // sous le joueur. On efface le verdict qu'il vient de lire et on rend l'état
     // tel qu'il est — inventer un palier ici le ferait monter sans avoir joué.
     await db.delete(reservations).where(eq(reservations.userId, user.id))
-    return buildState(db, user.id, now)
+    return withUnlocked(await buildState(db, user.id, now), unlocked)
   }
 
   // L'état renvoyé est exactement ce qu'on vient d'écrire : le relire coûterait
   // deux allers-retours de plus pour la même réponse.
-  return stateFrom(db, {
+  return withUnlocked(await stateFrom(db, {
     ...current,
     reservation: {
       userId: user.id,
@@ -810,7 +949,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
       chest: null,
     },
     question: drawn.question,
-  }, now)
+  }, now), unlocked)
 }
 
 /**
@@ -866,16 +1005,20 @@ export async function openPlayerChest(
 
   // Le Mimic retire toutes les vies d'un coup, traité comme une perte de dernière
   // vie ordinaire : l'attente démarre, et le verdict de la question — juste, elle
-  // l'était — reste lisible par-dessus.
+  // l'était — reste lisible par-dessus. La série tombe avec les vies : « toute vie
+  // perdue casse la série » ne souffre pas d'exception, pas même celle-ci.
   const wait = cooldownFields(cooldownFrom(rules, now), now)
+  const killed = { lives: 0, streak: 0, ...wait }
 
-  await db.update(users).set({ lives: 0, ...wait }).where(eq(users.id, user.id))
+  await db.update(users).set(killed).where(eq(users.id, user.id))
 
-  return stateFrom(db, {
+  const unlocked = await grant(db, snapshot, ['FIRST_DEATH'], now)
+
+  return withUnlocked(await stateFrom(db, {
     ...snapshot,
-    user: { ...snapshot.user, lives: 0, ...wait },
+    user: { ...snapshot.user, ...killed },
     reservation: opened,
-  }, now)
+  }, now), unlocked)
 }
 
 /**
@@ -885,7 +1028,13 @@ export async function openPlayerChest(
  * Appelée sur la phase `floorEnd`, qui garantit qu'un étage suivant existe.
  * Voir specs/mecanique.md#fin-détage.
  */
-async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date): Promise<void> {
+async function crossFloor(
+  db: Database,
+  snapshot: PlayerSnapshot,
+  user: User,
+  rules: FloorRules,
+  now: Date,
+): Promise<AchievementId[]> {
   const currentFloor = user.currentFloor + 1
 
   // Franchir est un seul acte : en trois écritures séparées, une interruption
@@ -911,6 +1060,18 @@ async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date
     // l'étage est la première de rang supérieur à 0.
     await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, rules, now)
   }
+
+  // Le sans-faute de l'étage quitté s'est gagné à sa dernière question, dans
+  // resolve() : ici on ne récompense que la montée elle-même.
+  const earned = [
+    ...earnedByCrossing(user.currentFloor),
+    // Seul le premier étage franchi peut faire un premier arrivé : au suivant, la
+    // place est prise depuis longtemps, et la réclamer coûterait une écriture par
+    // palier pour rien.
+    ...user.currentFloor === 1 ? await claimFirstAscent(db, user) : [],
+  ]
+
+  return grant(db, snapshot, earned, now)
 }
 
 /** Ce qu'un tirage vient d'écrire, pour éviter d'aller le relire. */
@@ -980,6 +1141,7 @@ async function reserve(
  */
 async function advanceRecovery(
   db: Database,
+  snapshot: PlayerSnapshot,
   user: User,
   rules: FloorRules,
   now: Date,
@@ -988,6 +1150,8 @@ async function advanceRecovery(
   if (waiting) {
     return buildState(db, user.id, now)
   }
+
+  let opened: AchievementId[] = []
 
   if (!await hasRecoveryRun(db, user.id)) {
     const drawn = await db
@@ -1009,6 +1173,11 @@ async function advanceRecovery(
     await db.insert(recoveryQuestions).values(
       drawn.map((entry, position) => ({ userId: user.id, questionId: entry.questionId, position })),
     )
+
+    // Le tirage posé, le rattrapage commence : c'est l'entrée en phase, et le seul
+    // instant où elle se produit. Un pool trop maigre rend les vies sans jamais
+    // passer ici — il n'y a pas eu de rattrapage.
+    opened = await grant(db, snapshot, ['FIRST_RECOVERY'], now)
   }
 
   // Le verdict est scellé — quota atteint ou mathématiquement impossible — : on
@@ -1018,7 +1187,7 @@ async function advanceRecovery(
   const progress = await recoveryProgress(db, user, rules)
 
   if (progress !== null && progress.sealed) {
-    return finishRecovery(db, user, rules, now)
+    return withUnlocked(await finishRecovery(db, snapshot, user, rules, now), opened)
   }
 
   const [nextUp] = await db
@@ -1029,7 +1198,7 @@ async function advanceRecovery(
     .limit(1)
 
   if (!nextUp) {
-    return finishRecovery(db, user, rules, now)
+    return withUnlocked(await finishRecovery(db, snapshot, user, rules, now), opened)
   }
 
   await reserve(
@@ -1041,7 +1210,7 @@ async function advanceRecovery(
     now,
   )
 
-  return buildState(db, user.id, now)
+  return withUnlocked(await buildState(db, user.id, now), opened)
 }
 
 /**
@@ -1053,12 +1222,25 @@ async function advanceRecovery(
  */
 async function finishRecovery(
   db: Database,
+  snapshot: PlayerSnapshot,
   user: User,
   rules: FloorRules,
   now: Date,
 ): Promise<GameState> {
   const progress = await recoveryProgress(db, user, rules)
   const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, rules, now)
+
+  // Le tirage joué en entier, et juste de bout en bout. Depuis que le rattrapage
+  // s'arrête au verdict scellé, cela n'arrive que lorsque le quota exige tout le
+  // tirage — sous Indulgence noire. Voir specs/succes.md#rattrapage.
+  const perfect = progress !== null
+    && progress.total > 0
+    && progress.played === progress.total
+    && progress.successes === progress.total
+
+  const unlocked = perfect
+    ? await grant(db, snapshot, ['RECOVERY_PERFECT'], now)
+    : []
 
   await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))
   await db.delete(reservations).where(eq(reservations.userId, user.id))
@@ -1076,7 +1258,7 @@ async function finishRecovery(
     // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit.
     await drawAndReserve(db, user, rules, now)
 
-    return buildState(db, user.id, now)
+    return withUnlocked(await buildState(db, user.id, now), unlocked)
   }
 
   await db
@@ -1087,7 +1269,10 @@ async function finishRecovery(
   // Le verdict du rattrapage se lit sur le verdict de la question qui l'a
   // scellé, puis sur l'écran d'attente qui suit : il voyage avec l'état
   // jusqu'à ce que le joueur reprenne.
-  return { ...await buildState(db, user.id, now), recoveryResult: 'failed' }
+  return withUnlocked(
+    { ...await buildState(db, user.id, now), recoveryResult: 'failed' },
+    unlocked,
+  )
 }
 
 export interface MissedPoolEntryView {
@@ -1213,9 +1398,9 @@ export async function submitAnswer(
 
   const resolution = await resolve(db, snapshot, reservation, answer, now, source)
 
-  return stateFrom(db, {
+  return withUnlocked(await stateFrom(db, {
     ...snapshot,
     user: resolution.user,
     reservation: resolution.reservation,
-  }, now)
+  }, now), resolution.unlocked)
 }

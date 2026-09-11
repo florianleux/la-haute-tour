@@ -150,6 +150,11 @@ export async function advanceTestPlayer(
       floorCursor: upcoming[upcoming.length - 1].rank,
       floorSeen: sql`${users.floorSeen} + ${upcoming.length}`,
       attemptSeen: sql`${users.attemptSeen} + ${upcoming.length}`,
+      seenTotal: sql`${users.seenTotal} + ${upcoming.length}`,
+      // La série suit ce que le raccourci vient de faire : avancer en justes
+      // l'allonge, avancer en fausses la casse. Sans quoi un joueur test poussé
+      // jusqu'au palier y arriverait avec une série que sa partie ne décrit pas.
+      streak: correct ? sql`${users.streak} + ${upcoming.length}` : sql`0`,
     })
     .where(eq(users.id, testPlayer.id))
 

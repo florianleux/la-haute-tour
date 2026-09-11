@@ -1,6 +1,7 @@
 import { asc, eq, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
 import {
+  achievements,
   activeEffects,
   attempts,
   deckFloors,
@@ -144,6 +145,20 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
  * mondes. Voir specs/admin.md#gestion-des-joueurs.
  */
 export async function resetPlayer(db: Database, player: User, now: Date): Promise<void> {
+  // Le palmarès n'est pas la partie : remettre un joueur à zéro remet sa partie à
+  // zéro, pas ce qu'il a accompli. Les joueurs test font exception — ils existent
+  // pour rejouer des situations, et une « première fois » ne se testerait qu'une
+  // seule fois si leurs succès survivaient. Voir specs/succes.md#remise-à-zéro.
+  //
+  // Les vues de toujours suivent la même règle, parce qu'elles nourrissent les
+  // mêmes succès : les garder chez un joueur test rendrait « Question n°67 »
+  // intestable après le premier essai.
+  const palmares = player.isTest ? { seenTotal: 0 } : {}
+
+  if (player.isTest) {
+    await db.delete(achievements).where(eq(achievements.userId, player.id))
+  }
+
   await db.batch([
     db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
@@ -164,6 +179,12 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         floorSeen: 0,
         attemptSeen: 0,
         attemptStartedAt: now,
+        // La série repart avec la partie : elle décrit la tentative en cours, qui
+        // n'existe plus. Les vues de toujours et les jours joués, non — les
+        // premières ne redescendent jamais, les seconds disent une assiduité et
+        // personne n'a « désassisté » en étant remis à zéro.
+        streak: 0,
+        ...palmares,
       })
       .where(eq(users.id, player.id)),
   ])

@@ -9,7 +9,7 @@ import type { GameState } from '~~/server/utils/game'
  */
 export type NavIconState = 'link' | 'active' | 'disabled'
 
-export type NavIconKey = 'tower' | 'wand' | 'profile' | 'admin'
+export type NavIconKey = 'tower' | 'wand' | 'trophy' | 'profile' | 'admin'
 
 export interface NavIcon {
   key: NavIconKey
@@ -38,6 +38,7 @@ interface NavEntry {
 const ENTRIES: NavEntry[] = [
   { key: 'tower', to: '/', label: 'Le jeu' },
   { key: 'wand', to: '/sorts', label: 'Mes sorts' },
+  { key: 'trophy', to: '/succes', label: 'Mes succès' },
   { key: 'profile', to: '/profil', label: 'Mon profil' },
   { key: 'admin', to: '/admin', label: 'Administration', adminOnly: true },
 ]

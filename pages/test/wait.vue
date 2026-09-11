@@ -79,6 +79,7 @@ const state = ref<GameState>({
   chest: buildChest(),
   maintenance: false,
   effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('pending')),
+  unlocked: [],
 })
 
 const screen = computed(() => gameScreen(state.value))

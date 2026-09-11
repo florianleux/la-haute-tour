@@ -111,5 +111,6 @@ const state = ref<GameState>({
   chest: null,
   maintenance: false,
   effects: [],
+  unlocked: [],
 })
 </script>

@@ -44,6 +44,12 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Catégorie** | `category` | Thème d'une question (Histoire, Musique, Sport…). Une question en porte zéro, une ou plusieurs. |
 | **Profil** | `profile` | Page d'identité du joueur : pseudo, ancienneté, déconnexion. Ne porte ni état de jeu ni donnée de triche. |
 | **Parcours** | `journey` | Ce que le profil montre du chemin déjà fait : étage atteint, questions vues, meilleure série, tentatives achevées. Jamais l'état de l'instant. |
+| **Succès** | `achievement` | Une distinction débloquée en jouant, acquise à vie, sans aucun effet sur la partie. Le catalogue est fixe, écrit dans le code, jamais administrable. À ne pas confondre avec les **Réussites** (`poolSuccesses`) du rattrapage, qui portent le même mot français sans rien partager d'autre. Voir [`succes.md`](./succes.md). |
+| **Série** | `streak` | Bonnes réponses d'affilée dans la tentative en cours, sans qu'aucune vie ait été perdue. Toute erreur la casse, toute nouvelle tentative la remet à zéro — c'est ce qui fait qu'atteindre la taille d'un étage prouve qu'on l'a passé sans faute. |
+| **Vues totales** | `seenTotal` | Questions vues depuis toujours, tous étages et toutes tentatives confondus. Ne redescend jamais, pas même à la remise à zéro d'un joueur. |
+| **Jour joué** | `playedDay` | Un jour où le joueur a résolu au moins une question, daté en Europe/Paris. Ouvrir le jeu sans jouer n'en fait pas un : c'est la partie qui compte, pas la visite. Le rattrapage en est une : on y répond à des questions. |
+| **Assiduité** | `playStreak` | Jours joués qui se suivent, le dernier compris. Un jour sauté la ramène à un. À ne pas confondre avec la **Série** (`streak`), qui compte des réponses et non des jours. |
+| **Premier arrivé** | `firstAscension` | Le premier joueur à avoir franchi l'étage 1, pour tout le jeu. Réclamé une seule fois et jamais repris. Ni les joueurs test ni l'admin ne le réclament. Aucun classement n'existe pour le désigner : la place se prend à l'écriture, tant qu'elle est libre. |
 | **Rendre une vie** | `grantLife` | Rendre une vie à un joueur — contestation acceptée, ou geste d'admin. Sans plafond : c'est une réparation, pas une récompense. S'il n'en avait plus, l'attente et le rattrapage en cours sont annulés et la tentative se poursuit. |
 | **Passer l'attente** | `skipCooldown` | Geste d'admin qui fait échoir immédiatement l'attente d'un joueur. La suite se déroule comme si le délai s'était écoulé : rattrapage si le Pool Échecs le permet, reprise sinon. |
 | **Maintenance** | `maintenance` | Interrupteur d'administration qui ferme le jeu à tous sauf aux admins. Les joueurs se connectent toujours, mais n'obtiennent plus de nouvelle question. |
@@ -87,6 +93,7 @@ Le mot **session** n'appartient pas au vocabulaire du domaine : il désigne uniq
 - [`architecture.md`](./architecture.md) — Stack technique, données, authentification, forme de l'API, hébergement.
 - [`bonus.md`](./bonus.md) — Sorts, question loot, coffres et Mimic. Le seul système qui fasse communiquer deux parties entre elles.
 - [`equipes.md`](./equipes.md) — Les deux équipes, leur assignation, et la dérivation allié/ennemi dont la magie noire dépend.
+- [`succes.md`](./succes.md) — Le catalogue des Succès, ce qui les déclenche, et comment ils se montrent.
 
 ## Règles chiffrées
 

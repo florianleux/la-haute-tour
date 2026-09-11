@@ -44,6 +44,9 @@ Tout l'état vit en base, jamais côté client :
 - **Effets actifs** — un effet posé sur un joueur, portant son sort, sa face, son lanceur et la date du lancer. Ancré sur la prochaine tentative de la cible, il meurt avec elle.
 - **Lancers** — ce qui est parti de chez qui, vers qui, et quand. C'est le journal, et c'est aussi lui qui fait respecter les deux lancers par attente.
 - **Coffre** — un état porté par le verdict : *pas de coffre*, *fermé*, *ouvert avec son résultat*. Le tirage a lieu au clic et son résultat est persisté, sinon un rechargement relancerait le dé.
+- **Succès débloqués** — une entrée par succès acquis, avec sa date. Lus avec l'état du joueur plutôt qu'à part : c'est en les connaissant qu'on sait lesquels sont neufs, et un aller-retour de plus se paierait à chaque question. Voir [`succes.md`](./succes.md).
+- **Compteurs de succès**, portés par le joueur — la **série** en cours, les **vues totales**, et les **jours joués** (le dernier jour joué, leur nombre, et combien se suivent). Portés plutôt que comptés, pour la raison qui vaut déjà aux questions vues : les recompter lirait une ligne par fait à chaque question.
+- **Premier arrivé en haut** — un champ unique des réglages, réclamé une seule fois pour tout le jeu. Un classement dirait la même chose en le montrant à tout le monde, ce qu'aucun écran ne doit faire.
 
 Il n'existe **aucun compteur de loot**. Le statut de question loot se dérive du nombre de questions vues à l'étage, déjà stocké : un second compteur dirait le même nombre sous un autre nom, avec une désynchronisation possible en prime. Voir [`bonus.md`](./bonus.md#question-loot).
 

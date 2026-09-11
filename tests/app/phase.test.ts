@@ -20,6 +20,7 @@ function state(overrides: Partial<GameState>): GameState {
     chest: null,
   maintenance: false,
   effects: [],
+  unlocked: [],
     ...overrides,
   }
 }

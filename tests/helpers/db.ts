@@ -137,6 +137,11 @@ export async function markSeen(
       // palier ; sa tentative, elle, compte tout ce qu'il vient de voir.
       floorSeen: floor === player.currentFloor ? player.floorSeen + ids.length : player.floorSeen,
       attemptSeen: player.attemptSeen + ids.length,
+      // Les vues de toujours ne connaissent ni étage ni tentative : tout ce qui
+      // est vu les fait monter. La série, elle, n'est pas déductible d'ici — ce
+      // helper ne dit ni l'ordre des réponses ni les vies perdues entre-temps :
+      // un test qui en a besoin la pose lui-même.
+      seenTotal: player.seenTotal + ids.length,
     })
     .where(eq(schema.users.id, userId))
 }

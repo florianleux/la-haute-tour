@@ -30,6 +30,7 @@ const served: GameState = {
   chest: null,
   maintenance: false,
   effects: [],
+  unlocked: [],
 }
 
 describe('actions du joueur', () => {

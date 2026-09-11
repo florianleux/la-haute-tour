@@ -1,4 +1,5 @@
 import { and, asc, eq, ne, notInArray } from 'drizzle-orm'
+import { unlock } from './achievements'
 import { grantLife } from './lives'
 import {
   acceptedAnswers,
@@ -92,6 +93,12 @@ export async function openDispute(
   }
 
   await db.insert(disputes).values({ userId: user.id, questionId, createdAt: now })
+
+  // Gravé ici et pas annoncé : la page Succès le montrera. Il n'y a pas d'état de
+  // jeu à porter sur ce chemin, et un toast n'aurait de toute façon aucun sens sur
+  // les deux autres succès de contestation, arbitrés des heures plus tard.
+  // Voir specs/succes.md#affichage.
+  await unlock(db, user.id, ['DISPUTE_OPENED'], now)
 }
 
 export interface PendingDispute {
@@ -188,6 +195,14 @@ export async function settleDispute(
     .update(disputes)
     .set({ status: verdict, settledAt: now })
     .where(eq(disputes.id, id))
+
+  // Le succès va au joueur qui a contesté, jamais à l'admin qui arbitre.
+  await unlock(
+    db,
+    dispute.userId,
+    [verdict === 'accepted' ? 'DISPUTE_ACCEPTED' : 'DISPUTE_REJECTED'],
+    now,
+  )
 
   if (verdict === 'rejected') {
     return

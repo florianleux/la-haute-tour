@@ -64,6 +64,8 @@ const PATHS: Record<NavIconKey, string> = {
   tower: 'M5 3h2v2h2V3h2v2h2V3h2v2h2V3h2v19h-6v-6a2 2 0 0 0-4 0v6H5V3Z',
   // Une baguette en diagonale, l'étincelle à sa pointe.
   wand: 'M4.7 17.9 14.6 8l1.4 1.4-9.9 9.9-1.4-1.4ZM17.4 6.6 16 5.2l1.4-1.4 1.4 1.4-1.4 1.4Zm2.1 2.1 1.4-1.4 1.4 1.4-1.4 1.4-1.4-1.4ZM6.5 4.5l.9-2 .9 2 2 .9-2 .9-.9 2-.9-2-2-.9 2-.9Zm11 11 .9-2 .9 2 2 .9-2 .9-.9 2-.9-2-2-.9 2-.9Z',
+  // Une coupe : sa vasque, son pied, son socle.
+  trophy: 'M6 4h12v5a6 6 0 0 1-5 5.9V18h4v2H7v-2h4v-3.1A6 6 0 0 1 6 9V4Z',
   profile: 'M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.67 0-9 2.34-9 6.5V22h18v-1.5C21 16.34 16.67 14 12 14Z',
   admin: 'M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z',
 }

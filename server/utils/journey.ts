@@ -35,6 +35,10 @@ export async function openAttempt(db: Database, user: User, now: Date): Promise<
       cooldownStartedAt: null,
       attemptStartedAt: now,
       attemptSeen: 0,
+      // La série ne traverse pas les tentatives : « sans faute » veut dire d'une
+      // seule traite, et une tentative neuve est justement ce qui coupe la traite.
+      // Voir specs/succes.md#série-sans-faute.
+      streak: 0,
     })
     .where(eq(users.id, user.id))
 
