@@ -86,7 +86,10 @@
 // Fiche de révision, pas punition : les réponses sont montrées, et c'est ce qui
 // rend le seuil de sortie du pool atteignable. La contestation fusionne ici :
 // chaque carte porte son statut à droite. Voir specs/mecanique.md.
-const { entries, total, order, loading, hasMore, loaded, failed, loadMore, toggleOrder } = useMissedPool()
+// Le tri par date n'est plus proposé à l'écran depuis le passage au mobile. Le
+// composable l'expose toujours — `order` et `toggleOrder` attendent qu'un bouton
+// les rappelle — mais les lire ici sans s'en servir ne fait que mentir.
+const { entries, total, loading, hasMore, loaded, failed, loadMore } = useMissedPool()
 const { isContestable, contest, contestingId } = useDisputes()
 
 // Rien à dire tant que la première page n'est pas revenue, ni quand la lecture
