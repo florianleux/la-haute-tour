@@ -6,8 +6,38 @@
 
 ## Tolérance aux fautes
 
-- **Distance de Levenshtein ≤ 2** par rapport à une des réponses acceptées.
-- **Normalisation** avant calcul : trimming, lowercase, suppression des accents, des articles et de la ponctuation.
+La comparaison se fait **à l'oreille, pas à la lettre**. Ce que le joueur sait, c'est une réponse ; l'orthographe d'un nom propre n'en fait pas partie. Compter les caractères ne sait pas faire la différence entre une graphie et une erreur : « Sarkosy » est à une lettre de « Sarkozy » et se prononce pareil, « Rose » est à une lettre de « Rome » et n'a rien à voir.
+
+- **Normalisation** d'abord : trimming, lowercase, suppression des accents, des articles et de la ponctuation.
+- **Chiffres identiques**, sans aucune tolérance. Se tromper d'un chiffre dans une année, ce n'est pas mal l'écrire, c'est répondre autre chose : « 1880 » ne vaut pas « 1889 ».
+- **Chiffres romains identiques**, pour la même raison : « Louis IX » n'est pas « Louis II ».
+- **Même son** pour le reste. Chaque mot est réduit à un code phonétique français — `ph` = f, `s` entre deux voyelles = z, doubles repliées, nasales, finales muettes — et deux réponses se valent si leurs codes coïncident.
+
+Un mot contenant `ch` produit **deux lectures**, /ʃ/ comme dans « Michel » et /k/ comme dans « orchestre » ; il suffit qu'une coïncide.
+
+Ce que cela accepte : « Bordo » pour Bordeaux, « Flemming » pour Fleming, « Vanesa » pour Vanessa, « Escargots » pour Escargot, « Nabukodonosor » pour Nabuchodonosor.
+
+Ce que cela refuse, et qui passait avant : « Rose » pour Rome, « Manet » pour Monet, toute année fausse d'un chiffre. Et, assumé, **la faute de frappe qui change le son** — « Berloiz » pour Berlioz. C'est la contrepartie du principe : si c'est l'oreille qui tranche, une inversion de doigts qui change la prononciation est une autre réponse. À rouvrir seulement si ça mord en jeu, et jamais par une tolérance au caractère près, qui ramènerait « Rose » pour « Rome » par la même porte.
+
+Un choix de conception à connaître : replier les doubles avant de traiter le `s` intervocalique fait passer « Vanesa », au prix de confondre « poisson » et « poison ». Arbitré en faveur du premier — le deck répond surtout des noms propres.
+
+## Prénom et nom
+
+Un tiers du deck répond un nom de personne. **Le nom de famille seul suffit, et c'est ce qu'on attend** : les questions sont posées pour ça, et ne donner que le nom de famille est la bonne façon de répondre. Le prénom seul, lui, ne vaut rien — il n'identifie personne.
+
+Le prénom est donc **facultatif, mais engageant** : rien n'oblige à le donner, et le donner faux rend la réponse fausse. « Ian Fleming » n'est pas « Alexander Fleming », c'est quelqu'un d'autre.
+
+Restent les cas où le prénom est **juste mais autrement écrit** — « Yann » pour « Ian », « Alexandre » pour « Alexander », ou réduit à son initiale. Donc, sur une réponse d'**au moins deux mots** : un seul mot peut être à un son près, les autres doivent s'entendre exactement. Le nom de famille ancre la réponse, le prénom a le jeu. Une **initiale** vaut le mot qu'elle ouvre.
+
+Trois garde-fous :
+
+- Une réponse d'**un seul mot** n'a aucun jeu — « Rose » ne vaudra jamais « Rome ».
+- Un mot qui porte une **valeur** n'en a aucun non plus — « Charles II » ne vaut pas « Charles III ».
+- **Un seul** mot peut flotter. Deux, et c'est refusé.
+
+Aligner plusieurs noms pour ratisser ne marche pas non plus : le nombre de mots doit correspondre.
+
+Un piège à connaître : **sept initiales courantes sont aussi des chiffres romains** — C, D, I, L, M, V, X, soit Claude, Daniel, Ian, Louis, Michel, Victor, Xavier. Une lettre seule vaut donc l'initiale du mot qu'elle ouvre, sauf en face d'un vrai chiffre romain, où « Louis I » ne doit pas valoir « Louis II ».
 
 ## Réponses acceptées
 

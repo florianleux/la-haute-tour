@@ -136,21 +136,21 @@ describe('contestation', () => {
         answerLabel: 'BORDEAUX',
         accepted: ['Bordeaux', 'bordeaux (33)'],
       })
-      const questionId = await play('Bordo')
+      const questionId = await play('Toulouse')
       await openDispute(db, await reload(), questionId, NOW)
 
       expect(await pendingDisputes(db)).toMatchObject([{
         questionId,
         username: 'gandalf',
         statement: 'Capitale de la Gironde ?',
-        submittedAnswer: 'Bordo',
+        submittedAnswer: 'Toulouse',
         acceptedAnswers: ['Bordeaux', 'bordeaux (33)'],
       }])
     })
 
     it('ne montre que les contestations en attente', async () => {
       await createQuestion(db, { accepted: ['Bordeaux'] })
-      const questionId = await play('Bordo')
+      const questionId = await play('Toulouse')
       await openDispute(db, await reload(), questionId, NOW)
       const [dispute] = await db.select().from(disputes)
 
