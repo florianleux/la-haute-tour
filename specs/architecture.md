@@ -24,7 +24,7 @@ Zéro gestion serveur, zéro infrastructure externe hors Discord et Turso.
 - **Énoncé** — le texte posé au joueur.
 - **Réponse affichée** — montrée sur échec, ne sert jamais au matching.
 - **Réponses acceptées** — toutes les formulations qui valident la question.
-- **Étage** (1 à 6) — la difficulté s'en dérive, elle n'est pas stockée.
+- **Étage** (1 à 6) — tiré au hasard à l'import.
 - **Catégories** — zéro, une ou plusieurs.
 
 Pas de source ni de référence au lancement. Ajoutable plus tard.
@@ -53,8 +53,8 @@ Il n'existe **aucun compteur de loot**. Le statut de question loot se dérive du
 ### Import des questions
 
 - **Script CLI** (Node.js) qui charge le deck directement en base. Un seul run, avant le lancement.
-- **Format JSON** en entrée : un fichier pour le deck complet, chaque entrée portant énoncé, réponse, réponse affichée, variantes, catégories et difficulté.
-- Le script fusionne réponse et variantes en réponses acceptées, et répartit chaque difficulté sur ses deux étages.
+- **Format JSON** en entrée : un fichier pour le deck complet, chaque entrée portant énoncé, réponse, réponse affichée, variantes et catégories.
+- Le script fusionne réponse et variantes en réponses acceptées, puis **répartit les questions au hasard sur les 6 étages**, en tranches de tailles égales à une question près. Aucun critère de difficulté n'entre dans cette répartition ; l'équilibre, lui, est garanti par construction plutôt que laissé à six tirages indépendants, sinon un étage pourrait se dégarnir.
 - Lignes invalides **ignorées**, jamais bloquantes : rapportées en fin de run avec les compteurs par étage.
 - Pas d'UI d'import dans l'admin — le script suffit.
 

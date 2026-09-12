@@ -3,7 +3,7 @@
  * le schéma le grave dans sa contrainte d'étage, l'administration en fait une
  * liste déroulante. Deux copies dériveraient.
  *
- * Étages 1-2 = difficulté 1, 3-4 = difficulté 2, 5-6 = difficulté 3.
+ * Les 6 étages sont équivalents : les questions y sont réparties au hasard.
  */
 export const FLOOR_COUNT = 6
 

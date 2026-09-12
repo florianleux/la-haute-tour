@@ -260,9 +260,11 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
 - **Les chiffres du jeu ont été posés en imaginant un joueur qui se trompe souvent.**
   Le vrai se trompe rarement. Tout ce qui se déclenche à la mort — l'attente, le
   Pool Échecs, le rattrapage, et l'ancrage des Sorts sur la tentative suivante — se
-  déclenche donc bien plus rarement que prévu. La mesure ci-dessus porte sur la
-  difficulté 1, la plus facile : elle est un plafond, pas une moyenne. À revoir
-  quand des parties auront tourné sur les étages hauts.
+  déclenche donc bien plus rarement que prévu. Reste un plafond : la mesure a été
+  prise sur un étage 1 qui tenait alors le tiers le plus facile du deck. Les étages
+  étant désormais tirés au hasard, chacun mêle tout le spectre — le taux réel sera
+  plus bas, et le même partout. À reprendre sur des parties jouées sur le deck
+  réparti au hasard.
 
 ## Coffre et Mimic
 

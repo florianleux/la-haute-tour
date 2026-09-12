@@ -160,9 +160,9 @@ export const users = sqliteTable('users', {
 })
 
 /**
- * A question of the shared deck. `floor` carries the difficulty too — floors 1-2
- * hold difficulty 1, 3-4 difficulty 2, 5-6 difficulty 3 — so difficulty is derived
- * (`ceil(floor / 2)`), never stored. See specs/spec.md.
+ * A question of the shared deck. `floor` says where the question sits, nothing
+ * more: the import deals questions across the six floors at random, so the floors
+ * are equivalent and no difficulty is carried anywhere. See specs/spec.md.
  *
  * `answerLabel` is what the player is shown on failure ("FLEMING (Alexander)");
  * it is never matched against. Matching goes through `acceptedAnswers`.

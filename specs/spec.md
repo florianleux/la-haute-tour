@@ -4,7 +4,7 @@
 
 Jeu web de culture générale avec inscription Discord. Stack : **Nuxt 3** (Vue 3 + Nitro) + **Turso** (SQLite hébergé) sur **Netlify**. Zéro gestion serveur, zéro infrastructure externe (sauf Discord).
 
-Base de contenu : deck commun de questions de culture générale, partagé par tous les joueurs, réparti en **6 étages**. Le deck porte **3 niveaux de difficulté**, chacun réparti sur 2 étages : difficulté 1 → étages 1-2, difficulté 2 → étages 3-4, difficulté 3 → étages 5-6. Le volume du deck n'est pas fixé — la mécanique ne dépend d'aucun nombre de questions.
+Base de contenu : deck commun de questions de culture générale, partagé par tous les joueurs, réparti en **6 étages**. La répartition est **purement aléatoire** : les 6 étages sont équivalents, aucun n'est plus difficile qu'un autre. Le volume du deck n'est pas fixé — la mécanique ne dépend d'aucun nombre de questions.
 
 ## Glossaire
 
@@ -14,8 +14,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 
 | Terme | Nom en code | Définition |
 |-------|-------------|------------|
-| **Étage** | `floor` | Un des 6 groupes de questions traversés dans l'ordre. Étages 1-2 = difficulté 1, 3-4 = difficulté 2, 5-6 = difficulté 3. Les deux étages d'une même difficulté sont équivalents. |
-| **Difficulté** | `difficulty` | Niveau de difficulté du deck, de 1 (le plus facile) à 3. Dérivée de l'étage (`ceil(floor / 2)`), jamais stockée séparément. |
+| **Étage** | `floor` | Un des 6 groupes de questions traversés dans l'ordre. Les questions y sont réparties au hasard à l'import : les 6 étages sont équivalents, monter n'est pas monter en difficulté. |
 | **Ascension** | `ascent` | Progression du joueur à travers les questions de l'étage courant. |
 | **Tentative** | `attempt` | Période de jeu qui va des vies pleines jusqu'à la perte de la dernière vie. S'achève en attente, ou se poursuit si une contestation rend une vie. Sa longueur se compte en questions vues, et n'est inscrite qu'au moment où la suivante s'ouvre. |
 | **Vies** | `lives` | Unités perdues sur erreur. Restaurées au nombre plein à chaque reprise après attente. |
