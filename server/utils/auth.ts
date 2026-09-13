@@ -168,12 +168,33 @@ export async function requireAdmin(event: H3Event): Promise<User> {
   return user
 }
 
+/**
+ * Le joueur, s'il a encore le droit d'être servi.
+ *
+ * La whitelist se relit ici et pas seulement à la connexion : la session dure un
+ * an, donc la lire une seule fois laisserait un joueur désinvité jouer jusqu'à
+ * l'expiration de son cookie. En jointure sur la requête qui existait déjà, donc
+ * sans un aller-retour de plus — voir tests/server/query-budget.test.ts.
+ *
+ * Un joueur test échappe à la règle : son `discordId` est synthétique et aucune
+ * whitelist ne le portera jamais. Le refuser ici ferait tomber l'incarnation,
+ * qui passe par le même chemin. Voir server/utils/testPlayers.ts.
+ */
 async function loadUser(id: number | undefined): Promise<User | null> {
   if (!id) {
     return null
   }
 
-  const [user] = await useDatabase().select().from(users).where(eq(users.id, id)).limit(1)
+  const [row] = await useDatabase()
+    .select({ user: users, invited: whitelist.discordId })
+    .from(users)
+    .leftJoin(whitelist, eq(whitelist.discordId, users.discordId))
+    .where(eq(users.id, id))
+    .limit(1)
 
-  return user ?? null
+  if (!row) {
+    return null
+  }
+
+  return row.invited !== null || row.user.isTest ? row.user : null
 }

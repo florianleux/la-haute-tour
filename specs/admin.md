@@ -15,6 +15,8 @@
 - Seuls les **Discord IDs whitelistés en base** peuvent s'inscrire.
 - L'admin liste les Discord IDs autorisés et en ajoute, depuis `/admin` ou directement en base.
 - **L'ajout porte l'équipe d'arrivée** : c'est là que l'appartenance se décide, et le compte la reprend à sa première connexion. Elle se change ensuite depuis la fiche joueur. Voir [`equipes.md`](./equipes.md).
+- **Le retrait ferme la porte tout de suite**, session en cours comprise : un joueur désinvité n'est plus servi dès la requête suivante, sans attendre l'expiration de son cookie. Un admin ne peut pas se retirer lui-même — il se verrouillerait dehors.
+- Le retrait ne touche pas à la partie : compte, étage, vies, Pool Échecs et succès restent en place, et ré-inviter l'ID rouvre l'accès sur la partie telle qu'elle était.
 - Pas de whitelist → pas d'inscription possible.
 - Voir [`anti-triche.md`](./anti-triche.md).
 

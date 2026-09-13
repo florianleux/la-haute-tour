@@ -92,6 +92,17 @@ export async function createPlayer(db: Database, state: PlayerState = {}): Promi
     })
     .returning()
 
+  // Un joueur réel est passé par la whitelist, sinon il n'existerait pas — et
+  // c'est elle qu'on relit à chaque requête pour continuer de le servir. Un
+  // joueur test, lui, n'y a jamais figuré : son identifiant est synthétique.
+  // Voir server/utils/auth.ts, loadUser().
+  if (!user.isTest) {
+    await db
+      .insert(schema.whitelist)
+      .values({ discordId: user.discordId })
+      .onConflictDoNothing()
+  }
+
   return user.id
 }
 

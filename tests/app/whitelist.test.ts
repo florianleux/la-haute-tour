@@ -60,4 +60,38 @@ describe('whitelist côté admin', () => {
 
     expect(failed.value).toBe(true)
   })
+
+  it('relit la liste après un retrait', async () => {
+    const { remove } = await useWhitelist()
+
+    const removed = await remove('111')
+
+    expect(removed).toBe(true)
+    expect(calls()).toEqual(['fetch DELETE /api/admin/whitelist/111'])
+    expect(refresh).toHaveBeenCalledOnce()
+  })
+
+  it('n occupe que la ligne retirée, et jamais le bouton d ajout', async () => {
+    const { remove, removing, adding } = await useWhitelist()
+
+    const inFlight = remove('111')
+    expect(removing.value).toBe('111')
+    // Le bouton « Ajouter » n'a rien demandé : son loader doit rester éteint.
+    expect(adding.value).toBe(false)
+    await inFlight
+
+    expect(removing.value).toBeNull()
+  })
+
+  it('signale un retrait refusé sans relire', async () => {
+    breakNetwork()
+    const { remove, removing, failed } = await useWhitelist()
+
+    const removed = await remove('111')
+
+    expect(removed).toBe(false)
+    expect(removing.value).toBeNull()
+    expect(refresh).not.toHaveBeenCalled()
+    expect(failed.value).toBe(false)
+  })
 })

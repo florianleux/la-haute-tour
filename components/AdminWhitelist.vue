@@ -22,6 +22,9 @@
     <BaseNotice v-if="addFailed">
       L'ajout a échoué. Réessaie.
     </BaseNotice>
+    <BaseNotice v-if="removeFailed">
+      Le retrait a échoué. Réessaie.
+    </BaseNotice>
     <BaseNotice v-if="failed">
       Impossible de lire la whitelist. Recharge la page.
     </BaseNotice>
@@ -40,6 +43,13 @@
         <span class="flex items-center gap-3 text-slate-500">
           <span>{{ teamLabel(entry.team) }}</span>
           <span>{{ formatDay(entry.createdAt) }}</span>
+          <BaseButton
+            variant="ghost"
+            :loading="removing === entry.discordId"
+            @click="drop(entry.discordId)"
+          >
+            Retirer
+          </BaseButton>
         </span>
       </li>
     </BaseList>
@@ -52,7 +62,7 @@ import type { TeamId } from '~~/shared/utils/teams'
 
 // La liste des Discord IDs autorisés. La garde serveur est ce qui protège ;
 // cet écran ne fait que lire et ajouter. Voir specs/admin.md.
-const { entries, failed, add, adding, loading } = await useWhitelist()
+const { entries, failed, add, adding, remove, removing, loading } = await useWhitelist()
 
 const discordId = ref('')
 
@@ -65,6 +75,7 @@ const teamOptions = [
   ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
 ]
 const addFailed = ref(false)
+const removeFailed = ref(false)
 
 // Pas de « liste vide » quand la lecture a échoué : ce serait la même phrase
 // pour « personne n'est autorisé » et « je ne sais pas ».
@@ -83,5 +94,11 @@ async function submit(): Promise<void> {
   if (added) {
     discordId.value = ''
   }
+}
+
+// Nommé « drop » et non « remove » : `remove` est déjà le geste du composable,
+// et les deux dans la même portée se confondraient à la lecture.
+async function drop(id: string): Promise<void> {
+  removeFailed.value = !await remove(id)
 }
 </script>
