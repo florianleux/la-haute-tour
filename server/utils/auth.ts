@@ -86,7 +86,14 @@ export async function useAuthSession(event: H3Event): Promise<SessionManager<Ses
   return await useSession<SessionData>(event, {
     name: SESSION_NAME,
     password: sessionPassword,
-    cookie: { maxAge: SESSION_MAX_AGE },
+    cookie: {
+      maxAge: SESSION_MAX_AGE,
+      // Écrit en toutes lettres parce que h3 n'en pose aucun : son défaut
+      // s'arrête à `path`, `secure` et `httpOnly`. Et `lax`, jamais `strict` —
+      // sous `strict` plus personne ne se connecte.
+      // Voir specs/architecture.md#authentification.
+      sameSite: 'lax',
+    },
   })
 }
 

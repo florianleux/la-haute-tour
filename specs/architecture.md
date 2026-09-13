@@ -16,6 +16,7 @@ Zéro gestion serveur, zéro infrastructure externe hors Discord et Turso.
 - Le pseudo est synchronisé au login si le pseudo Discord change.
 - **Whitelist Discord** : seuls les Discord IDs whitelistés en base peuvent s'inscrire. Voir [`anti-triche.md`](./anti-triche.md).
 - La session d'authentification est un cookie signé. C'est le seul emploi du mot « session » dans le projet.
+- Ce cookie est `Secure`, `HttpOnly` et `SameSite=Lax` — sans quoi un site tiers ferait écrire l'API avec le cookie du joueur. `Lax` et non `Strict` : le retour OAuth arrive de Discord en navigation cross-site et doit pouvoir relire son état, sinon plus personne ne se connecte. `Lax` suffit, aucune écriture du jeu ne pendant à un GET.
 
 ## Données
 

@@ -121,10 +121,14 @@ export function jsonRequest(
 }
 
 /**
- * A session cookie for a signed-in player, without replaying the OAuth flow —
- * the flow itself is covered by callback.test.ts.
+ * L'en-tête `set-cookie` entier d'une session qui s'ouvre, attributs compris.
+ * Ce que renvoie un serveur ; `sessionCookieFor()` en garde ce qu'un navigateur
+ * renverrait.
  */
-export async function sessionCookieFor(userId: number, actingAsUserId?: number): Promise<string> {
+export async function sessionSetCookieHeader(
+  userId: number,
+  actingAsUserId?: number,
+): Promise<string> {
   const setSession = mountHandler('/session', defineEventHandler(async (event) => {
     const session = await useAuthSession(event)
     await session.update({ userId, actingAsUserId })
@@ -132,5 +136,20 @@ export async function sessionCookieFor(userId: number, actingAsUserId?: number):
   }))
 
   const response = await setSession(new Request('http://test/session'))
-  return (response.headers.get('set-cookie') ?? '').split(';')[0]
+
+  return response.headers.get('set-cookie') ?? ''
+}
+
+/**
+ * A session cookie for a signed-in player, without replaying the OAuth flow —
+ * the flow itself is covered by callback.test.ts. La paire `nom=valeur` seule,
+ * qui est ce qu'un navigateur renvoie.
+ */
+export async function sessionCookieFor(userId: number, actingAsUserId?: number): Promise<string> {
+  return nameAndValue(await sessionSetCookieHeader(userId, actingAsUserId))
+}
+
+/** Ce qu'un navigateur renverrait d'un `set-cookie` : la paire, sans les attributs. */
+function nameAndValue(setCookie: string): string {
+  return setCookie.split(';')[0]
 }
