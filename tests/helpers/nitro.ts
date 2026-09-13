@@ -3,6 +3,8 @@ import {
   createError,
   createRouter,
   getQuery,
+  getRequestHeader,
+  getRequestHost,
   getRouterParam,
   defineEventHandler,
   getValidatedQuery,
@@ -43,6 +45,8 @@ export function installNitroGlobals(discord: DiscordStubs = refusingDiscordStubs
   Object.assign(globalThis, {
     defineEventHandler,
     getQuery,
+    getRequestHeader,
+    getRequestHost,
     getRouterParam,
     getValidatedQuery,
     readValidatedBody,
