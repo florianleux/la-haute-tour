@@ -78,7 +78,18 @@ export interface SessionData {
 }
 
 const SESSION_NAME = 'lht_session'
-/** Un an : La Haute Tour est un jeu qu'on peut revenir jouer bien plus tard. */
+/**
+ * Un an : La Haute Tour est un jeu qu'on peut revenir jouer bien plus tard.
+ *
+ * Donné deux fois, et les deux comptent : au niveau de la config c'est la règle,
+ * h3 refusant de desceller au-delà ; dans `cookie` c'est la politesse faite au
+ * navigateur, qui oubliera le cookie de lui-même. Sans la première, l'année
+ * n'est qu'une convention que le porteur du cookie est libre d'ignorer.
+ *
+ * L'âge se compte depuis l'ouverture de la session et non depuis la dernière
+ * visite : au bout d'un an on repasse par Discord, même en ayant joué tous les
+ * jours.
+ */
 const SESSION_MAX_AGE = 365 * 24 * 60 * 60
 
 export async function useAuthSession(event: H3Event): Promise<SessionManager<SessionData>> {
@@ -86,6 +97,7 @@ export async function useAuthSession(event: H3Event): Promise<SessionManager<Ses
   return await useSession<SessionData>(event, {
     name: SESSION_NAME,
     password: sessionPassword,
+    maxAge: SESSION_MAX_AGE,
     cookie: {
       maxAge: SESSION_MAX_AGE,
       // Écrit en toutes lettres parce que h3 n'en pose aucun : son défaut
