@@ -5,7 +5,7 @@
     le rapport qu'un succès entretient avec la partie en cours.
   -->
   <div
-    class="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-2xl backdrop-blur"
+    class="flex w-full max-w-sm items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-2xl backdrop-blur"
     role="status"
   >
     <slot />

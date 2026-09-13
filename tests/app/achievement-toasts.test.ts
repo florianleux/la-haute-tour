@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { installAppGlobals } from '../helpers/app'
 
 const { serve, reset } = installAppGlobals()
 
 const { GAME_STATE_KEY } = await import('../../composables/useGameState')
-const { useAchievementToasts } = await import('../../composables/useAchievementToasts')
+const { TOAST_MS, useAchievementToasts } = await import('../../composables/useAchievementToasts')
 
 /** L'état de jeu tel qu'une écriture vient de le poser dans le cache. */
 function landed(unlocked: string[]): void {
@@ -13,19 +13,26 @@ function landed(unlocked: string[]): void {
 }
 
 describe('les annonces de succès', () => {
-  beforeEach(reset)
+  // Le délai d'expiration est la mécanique testée ici : chaque test avance
+  // l'horloge lui-même plutôt que d'attendre six secondes réelles.
+  beforeEach(() => {
+    reset()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => vi.useRealTimers())
 
   it('n annonce rien tant que rien n est débloqué', async () => {
     landed([])
 
-    const { toasts } = useAchievementToasts()
+    const toasts = useAchievementToasts()
     await nextTick()
 
     expect(toasts.value).toEqual([])
   })
 
   it('annonce ce qu une écriture vient de graver', async () => {
-    const { toasts } = useAchievementToasts()
+    const toasts = useAchievementToasts()
 
     landed(['FIRST_CORRECT'])
     await nextTick()
@@ -34,7 +41,7 @@ describe('les annonces de succès', () => {
   })
 
   it('empile plusieurs déblocages arrivés ensemble', async () => {
-    const { toasts } = useAchievementToasts()
+    const toasts = useAchievementToasts()
 
     landed(['GAME_COMPLETED', 'FLAWLESS_FLOOR_6'])
     await nextTick()
@@ -48,7 +55,7 @@ describe('les annonces de succès', () => {
    * vide et n annonce rien. Rien à dédupliquer côté client.
    */
   it('ne rejoue pas une annonce à la relecture', async () => {
-    const { toasts } = useAchievementToasts()
+    const toasts = useAchievementToasts()
 
     landed(['FIRST_CORRECT'])
     await nextTick()
@@ -59,14 +66,35 @@ describe('les annonces de succès', () => {
     expect(toasts.value.map(toast => toast.id)).toEqual(['FIRST_CORRECT'])
   })
 
-  it('laisse fermer une annonce à la main', async () => {
-    const { toasts, dismiss } = useAchievementToasts()
+  /**
+   * La seule sortie d'une annonce est le temps : rien dans l'écran ne la ferme,
+   * et le joueur n'a donc aucun geste à faire pour revenir à sa partie.
+   */
+  it('disparaît seule au bout de son délai', async () => {
+    const toasts = useAchievementToasts()
 
     landed(['FIRST_WRONG'])
     await nextTick()
+    expect(toasts.value).toHaveLength(1)
 
-    dismiss(toasts.value[0].key)
+    vi.advanceTimersByTime(TOAST_MS)
 
     expect(toasts.value).toEqual([])
+  })
+
+  it('laisse chaque annonce vivre son propre délai', async () => {
+    const toasts = useAchievementToasts()
+
+    landed(['FIRST_CORRECT'])
+    await nextTick()
+
+    vi.advanceTimersByTime(TOAST_MS / 2)
+    landed(['FIRST_WRONG'])
+    await nextTick()
+
+    // La première expire ; la seconde, arrivée à mi-course, tient encore.
+    vi.advanceTimersByTime(TOAST_MS / 2)
+
+    expect(toasts.value.map(toast => toast.id)).toEqual(['FIRST_WRONG'])
   })
 })
