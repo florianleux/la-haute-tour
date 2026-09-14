@@ -124,7 +124,6 @@
         :label="bottomAction.label"
         anchor="card-bottom"
         :disabled="bottomAction.loading"
-        size="sm"
         @click="bottomAction.run"
       />
     </div>

@@ -20,9 +20,10 @@
           Ce coffre rutilant doit renfermer quelque chose de précieux...
         </p>
 
-        <!-- Mêmes deux messages que components/ChestResult.vue, réécrits ici :
-             ChestResult repose sur BaseHint (thème sombre), incompatible avec
-             le reskin parchemin de cet écran. Voir specs/bonus.md#coffre-et-mimic. -->
+        <!-- Mêmes deux messages que sur l'écran d'attente (WaitCard, qui les
+             rend sur son poster) : chaque écran reskiné porte sa copie, faute
+             d'un composant partagé qui survivrait aux deux habillages.
+             Voir specs/bonus.md#coffre-et-mimic. -->
         <template v-else>
           <p
             v-if="chest.mimic"
@@ -43,14 +44,12 @@
         v-if="!chest.opened"
         label="OUVRIR"
         :disabled="opening"
-        size="sm"
         @click="$emit('open')"
       />
       <CardButton
         v-else
         :label="action ?? 'Suivant'"
         :disabled="advancing"
-        size="sm"
         @click="$emit('advance')"
       />
     </div>

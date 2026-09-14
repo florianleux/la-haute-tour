@@ -55,6 +55,43 @@ export function formatRemaining(iso: string, now: number): string {
 }
 
 /**
+ * La même attente, en cadran : « 01:30:00 », « 12:04 », « 4:32 », « 32 », « 8 ».
+ * Ce que porte le drapeau du poster d'attente, où le décompte est lu d'un coup
+ * d'œil et non dans une phrase — la forme en toutes lettres de `formatRemaining`
+ * y tiendrait mal et se lirait moins vite.
+ *
+ * Seule l'unité de tête n'est pas complétée à deux chiffres : elle porte la
+ * grandeur du délai, et « 4:32 » se lit plus vite que « 04:32 ». Celles qui
+ * suivent le sont toujours, sans quoi « 4:7 » se lirait quatre minutes sept.
+ *
+ * Même contrat que `formatRemaining` sur les bords : une échéance passée,
+ * absente ou illisible n'est pas un décompte, et se dit plutôt que de rendre
+ * « NaN:NaN ».
+ */
+export function formatCountdown(iso: string, now: number): string {
+  const seconds = Math.ceil((new Date(iso).getTime() - now) / 1000)
+
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return 'terminée'
+  }
+
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  const pad = (value: number): string => String(value).padStart(2, '0')
+
+  if (hours > 0) {
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`
+  }
+
+  if (minutes > 0) {
+    return `${minutes}:${pad(secs)}`
+  }
+
+  return String(secs)
+}
+
+/**
  * La même attente, à la minute près : ce que l'administration lit d'un joueur
  * qu'elle n'est pas en train de faire patienter. « 11 h 58 min », « 4 min ».
  * Arrondie au-dessus : trente secondes restantes se lisent « 1 min », parce

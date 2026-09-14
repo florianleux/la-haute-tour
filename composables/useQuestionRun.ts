@@ -1,6 +1,6 @@
 import { useGameState } from './useGameState'
 import { usePlay } from './usePlay'
-import { formatRemaining } from '../utils/date'
+import { formatCountdown } from '../utils/date'
 import type { Ref } from 'vue'
 import type { AnswerSource } from '~~/server/utils/mechanics'
 import type { GameState } from '~~/server/utils/game'
@@ -85,7 +85,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   })
 
   const waitRemaining = computed(
-    () => formatRemaining(state.value?.cooldownUntil ?? '', now.value),
+    () => formatCountdown(state.value?.cooldownUntil ?? '', now.value),
   )
 
   const cooldownOver = computed(() => {
