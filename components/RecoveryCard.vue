@@ -9,14 +9,10 @@
       >
         {{ secondsLeft }}
       </PlayText>
-      <PlayText
+      <VerdictMark
         v-else-if="screen.verdict"
-        role="mark"
-        as="span"
-        :class="screen.verdict.correct ? 'text-emerald-600' : 'text-rose-600'"
-      >
-        {{ screen.verdict.correct ? '✓' : '✗' }}
-      </PlayText>
+        :correct="screen.verdict.correct"
+      />
     </template>
 
     <template v-if="screen.question">
@@ -53,47 +49,12 @@
     </template>
 
     <template v-else-if="screen.verdict">
-      <PlayText
-        role="headline"
-        :class="screen.verdict.correct ? 'text-emerald-700' : 'text-rose-700'"
-      >
-        {{ screen.verdict.correct ? 'Correct !' : 'Incorrect...' }}
-      </PlayText>
-
-      <PlayText
-        role="recall"
-        class="text-amber-800"
-      >
-        {{ statement }}
-      </PlayText>
-
-      <PlayText
-        role="answer"
-        class="text-amber-800"
-      >
-        {{ screen.verdict.answerLabel }}
-      </PlayText>
-
-      <PlayText
-        role="aside"
-        class="text-amber-800/80"
-      >
-        Ta réponse : {{ screen.verdict.submittedAnswer || '(rien)' }}
-      </PlayText>
-
-      <!-- Voir specs/validation.md : la contestation se propose là où le
-           désaccord naît, rattrapage compris. -->
-      <PlayText
-        v-if="contestable"
-        role="link"
-        as="button"
-        type="button"
-        :disabled="contesting"
-        class="cursor-pointer text-amber-700 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
-        @click="$emit('dispute')"
-      >
-        Contester cette question
-      </PlayText>
+      <VerdictLines
+        :verdict="screen.verdict"
+        :contestable="contestable"
+        :contesting="contesting"
+        @dispute="$emit('dispute')"
+      />
 
       <!-- Le sort du rattrapage s'annonce sur le verdict de la question qui le
            scelle. Voir specs/ecrans.md#recovery--rattrapage. -->
@@ -127,15 +88,15 @@
       <CardButton
         v-if="screen.question"
         label="Valider"
-        anchor="modal"
+        anchor="parchment-bottom"
         face="plank"
         :disabled="submitting"
         @click="$emit('submit')"
       />
       <CardButton
         v-else-if="screen.action"
-        :label="actionLabel"
-        anchor="modal"
+        :label="screen.action"
+        anchor="parchment-bottom"
         face="plank"
         :loading="advancing"
         @click="$emit('advance')"
@@ -174,26 +135,7 @@ defineEmits<{
   'advance': []
 }>()
 
-// La planche est large de trois fois sa hauteur : « Terminer le rattrapage »
-// n'y tient pas à la taille des boutons de l'ascension, qui n'écrivent jamais
-// plus d'un mot. WaitCard fait déjà ce raccourci sur le même bois
-// (« Commencer » pour « Commencer le rattrapage ») — la destination est écrite
-// juste au-dessus, le bouton n'a qu'à nommer le geste. Voir utils/phase.ts.
-const actionLabel = computed(() => {
-  switch (props.screen.recovery?.result) {
-    case 'resumed':
-      return 'Reprendre'
-    case 'waiting':
-      return 'Terminer'
-    default:
-      return props.screen.action ?? ''
-  }
-})
-
-// Espace insécable avant la ponctuation double du français, comme QuestionCard :
-// sinon un point d'interrogation esseulé se retrouve seul sur sa ligne.
 const statement = computed(() =>
-  (props.screen.question?.statement ?? props.screen.verdict?.statement ?? '')
-    .replace(/ ([?!:;])/g, ' $1'),
+  withNonBreakingSpaces(props.screen.question?.statement ?? ''),
 )
 </script>

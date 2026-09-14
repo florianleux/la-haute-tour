@@ -96,6 +96,8 @@ Même présentation que l'ascension : une question à la fois, un champ libre, u
 
 Le verdict du rattrapage s'annonce sur l'écran de la question qui le scelle : « Rattrapage réussi » + bouton « Reprendre » qui enchaîne sur l'ascension, ou « Rattrapage raté » + bouton « Terminer le rattrapage » qui enchaîne sur l'attente.
 
+Deux écarts assumés avec l'ascension, que l'illustration du camp impose. Le parchemin ne dessine pas de rubans : **ni étage, ni vies** sur cet écran — l'étage ne bouge pas d'un rattrapage à l'autre, les vies y valent zéro d'un bout à l'autre, et c'est le message de reprise qui annonce leur retour. À leur place, **le décompte du tirage** — « rattrapage, n/total, x juste(s) », plus la mention d'une Indulgence qui l'a rallongé — affiché **sur la question seulement** : le verdict, lui, dit déjà ce qu'il advient.
+
 ### `floorEnd` — palier
 
 L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet écran qui suit la question, l'étage n'ayant plus rien à servir — puis une action pour continuer vers la porte du boss. Version sobre ; le reste du contenu est encore à spécifier.

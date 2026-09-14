@@ -93,10 +93,14 @@ const state = ref<GameState>({
         lifeLost: false,
       },
   cooldownUntil: null,
+  // `resumes` suit le quota atteint, pas la dernière réponse : un tirage scellé
+  // sur trop peu de succès ne reprend jamais. Le banc fait donc varier les
+  // succès avec le sort, sinon il montrerait un état que resumesRecovery ne
+  // rend jamais. Voir server/utils/mechanics.ts.
   recovery: {
     total: 5,
     played: answering ? 2 : 3,
-    successes: 2,
+    successes: sealed && correct ? 5 : 2,
     sealed,
     resumes: sealed && correct,
     lengthened: Math.random() < 0.5,

@@ -14,56 +14,16 @@
       v-if="screen.verdict"
       #medallion
     >
-      <PlayText
-        role="mark"
-        as="span"
-        :class="screen.verdict.correct ? 'text-emerald-600' : 'text-rose-600'"
-      >
-        {{ screen.verdict.correct ? '✓' : '✗' }}
-      </PlayText>
+      <VerdictMark :correct="screen.verdict.correct" />
     </template>
 
     <template v-if="screen.verdict">
-      <PlayText
-        role="headline"
-        :class="screen.verdict.correct ? 'text-emerald-700' : 'text-rose-700'"
-      >
-        {{ screen.verdict.correct ? 'Correct !' : 'Incorrect...' }}
-      </PlayText>
-
-      <PlayText
-        role="recall"
-        class="text-amber-800"
-      >
-        {{ statement }}
-      </PlayText>
-
-      <PlayText
-        role="answer"
-        class="text-amber-800"
-      >
-        {{ screen.verdict.answerLabel }}
-      </PlayText>
-
-      <PlayText
-        role="aside"
-        class="text-amber-800/80"
-      >
-        Ta réponse : {{ screen.verdict.submittedAnswer || '(rien)' }}
-      </PlayText>
-
-      <!-- Voir specs/validation.md. -->
-      <PlayText
-        v-if="contestable"
-        role="link"
-        as="button"
-        type="button"
-        :disabled="contesting"
-        class="cursor-pointer text-amber-700 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
-        @click="$emit('dispute')"
-      >
-        Contester cette question
-      </PlayText>
+      <VerdictLines
+        :verdict="screen.verdict"
+        :contestable="contestable"
+        :contesting="contesting"
+        @dispute="$emit('dispute')"
+      />
 
       <!-- Le coffre s'ouvre sur un écran à part (ChestCard) : ici seulement
            l'annonce qu'il y en a un. Voir specs/bonus.md#coffre-et-mimic. -->
@@ -145,11 +105,6 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ dispute: [], 'enter-chest': [], advance: [] }>()
-
-// Même traitement que QuestionCard : espace insécable avant la
-// ponctuation double du français, sinon un point d'interrogation esseulé se
-// retrouve seul sur sa ligne.
-const statement = computed(() => props.screen.verdict?.statement.replace(/ ([?!:;])/g, ' $1') ?? '')
 
 // Le coffre fermé retient le joueur, mais ce n'est plus ce bouton qui
 // l'ouvre : « Suivant » mène à un écran à part (ChestCard), l'ouverture

@@ -75,8 +75,5 @@ const props = defineProps<{
 
 defineEmits<{ 'update:modelValue': [string], submit: [] }>()
 
-// Espace insécable avant la ponctuation double du français : sans ça, un
-// point d'interrogation esseulé se retrouve seul sur sa ligne dès que le
-// retour à la ligne tombe juste avant lui.
-const statement = computed(() => props.question.statement.replace(/ ([?!:;])/g, ' $1'))
+const statement = computed(() => withNonBreakingSpaces(props.question.statement))
 </script>
