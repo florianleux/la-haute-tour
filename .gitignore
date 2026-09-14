@@ -10,3 +10,9 @@ dist/
 local.db
 local.db-*
 tmp/
+
+# Global gitignore excludes .claude/ everywhere on this machine — un-exclude it
+# here so project skills/commands/rules/settings survive across worktrees.
+!.claude/
+.claude/settings.local.json
+.claude/worktrees/
