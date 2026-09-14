@@ -77,7 +77,15 @@ gagner ce succès.
 - Un succès par étage atteint pour la première fois : **étages 2 à 6**, soit cinq
   franchissements. Atteindre l'étage 1 n'est pas un accomplissement, c'est le
   point de départ.
-- Terminer le jeu — atteindre la phase `gameOver`.
+- Terminer le jeu — avoir vu toutes les questions du dernier étage.
+
+Depuis le boss (voir [`boss.md`](./boss.md)), « atteindre un étage » et
+« terminer le jeu » se gagnent à `floorEnd` — toutes les questions de l'étage
+vues — et non à `crossFloor`/`gameOver`, désormais plus tardifs, gagnés
+seulement après avoir battu le boss (ou l'avoir passé automatiquement). Le
+boss est une porte supplémentaire vers l'étage suivant, il ne redéfinit pas ce
+que ces succès mesurent. Voir
+[ADR 0007](../docs/adr/0007-les-succes-de-franchissement-restent-sur-floorend.md).
 
 ### Rattrapage — 2
 
@@ -113,7 +121,8 @@ Même raison, même absence de correctif.
 ### Premier sur le serveur — 1
 
 Premier joueur à franchir l'étage 1. Un seul succès pour tout le jeu, réclamé une
-fois et jamais réattribué.
+fois et jamais réattribué. Gagné à `floorEnd` (voir « Progression » plus haut) :
+pas besoin d'avoir battu le boss de l'étage 1.
 
 **Les joueurs test en sont exclus**, comme de tout ce qui touche aux vrais
 joueurs — leur monde est scellé, voir [`admin.md`](./admin.md#joueurs-test).
@@ -206,4 +215,6 @@ rouvrant.
 ---
 
 *Amende [`spec.md`](./spec.md) (glossaire), [`architecture.md`](./architecture.md)
-(état de jeu) et [`ecrans.md`](./ecrans.md) (inventaire des écrans, toast).*
+(état de jeu) et [`ecrans.md`](./ecrans.md) (inventaire des écrans, toast).
+Amendé par [`boss.md`](./boss.md) (succès de franchissement restent sur
+`floorEnd`).*

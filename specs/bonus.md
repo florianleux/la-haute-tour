@@ -276,6 +276,10 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
   l'inventaire. Doublons illimités.
 - **Mimic (5 %)** → aucun objet : **toutes les vies de la tentative en cours sont
   retirées d'un coup**, traité comme une perte de dernière vie ordinaire.
+- **Exception, à partir de 50 % de l'étage parcouru et tant que le joueur n'a
+  pas sa clé de boss** : le tirage 95/5 ne s'applique plus, le coffre est
+  **forcé** de donner la clé — ni Sort, ni Mimic. Voir
+  [`boss.md`](./boss.md#obtention-de-la-clé).
 - Le résultat s'affiche sur l'écran de coffre (ou, pour un Mimic, sur l'attente
   qu'il ouvre aussitôt).
 
@@ -371,4 +375,5 @@ côtés. Voir [`equipes.md`](./equipes.md).
 
 *Document de travail, issu du grillage. Amende [`spec.md`](./spec.md),
 [`mecanique.md`](./mecanique.md), [`architecture.md`](./architecture.md) et
-[`ecrans.md`](./ecrans.md).*
+[`ecrans.md`](./ecrans.md). Amendé par [`boss.md`](./boss.md) (exception au
+tirage du coffre passé 50 % de l'étage).*

@@ -5,9 +5,9 @@
 - **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers les Sorts, une coupe vers les Succès, un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
 - **Chaque icône a trois états.** **Lien** quand la page est atteignable d'ici. **Actif** quand c'est la page qu'on regarde : elle est mise en avant et ne mène nulle part, comme dans un en-tête ordinaire — on ne clique pas vers là où on est déjà. **Désactivé** quand on ne peut pas y aller maintenant : éteinte et inerte. La barre ne disparaît jamais ; ce sont ses liens qui s'éteignent.
 - **Le jeu est la page d'accueil.** `/` est la partie : c'est là qu'on atterrit en se connectant, là qu'on retombe en rechargeant, et il n'existe pas de vestibule devant. Un joueur qui n'a jamais commencé y trouve l'invitation à le faire ; les autres, leur phase. Rien à traverser pour jouer.
-- **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, fin — vit sur cette page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
+- **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, porte de boss, combat de boss, fin — vit sur cette page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
 - **Étage et vies ne s'affichent que pendant le jeu**, là où ils bougent. Nulle part ailleurs.
-- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension comme en rattrapage — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente ou le palier, rien ne tourne et la barre redevient vivante.
+- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension, en rattrapage, comme pendant une épreuve de combat de boss — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente, le palier ou la porte du boss (en attente de clés comme ouverte), rien ne tourne et la barre redevient vivante.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
 - **Un déblocage de Succès s'annonce par un toast**, et c'est la seule chose du jeu qui flotte par-dessus un écran. Il passe seul, sans rien demander : un succès n'appelle aucune décision, donc il ne doit rien interrompre. Il s'efface **de lui-même** au bout de quelques secondes et ne se ferme pas à la main : un bouton pour le congédier serait exactement la décision qu'un succès n'appelle pas. Il se pose sous la barre d'icônes et ne la recouvre jamais — ni au regard, ni au clic. Il n'apparaît que sur les déblocages qui arrivent pendant la partie — ceux que le joueur n'était pas là pour voir se découvrent sur leur page. Voir [`succes.md`](./succes.md#affichage).
 - **Les Succès ont leur icône dans la barre**, une coupe, entre la baguette et le buste. Elle ne s'éteint que pendant une question, comme le reste : la page se consulte à tout moment, contrairement aux Sorts qui n'existent qu'en attente. Un lien posé sur un écran de jeu aurait été introuvable — un joueur actif n'en voit aucun, sa page étant toujours prise par sa question, son verdict ou son attente.
@@ -19,7 +19,7 @@
 |---|---|---|
 | Connexion | `/login` | oui |
 | Accès refusé | `/refus` | oui |
-| Jeu | `/` — 5 phases, page d'accueil | non |
+| Jeu | `/` — 7 phases, page d'accueil | non |
 | Profil | `/profil` | non |
 | Sorts | `/sorts` — en attente seulement | non |
 | Succès | `/succes` — par la barre | non |
@@ -56,7 +56,7 @@ Ce que le profil ne montre toujours pas : ni phase, ni vies, ni attente — l'é
 
 ## Jeu
 
-Une page, cinq phases. Le serveur décide, la page affiche.
+Une page, sept phases. Le serveur décide, la page affiche.
 
 ### `ascent` — question
 
@@ -98,7 +98,22 @@ Le verdict du rattrapage s'annonce sur l'écran de la question qui le scelle : �
 
 ### `floorEnd` — palier
 
-L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet écran qui suit la question, l'étage n'ayant plus rien à servir — puis une action pour continuer vers le suivant. Version sobre ; le reste du contenu est encore à spécifier.
+L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet écran qui suit la question, l'étage n'ayant plus rien à servir — puis une action pour continuer vers la porte du boss. Version sobre ; le reste du contenu est encore à spécifier.
+
+### `bossDoor` — porte du boss
+
+Un seul champ distingue les deux écrans, pas deux phases (voir [`boss.md`](./boss.md#porte-à-deux-clés)) :
+
+- **Porte fermée** (moins de deux clés posées côté équipe) : qui a déjà posé sa clé, qui manque encore. Un joueur sans équipe ne voit jamais cet écran, il tombe direct sur la porte ouverte. Contenu exact encore à spécifier.
+- **Porte ouverte** : une action pour engager le combat. Le joueur qui a sa clé la pose ici, par un bouton dédié — pas automatique à l'arrivée.
+
+Introduction du boss (apparition, nom, dialogue) jouée ici, une seule fois par boss.
+
+### `bossFight` — combat de boss
+
+PV du boss, vies du joueur, l'épreuve en cours — format propre à chaque boss, hors périmètre de ce document. Une épreuve juste anime la barre de vie du boss (elle perd 1/7 et le boss vibre) ; une épreuve fausse retire une vie sans animation particulière pour l'instant.
+
+Le combat s'arrête au boss à 0 PV (victoire) ou au joueur à 0 vie (défaite), chacun avec sa propre animation. Un combat relancé après échec va direct au combat, sans rejouer l'introduction. Voir [`boss.md`](./boss.md).
 
 ### `gameOver` — fin de partie
 

@@ -38,14 +38,16 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 | `ascent` | Vies restantes, questions restantes à l'étage | La réservation en cours (énoncé + échéance), **ou** le verdict de la question qui vient d'être résolue |
 | `cooldown` | Plus de vies, délai d'attente non écoulé | Fin de l'attente, Pool Échecs de l'étage, erreurs contestables de la tentative |
 | `recovery` | Plus de vies, attente écoulée, Pool Échecs assez fourni | Les questions de rattrapage, une à une, avec le même mécanisme de réservation et de verdict qu'en ascension |
-| `floorEnd` | Toutes les questions de l'étage vues, étage non final | Le palier atteint |
-| `gameOver` | Toutes les questions du dernier étage vues | Message de fin. Phase terminale |
+| `floorEnd` | Toutes les questions de l'étage vues | Le palier atteint — prélude du boss de l'étage, plus la fin elle-même. Voir [`boss.md`](./boss.md) |
+| `bossDoor` | `floorEnd` franchi, boss pas encore battu | La porte du boss — fermée (moins de deux clés posées côté équipe) ou ouverte, sur le même champ. Voir [`boss.md`](./boss.md#porte-à-deux-clés) |
+| `bossFight` | Porte ouverte (ou pas d'équipe), combat en cours | Le combat de boss actif — PV du boss, vies du joueur, épreuve en cours. Voir [`boss.md`](./boss.md) |
+| `gameOver` | Boss du dernier étage battu, ou passé automatiquement | Message de fin. Phase terminale |
 
 ### Transitions
 
 - La phase est **dérivée à chaque lecture**, jamais stockée : elle se déduit des vies, de la réservation, de la fin d'attente et du décompte des questions vues. Une attente échue devient donc `recovery` (ou `ascent`) sans qu'aucune tâche de fond ne s'exécute.
 - **Aucune lecture ne réserve de question.** Le tirage naît d'une action explicite du joueur : commencer, passer à la question suivante, franchir un palier. Une lecture ne fait que rendre ce qui existe — réservation vivante, réservation expirée résolue en échec, ou verdict en attente.
-- `floorEnd` et `gameOver` ne coûtent aucun stockage : elles se déduisent du nombre de questions vues à l'étage courant. Franchir le palier est l'action qui incrémente l'étage.
+- `floorEnd` ne coûte aucun stockage : elle se déduit du nombre de questions vues à l'étage courant. `bossDoor` et `bossFight` suivent `floorEnd` jusqu'à ce que le boss soit battu (ou passé automatiquement) — c'est cet instant-là, pas `floorEnd`, qui déclenche `crossFloor`, l'action qui incrémente l'étage. Voir [`boss.md`](./boss.md#franchissement-détage).
 - **L'étage épuisé prime sur les vies** : perdre sa dernière vie sur la dernière question de l'étage mène au palier, pas à l'attente. Le Pool Échecs de cet étage est sur le point d'être abandonné — il n'y a plus rien à y rattraper. L'attente due, elle, reste due : elle attend le joueur à l'étage suivant. Au dernier étage, c'est la fin de partie qui prime, sans attente ni rattrapage.
 - Un **verdict** ne retient pas le joueur à sa phase : il se lit sur l'écran de celle qui suit — palier, attente ou fin. Seule une question **non résolue** maintient l'ascension.
 
@@ -80,14 +82,14 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 
 ## Fin d'étage
 
-- Le joueur atteint le palier quand toutes les questions de l'étage courant sont vues. Le Pool Échecs peut être non vide : les ratées non rattrapées sont abandonnées.
-- Franchir le palier incrémente l'étage et réserve la première question du suivant.
+- Le joueur atteint le palier quand toutes les questions de l'étage courant sont vues. Le Pool Échecs n'est pas abandonné pour autant : il reste vivant tant que le boss de l'étage n'est pas réglé, voir [`boss.md`](./boss.md).
+- Le palier n'incrémente plus l'étage lui-même : il ouvre la porte du boss (`bossDoor`), puis le combat (`bossFight`). Franchir le palier (`crossFloor`) — qui incrémente l'étage, abandonne le Pool Échecs et réserve la première question du suivant — se déclenche à la victoire sur le boss ou à son passage automatique, pas à `floorEnd`. Voir [`boss.md`](./boss.md#franchissement-détage).
 - La **dernière question restante de l'étage n'est jamais une question loot**. Sans cette règle, un Mimic sur cette question opposerait le palier à l'attente, alors que la règle « l'étage épuisé prime sur les vies » a déjà tranché. Voir [`bonus.md`](./bonus.md#question-loot).
 
 ## Fin de partie
 
-- Toutes les questions du dernier étage vues → message de félicitations, phase terminale.
-- Pas de classement.
+- Toutes les questions du dernier étage vues → même système que les autres étages : porte, combat de boss. Battre le boss du dernier étage (ou le passer automatiquement) mène à `gameOver`, au lieu de `crossFloor`. Voir [`boss.md`](./boss.md#franchissement-détage).
+- Message de félicitations, phase terminale, pas de classement.
 - Le Pool Échecs du dernier étage peut rester non vide sans empêcher la fin.
 
 ## Règles chiffrées

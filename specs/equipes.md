@@ -2,9 +2,10 @@
 
 Le jeu était solo, puis les Sorts l'ont ouvert aux autres. Encore faut-il savoir
 qui est « l'autre » : un sort se lance sur un **allié** ou sur un **ennemi**, et
-ces deux mots ne désignent personne tant qu'une appartenance n'existe pas. C'est
-tout ce que ce document apporte — la donnée dont la magie noire dépend, et rien
-de plus.
+ces deux mots ne désignent personne tant qu'une appartenance n'existe pas. La
+porte à deux clés d'un boss en dépend tout autant : sans équipe, personne à
+attendre pour l'ouvrir. C'est tout ce que ce document apporte — la donnée dont
+la magie noire et la porte du boss dépendent, et rien de plus.
 
 ## Deux équipes, assignées à la main
 
@@ -50,6 +51,21 @@ de quel côté on est, elle ne dit pas dans quel monde on joue — et un fantôm
 ni allié ni ennemi parmi les vivants. La règle vit dans la relation elle-même
 plutôt que dans le seul tirage : c'est le lien qu'on veut inexistant, et tout ce
 qui le lira en hérite. Voir [`admin.md`](./admin.md#joueurs-test).
+
+## Porte à deux clés
+
+Deuxième usage de l'équipe, indépendant du ciblage des Sorts : le boss de
+chaque étage est derrière une porte que deux membres d'une même équipe doivent
+ouvrir, chacun posant sa clé. Un joueur sans équipe n'a pas de porte, il
+affronte le boss seul dès qu'il l'atteint — même règle que pour le PvP :
+personne à attendre, personne à qui il doive quelque chose.
+
+**Deuxième fissure dans l'anonymat des coéquipiers**, du même type que le
+journal des Sorts (voir plus bas) : l'écran de porte fermée **nomme** qui a
+déjà posé sa clé — une action accomplie qui vous concerne, jamais une
+progression que ce coéquipier n'a pas choisi de montrer. Voir
+[`boss.md`](./boss.md#porte-à-deux-clés) et
+[ADR 0008](../docs/adr/0008-la-porte-du-boss-nomme-qui-a-pose-sa-cle.md).
 
 ## Le joueur sans équipe
 
@@ -117,4 +133,5 @@ gagner.
 ---
 
 *Amende [`bonus.md`](./bonus.md) (catégories de cible, tirage) et
-[`admin.md`](./admin.md) (assignation).*
+[`admin.md`](./admin.md) (assignation). Amendée par [`boss.md`](./boss.md)
+(porte à deux clés).*
