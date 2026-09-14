@@ -67,6 +67,19 @@ describe('les annonces de succès', () => {
   })
 
   /**
+   * L'Assiduité se gagne hors jeu et se découvre sur la page — jamais en toast,
+   * même quand le serveur l'a bien mise dans `unlocked`. Voir specs/succes.md#affichage.
+   */
+  it('tait l Assiduité, même arrivée avec d autres déblocages', async () => {
+    const toasts = useAchievementToasts()
+
+    landed(['FIRST_CORRECT', 'DAYS_7', 'TWO_DAYS_IN_A_ROW'])
+    await nextTick()
+
+    expect(toasts.value.map(toast => toast.id)).toEqual(['FIRST_CORRECT'])
+  })
+
+  /**
    * La seule sortie d'une annonce est le temps : rien dans l'écran ne la ferme,
    * et le joueur n'a donc aucun geste à faire pour revenir à sa partie.
    */

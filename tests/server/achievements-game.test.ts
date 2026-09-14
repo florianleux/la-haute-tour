@@ -111,6 +111,21 @@ describe('les succès en jeu', () => {
       await answer('Bordeaux', new Date(NOW.getTime() + 60_000))
       expect(await reload()).toMatchObject({ daysPlayed: 1, playStreak: 1 })
     })
+
+    // Le silence de l'Assiduité est une règle d'affichage, pas d'écriture : le
+    // serveur grave et annonce ces succès comme les autres. Voir
+    // tests/app/achievement-toasts.test.ts, qui couvre le silence côté client.
+    it('grave l Assiduité comme n importe quel autre succès', async () => {
+      await db.update(users).set({
+        daysPlayed: 6,
+        playStreak: 1,
+        lastPlayedDay: '2026-09-02',
+      }).where(eq(users.id, player.id))
+
+      expect(await answer('Bordeaux')).toContain('DAYS_7')
+      expect(await held()).toContain('DAYS_7')
+      expect(await held()).toContain('TWO_DAYS_IN_A_ROW')
+    })
   })
 
   /**
