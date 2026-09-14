@@ -305,6 +305,24 @@ function withUnlocked(state: GameState, unlocked: AchievementId[]): GameState {
   return unlocked.length ? { ...state, unlocked } : state
 }
 
+/** Ce que earnedByAnswer réclame, prélevé sur l'instantané du joueur qui vient de répondre. */
+function answeredAchievements(
+  user: Pick<User, 'streak' | 'seenTotal' | 'daysPlayed' | 'playStreak'>,
+  correct: boolean,
+  empty: boolean,
+  died: boolean,
+): AchievementId[] {
+  return earnedByAnswer({
+    correct,
+    empty,
+    died,
+    streak: user.streak,
+    seenTotal: user.seenTotal,
+    daysPlayed: user.daysPlayed,
+    playStreak: user.playStreak,
+  })
+}
+
 async function poolSize(db: Database, user: User): Promise<number> {
   const [row] = await db
     .select({ value: count() })
@@ -500,15 +518,7 @@ async function resolve(
     }
 
     const earned = [
-      ...earnedByAnswer({
-        correct,
-        empty: answer === '',
-        died: false,
-        streak: recovering.streak,
-        seenTotal: recovering.seenTotal,
-        daysPlayed: recovering.daysPlayed,
-        playStreak: recovering.playStreak,
-      }),
+      ...answeredAchievements(recovering, correct, answer === '', false),
       ...leavesPool ? ['POOL_CLEARED' as const] : [],
     ]
 
@@ -551,12 +561,12 @@ async function resolve(
     streak: correct ? user.streak + 1 : 0,
   }
 
+  const patch = { ...moved, ...played, ...counted }
+
   const advance = db
     .update(users)
     .set({
-      ...moved,
-      ...played,
-      ...counted,
+      ...patch,
       floorSeen: sql`${users.floorSeen} + ${seenDelta}`,
       attemptSeen: sql`${users.attemptSeen} + ${seenDelta}`,
     })
@@ -564,9 +574,7 @@ async function resolve(
 
   const fresh: User = {
     ...user,
-    ...moved,
-    ...played,
-    ...counted,
+    ...patch,
     floorSeen: user.floorSeen + seenDelta,
     attemptSeen: user.attemptSeen + seenDelta,
   }
@@ -578,15 +586,7 @@ async function resolve(
   const floorDone = fresh.floorSeen >= snapshot.floorTotal
 
   const earned = [
-    ...earnedByAnswer({
-      correct,
-      empty: answer === '',
-      died: cooldownUntil !== null,
-      streak: fresh.streak,
-      seenTotal: fresh.seenTotal,
-      daysPlayed: fresh.daysPlayed,
-      playStreak: fresh.playStreak,
-    }),
+    ...answeredAchievements(fresh, correct, answer === '', cooldownUntil !== null),
     ...floorDone
       ? earnedByFloorDone({
           floor: user.currentFloor,

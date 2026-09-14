@@ -153,12 +153,6 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
   // Les vues de toujours suivent la même règle, parce qu'elles nourrissent les
   // mêmes succès : les garder chez un joueur test rendrait « Question n°67 »
   // intestable après le premier essai.
-  const palmares = player.isTest ? { seenTotal: 0 } : {}
-
-  if (player.isTest) {
-    await db.delete(achievements).where(eq(achievements.userId, player.id))
-  }
-
   await db.batch([
     db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
@@ -184,8 +178,11 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         // premières ne redescendent jamais, les seconds disent une assiduité et
         // personne n'a « désassisté » en étant remis à zéro.
         streak: 0,
-        ...palmares,
+        ...player.isTest ? { seenTotal: 0 } : {},
       })
       .where(eq(users.id, player.id)),
+    // Rien ne dépend de cette ligne avant les autres : un seul aller-retour lui
+    // suffit autant qu'au reste de la remise à zéro.
+    ...player.isTest ? [db.delete(achievements).where(eq(achievements.userId, player.id))] : [],
   ])
 }
