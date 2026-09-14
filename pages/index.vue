@@ -1,6 +1,21 @@
 <template>
+  <RecoveryCard
+    v-if="state?.phase === 'recovery' && screen && (screen.question || screen.verdict)"
+    :screen="screen"
+    :model-value="typed"
+    :seconds-left="secondsLeft"
+    :submitting="isRunning('submit')"
+    :contestable="Boolean(screen.verdict && isContestable(screen.verdict.questionId))"
+    :contesting="Boolean(screen.verdict && contestingId === screen.verdict.questionId)"
+    :advancing="isRunning('advance')"
+    @update:model-value="typed = $event"
+    @submit="run('submit', submit)"
+    @dispute="screen.verdict && dispute(screen.verdict.questionId)"
+    @advance="goNext"
+  />
+
   <QuestionCard
-    v-if="state?.phase === 'ascent' && screen?.question"
+    v-else-if="state?.phase === 'ascent' && screen?.question"
     :state="state"
     :question="screen.question"
     :model-value="typed"
@@ -69,18 +84,8 @@
            C'est un état, comme les vies — pas une action. -->
       <EffectList v-if="screen.activeEffects.length" :effects="screen.activeEffects" class="mt-3" />
 
-      <BaseHint v-if="screen.recovery">
-        Rattrapage — question {{ screen.recovery.position }}
-        sur {{ screen.recovery.total }},
-        {{ screen.recovery.successes }} juste(s).
-      </BaseHint>
-
-      <!-- Le joueur compte ses questions : sans cette ligne, un rattrapage plus
-           long qu'à l'ordinaire passe pour un bug. Voir specs/bonus.md#catalogue. -->
-      <BaseHint v-if="screen.recovery?.lengthened" tone="success">
-        Une Indulgence rallonge ce rattrapage : plus de questions tirées, donc
-        plus d'occasions de retrouver tes vies.
-      </BaseHint>
+      <!-- Le décompte du rattrapage et la mention de l'Indulgence vivent dans
+           RecoveryCard, qui porte cette phase en entier. -->
 
       <!-- Question en cours : aucune action à part répondre. -->
       <form v-if="screen.question" class="mt-6" @submit.prevent="run('submit', submit)">

@@ -59,11 +59,14 @@
 //   non `left-1/2` : l'illustration n'est pas symétrique (bannière débordant à
 //   droite, corde pendant à gauche), si bien que le parchemin y est centré sur
 //   54%. Mesuré, pas estimé — le corps de la feuille va de x=182 à x=807 sur 918.
+// - 'modal' : RecoveryCard, où le bouton se pose à cheval sur le bord bas du
+//   parchemin. Il tombe plus haut que 'image-bottom' parce que l'illustration
+//   garde du bois sous la feuille, que le bouton n'a pas à recouvrir.
 //
 // `face` choisit l'illustration : le médaillon de parchemin par défaut, ou la
 // planche clouée du camp — bois sombre, donc texte crème plutôt qu'ambre, et pas
 // de `pb-2` puisqu'elle est symétrique là où le médaillon a une lèvre basse.
-type Anchor = 'image-bottom' | 'card-bottom' | 'poster'
+type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'modal'
 type Face = 'medallion' | 'plank'
 
 const ANCHORS: Record<Anchor, { position: string, width: string, text: string }> = {
@@ -81,6 +84,16 @@ const ANCHORS: Record<Anchor, { position: string, width: string, text: string }>
     position: 'top-[63%] left-[54%]',
     width: 'w-[52%] sm:w-[34%]',
     text: 'text-[4cqw] sm:text-[3cqw]',
+  },
+  'modal': {
+    // `translate-y-1/2` descend le bouton d'une demi-hauteur APRÈS le `top` :
+    // son centre tombe donc à `top` + une hauteur entière, pas à `top`. Ces
+    // valeurs sont le bord bas du parchemin — 91,4% en mobile, 89,2% en desktop,
+    // mesurés sous la largeur du bouton — moins la hauteur du bouton (14,6% du
+    // cadre), pour qu'il tombe à cheval sur ce bord et non entièrement dessous.
+    position: 'top-[77%] left-1/2 sm:top-[75%]',
+    width: 'w-[52%] sm:w-[34%]',
+    text: 'text-[4cqw] sm:text-[2.6cqw]',
   },
 }
 
