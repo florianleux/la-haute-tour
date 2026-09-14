@@ -178,11 +178,17 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         // premières ne redescendent jamais, les seconds disent une assiduité et
         // personne n'a « désassisté » en étant remis à zéro.
         streak: 0,
-        ...player.isTest ? { seenTotal: 0 } : {},
+        // Le palmarès porté tombe avec les lignes qu'il double : le laisser
+        // plein ferait croire au jeu que le joueur test possède encore ce qu'on
+        // vient d'effacer, et aucune « première fois » ne se réécrirait.
+        // Voir server/db/schema.ts.
+        ...player.isTest ? { seenTotal: 0, achievementsHeld: [] } : {},
       })
       .where(eq(users.id, player.id)),
-    // Rien ne dépend de cette ligne avant les autres : un seul aller-retour lui
-    // suffit autant qu'au reste de la remise à zéro.
+    // Dans le même lot que le palmarès qui les double, et non à part : une
+    // interruption entre les deux laisserait un palmarès plein sur des lignes
+    // disparues. Rien ne dépend de cette ligne avant les autres, donc un seul
+    // aller-retour lui suffit autant qu'au reste de la remise à zéro.
     ...player.isTest ? [db.delete(achievements).where(eq(achievements.userId, player.id))] : [],
   ])
 }

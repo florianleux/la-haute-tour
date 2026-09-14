@@ -1,4 +1,4 @@
-import { eq, isNull } from 'drizzle-orm'
+import { eq, isNull, sql } from 'drizzle-orm'
 import {
   DAY_TIERS,
   STREAK_TIERS,
@@ -13,7 +13,8 @@ import {
 } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { GAME_TIME_ZONE } from '../../shared/utils/time'
-import { achievements, settings } from '../db/schema'
+import { achievements, settings, users } from '../db/schema'
+import type { SQL } from 'drizzle-orm'
 import type { AchievementId } from '../../shared/utils/achievements'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -24,8 +25,8 @@ import type { User } from '../db/schema'
  * Toutes les fonctions de décision rendent des **seuils atteints**, jamais des
  * franchissements : l attribution d un succès ne voyage pas dans le même lot que
  * le fait qui la déclenche, et un seuil rattrape au coup suivant là où une égalité
- * perdrait le succès pour toujours. C est l appelant qui écarte ce que le joueur
- * possède déjà — il le connaît sans rien relire, son instantané le porte.
+ * perdrait le succès pour toujours. C est `unlock()` qui écarte ce que le joueur
+ * possède déjà — il le lit sur le joueur, qui porte son palmarès.
  * Voir specs/succes.md.
  */
 
@@ -169,29 +170,63 @@ export function playedToday(
 }
 
 /**
+ * Le palmarès du joueur, celui-là en plus. Calculé en base et non en mémoire :
+ * deux écritures d'une même requête — un rattrapage qui s'ouvre puis se scelle —
+ * partent du même joueur, lu une fois, et la seconde effacerait ce que la
+ * première a ajouté. Ici chacune ajoute à ce que la colonne porte déjà.
+ *
+ * Écrit à la main faute d'un `union` d'ensembles dans le query builder, comme
+ * les sous-requêtes de `deck.ts` et de `players.ts` le sont déjà. Paramétré,
+ * jamais concaténé.
+ */
+function heldPlus(ids: AchievementId[]): SQL<AchievementId[]> {
+  return sql`(select json_group_array(value) from (
+    select value from json_each(${users.achievementsHeld})
+    union
+    select value from json_each(${JSON.stringify(ids)})))`
+}
+
+/**
  * Grave les succès qui manquent au joueur, et rend ceux qui viennent réellement
  * d être écrits — ce sont eux, et eux seuls, que l écran annonce.
  *
- * Aucune requête quand il n y a rien à écrire, ce qui est le cas de l immense
- * majorité des réponses : l appelant a déjà retranché ce que le joueur possède.
- * Le conflit ignoré n est donc pas le régime normal, c est le filet — deux
- * requêtes qui se croisent, ou un lot interrompu au coup précédent.
+ * Le retranchement se fait ici, sur le palmarès que le joueur porte : celui qui
+ * écrit les succès est celui qui tient leur double, sinon les deux
+ * divergeraient depuis deux endroits. Aucune requête quand il n y a rien à
+ * écrire, ce qui est le cas de l immense majorité des réponses — les fonctions
+ * de décision rendent des seuils atteints, donc elles redisent à chaque fois ce
+ * qui est déjà gagné.
+ *
+ * Le palmarès et son double partent dans le même lot : écrits l un après l
+ * autre, une interruption au milieu laisserait un succès que son double ignore.
+ * Le conflit ignoré reste le filet — si le double ment malgré tout, l insert ne
+ * rend rien, donc rien ne s annonce deux fois, et le double se recale au
+ * passage. Voir server/db/schema.ts.
  */
 export async function unlock(
   db: Database,
-  userId: number,
+  user: Pick<User, 'id' | 'achievementsHeld'>,
   ids: AchievementId[],
   now: Date,
 ): Promise<AchievementId[]> {
-  if (!ids.length) {
+  const held = new Set(user.achievementsHeld)
+  const missing = ids.filter(id => !held.has(id))
+
+  if (!missing.length) {
     return []
   }
 
-  const granted = await db
-    .insert(achievements)
-    .values(ids.map(achievement => ({ userId, achievement, unlockedAt: now })))
-    .onConflictDoNothing()
-    .returning({ achievement: achievements.achievement })
+  const [granted] = await db.batch([
+    db
+      .insert(achievements)
+      .values(missing.map(achievement => ({ userId: user.id, achievement, unlockedAt: now })))
+      .onConflictDoNothing()
+      .returning({ achievement: achievements.achievement }),
+    db
+      .update(users)
+      .set({ achievementsHeld: heldPlus(missing) })
+      .where(eq(users.id, user.id)),
+  ])
 
   return granted.map(row => row.achievement)
 }
@@ -226,30 +261,6 @@ export async function claimFirstAscent(db: Database, user: User): Promise<Achiev
     .returning({ userId: settings.firstAscensionUserId })
 
   return claimed?.userId === user.id ? ['FIRST_ASCENT'] : []
-}
-
-/**
- * Le type exact d une requête Drizzle ne s écrit pas à la main. On le nomme une
- * fois ici, à partir de la requête elle-même, pour que la fonction exportée
- * puisse l annoncer comme le veut CLAUDE.md. Voir server/utils/effects.ts.
- */
-type AchievementsQuery = ReturnType<typeof buildAchievementsQuery>
-
-function buildAchievementsQuery(db: Database, userId: number) {
-  return db
-    .select({ achievement: achievements.achievement })
-    .from(achievements)
-    .where(eq(achievements.userId, userId))
-}
-
-/**
- * Les succès déjà acquis, rendus plutôt qu exécutés : la lecture d état les fait
- * voyager dans le même lot que la réservation. Les connaître est ce qui permet de
- * n écrire que le neuf, donc de ne rien écrire du tout la plupart du temps.
- * Voir tests/server/query-budget.test.ts.
- */
-export function achievementsQuery(db: Database, userId: number): AchievementsQuery {
-  return buildAchievementsQuery(db, userId)
 }
 
 /** Ce que la page Succès montre : ce qui est acquis, et quand. */

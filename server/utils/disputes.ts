@@ -98,7 +98,7 @@ export async function openDispute(
   // jeu à porter sur ce chemin, et un toast n'aurait de toute façon aucun sens sur
   // les deux autres succès de contestation, arbitrés des heures plus tard.
   // Voir specs/succes.md#affichage.
-  await unlock(db, user.id, ['DISPUTE_OPENED'], now)
+  await unlock(db, user, ['DISPUTE_OPENED'], now)
 }
 
 export interface PendingDispute {
@@ -191,15 +191,22 @@ export async function settleDispute(
     throw createError({ statusCode: 409, statusMessage: 'Contestation déjà arbitrée' })
   }
 
-  await db
-    .update(disputes)
-    .set({ status: verdict, settledAt: now })
-    .where(eq(disputes.id, id))
+  // L'arbitrage et le contestataire partent dans le même lot : ils ne dépendent
+  // pas l'un de l'autre, et la base est distante. Le joueur se lit quel que soit
+  // le verdict — c'est lui qui porte son palmarès, et l'écriture du succès a
+  // besoin de le connaître.
+  const [, [player]] = await db.batch([
+    db
+      .update(disputes)
+      .set({ status: verdict, settledAt: now })
+      .where(eq(disputes.id, id)),
+    db.select().from(users).where(eq(users.id, dispute.userId)).limit(1),
+  ])
 
   // Le succès va au joueur qui a contesté, jamais à l'admin qui arbitre.
   await unlock(
     db,
-    dispute.userId,
+    player,
     [verdict === 'accepted' ? 'DISPUTE_ACCEPTED' : 'DISPUTE_REJECTED'],
     now,
   )
@@ -208,7 +215,6 @@ export async function settleDispute(
     return
   }
 
-  const [player] = await db.select().from(users).where(eq(users.id, dispute.userId)).limit(1)
   const [seen] = await db
     .select()
     .from(seenQuestions)

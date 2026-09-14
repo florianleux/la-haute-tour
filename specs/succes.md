@@ -153,7 +153,7 @@ porte déjà ses questions vues. Voir
 | Les questions vues depuis toujours | `seenTotal` |
 | Les jours joués | `lastPlayedDay`, `daysPlayed`, `playStreak` |
 | Le premier arrivé en haut | Un champ unique des réglages, réclamé une seule fois |
-| Ce qui est déjà acquis | La table des succès, lue avec l'état du joueur |
+| Ce qui est déjà acquis | Le **palmarès** (`achievementsHeld`), porté par le joueur. La table des succès reste la source — elle seule les date ; le palmarès la double pour qu'aucune requête de jeu n'ait à la relire |
 
 ## Affichage
 

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { achievements, missedPool, settings, users } from '../../server/db/schema'
 import { STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
+import { unlock } from '../../server/utils/achievements'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -278,6 +279,43 @@ describe('les succès en jeu', () => {
       await submitAnswer(db, await reload(), 'Bordeaux', NOW)
 
       expect(await reload()).toMatchObject({ daysPlayed: 1, playStreak: 1 })
+    })
+  })
+
+  /**
+   * Le joueur porte son palmarès pour que le retranchement ne coûte pas une
+   * lecture de la table à chaque requête. Voir server/db/schema.ts.
+   */
+  describe('le palmarès porté', () => {
+    it('suit ce que la table reçoit', async () => {
+      await answer('Bordeaux')
+
+      // Comparés comme des ensembles : l'union se fait en base, qui rend ses
+      // valeurs triées, là où la table les rend dans l'ordre d'obtention.
+      expect([...(await reload()).achievementsHeld].sort()).toEqual([...await held()].sort())
+    })
+
+    // Deux écritures d'une même requête — un rattrapage qui s'ouvre puis se
+    // scelle — partent du même joueur, lu une fois.
+    it('n efface pas ce qu une écriture précédente vient d y ajouter', async () => {
+      const stale = await reload()
+
+      await unlock(db, stale, ['FIRST_CORRECT'], NOW)
+      await unlock(db, stale, ['FIRST_WRONG'], NOW)
+
+      const carried = (await reload()).achievementsHeld
+      expect(carried).toHaveLength(2)
+      expect(carried).toContain('FIRST_CORRECT')
+      expect(carried).toContain('FIRST_WRONG')
+    })
+
+    it('n annonce pas deux fois un succès qu il aurait oublié, et se recale', async () => {
+      await answer('Bordeaux')
+      await db.update(users).set({ achievementsHeld: [] }).where(eq(users.id, player.id))
+
+      expect(await answer('Bordeaux')).not.toContain('FIRST_CORRECT')
+      expect((await reload()).achievementsHeld).toContain('FIRST_CORRECT')
+      expect((await held()).filter(id => id === 'FIRST_CORRECT')).toHaveLength(1)
     })
   })
 

@@ -14,7 +14,6 @@ import {
   sealedRecovery,
 } from './mechanics'
 import {
-  achievementsQuery,
   claimFirstAscent,
   earnedByAnswer,
   earnedByCrossing,
@@ -181,12 +180,6 @@ export interface PlayerSnapshot {
   floorTotal: number
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
   effects: EffectView[]
-  /**
-   * Les succès déjà acquis. Lus avec le reste parce que c'est en les connaissant
-   * qu'on sait lesquels sont neufs : sans eux, chaque réponse au-delà du premier
-   * palier de série réécrirait des succès que le joueur a déjà.
-   */
-  achievements: AchievementId[]
   reservation?: Reservation
   /** The reserved question, loaded with the reservation. */
   question?: Question
@@ -246,10 +239,10 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
     .where(eq(users.id, userId))
     .limit(1)
 
-  // La réservation, les effets, la taille de l'étage et les succès acquis
-  // voyagent dans le même lot : quatre requêtes, un seul aller-retour réseau.
+  // La réservation, les effets et la taille de l'étage voyagent dans le même
+  // lot : trois requêtes, un seul aller-retour réseau.
   // Voir tests/server/query-budget.test.ts.
-  const [holding, effects, deckFloor, unlocked] = await db.batch([
+  const [holding, effects, deckFloor] = await db.batch([
     db
       .select({ reservation: reservations, question: questions })
       .from(reservations)
@@ -258,7 +251,6 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
       .limit(1),
     effectsQuery(db, userId),
     floorSizeQuery(db, row.user.currentFloor),
-    achievementsQuery(db, userId),
   ])
 
   const [held] = holding
@@ -273,31 +265,9 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
     // Voir server/utils/deck.ts.
     floorTotal: sizeOf(deckFloor),
     gameClosed: row.gameClosed === 1,
-    achievements: unlocked.map(entry => entry.achievement),
     reservation: held?.reservation,
     question: held?.question,
   }
-}
-
-/**
- * Grave ceux de ces succès qui manquent encore au joueur, et rend ceux qui
- * viennent réellement d'être écrits.
- *
- * Le retranchement est ce qui rend l'écriture rare : les fonctions de décision
- * rendent des **seuils atteints**, donc elles redisent à chaque question tout ce
- * qui a déjà été gagné. Sans lui, une écriture partirait à chaque réponse au lieu
- * d'une poignée par partie — et l'instantané porte déjà de quoi trancher, sans
- * rien relire. Voir server/utils/achievements.ts.
- */
-function grant(
-  db: Database,
-  snapshot: PlayerSnapshot,
-  earned: AchievementId[],
-  now: Date,
-): Promise<AchievementId[]> {
-  const held = new Set(snapshot.achievements)
-
-  return unlock(db, snapshot.user.id, earned.filter(id => !held.has(id)), now)
 }
 
 /** Recolle à un état ce que la requête vient de débloquer, sans toucher au reste. */
@@ -525,7 +495,7 @@ async function resolve(
     return {
       user: recovering,
       reservation: resolved,
-      unlocked: await grant(db, snapshot, earned, now),
+      unlocked: await unlock(db, snapshot.user, earned, now),
     }
   }
 
@@ -599,7 +569,7 @@ async function resolve(
   if (!entersPool) {
     await db.batch([markSeen, advance])
 
-    return { user: fresh, reservation: resolved, unlocked: await grant(db, snapshot, earned, now) }
+    return { user: fresh, reservation: resolved, unlocked: await unlock(db, snapshot.user, earned, now) }
   }
 
   await db.batch([
@@ -620,7 +590,7 @@ async function resolve(
     advance,
   ])
 
-  return { user: fresh, reservation: resolved, unlocked: await grant(db, snapshot, earned, now) }
+  return { user: fresh, reservation: resolved, unlocked: await unlock(db, snapshot.user, earned, now) }
 }
 
 function servedQuestion(
@@ -1012,7 +982,7 @@ export async function openPlayerChest(
 
   await db.update(users).set(killed).where(eq(users.id, user.id))
 
-  const unlocked = await grant(db, snapshot, ['FIRST_DEATH'], now)
+  const unlocked = await unlock(db, snapshot.user, ['FIRST_DEATH'], now)
 
   return withUnlocked(await stateFrom(db, {
     ...snapshot,
@@ -1071,7 +1041,7 @@ async function crossFloor(
     ...user.currentFloor === 1 ? await claimFirstAscent(db, user) : [],
   ]
 
-  return grant(db, snapshot, earned, now)
+  return unlock(db, snapshot.user, earned, now)
 }
 
 /** Ce qu'un tirage vient d'écrire, pour éviter d'aller le relire. */
@@ -1177,7 +1147,7 @@ async function advanceRecovery(
     // Le tirage posé, le rattrapage commence : c'est l'entrée en phase, et le seul
     // instant où elle se produit. Un pool trop maigre rend les vies sans jamais
     // passer ici — il n'y a pas eu de rattrapage.
-    opened = await grant(db, snapshot, ['FIRST_RECOVERY'], now)
+    opened = await unlock(db, snapshot.user, ['FIRST_RECOVERY'], now)
   }
 
   // Le verdict est scellé — quota atteint ou mathématiquement impossible — : on
@@ -1239,7 +1209,7 @@ async function finishRecovery(
     && progress.successes === progress.total
 
   const unlocked = perfect
-    ? await grant(db, snapshot, ['RECOVERY_PERFECT'], now)
+    ? await unlock(db, snapshot.user, ['RECOVERY_PERFECT'], now)
     : []
 
   await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))

@@ -4,6 +4,7 @@ import { ACHIEVEMENT_IDS } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { CHEST_STATES, SPELL_FACES, SPELL_IDS } from '../../shared/utils/spells'
 import { TEAM_IDS } from '../../shared/utils/teams'
+import type { AchievementId } from '../../shared/utils/achievements'
 
 /**
  * Discord IDs allowed to sign up. Filled manually (admin UI or raw SQL).
@@ -154,6 +155,32 @@ export const users = sqliteTable('users', {
   daysPlayed: integer('days_played').notNull().default(0),
   /** Jours joués qui se suivent, le dernier compris. */
   playStreak: integer('play_streak').notNull().default(0),
+  /**
+   * Les succès déjà acquis, portés plutôt que relus.
+   *
+   * La table `achievements` reste la source : elle seule les date, et c'est
+   * elle que la page Succès lit. Ceci en est le double, tenu par `unlock()`
+   * dans le même lot que l'écriture qui le fait bouger.
+   *
+   * Il existe parce que les fonctions de décision rendent des **seuils
+   * atteints** : elles redisent à chaque réponse tout ce qui est déjà gagné, et
+   * il faut donc le retrancher avant d'écrire. Le retranchement se faisait sur
+   * une lecture de la table, à chaque requête de jeu — une ligne par succès
+   * acquis, facturée jusque sur les requêtes qui n'attribuent rien. Ce
+   * palmarès-là voyage maintenant avec le joueur, dont la ligne est de toute
+   * façon lue. Même raison d'être que `floorSeen` et `seenTotal`.
+   * Voir server/utils/achievements.ts.
+   *
+   * Un tableau JSON et non un masque de bits : les identifiants se dérivent de
+   * paliers, donc un palier inséré au milieu décalerait tout un masque
+   * positionnel, en silence.
+   */
+  achievementsHeld: text('achievements_held', { mode: 'json' })
+    .$type<AchievementId[]>()
+    .notNull()
+    // Constant, comme SQLite l'exige d'une colonne NOT NULL ajoutée à une table
+    // qui porte déjà des lignes.
+    .default(sql`'[]'`),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),

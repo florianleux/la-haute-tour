@@ -203,6 +203,11 @@ describe('budget de requêtes des chemins chauds', () => {
    */
   describe('ne compte rien sur le chemin du joueur', () => {
     const counting = /count\(\*\)\s+from\s+["`']?(questions|seen_questions)/
+    // Le palmarès se lit sur le joueur, jamais dans la table : une ligne par
+    // succès acquis, à chaque requête, se payait jusque sur les chemins qui
+    // n'attribuent rien. L'écriture d'un succès neuf, elle, a le droit de
+    // partir — ce qu'on refuse ici est la lecture. Voir server/db/schema.ts.
+    const selectsAchievements = /select[^;]*from\s+["`']?achievements/
 
     it('en servant la question suivante', async () => {
       const sql = captureSql(db)
@@ -213,6 +218,7 @@ describe('budget de requêtes des chemins chauds', () => {
       const seen = sql()
       expect(seen).toContain('select')
       expect(seen).not.toMatch(counting)
+      expect(seen).not.toMatch(selectsAchievements)
     })
 
     it('en lisant l état de jeu', async () => {
@@ -222,7 +228,9 @@ describe('budget de requêtes des chemins chauds', () => {
 
       await readGameState(db, await loadPlayer(db, player.id), NOW)
 
-      expect(sql()).not.toMatch(counting)
+      const seen = sql()
+      expect(seen).not.toMatch(counting)
+      expect(seen).not.toMatch(selectsAchievements)
     })
 
     it('en résolvant une réponse', async () => {
@@ -233,7 +241,9 @@ describe('budget de requêtes des chemins chauds', () => {
 
       await submitAnswer(db, fresh, 'Bordeaux', NOW)
 
-      expect(sql()).not.toMatch(counting)
+      const seen = sql()
+      expect(seen).not.toMatch(counting)
+      expect(seen).not.toMatch(selectsAchievements)
     })
   })
 })
