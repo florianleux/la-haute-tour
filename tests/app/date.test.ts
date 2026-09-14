@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, formatRemaining, formatWait } from '../../utils/date'
+import { formatCountdown, formatDay, formatRemaining, formatWait } from '../../utils/date'
 
 describe('date lisible', () => {
   it('rend le jour en français', () => {
@@ -43,6 +43,36 @@ describe('temps restant', () => {
 
   it('ne rend pas « NaN h » sur une échéance absente', () => {
     expect(formatRemaining('', now)).toBe('terminée')
+  })
+})
+
+describe('décompte en cadran', () => {
+  const now = new Date('2026-09-03T12:00:00.000Z').getTime()
+
+  function inSeconds(seconds: number): string {
+    return new Date(now + seconds * 1000).toISOString()
+  }
+
+  it('complète heures et minutes au-delà de l heure', () => {
+    expect(formatCountdown(inSeconds(90 * 60), now)).toBe('01:30:00')
+    expect(formatCountdown(inSeconds(11 * 3600 + 58 * 60 + 12), now)).toBe('11:58:12')
+  })
+
+  it('ne complète pas l unité de tête, qui porte la grandeur du délai', () => {
+    expect(formatCountdown(inSeconds(12 * 60 + 4), now)).toBe('12:04')
+    expect(formatCountdown(inSeconds(4 * 60 + 32), now)).toBe('4:32')
+    expect(formatCountdown(inSeconds(32), now)).toBe('32')
+    expect(formatCountdown(inSeconds(8), now)).toBe('8')
+  })
+
+  it('complète toujours celles qui suivent, sinon « 4:7 » se lirait sept minutes', () => {
+    expect(formatCountdown(inSeconds(4 * 60 + 7), now)).toBe('4:07')
+    expect(formatCountdown(inSeconds(3600 + 5 * 60 + 9), now)).toBe('01:05:09')
+  })
+
+  it('ne compte pas à l envers une fois l échéance passée', () => {
+    expect(formatCountdown(inSeconds(-1800), now)).toBe('terminée')
+    expect(formatCountdown('', now)).toBe('terminée')
   })
 })
 

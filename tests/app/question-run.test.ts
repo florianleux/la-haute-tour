@@ -224,6 +224,6 @@ describe('déroulé d une question', () => {
 
     const { waitRemaining } = await run({ now: ref(NOW) })
 
-    expect(waitRemaining.value).toBe('1 h 30 min 0 s')
+    expect(waitRemaining.value).toBe('01:30:00')
   })
 })
