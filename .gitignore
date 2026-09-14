@@ -16,3 +16,8 @@ tmp/
 !.claude/
 .claude/settings.local.json
 .claude/worktrees/
+
+# Outillage local : la liste des serveurs MCP et l'index de codegraph décrivent
+# le poste qui développe, pas le projet — ils n'ont pas à voyager avec lui.
+.mcp.json
+.codegraph/
