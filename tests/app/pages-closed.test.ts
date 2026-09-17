@@ -19,6 +19,7 @@ const OTHER_ADMIN_PAGES = [
   'test/verdict.vue',
   'test/chest.vue',
   'test/recovery.vue',
+  'test/dialogue.vue',
 ]
 
 function pageFiles(): string[] {

@@ -40,6 +40,9 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Combat** | `bossFight` | Phase active d'un combat de boss : épreuves posées une à une jusqu'à ce que le boss soit à 0 PV (victoire) ou le joueur à 0 vie (défaite). |
 | **PV du boss** | `bossHp` | Points de vie du boss pour le combat en cours — 7 par défaut, remis à ce plein à l'ouverture de chaque nouveau combat. Une épreuve juste en retire un. |
 | **Relique** | `relic` | Objet cosmétique laissé par un boss battu — vraie victoire ou passage automatique après 6 échecs. Sans effet pour le moment. |
+| **Dialogue** | `dialogue` | Une suite de répliques jouée sur un décor, entre deux interlocuteurs affichés de part et d'autre de la scène. Il se joue entièrement côté client : rien n'y avance la partie, seul son terme rend la main à l'écran qui l'a lancé. Premier usage : l'introduction d'un boss (voir [`boss.md`](./boss.md#introduction-et-animations)). |
+| **Réplique** | `line` | Une prise de parole d'un dialogue : son interlocuteur et son texte, qui sort caractère par caractère. Un geste du joueur la montre en entier, le suivant passe à celle d'après. |
+| **Interlocuteur** | `speaker` | Qui parle dans un dialogue : un nom, un portrait, et le côté (`left`/`right`) où il se tient. Un seul par côté, et il reste à l'affiche quand ce n'est pas son tour — en retrait, pas absent. |
 | **Drapeau** | `flag` | Le contenu d'une épreuve du boss de l'étage 1 (Julien le perse) : une image de drapeau, ses réponses acceptées, sa réponse affichée. Table dédiée, distincte du deck de questions. Voir [`boss-etage1-drapeaux.md`](./boss-etage1-drapeaux.md). |
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
 | **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Visible de l'administration seulement, et non contestable. |

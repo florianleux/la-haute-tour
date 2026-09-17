@@ -8,9 +8,14 @@ import type { Ref } from 'vue'
  * que le jeu cherche. Voir specs/ecrans.md#jeu.
  *
  * Rien à débrancher côté tactile : sans clavier, l'événement n'arrive jamais.
+ *
+ * La suite est tantôt un appel au serveur, tantôt un simple pas de plus dans un
+ * dialogue : d'où une action qui peut ne rien rendre. Le raccourci n'attend pas
+ * sa fin dans un cas comme dans l'autre.
+ *
  * La décision, elle, vit dans `advancesOnEnter` — testable sans DOM.
  */
-export function useAdvanceOnEnter(ready: Ref<boolean>, advance: () => Promise<void>): void {
+export function useAdvanceOnEnter(ready: Ref<boolean>, advance: () => void | Promise<void>): void {
   if (!import.meta.client) {
     return
   }
