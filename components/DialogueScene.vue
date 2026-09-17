@@ -20,16 +20,22 @@
          reprend : la fenêtre y est plus large que haute, c'est la largeur qui
          manque. -->
     <div class="relative mx-auto h-[78svh] w-full overflow-hidden @container sm:h-auto sm:aspect-16/9">
-      <DialoguePortrait
-        v-if="stage.left"
-        :speaker="stage.left"
-        :speaking="speaker.side === 'left'"
-      />
-      <DialoguePortrait
-        v-if="stage.right"
-        :speaker="stage.right"
-        :speaking="speaker.side === 'right'"
-      />
+      <template v-if="solo">
+        <DialoguePortrait
+          :speaker="solo"
+          place="center"
+          speaking
+        />
+      </template>
+      <template v-else-if="pair">
+        <DialoguePortrait
+          v-for="portrait in pair"
+          :key="portrait.place"
+          :speaker="portrait.speaker"
+          :place="portrait.place"
+          :speaking="place === portrait.place"
+        />
+      </template>
 
       <DialogueBox
         :name="speaker.name"
@@ -56,15 +62,14 @@
 </template>
 
 <script setup lang="ts">
-// Une scène de dialogue : un décor, deux interlocuteurs, une boîte où le texte
-// défile. Elle joue le dialogue qu'on lui donne et n'en connaît rien d'autre —
-// aucun boss, aucune phase, aucun appel d'API : elle rend la main par `end`, et
-// c'est l'écran appelant qui décide de la suite. C'est ce qui la rend jouable
-// partout, du banc de design à l'introduction d'un boss.
+// Une scène de dialogue : un décor, un ou deux interlocuteurs, une boîte où le
+// texte défile. Elle joue le dialogue qu'on lui donne et n'en connaît rien
+// d'autre — aucun boss, aucune phase, aucun appel d'API : elle rend la main par
+// `end`, et c'est l'écran appelant qui décide de la suite. C'est ce qui la rend
+// jouable partout, du banc de design à l'introduction d'un boss.
 //
 // Elle ne se rembobine pas (voir useDialogue) : jouer un autre dialogue veut
 // dire remonter le composant, `:key` dessus.
-import { dialogueStage } from '~~/utils/dialogue'
 import type { Dialogue } from '~~/utils/dialogue'
 
 const props = defineProps<{ dialogue: Dialogue }>()
@@ -74,10 +79,21 @@ const emit = defineEmits<{
   end: []
 }>()
 
-const lines = computed(() => props.dialogue.lines)
-const stage = computed(() => dialogueStage(props.dialogue.lines))
+// L'affiche, résolue ici plutôt que dans le template : le rétrécissement des
+// deux formes de dialogue se lit mieux en TypeScript qu'en `v-if` imbriqués, et
+// le template n'a plus qu'à poser des portraits.
+const solo = computed(() => props.dialogue.center ?? null)
+const pair = computed(() => (props.dialogue.center
+  ? null
+  : [
+      { speaker: props.dialogue.left, place: 'left' as const },
+      { speaker: props.dialogue.right, place: 'right' as const },
+    ]))
 
-const { speaker, shown, revealed, advance } = useDialogue(lines, () => emit('end'))
+const { speaker, place, shown, revealed, advance } = useDialogue(
+  computed(() => props.dialogue),
+  () => emit('end'),
+)
 
 // Entrée fait avancer comme le clic, par le même chemin que les écrans de jeu.
 // Toujours prête : un dialogue affiché est un dialogue qui attend un geste.

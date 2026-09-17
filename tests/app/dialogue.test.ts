@@ -1,34 +1,83 @@
 import { describe, expect, it } from 'vitest'
-import { dialogueGesture, dialogueStage, revealedLength } from '../../utils/dialogue'
-import type { DialogueLine, Speaker } from '../../utils/dialogue'
+import { dialogueGesture, revealedLength } from '../../utils/dialogue'
+import type { Dialogue, Speaker } from '../../utils/dialogue'
 
-const GANDALF: Speaker = { name: 'Gandalf', portrait: '/gandalf.webp', side: 'left' }
-const EOWYN: Speaker = { name: 'Éowyn', portrait: '/eowyn.webp', side: 'right' }
-const SARUMAN: Speaker = { name: 'Saroumane', portrait: '/saroumane.webp', side: 'left' }
+const GANDALF: Speaker = { name: 'Gandalf', portrait: '/gandalf.webp' }
+const EOWYN: Speaker = { name: 'Éowyn', portrait: '/eowyn.webp' }
+const SARUMAN: Speaker = { name: 'Saroumane', portrait: '/saroumane.webp' }
 
-function line(speaker: Speaker, text = 'Te voilà.'): DialogueLine {
-  return { speaker, text }
+const BG = '/images/play-bg.webp'
+
+/**
+ * Ce que la forme d'un dialogue refuse. Ces déclarations ne s'exécutent jamais :
+ * c'est `nuxt typecheck` qui les lit, et un `@ts-expect-error` échoue le jour où
+ * l'erreur qu'il attend cesse d'arriver. C'est là que vit l'invariant « deux
+ * interlocuteurs au plus, et personne ne parle d'une place vide » depuis qu'il a
+ * quitté le runtime. Voir ADR 0010.
+ */
+const DUO: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  right: EOWYN,
+  lines: [
+    { place: 'left', text: 'Te voilà enfin.' },
+    { place: 'right', text: 'Tu m\'attendais ?' },
+  ],
 }
 
-describe('qui tient l affiche', () => {
-  it('pose un portrait de chaque côté', () => {
-    expect(dialogueStage([line(GANDALF), line(EOWYN)])).toEqual({
-      left: GANDALF,
-      right: EOWYN,
-    })
+const SEUL: Dialogue = {
+  background: BG,
+  center: GANDALF,
+  revealMs: 60,
+  lines: [{ place: 'center', text: 'Personne d\'autre ne viendra.' }],
+}
+
+// @ts-expect-error un troisième interlocuteur n'a aucune place où se tenir
+const TROIS: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  right: EOWYN,
+  center: SARUMAN,
+  lines: [{ place: 'left', text: 'Te voilà enfin.' }],
+}
+
+// @ts-expect-error personne ne se tient au milieu d'un dialogue à deux
+const MILIEU_SANS_PERSONNE: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  right: EOWYN,
+  lines: [{ place: 'center', text: 'Te voilà enfin.' }],
+}
+
+// @ts-expect-error un interlocuteur seul se tient au milieu, pas à gauche
+const SEUL_A_GAUCHE: Dialogue = {
+  background: BG,
+  center: GANDALF,
+  lines: [{ place: 'left', text: 'Te voilà enfin.' }],
+}
+
+// @ts-expect-error un dialogue à deux qui n'en déclare qu'un
+const DUO_AMPUTE: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  lines: [{ place: 'left', text: 'Te voilà enfin.' }],
+}
+
+describe('les formes qu un dialogue accepte', () => {
+  it('porte deux interlocuteurs, un de chaque côté', () => {
+    expect(DUO.left).toEqual(GANDALF)
+    expect(DUO.right).toEqual(EOWYN)
   })
 
-  it('pose les deux dès la première réplique, avant même que le second parle', () => {
-    // Sans ça, le portrait de droite apparaîtrait au milieu du dialogue.
-    expect(dialogueStage([line(GANDALF), line(EOWYN)]).right).toEqual(EOWYN)
+  it('ou un seul, au milieu', () => {
+    expect(SEUL.center).toEqual(GANDALF)
+    expect(SEUL.left).toBeUndefined()
   })
 
-  it('laisse un côté vide quand personne n y parle', () => {
-    expect(dialogueStage([line(GANDALF)])).toEqual({ left: GANDALF, right: null })
-  })
-
-  it('donne le côté au premier rencontré quand deux s y disputent la place', () => {
-    expect(dialogueStage([line(GANDALF), line(SARUMAN)]).left).toEqual(GANDALF)
+  it('refuse les formes bancales à la compilation, pas à l exécution', () => {
+    // Ces quatre-là n'existent que pour leur `@ts-expect-error` ; les citer ici
+    // empêche le lint de les déclarer inutilisées, et dit à quoi elles servent.
+    expect([TROIS, MILIEU_SANS_PERSONNE, SEUL_A_GAUCHE, DUO_AMPUTE]).toHaveLength(4)
   })
 })
 
@@ -67,6 +116,10 @@ describe('le défilé du texte', () => {
 
   it('ne sort le caractère qu une fois son temps écoulé', () => {
     expect(revealedLength(29, 30, 10)).toBe(0)
+  })
+
+  it('suit le rythme qu on lui donne : deux fois plus lent, deux fois moins sorti', () => {
+    expect(revealedLength(120, 60, 10)).toBe(2)
   })
 
   it('s arrête à la fin du texte', () => {

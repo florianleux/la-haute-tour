@@ -1,63 +1,63 @@
 /**
- * Un dialogue, dit sans DOM pour rester testable : qui tient l'affiche, ce qu'il
- * reste à révéler d'une réplique, et ce qu'un geste du joueur y fait. Voir le
+ * Un dialogue, dit sans DOM pour rester testable : la forme qu'il peut prendre,
+ * ce qu'un geste du joueur y fait, et ce qui est sorti d'une réplique. Voir le
  * glossaire de specs/spec.md.
  */
 
-/** De quel côté de la scène un interlocuteur se tient. */
-export type SpeakerSide = 'left' | 'right'
+/**
+ * Où un interlocuteur se tient sur la scène. Ce n'est pas un côté : seul, il se
+ * place au milieu.
+ */
+export type SpeakerPlace = 'left' | 'right' | 'center'
 
 export interface Speaker {
   /** Le nom écrit au-dessus de la réplique. */
   name: string
   /**
-   * Le portrait, servi tel quel — chemin public ou data URI. Il n'entre pas
-   * dans une classe Tailwind : celles-ci ne sont générées que depuis les
-   * littéraux du source, et l'image d'un interlocuteur est une donnée.
+   * Le portrait, servi tel quel — chemin public ou data URI. Il n'entre pas dans
+   * une classe Tailwind : celles-ci ne sont générées que depuis les littéraux du
+   * source, et l'image d'un interlocuteur est une donnée.
    */
   portrait: string
-  side: SpeakerSide
 }
 
-export interface DialogueLine {
-  speaker: Speaker
+/** Une prise de parole : d'où elle vient, et ce qui s'y dit. */
+export interface DialogueLine<P extends SpeakerPlace = SpeakerPlace> {
+  place: P
   text: string
 }
 
-export interface Dialogue {
+/** Ce que les deux formes de dialogue ont en commun. */
+interface DialogueStage {
   /** Le décor derrière la scène, de même nature que `Speaker.portrait`. */
   background: string
-  /** Au moins une réplique : un dialogue sans texte n'a rien à jouer. */
-  lines: DialogueLine[]
-}
-
-/** Les portraits à l'affiche, un par côté — indépendants de la réplique en cours. */
-export interface Stage {
-  left: Speaker | null
-  right: Speaker | null
+  /**
+   * Le temps qu'un caractère met à sortir. Absent, le dialogue va au rythme du
+   * jeu (voir `useDialogue`) — c'est le cas courant, et le redéclarer partout
+   * ferait diverger des scènes que rien ne distingue.
+   */
+  revealMs?: number
 }
 
 /**
- * Qui tient l'affiche. Les portraits se posent une fois pour tout le dialogue et
- * ne bougent plus : un personnage qui apparaîtrait au moment de parler pour
- * disparaître ensuite ferait clignoter la scène à chaque réplique. C'est le
- * retrait du portrait, pas son absence, qui dit que ce n'est pas son tour.
+ * Un dialogue : deux interlocuteurs de part et d'autre, ou un seul au milieu.
  *
- * Un seul interlocuteur par côté, le premier rencontré le tient. Deux
- * personnages du même côté ne peuvent pas être à l'affiche ensemble, et l'ordre
- * des répliques est le seul critère disponible pour trancher.
+ * L'affiche est **déclarée, jamais déduite des répliques** : un personnage qui
+ * apparaîtrait au moment de parler pour disparaître ensuite ferait clignoter la
+ * scène, et une affiche devinée écartait en silence un troisième venu.
+ *
+ * Les `?: never` tiennent cet interdit, et ils ne sont pas décoratifs : le
+ * contrôle des propriétés en trop est permissif sur une union — TypeScript
+ * accepte une propriété dès qu'elle existe dans n'importe lequel des membres.
+ * Sans eux, `{ left, right, center }` compile et le troisième portrait ne
+ * s'affiche jamais. Voir ADR 0010.
+ *
+ * Un dialogue porte au moins une réplique : il n'a rien à jouer sinon.
  */
-export function dialogueStage(lines: DialogueLine[]): Stage {
-  const stage: Stage = { left: null, right: null }
-
-  for (const { speaker } of lines) {
-    if (!stage[speaker.side]) {
-      stage[speaker.side] = speaker
-    }
-  }
-
-  return stage
-}
+export type Dialogue = DialogueStage & (
+  | { left: Speaker, right: Speaker, center?: never, lines: DialogueLine<'left' | 'right'>[] }
+  | { center: Speaker, left?: never, right?: never, lines: DialogueLine<'center'>[] }
+)
 
 /** Où en est un dialogue au moment où le joueur fait son geste. */
 export interface DialogueProgress {

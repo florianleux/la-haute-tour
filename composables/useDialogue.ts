@@ -1,24 +1,40 @@
 import { dialogueGesture, revealedLength } from '../utils/dialogue'
 import { withNonBreakingSpaces } from '../utils/typography'
-import type { DialogueLine, Speaker } from '../utils/dialogue'
+import type { Dialogue, DialogueLine, Speaker, SpeakerPlace } from '../utils/dialogue'
 import type { ComputedRef, Ref } from 'vue'
 
 /**
- * Le temps qu'un caractère met à sortir. Écrit ici une fois : un dialogue qui
- * emporterait sa vitesse en prop finirait par en avoir une par appelant, et
- * deux scènes du même jeu ne se liraient plus au même rythme.
+ * Le rythme du jeu : le temps qu'un caractère met à sortir quand la scène n'en
+ * demande pas un autre. Écrit ici une fois, comme TICK_MS dans useClockTick :
+ * une scène qui veut ralentir le dit (`revealMs`), les autres suivent ce
+ * rythme-là sans avoir à le recopier.
  */
 const REVEAL_MS = 30
 
 export interface DialoguePlayback {
-  /** Qui parle à cet instant. */
+  /** Qui parle à cet instant, et d'où. */
   speaker: ComputedRef<Speaker>
+  place: ComputedRef<SpeakerPlace>
   /** Ce qui est sorti de sa réplique. */
   shown: ComputedRef<string>
   /** Elle est sortie en entier : le geste suivant passe à la suite. */
   revealed: ComputedRef<boolean>
   /** Le geste du joueur : révéler, passer, ou rendre la main. */
   advance: () => void
+}
+
+/**
+ * Qui se tient à cette place. Il y a toujours quelqu'un : une réplique ne peut
+ * pas nommer une place que son dialogue ne remplit pas, la forme du type
+ * l'interdit (voir ADR 0010). C'est ce qui permet de rendre un `Speaker` et non
+ * un `Speaker | undefined`, sans garde ni cast.
+ */
+function speakerAt(dialogue: Dialogue, place: SpeakerPlace): Speaker {
+  if (dialogue.center) {
+    return dialogue.center
+  }
+
+  return place === 'left' ? dialogue.left : dialogue.right
 }
 
 /**
@@ -30,11 +46,14 @@ export interface DialoguePlayback {
  * zéro en douce laisserait le défilé de l'ancienne réplique courir sur la
  * nouvelle.
  */
-export function useDialogue(lines: Ref<DialogueLine[]>, onEnd: () => void): DialoguePlayback {
+export function useDialogue(dialogue: Ref<Dialogue>, onEnd: () => void): DialoguePlayback {
   const index = ref(0)
   const elapsed = ref(0)
 
-  const speaker = computed(() => lines.value[index.value].speaker)
+  const lines = computed<DialogueLine[]>(() => dialogue.value.lines)
+  const place = computed(() => lines.value[index.value].place)
+  const speaker = computed(() => speakerAt(dialogue.value, place.value))
+  const revealMs = computed(() => dialogue.value.revealMs ?? REVEAL_MS)
 
   // La ponctuation est corrigée avant le découpage, jamais après : appliquée à
   // un texte déjà tronqué, l'espace insécable manquerait le « ? » qui n'est pas
@@ -42,7 +61,7 @@ export function useDialogue(lines: Ref<DialogueLine[]>, onEnd: () => void): Dial
   const text = computed(() => withNonBreakingSpaces(lines.value[index.value].text))
   const shown = computed(() => text.value.slice(
     0,
-    revealedLength(elapsed.value, REVEAL_MS, text.value.length),
+    revealedLength(elapsed.value, revealMs.value, text.value.length),
   ))
   const revealed = computed(() => shown.value.length === text.value.length)
 
@@ -57,19 +76,12 @@ export function useDialogue(lines: Ref<DialogueLine[]>, onEnd: () => void): Dial
 
   function revealAll(): void {
     stop()
-    elapsed.value = text.value.length * REVEAL_MS
+    elapsed.value = text.value.length * revealMs.value
   }
 
   function playLine(): void {
     stop()
     elapsed.value = 0
-
-    // Le défilé est une animation : qui les refuse lit la réplique entière tout
-    // de suite plutôt que de la voir ramper.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      revealAll()
-      return
-    }
 
     const startedAt = Date.now()
 
@@ -79,7 +91,7 @@ export function useDialogue(lines: Ref<DialogueLine[]>, onEnd: () => void): Dial
       if (revealed.value) {
         stop()
       }
-    }, REVEAL_MS)
+    }, revealMs.value)
   }
 
   function advance(): void {
@@ -105,5 +117,5 @@ export function useDialogue(lines: Ref<DialogueLine[]>, onEnd: () => void): Dial
   onMounted(playLine)
   onScopeDispose(stop)
 
-  return { speaker, shown, revealed, advance }
+  return { speaker, place, shown, revealed, advance }
 }
