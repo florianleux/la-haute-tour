@@ -27,6 +27,14 @@ export interface DialogueLine<P extends SpeakerPlace = SpeakerPlace> {
   text: string
 }
 
+/**
+ * Les répliques d'un dialogue : au moins une, dite par le type plutôt que par un
+ * commentaire. Un tableau ordinaire laissait passer `lines: []`, que rien
+ * n'arrêtait ensuite — `noUncheckedIndexedAccess` est à `false`, si bien que la
+ * première réplique se lisait comme si elle existait et le montage plantait.
+ */
+type Lines<P extends SpeakerPlace> = [DialogueLine<P>, ...DialogueLine<P>[]]
+
 /** Ce que les deux formes de dialogue ont en commun. */
 interface DialogueStage {
   /** Le décor derrière la scène, de même nature que `Speaker.portrait`. */
@@ -52,11 +60,12 @@ interface DialogueStage {
  * Sans eux, `{ left, right, center }` compile et le troisième portrait ne
  * s'affiche jamais. Voir ADR 0010.
  *
- * Un dialogue porte au moins une réplique : il n'a rien à jouer sinon.
+ * Un dialogue porte au moins une réplique : il n'a rien à jouer sinon, et
+ * `Lines` le lui impose.
  */
 export type Dialogue = DialogueStage & (
-  | { left: Speaker, right: Speaker, center?: never, lines: DialogueLine<'left' | 'right'>[] }
-  | { center: Speaker, left?: never, right?: never, lines: DialogueLine<'center'>[] }
+  | { left: Speaker, right: Speaker, center?: never, lines: Lines<'left' | 'right'> }
+  | { center: Speaker, left?: never, right?: never, lines: Lines<'center'> }
 )
 
 /** Où en est un dialogue au moment où le joueur fait son geste. */

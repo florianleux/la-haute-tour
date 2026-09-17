@@ -20,13 +20,12 @@
          reprend : la fenêtre y est plus large que haute, c'est la largeur qui
          manque. -->
     <div class="relative mx-auto h-[78svh] w-full overflow-hidden @container sm:h-auto sm:aspect-16/9">
-      <template v-if="solo">
-        <DialoguePortrait
-          :speaker="solo"
-          place="center"
-          speaking
-        />
-      </template>
+      <DialoguePortrait
+        v-if="solo"
+        :speaker="solo"
+        place="center"
+        speaking
+      />
       <template v-else-if="pair">
         <DialoguePortrait
           v-for="portrait in pair"
@@ -44,17 +43,9 @@
       />
 
       <!-- Toute la scène fait bouton : c'est le geste du genre, et il évite au
-           joueur de viser une cible. Un vrai <button> plutôt qu'un div qui
-           écoute le clic — il apporte le focus, Entrée, Espace et l'annonce en
-           synthèse vocale, qu'il faudrait sinon réécrire à la main. Posé par
-           dessus le reste, et non autour, pour ne rien imbriquer dans un élément
-           interactif. C'est la seule exception que ce module fait à la règle des
-           composants Base*, celle que CardButton fait déjà pour le bouton
-           illustré : la primitive s'écrit une fois, ici. -->
-      <button
-        type="button"
-        aria-label="Suite du dialogue"
-        class="absolute inset-0 z-30 cursor-pointer appearance-none border-0 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70"
+           joueur d'avoir une cible à viser. -->
+      <BaseSurfaceButton
+        label="Suite du dialogue"
         @click="advance"
       />
     </div>
@@ -92,7 +83,7 @@ const pair = computed(() => (props.dialogue.center
 
 const { speaker, place, shown, revealed, advance } = useDialogue(
   computed(() => props.dialogue),
-  () => emit('end'),
+  { onEnd: () => emit('end') },
 )
 
 // Entrée fait avancer comme le clic, par le même chemin que les écrans de jeu.

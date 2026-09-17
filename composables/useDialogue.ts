@@ -11,6 +11,18 @@ import type { ComputedRef, Ref } from 'vue'
  */
 const REVEAL_MS = 30
 
+export interface DialogueOptions {
+  /** La dernière réplique est passée : l'écran appelant reprend la main. */
+  onEnd: () => void
+  /**
+   * L'horloge, quand l'appelant la tient — un test. Fournie, le défilé n'a plus
+   * de minuterie à lui : il lit l'heure qu'on lui donne. Même couture que
+   * useQuestionRun, pour la même raison : le temps qui passe se pilote mieux
+   * qu'il ne se simule.
+   */
+  now?: Ref<number>
+}
+
 export interface DialoguePlayback {
   /** Qui parle à cet instant, et d'où. */
   speaker: ComputedRef<Speaker>
@@ -46,14 +58,25 @@ function speakerAt(dialogue: Dialogue, place: SpeakerPlace): Speaker {
  * zéro en douce laisserait le défilé de l'ancienne réplique courir sur la
  * nouvelle.
  */
-export function useDialogue(dialogue: Ref<Dialogue>, onEnd: () => void): DialoguePlayback {
+export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): DialoguePlayback {
   const index = ref(0)
-  const elapsed = ref(0)
-
   const lines = computed<DialogueLine[]>(() => dialogue.value.lines)
   const place = computed(() => lines.value[index.value].place)
   const speaker = computed(() => speakerAt(dialogue.value, place.value))
   const revealMs = computed(() => dialogue.value.revealMs ?? REVEAL_MS)
+
+  // L'horloge du défilé. Celle de l'appelant s'il en tient une, sinon la sienne,
+  // que la minuterie ci-dessous avance.
+  const clock = options.now ?? ref(Date.now())
+  const startedAt = ref(clock.value)
+  /**
+   * Le temps réputé écoulé quand un geste a révélé la réplique d'un coup. Il
+   * gèle le défilé sans toucher à l'horloge, qui n'appartient pas forcément à ce
+   * composable.
+   */
+  const forced = ref<number | null>(null)
+
+  const elapsed = computed(() => forced.value ?? clock.value - startedAt.value)
 
   // La ponctuation est corrigée avant le découpage, jamais après : appliquée à
   // un texte déjà tronqué, l'espace insécable manquerait le « ? » qui n'est pas
@@ -76,17 +99,29 @@ export function useDialogue(dialogue: Ref<Dialogue>, onEnd: () => void): Dialogu
 
   function revealAll(): void {
     stop()
-    elapsed.value = text.value.length * revealMs.value
+    forced.value = text.value.length * revealMs.value
   }
 
+  /**
+   * Le défilé de la réplique en cours. La minuterie ne tourne que dans un
+   * navigateur, et seulement quand personne d'autre ne tient l'horloge — même
+   * garde que useQuestionRun.
+   *
+   * Rien n'attend le montage : à l'hydratation, `elapsed` vaut encore zéro et la
+   * boîte sort vide, exactement comme le rendu serveur. Les deux côtés partent
+   * donc du même premier état.
+   */
   function playLine(): void {
     stop()
-    elapsed.value = 0
+    forced.value = null
+    startedAt.value = clock.value
 
-    const startedAt = Date.now()
+    if (options.now || !import.meta.client) {
+      return
+    }
 
     timer = setInterval(() => {
-      elapsed.value = Date.now() - startedAt
+      clock.value = Date.now()
 
       if (revealed.value) {
         stop()
@@ -105,16 +140,12 @@ export function useDialogue(dialogue: Ref<Dialogue>, onEnd: () => void): Dialogu
         break
       case 'end':
         stop()
-        onEnd()
+        options.onEnd()
         break
     }
   }
 
-  // Le défilé ne part qu'au montage : rendue côté serveur, la boîte sort vide et
-  // se remplit une fois hydratée. Les deux côtés partent donc du même premier
-  // état, là où un texte déjà écrit côté serveur ne correspondrait plus à ce que
-  // le client rend à l'hydratation.
-  onMounted(playLine)
+  playLine()
   onScopeDispose(stop)
 
   return { speaker, place, shown, revealed, advance }

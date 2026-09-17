@@ -45,6 +45,8 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Interlocuteur** | `speaker` | Qui parle dans un dialogue : un nom et un portrait. Deux au plus, jamais trois — la forme d'un dialogue l'interdit plutôt que de l'écarter en silence (voir [ADR 0010](../docs/adr/0010-le-type-interdit-un-troisieme-interlocuteur.md)). Celui qui ne parle pas reste à l'affiche, en retrait — pas absent. |
 | **Place** | `place` | Où un interlocuteur se tient sur la scène : `left` ou `right` quand ils sont deux, `center` quand il est seul. Ce n'est pas un côté : un interlocuteur seul se place au milieu. |
 | **Drapeau** | `flag` | Le contenu d'une épreuve du boss de l'étage 1 (Julien le perse) : une image de drapeau, ses réponses acceptées, sa réponse affichée. Table dédiée, distincte du deck de questions. Voir [`boss-etage1-drapeaux.md`](./boss-etage1-drapeaux.md). |
+| **Geste** | `gesture` | Ce qu'un clic, une tape ou Entrée fait d'un dialogue : révéler la réplique en entier si elle défile encore, passer à la suivante sinon, rendre la main après la dernière. Un seul geste du début à la fin — le joueur pressé n'attend jamais le défilé, celui qui lit n'a rien de plus à apprendre. |
+| **Défilé** | `reveal` | La sortie d'une réplique, caractère par caractère. Son rythme (`revealMs`) est celui du jeu, sauf quand un dialogue en demande un autre. |
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
 | **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Visible de l'administration seulement, et non contestable. |
 | **Whitelist** | `whitelist` | Discord IDs autorisés à s'inscrire, alimentée manuellement. |

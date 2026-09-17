@@ -42,7 +42,7 @@ const BACKGROUND = '/images/play-bg.webp'
 // Du texte de remplissage, choisi pour ce qu'il met à l'épreuve : une réplique
 // courte, une qui remplit les trois lignes réservées, une ponctuation double
 // (l'espace insécable), et l'alternance des deux places.
-const A_DEUX: Dialogue = {
+const PAIR: Dialogue = {
   background: BACKGROUND,
   left: GANDALF,
   right: EOWYN,
@@ -60,7 +60,7 @@ const A_DEUX: Dialogue = {
 
 // Seul en scène, et deux fois plus lent : le banc montre du même coup la place
 // du milieu et ce que `revealMs` change au débit.
-const SEUL_EN_SCENE: Dialogue = {
+const SOLO: Dialogue = {
   background: BACKGROUND,
   center: GANDALF,
   revealMs: 60,
@@ -70,7 +70,7 @@ const SEUL_EN_SCENE: Dialogue = {
   ],
 }
 
-const SCENES = [A_DEUX, SEUL_EN_SCENE]
+const SCENES = [PAIR, SOLO]
 
 const run = ref(0)
 const dialogue = computed(() => SCENES[run.value % SCENES.length])
