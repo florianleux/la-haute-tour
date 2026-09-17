@@ -1,8 +1,7 @@
 <template>
   <DialogueScene
-    :key="run"
     :dialogue="dialogue"
-    @end="run += 1"
+    @end="played += 1"
   />
 </template>
 
@@ -13,10 +12,10 @@
 // DialogueScene modifie donc aussi bien cette page que ses futurs usages. Admin
 // seulement. Voir pages/test/play.vue pour le même principe.
 //
-// Les deux formes de dialogue s'enchaînent : la dernière réplique de l'une
-// ouvre l'autre, sur une scène neuve (`:key` la remonte, seule façon de rejouer
-// un dialogue — voir useDialogue). Sans ça, l'interlocuteur seul au milieu ne
-// serait réglable nulle part, ce qui est précisément le travail d'un banc.
+// Les deux formes de dialogue s'enchaînent : la dernière réplique de l'une ouvre
+// l'autre, la scène reprenant au début dès qu'on lui en sert un autre (voir
+// useDialogue). Sans ça, l'interlocuteur seul au milieu ne serait réglable nulle
+// part, ce qui est précisément le travail d'un banc.
 import type { Dialogue, Speaker } from '~~/utils/dialogue'
 
 definePageMeta({ admin: true })
@@ -31,7 +30,7 @@ function silhouette(ink: string): string {
     + `<g fill="${ink}"><circle cx="150" cy="140" r="86"/>`
     + `<path d="M150 250c92 0 141 74 150 350H0c9-276 58-350 150-350z"/></g></svg>`
 
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
 const GANDALF: Speaker = { name: 'Gandalf', portrait: silhouette('#e2e8f0') }
@@ -72,6 +71,6 @@ const SOLO: Dialogue = {
 
 const SCENES = [PAIR, SOLO]
 
-const run = ref(0)
-const dialogue = computed(() => SCENES[run.value % SCENES.length])
+const played = ref(0)
+const dialogue = computed(() => SCENES[played.value % SCENES.length])
 </script>

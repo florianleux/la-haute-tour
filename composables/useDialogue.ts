@@ -1,6 +1,6 @@
-import { dialogueGesture, revealedLength } from '../utils/dialogue'
+import { dialogueCast, dialogueGesture, revealedLength } from '../utils/dialogue'
 import { withNonBreakingSpaces } from '../utils/typography'
-import type { Dialogue, DialogueLine, Speaker, SpeakerPlace } from '../utils/dialogue'
+import type { CastMember, Dialogue, DialogueLine, Speaker, SpeakerPlace } from '../utils/dialogue'
 import type { ComputedRef, Ref } from 'vue'
 
 /**
@@ -24,6 +24,8 @@ export interface DialogueOptions {
 }
 
 export interface DialoguePlayback {
+  /** Les portraits à poser, et où. */
+  cast: ComputedRef<CastMember[]>
   /** Qui parle à cet instant, et d'où. */
   speaker: ComputedRef<Speaker>
   place: ComputedRef<SpeakerPlace>
@@ -53,40 +55,41 @@ function speakerAt(dialogue: Dialogue, place: SpeakerPlace): Speaker {
  * Le déroulé d'un dialogue : la réplique en cours, son défilé, et le geste qui
  * fait avancer les deux. Voir specs/spec.md (glossaire).
  *
- * Il ne se rembobine pas : un dialogue commence là où le composant se monte, et
- * en jouer un autre veut dire remonter la scène (`:key`). Un compteur remis à
- * zéro en douce laisserait le défilé de l'ancienne réplique courir sur la
- * nouvelle.
+ * Il se dérive du dialogue qu'on lui passe, pas de l'instant du montage : en
+ * servir un autre le reprend à sa première réplique. Sans ça, l'appelant devait
+ * remonter la scène par un `:key`, et lui en servir un plus court laissait le
+ * compteur hors bornes.
  */
 export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): DialoguePlayback {
   const index = ref(0)
+  const cast = computed(() => dialogueCast(dialogue.value))
   const lines = computed<DialogueLine[]>(() => dialogue.value.lines)
-  const place = computed(() => lines.value[index.value].place)
+  const line = computed(() => lines.value[index.value])
+  const place = computed(() => line.value.place)
   const speaker = computed(() => speakerAt(dialogue.value, place.value))
   const revealMs = computed(() => dialogue.value.revealMs ?? REVEAL_MS)
 
-  // L'horloge du défilé. Celle de l'appelant s'il en tient une, sinon la sienne,
-  // que la minuterie ci-dessous avance.
+  /**
+   * L'horloge du défilé : celle de l'appelant s'il en tient une, sinon la
+   * sienne, que la minuterie ci-dessous avance. Elle sert à faire recalculer ce
+   * qui est sorti, jamais à dater le départ d'une réplique — elle est figée dès
+   * que la minuterie s'arrête, donc en retard sur l'heure vraie.
+   */
   const clock = options.now ?? ref(Date.now())
   const startedAt = ref(clock.value)
-  /**
-   * Le temps réputé écoulé quand un geste a révélé la réplique d'un coup. Il
-   * gèle le défilé sans toucher à l'horloge, qui n'appartient pas forcément à ce
-   * composable.
-   */
-  const forced = ref<number | null>(null)
-
-  const elapsed = computed(() => forced.value ?? clock.value - startedAt.value)
+  /** Un geste a tout révélé d'un coup : le temps ne décide plus de cette réplique. */
+  const forced = ref(false)
 
   // La ponctuation est corrigée avant le découpage, jamais après : appliquée à
   // un texte déjà tronqué, l'espace insécable manquerait le « ? » qui n'est pas
   // encore sorti, et la longueur à révéler changerait en cours de défilé.
-  const text = computed(() => withNonBreakingSpaces(lines.value[index.value].text))
-  const shown = computed(() => text.value.slice(
-    0,
-    revealedLength(elapsed.value, revealMs.value, text.value.length),
-  ))
-  const revealed = computed(() => shown.value.length === text.value.length)
+  const text = computed(() => withNonBreakingSpaces(line.value.text))
+  const count = computed(() => (forced.value
+    ? text.value.length
+    : revealedLength(clock.value - startedAt.value, revealMs.value, text.value.length)))
+
+  const shown = computed(() => text.value.slice(0, count.value))
+  const revealed = computed(() => count.value === text.value.length)
 
   let timer: ReturnType<typeof setInterval> | null = null
 
@@ -97,9 +100,14 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
     }
   }
 
+  /** L'heure vraie : l'horloge du test si elle existe, celle du monde sinon. */
+  function readClock(): number {
+    return options.now?.value ?? Date.now()
+  }
+
   function revealAll(): void {
     stop()
-    forced.value = text.value.length * revealMs.value
+    forced.value = true
   }
 
   /**
@@ -107,14 +115,18 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
    * navigateur, et seulement quand personne d'autre ne tient l'horloge — même
    * garde que useQuestionRun.
    *
-   * Rien n'attend le montage : à l'hydratation, `elapsed` vaut encore zéro et la
-   * boîte sort vide, exactement comme le rendu serveur. Les deux côtés partent
-   * donc du même premier état.
+   * Rien n'attend le montage : à l'hydratation, rien n'est encore sorti et la
+   * boîte rend le vide, exactement comme le rendu serveur. Les deux côtés
+   * partent donc du même premier état.
    */
   function playLine(): void {
     stop()
-    forced.value = null
-    startedAt.value = clock.value
+    forced.value = false
+    // L'heure vraie, pas `clock.value` : celle-ci est restée sur le dernier
+    // battement d'avant l'arrêt de la minuterie, et le temps passé à lire la
+    // réplique précédente aurait été compté comme du défilé déjà écoulé.
+    startedAt.value = readClock()
+    clock.value = startedAt.value
 
     if (options.now || !import.meta.client) {
       return
@@ -146,7 +158,13 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   }
 
   playLine()
+  // Un autre dialogue le reprend au début : le déroulé suit son entrée plutôt
+  // que l'instant où il a été monté.
+  watch(dialogue, () => {
+    index.value = 0
+    playLine()
+  })
   onScopeDispose(stop)
 
-  return { speaker, place, shown, revealed, advance }
+  return { cast, speaker, place, shown, revealed, advance }
 }

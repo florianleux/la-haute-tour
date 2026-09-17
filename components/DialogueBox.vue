@@ -13,11 +13,13 @@
 
     <!-- La hauteur est réservée d'avance : sans elle, la boîte grandirait au fil
          du défilé et sauterait à chaque passage à la réplique suivante. Trois
-         lignes, taillées sur les répliques du banc. Rien n'impose ce maximum —
+         lignes — la règle, `3lh`, et non le nombre qu'elle donne : une taille de
+         texte retouchée emporte la réserve avec elle, là où un `cqw` calculé à
+         la main se serait désynchronisé en silence. Rien n'impose ce maximum —
          une quatrième ligne pousserait la boîte vers le haut et rendrait le saut
          que cette réserve supprime, ce qui est le signal qu'une réplique est
          trop longue pour la scène. -->
-    <p class="mt-[1.6cqw] min-h-[19.5cqw] text-[4cqw] leading-relaxed text-stone-800 sm:mt-[0.8cqw] sm:min-h-[9.3cqw] sm:text-[1.9cqw]">
+    <p class="mt-[1.6cqw] min-h-[3lh] text-[4cqw] leading-relaxed text-stone-800 sm:mt-[0.8cqw] sm:text-[1.9cqw]">
       {{ text }}
     </p>
 

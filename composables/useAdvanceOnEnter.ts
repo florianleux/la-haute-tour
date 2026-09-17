@@ -1,6 +1,6 @@
 import { advancesOnEnter } from '../utils/keyboard'
 import type { EnterTarget } from '../utils/keyboard'
-import type { Ref } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
 
 /**
  * Entrée fait passer à la suite. La réponse s'envoie déjà à Entrée : on enchaîne
@@ -10,12 +10,18 @@ import type { Ref } from 'vue'
  * Rien à débrancher côté tactile : sans clavier, l'événement n'arrive jamais.
  *
  * La suite est tantôt un appel au serveur, tantôt un simple pas de plus dans un
- * dialogue : d'où une action qui peut ne rien rendre. Le raccourci n'attend pas
- * sa fin dans un cas comme dans l'autre.
+ * dialogue : le raccourci n'attend pas sa fin et ne fait rien de ce qu'elle
+ * rend, d'où `unknown` plutôt que la liste des types déjà rencontrés.
+ *
+ * `ready` dit quand la touche a quelque chose à enchaîner. Un écran qui attend
+ * toujours un geste ne le passe pas.
  *
  * La décision, elle, vit dans `advancesOnEnter` — testable sans DOM.
  */
-export function useAdvanceOnEnter(ready: Ref<boolean>, advance: () => void | Promise<void>): void {
+export function useAdvanceOnEnter(
+  advance: () => unknown,
+  ready: MaybeRefOrGetter<boolean> = true,
+): void {
   if (!import.meta.client) {
     return
   }
@@ -27,7 +33,7 @@ export function useAdvanceOnEnter(ready: Ref<boolean>, advance: () => void | Pro
       target: event.target as EnterTarget | null,
     }
 
-    if (!advancesOnEnter(press, ready.value)) {
+    if (!advancesOnEnter(press, toValue(ready))) {
       return
     }
 

@@ -1,7 +1,7 @@
-import { effectScope, ref } from 'vue'
+import { effectScope, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
-import { dialogueGesture, revealedLength } from '../../utils/dialogue'
+import { dialogueCast, dialogueGesture, revealedLength } from '../../utils/dialogue'
 import type { Dialogue, Speaker } from '../../utils/dialogue'
 import type { Ref } from 'vue'
 
@@ -109,6 +109,24 @@ describe('les formes qu un dialogue accepte', () => {
   })
 })
 
+describe('qui tient l affiche', () => {
+  it('pose un interlocuteur de chaque côté', () => {
+    expect(dialogueCast(PAIR)).toEqual([
+      { speaker: GANDALF, place: 'left' },
+      { speaker: EOWYN, place: 'right' },
+    ])
+  })
+
+  it('pose les deux dès la première réplique, avant même que le second parle', () => {
+    // Sans ça, le portrait de droite apparaîtrait au milieu du dialogue.
+    expect(dialogueCast(PAIR)[1].speaker).toEqual(EOWYN)
+  })
+
+  it('met au milieu celui qui est seul', () => {
+    expect(dialogueCast(SOLO)).toEqual([{ speaker: GANDALF, place: 'center' }])
+  })
+})
+
 describe('ce qu un geste fait du dialogue', () => {
   it('affiche la réplique en entier tant qu elle défile', () => {
     expect(dialogueGesture({ index: 0, revealed: false }, 3)).toBe('reveal')
@@ -169,12 +187,13 @@ describe('le déroulé d un dialogue', () => {
    */
   function play(dialogue: Dialogue, now: Ref<number>) {
     const ended: true[] = []
-    const playback = scope.run(() => useDialogue(ref(dialogue), {
+    const served = ref(dialogue)
+    const playback = scope.run(() => useDialogue(served, {
       onEnd: () => ended.push(true),
       now,
     }))!
 
-    return { ...playback, ended }
+    return { ...playback, ended, served }
   }
 
   beforeEach(() => {
@@ -277,5 +296,34 @@ describe('le déroulé d un dialogue', () => {
 
     now.value = START + 120
     expect(shown.value).toBe('Pe')
+  })
+  it('reprend au début quand on lui sert un autre dialogue', async () => {
+    // Sans ça, l'appelant devait remonter la scène par un `:key`, et un dialogue
+    // plus court laissait le compteur hors bornes.
+    const now = ref(START)
+    const { speaker, shown, advance, served } = play(PAIR, now)
+
+    advance()
+    advance()
+
+    served.value = SOLO
+    await nextTick()
+
+    expect(speaker.value).toEqual(GANDALF)
+    expect(shown.value).toBe('')
+  })
+
+  it('ne compte pas le temps de lecture dans le défilé de la suivante', async () => {
+    // L'horloge se fige quand la minuterie s'arrête : dater la réplique suivante
+    // dessus la faisait sortir déjà entamée, du temps passé à lire la
+    // précédente.
+    const now = ref(START)
+    const { shown, advance } = play(PAIR, now)
+
+    advance()
+    now.value = START + 10_000
+    advance()
+
+    expect(shown.value).toBe('')
   })
 })

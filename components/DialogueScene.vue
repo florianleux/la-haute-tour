@@ -21,20 +21,12 @@
          manque. -->
     <div class="relative mx-auto h-[78svh] w-full overflow-hidden @container sm:h-auto sm:aspect-16/9">
       <DialoguePortrait
-        v-if="solo"
-        :speaker="solo"
-        place="center"
-        speaking
+        v-for="member in cast"
+        :key="member.place"
+        :speaker="member.speaker"
+        :place="member.place"
+        :speaking="place === member.place"
       />
-      <template v-else-if="pair">
-        <DialoguePortrait
-          v-for="portrait in pair"
-          :key="portrait.place"
-          :speaker="portrait.speaker"
-          :place="portrait.place"
-          :speaking="place === portrait.place"
-        />
-      </template>
 
       <DialogueBox
         :name="speaker.name"
@@ -70,25 +62,14 @@ const emit = defineEmits<{
   end: []
 }>()
 
-// L'affiche, résolue ici plutôt que dans le template : le rétrécissement des
-// deux formes de dialogue se lit mieux en TypeScript qu'en `v-if` imbriqués, et
-// le template n'a plus qu'à poser des portraits.
-const solo = computed(() => props.dialogue.center ?? null)
-const pair = computed(() => (props.dialogue.center
-  ? null
-  : [
-      { speaker: props.dialogue.left, place: 'left' as const },
-      { speaker: props.dialogue.right, place: 'right' as const },
-    ]))
-
-const { speaker, place, shown, revealed, advance } = useDialogue(
+const { cast, speaker, place, shown, revealed, advance } = useDialogue(
   computed(() => props.dialogue),
   { onEnd: () => emit('end') },
 )
 
 // Entrée fait avancer comme le clic, par le même chemin que les écrans de jeu.
-// Toujours prête : un dialogue affiché est un dialogue qui attend un geste.
+// Sans condition : un dialogue affiché est un dialogue qui attend un geste.
 // Quand c'est le bouton de la scène qui a le focus, `advancesOnEnter` lui rend
 // la touche — il s'active déjà seul, sinon un appui avancerait de deux.
-useAdvanceOnEnter(ref(true), advance)
+useAdvanceOnEnter(advance)
 </script>

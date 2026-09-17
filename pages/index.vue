@@ -188,7 +188,7 @@ async function run(action: PlayAction, move: () => Promise<void>): Promise<void>
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, Entrée répond.
 const canAdvance = computed(() => Boolean(screen.value?.action) && !screen.value?.question && !pending.value)
-useAdvanceOnEnter(canAdvance, goNext)
+useAdvanceOnEnter(goNext, canAdvance)
 
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
 // désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.

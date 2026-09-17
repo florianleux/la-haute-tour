@@ -68,6 +68,31 @@ export type Dialogue = DialogueStage & (
   | { center: Speaker, left?: never, right?: never, lines: Lines<'center'> }
 )
 
+/** Un interlocuteur à l'affiche, et la place qu'il y tient. */
+export interface CastMember {
+  speaker: Speaker
+  place: SpeakerPlace
+}
+
+/**
+ * Qui est à l'affiche, dans l'ordre où la scène les pose. Écrit ici plutôt que
+ * dans le composant : c'est une lecture du dialogue, pas une affaire de rendu,
+ * et elle se teste alors sans DOM comme le reste des décisions du module.
+ *
+ * Les portraits ne bougent plus de tout le dialogue — c'est le retrait, pas
+ * l'absence, qui dit que ce n'est pas le tour de quelqu'un.
+ */
+export function dialogueCast(dialogue: Dialogue): CastMember[] {
+  if (dialogue.center) {
+    return [{ speaker: dialogue.center, place: 'center' }]
+  }
+
+  return [
+    { speaker: dialogue.left, place: 'left' },
+    { speaker: dialogue.right, place: 'right' },
+  ]
+}
+
 /** Où en est un dialogue au moment où le joueur fait son geste. */
 export interface DialogueProgress {
   /** La réplique en cours, de 0 à `total - 1`. */
