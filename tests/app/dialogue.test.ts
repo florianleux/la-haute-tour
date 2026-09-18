@@ -1,7 +1,7 @@
 import { effectScope, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
-import { dialogueCast, dialogueGesture, revealedLength } from '../../utils/dialogue'
+import { dialogueGesture, dialogueLineup, revealedLength } from '../../utils/dialogue'
 import type { Dialogue, Speaker } from '../../utils/dialogue'
 import type { Ref } from 'vue'
 
@@ -111,7 +111,7 @@ describe('les formes qu un dialogue accepte', () => {
 
 describe('qui tient l affiche', () => {
   it('pose un interlocuteur de chaque côté', () => {
-    expect(dialogueCast(PAIR)).toEqual([
+    expect(dialogueLineup(PAIR)).toEqual([
       { speaker: GANDALF, place: 'left' },
       { speaker: EOWYN, place: 'right' },
     ])
@@ -119,11 +119,11 @@ describe('qui tient l affiche', () => {
 
   it('pose les deux dès la première réplique, avant même que le second parle', () => {
     // Sans ça, le portrait de droite apparaîtrait au milieu du dialogue.
-    expect(dialogueCast(PAIR)[1].speaker).toEqual(EOWYN)
+    expect(dialogueLineup(PAIR)[1].speaker).toEqual(EOWYN)
   })
 
   it('met au milieu celui qui est seul', () => {
-    expect(dialogueCast(SOLO)).toEqual([{ speaker: GANDALF, place: 'center' }])
+    expect(dialogueLineup(SOLO)).toEqual([{ speaker: GANDALF, place: 'center' }])
   })
 })
 

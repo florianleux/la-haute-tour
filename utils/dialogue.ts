@@ -69,7 +69,7 @@ export type Dialogue = DialogueStage & (
 )
 
 /** Un interlocuteur à l'affiche, et la place qu'il y tient. */
-export interface CastMember {
+export interface LineupMember {
   speaker: Speaker
   place: SpeakerPlace
 }
@@ -82,7 +82,7 @@ export interface CastMember {
  * Les portraits ne bougent plus de tout le dialogue — c'est le retrait, pas
  * l'absence, qui dit que ce n'est pas le tour de quelqu'un.
  */
-export function dialogueCast(dialogue: Dialogue): CastMember[] {
+export function dialogueLineup(dialogue: Dialogue): LineupMember[] {
   if (dialogue.center) {
     return [{ speaker: dialogue.center, place: 'center' }]
   }
@@ -91,6 +91,20 @@ export function dialogueCast(dialogue: Dialogue): CastMember[] {
     { speaker: dialogue.left, place: 'left' },
     { speaker: dialogue.right, place: 'right' },
   ]
+}
+
+/**
+ * Qui se tient à cette place. Il y a toujours quelqu'un : une réplique ne peut
+ * pas nommer une place que son dialogue ne remplit pas, la forme du type
+ * l'interdit (voir ADR 0010). C'est ce qui permet de rendre un `Speaker` et non
+ * un `Speaker | undefined`, sans garde ni assertion.
+ *
+ * Non déduit de `dialogueLineup` : y chercher une place rendrait un
+ * `LineupMember | undefined`, et il faudrait affirmer à TypeScript ce que la
+ * forme garantit déjà. La lire directement ne ment à personne.
+ */
+export function speakerAt(dialogue: Dialogue, place: SpeakerPlace): Speaker {
+  return dialogue.center ?? (place === 'left' ? dialogue.left : dialogue.right)
 }
 
 /** Où en est un dialogue au moment où le joueur fait son geste. */

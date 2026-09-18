@@ -21,7 +21,7 @@
          manque. -->
     <div class="relative mx-auto h-[78svh] w-full overflow-hidden @container sm:h-auto sm:aspect-16/9">
       <DialoguePortrait
-        v-for="member in cast"
+        v-for="member in lineup"
         :key="member.place"
         :speaker="member.speaker"
         :place="member.place"
@@ -51,8 +51,8 @@
 // `end`, et c'est l'écran appelant qui décide de la suite. C'est ce qui la rend
 // jouable partout, du banc de design à l'introduction d'un boss.
 //
-// Elle ne se rembobine pas (voir useDialogue) : jouer un autre dialogue veut
-// dire remonter le composant, `:key` dessus.
+// Lui servir un autre dialogue le reprend à sa première réplique (voir
+// useDialogue) : aucun `:key` à poser dessus.
 import type { Dialogue } from '~~/utils/dialogue'
 
 const props = defineProps<{ dialogue: Dialogue }>()
@@ -62,7 +62,7 @@ const emit = defineEmits<{
   end: []
 }>()
 
-const { cast, speaker, place, shown, revealed, advance } = useDialogue(
+const { lineup, speaker, place, shown, revealed, advance } = useDialogue(
   computed(() => props.dialogue),
   { onEnd: () => emit('end') },
 )

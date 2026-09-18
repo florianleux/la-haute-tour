@@ -1,6 +1,6 @@
-import { dialogueCast, dialogueGesture, revealedLength } from '../utils/dialogue'
+import { dialogueGesture, dialogueLineup, revealedLength, speakerAt } from '../utils/dialogue'
 import { withNonBreakingSpaces } from '../utils/typography'
-import type { CastMember, Dialogue, DialogueLine, Speaker, SpeakerPlace } from '../utils/dialogue'
+import type { Dialogue, LineupMember, Speaker, SpeakerPlace } from '../utils/dialogue'
 import type { ComputedRef, Ref } from 'vue'
 
 /**
@@ -25,7 +25,7 @@ export interface DialogueOptions {
 
 export interface DialoguePlayback {
   /** Les portraits à poser, et où. */
-  cast: ComputedRef<CastMember[]>
+  lineup: ComputedRef<LineupMember[]>
   /** Qui parle à cet instant, et d'où. */
   speaker: ComputedRef<Speaker>
   place: ComputedRef<SpeakerPlace>
@@ -35,20 +35,6 @@ export interface DialoguePlayback {
   revealed: ComputedRef<boolean>
   /** Le geste du joueur : révéler, passer, ou rendre la main. */
   advance: () => void
-}
-
-/**
- * Qui se tient à cette place. Il y a toujours quelqu'un : une réplique ne peut
- * pas nommer une place que son dialogue ne remplit pas, la forme du type
- * l'interdit (voir ADR 0010). C'est ce qui permet de rendre un `Speaker` et non
- * un `Speaker | undefined`, sans garde ni cast.
- */
-function speakerAt(dialogue: Dialogue, place: SpeakerPlace): Speaker {
-  if (dialogue.center) {
-    return dialogue.center
-  }
-
-  return place === 'left' ? dialogue.left : dialogue.right
 }
 
 /**
@@ -62,20 +48,22 @@ function speakerAt(dialogue: Dialogue, place: SpeakerPlace): Speaker {
  */
 export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): DialoguePlayback {
   const index = ref(0)
-  const cast = computed(() => dialogueCast(dialogue.value))
-  const lines = computed<DialogueLine[]>(() => dialogue.value.lines)
-  const line = computed(() => lines.value[index.value])
+  const lineup = computed(() => dialogueLineup(dialogue.value))
+  const line = computed(() => dialogue.value.lines[index.value])
   const place = computed(() => line.value.place)
   const speaker = computed(() => speakerAt(dialogue.value, place.value))
   const revealMs = computed(() => dialogue.value.revealMs ?? REVEAL_MS)
 
   /**
    * L'horloge du défilé : celle de l'appelant s'il en tient une, sinon la
-   * sienne, que la minuterie ci-dessous avance. Elle sert à faire recalculer ce
-   * qui est sorti, jamais à dater le départ d'une réplique — elle est figée dès
-   * que la minuterie s'arrête, donc en retard sur l'heure vraie.
+   * sienne, que la minuterie ci-dessous avance. On ne lui écrit jamais — celle
+   * de l'appelant est à lui, et un composable qui avance l'horloge qu'on lui
+   * prête n'est une surprise que le jour où ça compte. Elle sert à faire
+   * recalculer ce qui est sorti, jamais à dater le départ d'une réplique : elle
+   * est figée dès que la minuterie s'arrête, donc en retard sur l'heure vraie.
    */
-  const clock = options.now ?? ref(Date.now())
+  const ticks = ref(Date.now())
+  const clock = computed(() => options.now?.value ?? ticks.value)
   const startedAt = ref(clock.value)
   /** Un geste a tout révélé d'un coup : le temps ne décide plus de cette réplique. */
   const forced = ref(false)
@@ -126,14 +114,13 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
     // battement d'avant l'arrêt de la minuterie, et le temps passé à lire la
     // réplique précédente aurait été compté comme du défilé déjà écoulé.
     startedAt.value = readClock()
-    clock.value = startedAt.value
 
     if (options.now || !import.meta.client) {
       return
     }
 
     timer = setInterval(() => {
-      clock.value = Date.now()
+      ticks.value = Date.now()
 
       if (revealed.value) {
         stop()
@@ -142,7 +129,7 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   }
 
   function advance(): void {
-    switch (dialogueGesture({ index: index.value, revealed: revealed.value }, lines.value.length)) {
+    switch (dialogueGesture({ index: index.value, revealed: revealed.value }, dialogue.value.lines.length)) {
       case 'reveal':
         revealAll()
         break
@@ -166,5 +153,5 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   })
   onScopeDispose(stop)
 
-  return { cast, speaker, place, shown, revealed, advance }
+  return { lineup, speaker, place, shown, revealed, advance }
 }
