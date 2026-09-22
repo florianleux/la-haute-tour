@@ -23,8 +23,8 @@ definePageMeta({ admin: true })
  * texte que l'intro aura vraiment.
  */
 const INTRO: Dialogue = {
-  // Le décor de l'attente en attendant le sien, cf. components/WaitCard.vue.
-  background: '/images/cooldown-bg.webp',
+  // Le décor flou de l'attente en attendant le sien, cf. components/PlayFrame.vue.
+  background: '/images/blurry-cooldown-bg.webp',
   left: { name: '???', portrait: '/images/intro-player.webp' },
   right: { name: 'L\'Inconnu', portrait: '/images/intro-unknown.webp' },
   lines: [

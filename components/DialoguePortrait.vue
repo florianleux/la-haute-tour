@@ -1,13 +1,24 @@
 <template>
-  <!-- Ancré au bas de la scène, qui le rogne : un portrait de dialogue est cadré
-       à mi-corps et sort par le bas du cadre, il n'y flotte pas entier.
-       `pointer-events-none` le laisse transparent au clic — c'est la scène qui
-       reçoit le geste, pas le personnage. -->
+  <!-- `pointer-events-none` le laisse transparent au clic — c'est la scène qui
+       reçoit le geste, pas le personnage.
+
+       En mobile il est dans le flux, aux côtés de l'autre sous la réplique :
+       c'est lui qui donne sa hauteur à la carte, qui s'arrête donc à ses pieds
+       au lieu de laisser un vide.
+
+       En desktop (`sm:`) il s'ancre au bas de la fenêtre, qui le rogne : cadré
+       à mi-corps, il sort par le bas du cadre plutôt que d'y flotter entier, et
+       la boîte (z-20) lui passe devant.
+
+       `origin-bottom` : c'est le seul point qui ne doit pas bouger quand il
+       grandit, sinon il décollerait du bas à chaque réplique. `z-10` sur celui
+       qui parle — agrandi, il passe devant l'autre plutôt que dessous, mais
+       reste sous la boîte. -->
   <img
     :src="speaker.portrait"
     alt=""
-    class="pointer-events-none absolute bottom-0 h-[62%] w-auto max-w-[52%] object-contain object-bottom transition duration-300 sm:h-[76%] sm:max-w-[40%]"
-    :class="[PLACES[place], speaking ? '' : 'brightness-50 saturate-50']"
+    class="pointer-events-none h-[30svh] w-auto max-w-[46%] origin-bottom object-contain object-bottom transition duration-300 sm:absolute sm:bottom-0 sm:h-[78%] sm:max-w-[37%]"
+    :class="[PLACES[place], speaking ? 'z-10 scale-105 brightness-100 saturate-100' : 'scale-[0.8] brightness-75 saturate-50']"
   >
 </template>
 
@@ -17,9 +28,11 @@
 // divergé au premier réglage de cadrage.
 //
 // Les deux portraits d'un dialogue à deux restent affichés tout du long ; c'est
-// le retrait — assombri, désaturé — qui dit que ce n'est pas le tour de
-// celui-ci. Le faire disparaître à la place ferait clignoter la scène à chaque
-// réplique.
+// la taille et la couleur qui disent à qui est le tour — celui qui parle se
+// redresse et retrouve ses teintes, l'autre recule d'un cran, se délave et
+// s'assombrit. Pas de transparence : le décor se lirait au travers du
+// personnage. Le faire
+// disparaître ferait clignoter la scène à chaque réplique.
 //
 // `alt=""` : le nom de celui qui parle est déjà écrit dans la boîte, juste à
 // côté. Le décrire ici le ferait lire deux fois par une synthèse vocale.
@@ -27,10 +40,12 @@ import type { SpeakerPlace, Speaker } from '~~/utils/dialogue'
 
 // Les classes sont écrites en entier, jamais construites par concaténation :
 // Tailwind ne voit que ce qui est littéral dans le source.
+// Les places ne valent qu'en desktop : en mobile les portraits sont côte à côte
+// dans le flux, et c'est leur ordre qui les range.
 const PLACES: Record<SpeakerPlace, string> = {
-  left: 'left-0',
-  right: 'right-0',
-  center: 'left-1/2 -translate-x-1/2',
+  left: 'sm:left-0',
+  right: 'sm:right-0',
+  center: 'sm:left-1/2 sm:-translate-x-1/2',
 }
 
 defineProps<{

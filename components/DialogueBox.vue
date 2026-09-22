@@ -1,35 +1,61 @@
 <template>
-  <!-- La boîte, posée sur le bas de la scène et par-dessus les portraits — le
-       texte passe devant les personnages, comme sur toute scène de dialogue.
-       Tout est en cqw de la scène (voir DialogueScene, qui est le @container) :
-       la boîte occupe la même fraction du décor quelle que soit la fenêtre,
-       plutôt que de grossir en pixels sur un petit écran. -->
+  <!-- Ce qui se dit. Sa forme suit celle de la scène (voir DialogueScene) :
+
+       — en mobile, le haut de la carte. Pas de fond ni d'ombre à elle : la
+         carte en porte déjà, et une boîte dans la boîte n'ajouterait qu'un
+         cadre. Le texte se lit au-dessus des personnages, rien ne se recouvre.
+       — en desktop (`sm:`), une boîte posée sur le bas de l'écran, par-dessus
+         les portraits — le cadrage du genre, où le texte coupe les jambes des
+         personnages.
+
+       Les tailles sont en `cqw` de la carte en mobile, où la composition doit
+       tenir d'un téléphone à l'autre ; en rem en desktop, où la scène occupe
+       toute la fenêtre et où un `cqw` gonflerait le texte avec l'écran. -->
   <div
-    class="absolute bottom-[5%] left-1/2 z-20 w-[90%] -translate-x-1/2 rounded-[2cqw] bg-stone-100/95 px-[4cqw] py-[3cqw] shadow-2xl ring-1 ring-black/10 sm:w-[64%] sm:px-[2.4cqw] sm:py-[1.8cqw]"
+    class="relative z-20 flex flex-col gap-[2cqw] px-[5cqw] py-[4cqw] sm:absolute sm:bottom-[5%] sm:left-1/2 sm:block sm:w-[80%] sm:max-w-5xl sm:-translate-x-1/2 sm:rounded-3xl sm:bg-stone-100/95 sm:px-8 sm:py-6 sm:shadow-2xl sm:ring-1 sm:ring-black/10"
   >
-    <p class="text-[4.4cqw] font-bold text-stone-900 sm:text-[2cqw]">
+    <!-- L'étiquette du nom, rangée du côté de celui qui parle : c'est ce qui
+         dit lequel des deux portraits a la parole, sans avoir à lire le nom.
+         En desktop elle passe à cheval sur le bord haut de la boîte, décalée
+         de sa propre hauteur — `-translate-y-full` et non un décalage chiffré,
+         qui se serait désaccordé au premier réglage de la taille du texte. -->
+    <p
+      class="rounded-xl bg-stone-800 px-[3cqw] py-[1.2cqw] text-[4cqw] font-bold text-stone-100 sm:absolute sm:top-0 sm:-translate-y-full sm:rounded-b-none sm:px-4 sm:py-1.5 sm:text-2xl sm:ring-1 sm:ring-black/10"
+      :class="SIDES[place]"
+    >
       {{ name }}
     </p>
 
-    <!-- La hauteur est réservée d'avance : sans elle, la boîte grandirait au fil
-         du défilé et sauterait à chaque passage à la réplique suivante. Trois
-         lignes — la règle, `3lh`, et non le nombre qu'elle donne : une taille de
-         texte retouchée emporte la réserve avec elle, là où un `cqw` calculé à
-         la main se serait désynchronisé en silence. Rien n'impose ce maximum —
-         une quatrième ligne pousserait la boîte vers le haut et rendrait le saut
-         que cette réserve supprime, ce qui est le signal qu'une réplique est
-         trop longue pour la scène. -->
-    <p class="mt-[1.6cqw] min-h-[3lh] text-[4cqw] leading-relaxed text-stone-800 sm:mt-[0.8cqw] sm:text-[1.9cqw]">
+    <!-- La hauteur est réservée d'avance, et figée : `h` et non `min-h`. Sans
+         elle, la boîte grandirait au fil du défilé, sauterait à chaque réplique
+         suivante, et en mobile la carte entière — dont la hauteur est celle de
+         son contenu — bougerait avec elle.
+
+         La réserve est comptée en lignes de texte (`lh`) et non en `cqw`
+         calculés à la main : une taille de texte retouchée emporte la réserve
+         avec elle au lieu de se désynchroniser en silence. Cinq lignes en
+         mobile, quatre en desktop où la boîte est plus large : c'est ce que
+         tient la plus longue réplique qu'on s'autorise.
+
+         ponytail: au-delà, le texte déborde de la réserve au lieu de la pousser
+         — c'est le signal qu'une réplique est trop longue pour la scène. Un
+         découpage automatique en plusieurs répliques serait la suite, le jour
+         où l'écriture en demande. -->
+    <p class="h-[5lh] text-[4cqw] leading-relaxed text-stone-800 sm:h-[4lh] sm:text-2xl">
       {{ text }}
     </p>
 
     <!-- Le repère de suite, seul indice que le dialogue attend un geste. Il ne
          paraît qu'une fois la réplique entière sortie : avant, le geste sert à
-         la révéler, pas à passer. -->
+         la révéler, pas à passer.
+
+         Caché (`invisible`) et non retiré : en mobile il est dans le flux de la
+         carte, et le retirer ferait monter puis redescendre toute la carte à
+         chaque réplique. -->
     <span
-      v-if="revealed"
       aria-hidden="true"
-      class="absolute bottom-[1.4cqw] right-[3cqw] animate-pulse text-[3.4cqw] text-stone-500 sm:bottom-[0.8cqw] sm:right-[1.6cqw] sm:text-[1.6cqw]"
+      class="self-end text-[3.4cqw] text-stone-500 sm:absolute sm:bottom-3 sm:right-6 sm:text-xl"
+      :class="revealed ? 'animate-pulse' : 'invisible'"
     >▼</span>
   </div>
 </template>
@@ -40,9 +66,26 @@
 // réplique, ni combien il en reste : on lui donne ce qu'il y a à lire, elle le
 // met en page. C'est ce qui la laisse servir un dialogue de boss comme
 // n'importe quel autre.
+import type { SpeakerPlace } from '~~/utils/dialogue'
+
+// Les classes sont écrites en entier, jamais construites par concaténation :
+// Tailwind ne voit que ce qui est littéral dans le source. Même table que
+// DialoguePortrait, pour la même raison.
+//
+// Deux façons de ranger l'étiquette pour une seule intention : l'alignement
+// dans la colonne en mobile, le bord de la boîte en desktop, où elle est en
+// position absolue.
+const SIDES: Record<SpeakerPlace, string> = {
+  left: 'self-start sm:left-6',
+  right: 'self-end sm:right-6',
+  center: 'self-center sm:left-1/2 sm:-translate-x-1/2',
+}
+
 defineProps<{
   /** Qui parle. */
   name: string
+  /** D'où il parle : l'étiquette se range de son côté. */
+  place: SpeakerPlace
   /** Ce qui est sorti de sa réplique — pas la réplique entière. */
   text: string
   /** Elle est sortie en entier : le repère de suite s'allume. */

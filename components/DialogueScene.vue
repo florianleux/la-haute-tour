@@ -1,46 +1,66 @@
 <template>
   <!-- Le décor, fixe : ancré au viewport et non au document, sinon le moindre
        rebond de scroll le fait glisser sous la scène. Même ancrage que
-       PlayFrame, pour la même raison. -->
+       PlayFrame, pour la même raison.
+
+       Cadré par le bas en mobile : l'écran y est plus haut que large, et un
+       décor centré n'y montrerait qu'un ciel vide au-dessus des personnages.
+       En desktop, la largeur manque plutôt que la hauteur, et le centre
+       reprend. -->
   <div
-    class="fixed inset-0 z-0 bg-cover bg-center"
+    class="fixed inset-0 z-0 bg-cover bg-bottom sm:bg-center"
     :style="{ backgroundImage: `url('${dialogue.background}')` }"
   />
 
-  <div class="relative z-10 mx-auto w-full max-w-5xl">
-    <!-- La scène : un cadre dont `@container` fait l'unité `cqw` de tout ce
-         qu'elle porte. Portraits et boîte gardent ainsi leur composition à toute
-         taille de fenêtre, au lieu de se recomposer écran par écran.
+  <!-- Ancré au viewport comme le décor, et non posé dans le flux de la page :
+       ça sort aussi la scène du `p-6` de la mise en page. -->
+  <div class="fixed inset-0 z-10 overflow-hidden">
+    <!-- La scène. Elle change de nature avec la forme de l'écran :
 
-         En mobile elle se règle sur la hauteur de l'écran plutôt que sur une
-         proportion : un 16/9 y tiendrait dans une bande de 220 px où ni les
-         personnages ni le texte ne seraient lisibles. `svh` et non `vh` — la
-         barre d'adresse mobile se rétracte au scroll, et `vh` fait alors
-         dépasser la scène du bas de l'écran. En desktop, le format connu
-         reprend : la fenêtre y est plus large que haute, c'est la largeur qui
-         manque. -->
-    <div class="relative mx-auto h-[78svh] w-full overflow-hidden @container sm:h-auto sm:aspect-16/9">
-      <DialoguePortrait
-        v-for="member in lineup"
-        :key="member.place"
-        :speaker="member.speaker"
-        :place="member.place"
-        :speaking="place === member.place"
-      />
+         — en mobile, une carte posée sur le décor. L'écran y est trop étroit
+           pour que deux personnages et un texte se recouvrent sans se gêner :
+           la carte se lit de haut en bas, la réplique d'abord, les personnages
+           debout sur son bord bas ensuite.
+         — en desktop (`sm:`), tout l'écran. La largeur y suffit, et les
+           personnages retrouvent les bords de la fenêtre.
 
+         `@container` dans les deux cas : c'est lui qui donne à la carte son
+         unité `cqw`, si bien que sa composition tient à toute largeur d'écran
+         au lieu de se régler téléphone par téléphone. -->
+    <div
+      class="absolute inset-x-[3%] top-1/2 -translate-y-1/2 overflow-hidden rounded-3xl bg-stone-100/95 shadow-2xl ring-1 ring-black/10 @container sm:inset-0 sm:translate-y-0 sm:rounded-none sm:bg-transparent sm:shadow-none sm:ring-0"
+    >
+      <!-- Les personnages : pieds sur le bord bas de la carte en mobile, sur
+           celui de la fenêtre en desktop — c'est le même `bottom-0`, la scène
+           ayant changé de taille sous eux. -->
       <DialogueBox
         :name="speaker.name"
+        :place="place"
         :text="shown"
         :revealed="revealed"
       />
 
-      <!-- Toute la scène fait bouton : c'est le geste du genre, et il évite au
-           joueur d'avoir une cible à viser. -->
-      <BaseSurfaceButton
-        label="Suite du dialogue"
-        @click="advance"
-      />
+      <!-- La rangée des personnages, sous la réplique en mobile. `sm:contents`
+           la fait disparaître en desktop : les portraits y reprennent leur
+           ancrage absolu sur la scène, sans qu'un cadre intermédiaire s'y
+           interpose. -->
+      <div class="flex items-end justify-center gap-[4cqw] sm:contents">
+        <DialoguePortrait
+          v-for="member in lineup"
+          :key="member.place"
+          :speaker="member.speaker"
+          :place="member.place"
+          :speaking="place === member.place"
+        />
+      </div>
     </div>
+
+    <!-- Tout l'écran fait bouton, carte comprise : c'est le geste du genre, et
+         il évite au joueur d'avoir une cible à viser. -->
+    <BaseSurfaceButton
+      label="Suite du dialogue"
+      @click="advance"
+    />
   </div>
 </template>
 
