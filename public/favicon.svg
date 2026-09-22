@@ -1,0 +1,17 @@
+<!-- La Tour, en 32 pixels : créneaux, corps, une fenêtre, une porte. Dessinée
+     en aplats et sans détail — à la taille d'un onglet, tout trait fin se
+     referme en tache. Le fond fait partie de l'icône : sans lui, la silhouette
+     claire disparaîtrait sur un onglet clair. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#020617"/>
+
+  <!-- Les créneaux, et le bandeau qui les porte. -->
+  <path fill="#818cf8" d="M9 6h3v2h2V6h4v2h2V6h3v6H9z"/>
+
+  <!-- Le corps, jusqu'au bas du cadre : la tour n'y flotte pas, elle monte. -->
+  <path fill="#e2e8f0" d="M11 12h10v20H11z"/>
+
+  <!-- La fenêtre et la porte, évidées dans le corps. -->
+  <rect x="14.5" y="15" width="3" height="4" rx="1.5" fill="#020617"/>
+  <path fill="#020617" d="M13 32v-4a3 3 0 0 1 6 0v4z"/>
+</svg>
