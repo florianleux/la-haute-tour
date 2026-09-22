@@ -1,5 +1,5 @@
 <template>
-  <BaseField :label="label">
+  <BaseField :label="label" :clear="clear">
     <template #default="{ classes }">
       <input
         ref="field"
@@ -30,6 +30,8 @@ const props = defineProps<{
    * compte : chaque question monte un champ neuf.
    */
   autofocus?: boolean
+  /** Sans fond, voir BaseField. */
+  clear?: boolean
 }>()
 
 const model = defineModel<string>({ required: true })

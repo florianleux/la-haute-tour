@@ -10,15 +10,9 @@
 
        Les tailles sont en `cqw` de la carte en mobile, où la composition doit
        tenir d'un téléphone à l'autre ; en rem en desktop, où la scène occupe
-       toute la fenêtre et où un `cqw` gonflerait le texte avec l'écran.
-
-       Pendant une invite elle passe au-dessus de la surface cliquable de la
-       scène (z-30) : sans ça, « cliquer n'importe où » recouvrirait le champ et
-       le joueur ne pourrait pas y écrire. Le reste du temps elle repasse
-       dessous, et le clic sur le texte avance comme partout ailleurs. -->
+       toute la fenêtre et où un `cqw` gonflerait le texte avec l'écran. -->
   <div
-    class="relative flex flex-col gap-[2cqw] px-[5cqw] py-[4cqw] sm:absolute sm:bottom-[5%] sm:left-1/2 sm:block sm:w-[80%] sm:max-w-5xl sm:-translate-x-1/2 sm:rounded-3xl sm:bg-stone-100/95 sm:px-8 sm:py-6 sm:shadow-2xl sm:ring-1 sm:ring-black/10"
-    :class="prompt ? 'z-40' : 'z-20'"
+    class="relative z-20 flex flex-col gap-[2cqw] px-[5cqw] py-[4cqw] sm:absolute sm:bottom-[5%] sm:left-1/2 sm:block sm:w-[80%] sm:max-w-5xl sm:-translate-x-1/2 sm:rounded-3xl sm:bg-stone-100/95 sm:px-8 sm:py-6 sm:shadow-2xl sm:ring-1 sm:ring-black/10"
   >
     <!-- L'étiquette du nom, rangée du côté de celui qui parle : c'est ce qui
          dit lequel des deux portraits a la parole, sans avoir à lire le nom.
@@ -55,14 +49,24 @@
          demanderait de répondre à une question à moitié posée. Il prend le
          clavier en arrivant, et sa borne haute est celle du champ lui-même — la
          frappe s'arrête plutôt que d'annoncer une faute après coup. La borne
-         basse, elle, retient le dialogue : voir `dialogueGesture`. -->
-    <BaseInput
-      v-if="prompt && revealed"
-      v-model="answer"
-      autofocus
-      :label="prompt.label"
-      :maxlength="prompt.maxLength"
-    />
+         basse, elle, retient le dialogue : voir `dialogueGesture`.
+
+         Entrée répond depuis le champ : le raccourci de la scène
+         (`useAdvanceOnEnter`) laisse la touche aux champs de saisie. -->
+    <div v-if="prompt && revealed" class="flex items-end gap-2">
+      <BaseInput
+        v-model="answer"
+        class="flex-1"
+        autofocus
+        clear
+        :label="prompt.label"
+        :maxlength="prompt.maxLength"
+        @keydown.enter.prevent="emit('submit')"
+      />
+      <BaseButton variant="text" :disabled="awaiting" @click="emit('submit')">
+        Répondre
+      </BaseButton>
+    </div>
 
     <!-- Le repère de suite, seul indice que le dialogue attend un geste. Il ne
          paraît qu'une fois la réplique entière sortie : avant, le geste sert à
@@ -121,4 +125,9 @@ defineProps<{
  * changeant de réplique.
  */
 const answer = defineModel<string>('answer', { required: true })
+
+const emit = defineEmits<{
+  /** Le joueur valide sa saisie : à la scène de faire avancer le dialogue. */
+  submit: []
+}>()
 </script>

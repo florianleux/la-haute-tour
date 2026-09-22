@@ -29,7 +29,8 @@ const props = withDefaults(defineProps<{
   block?: boolean
   /** Action en cours : le bouton montre un loader et refuse un second clic. */
   loading?: boolean
-  variant?: 'primary' | 'ghost'
+  /** `text` : le libellé seul, sans fond, pour une surface claire. */
+  variant?: 'primary' | 'ghost' | 'text'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -42,6 +43,12 @@ const props = withDefaults(defineProps<{
 
 defineEmits<{ click: [MouseEvent] }>()
 
+const VARIANTS = {
+  primary: 'bg-indigo-500 text-white hover:bg-indigo-400',
+  ghost: 'bg-transparent text-slate-300 hover:bg-slate-800',
+  text: 'bg-transparent text-stone-800 hover:underline',
+}
+
 const classes = computed(() => [
   // `relative` : le loader se pose par-dessus le libellé plutôt qu'à côté, pour
   // que le bouton garde sa largeur pendant l'attente.
@@ -49,8 +56,6 @@ const classes = computed(() => [
   'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
   'disabled:cursor-not-allowed disabled:opacity-50',
   props.block ? 'w-full' : '',
-  props.variant === 'primary'
-    ? 'bg-indigo-500 text-white hover:bg-indigo-400'
-    : 'bg-transparent text-slate-300 hover:bg-slate-800',
+  VARIANTS[props.variant],
 ])
 </script>

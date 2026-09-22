@@ -41,6 +41,7 @@
         :revealed="revealed"
         :prompt="prompt"
         :awaiting="awaiting"
+        @submit="advance"
       />
 
       <!-- La rangée des personnages, sous la réplique en mobile. `sm:contents`
@@ -59,8 +60,14 @@
     </div>
 
     <!-- Tout l'écran fait bouton, carte comprise : c'est le geste du genre, et
-         il évite au joueur d'avoir une cible à viser. -->
+         il évite au joueur d'avoir une cible à viser.
+
+         Retiré pendant qu'une invite attend : il recouvrirait le champ, et
+         aucun z-index de la boîte n'y changerait rien — la carte porte un
+         `transform`, qui enferme la boîte dans son propre empilement. On
+         répond alors par Entrée ou « Répondre ». -->
     <BaseSurfaceButton
+      v-if="!(prompt && revealed)"
       label="Suite du dialogue"
       @click="advance"
     />
