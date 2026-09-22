@@ -1,7 +1,7 @@
 import { effectScope, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
-import { dialogueGesture, dialogueLineup, revealedLength } from '../../utils/dialogue'
+import { dialogueGesture, dialogueLineup, promptAnswered, revealedLength } from '../../utils/dialogue'
 import type { Dialogue, Speaker } from '../../utils/dialogue'
 import type { Ref } from 'vue'
 
@@ -39,6 +39,21 @@ const PAIR: Dialogue = {
   lines: [
     { place: 'left', text: 'Te voilà enfin.' },
     { place: 'right', text: 'Tu m\'attendais ?' },
+  ],
+}
+
+/** Un dialogue qui demande quelque chose au joueur avant de continuer. */
+const ASKED: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  right: EOWYN,
+  lines: [
+    {
+      place: 'right',
+      text: 'Dis ton nom.',
+      prompt: { label: 'Votre nom', minLength: 1, maxLength: 15 },
+    },
+    { place: 'left', text: 'Le voilà.' },
   ],
 }
 
@@ -129,24 +144,59 @@ describe('qui tient l affiche', () => {
 
 describe('ce qu un geste fait du dialogue', () => {
   it('affiche la réplique en entier tant qu elle défile', () => {
-    expect(dialogueGesture({ index: 0, revealed: false }, 3)).toBe('reveal')
+    expect(dialogueGesture({ index: 0, revealed: false, awaiting: false }, 3)).toBe('reveal')
   })
 
   it('passe à la suivante une fois qu elle est sortie', () => {
-    expect(dialogueGesture({ index: 0, revealed: true }, 3)).toBe('next')
+    expect(dialogueGesture({ index: 0, revealed: true, awaiting: false }, 3)).toBe('next')
   })
 
   it('rend la main après la dernière', () => {
-    expect(dialogueGesture({ index: 2, revealed: true }, 3)).toBe('end')
+    expect(dialogueGesture({ index: 2, revealed: true, awaiting: false }, 3)).toBe('end')
   })
 
   it('révèle d abord la dernière, sans la sauter', () => {
     // Un dialogue ne se termine jamais sur une réplique à moitié lue.
-    expect(dialogueGesture({ index: 2, revealed: false }, 3)).toBe('reveal')
+    expect(dialogueGesture({ index: 2, revealed: false, awaiting: false }, 3)).toBe('reveal')
   })
 
   it('rend la main dès la première quand il n y en a qu une', () => {
-    expect(dialogueGesture({ index: 0, revealed: true }, 1)).toBe('end')
+    expect(dialogueGesture({ index: 0, revealed: true, awaiting: false }, 1)).toBe('end')
+  })
+
+  it('ne passe pas tant qu une invite attend sa réponse', () => {
+    expect(dialogueGesture({ index: 0, revealed: true, awaiting: true }, 3)).toBe('wait')
+  })
+
+  it('révèle quand même la réplique qui porte l invite', () => {
+    // Le champ ne paraît qu'une fois la question posée en entier : le geste
+    // doit donc encore pouvoir la révéler.
+    expect(dialogueGesture({ index: 0, revealed: false, awaiting: true }, 3)).toBe('reveal')
+  })
+})
+
+describe('ce qu une invite accepte', () => {
+  const NAME = { label: 'Votre nom', minLength: 1, maxLength: 15 }
+
+  it('accepte ce qui tient dans les bornes', () => {
+    expect(promptAnswered(NAME, 'Frodo')).toBe(true)
+  })
+
+  it('refuse le vide', () => {
+    expect(promptAnswered(NAME, '')).toBe(false)
+  })
+
+  it('refuse les espaces seuls : ce n est pas un nom', () => {
+    expect(promptAnswered(NAME, '   ')).toBe(false)
+  })
+
+  it('refuse plus long que la borne haute', () => {
+    expect(promptAnswered(NAME, 'Saroumane le Blanc')).toBe(false)
+  })
+
+  it('ne compte pas les espaces de bout dans la longueur', () => {
+    // Quinze caractères une fois coupé : accepté, malgré les dix-neuf écrits.
+    expect(promptAnswered(NAME, '  Bilbon Sacquet  ')).toBe(true)
   })
 })
 
@@ -187,13 +237,15 @@ describe('le déroulé d un dialogue', () => {
    */
   function play(dialogue: Dialogue, now: Ref<number>) {
     const ended: true[] = []
+    const answers: string[] = []
     const served = ref(dialogue)
     const playback = scope.run(() => useDialogue(served, {
       onEnd: () => ended.push(true),
+      onAnswer: written => answers.push(written),
       now,
     }))!
 
-    return { ...playback, ended, served }
+    return { ...playback, ended, answers, served }
   }
 
   beforeEach(() => {
@@ -325,5 +377,35 @@ describe('le déroulé d un dialogue', () => {
     advance()
 
     expect(shown.value).toBe('')
+  })
+  it('ne passe pas la réplique tant que l invite n a pas sa réponse', () => {
+    const now = ref(START)
+    const { shown, advance, awaiting, answer } = play(ASKED, now)
+
+    now.value = START + 10_000
+    advance()
+
+    // Le geste a bien révélé la question, mais il ne va pas plus loin.
+    expect(awaiting.value).toBe(true)
+    advance()
+    expect(shown.value).toBe('Dis ton nom.')
+
+    answer.value = 'Frodo'
+    advance()
+    expect(shown.value).toBe('')
+  })
+
+  it('rend la saisie coupée, puis la vide à la réplique suivante', () => {
+    const now = ref(START)
+    const { advance, answer, answers, prompt } = play(ASKED, now)
+
+    now.value = START + 10_000
+    advance()
+    answer.value = '  Frodo  '
+    advance()
+
+    expect(answers).toEqual(['Frodo'])
+    expect(answer.value).toBe('')
+    expect(prompt.value).toBeNull()
   })
 })

@@ -1,6 +1,6 @@
-import { dialogueGesture, dialogueLineup, revealedLength, speakerAt } from '../utils/dialogue'
+import { dialogueGesture, dialogueLineup, promptAnswered, revealedLength, speakerAt } from '../utils/dialogue'
 import { withNonBreakingSpaces } from '../utils/typography'
-import type { Dialogue, LineupMember, Speaker, SpeakerPlace } from '../utils/dialogue'
+import type { Dialogue, DialoguePrompt, LineupMember, Speaker, SpeakerPlace } from '../utils/dialogue'
 import type { ComputedRef, Ref } from 'vue'
 
 /**
@@ -14,6 +14,12 @@ const REVEAL_MS = 30
 export interface DialogueOptions {
   /** La dernière réplique est passée : l'écran appelant reprend la main. */
   onEnd: () => void
+  /**
+   * Une invite vient d'être satisfaite : voici ce que le joueur a écrit, espaces
+   * de bout coupés. Le dialogue ne garde rien — c'est l'écran appelant qui en
+   * fait quelque chose, comme il décide déjà de la suite à `onEnd`.
+   */
+  onAnswer?: (answer: string) => void
   /**
    * L'horloge, quand l'appelant la tient — un test. Fournie, le défilé n'a plus
    * de minuterie à lui : il lit l'heure qu'on lui donne. Même couture que
@@ -33,6 +39,12 @@ export interface DialoguePlayback {
   shown: ComputedRef<string>
   /** Elle est sortie en entier : le geste suivant passe à la suite. */
   revealed: ComputedRef<boolean>
+  /** Ce que la réplique en cours demande d'écrire, s'il y a lieu. */
+  prompt: ComputedRef<DialoguePrompt | null>
+  /** Ce que le joueur écrit dans l'invite en cours. */
+  answer: Ref<string>
+  /** L'invite attend encore une saisie valable : le geste ne passe pas. */
+  awaiting: ComputedRef<boolean>
   /** Le geste du joueur : révéler, passer, ou rendre la main. */
   advance: () => void
 }
@@ -79,6 +91,19 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   const shown = computed(() => text.value.slice(0, count.value))
   const revealed = computed(() => count.value === text.value.length)
 
+  /**
+   * L'invite de la réplique en cours et ce que le joueur y écrit. La saisie se
+   * vide en passant à la suivante : c'est une réponse à cette question-là, pas
+   * un état du dialogue.
+   */
+  const prompt = computed(() => line.value.prompt ?? null)
+  const answer = ref('')
+  const awaiting = computed(() => {
+    const asked = prompt.value
+
+    return asked !== null && !promptAnswered(asked, answer.value)
+  })
+
   let timer: ReturnType<typeof setInterval> | null = null
 
   function stop(): void {
@@ -110,6 +135,7 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   function playLine(): void {
     stop()
     forced.value = false
+    answer.value = ''
     // L'heure vraie, pas `clock.value` : celle-ci est restée sur le dernier
     // battement d'avant l'arrêt de la minuterie, et le temps passé à lire la
     // réplique précédente aurait été compté comme du défilé déjà écoulé.
@@ -129,7 +155,18 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   }
 
   function advance(): void {
-    switch (dialogueGesture({ index: index.value, revealed: revealed.value }, dialogue.value.lines.length)) {
+    const progress = { index: index.value, revealed: revealed.value, awaiting: awaiting.value }
+    const gesture = dialogueGesture(progress, dialogue.value.lines.length)
+
+    // La saisie est rendue avant que la réplique change : après, l'invite n'est
+    // plus celle à laquelle le joueur vient de répondre.
+    if (prompt.value && (gesture === 'next' || gesture === 'end')) {
+      options.onAnswer?.(answer.value.trim())
+    }
+
+    switch (gesture) {
+      case 'wait':
+        break
       case 'reveal':
         revealAll()
         break
@@ -153,5 +190,5 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   })
   onScopeDispose(stop)
 
-  return { lineup, speaker, place, shown, revealed, advance }
+  return { lineup, speaker, place, shown, revealed, prompt, answer, awaiting, advance }
 }

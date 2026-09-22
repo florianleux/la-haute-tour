@@ -34,10 +34,13 @@
            celui de la fenêtre en desktop — c'est le même `bottom-0`, la scène
            ayant changé de taille sous eux. -->
       <DialogueBox
+        v-model:answer="answer"
         :name="speaker.name"
         :place="place"
         :text="shown"
         :revealed="revealed"
+        :prompt="prompt"
+        :awaiting="awaiting"
       />
 
       <!-- La rangée des personnages, sous la réplique en mobile. `sm:contents`
@@ -68,7 +71,8 @@
 // Une scène de dialogue : un décor, un ou deux interlocuteurs, une boîte où le
 // texte défile. Elle joue le dialogue qu'on lui donne et n'en connaît rien
 // d'autre — aucun boss, aucune phase, aucun appel d'API : elle rend la main par
-// `end`, et c'est l'écran appelant qui décide de la suite. C'est ce qui la rend
+// `end`, et ce qu'une invite a reçu par `answer`, à charge de l'écran appelant
+// d'en faire quelque chose. C'est ce qui la rend
 // jouable partout, du banc de design à l'introduction d'un boss.
 //
 // Lui servir un autre dialogue le reprend à sa première réplique (voir
@@ -80,11 +84,16 @@ const props = defineProps<{ dialogue: Dialogue }>()
 const emit = defineEmits<{
   /** La dernière réplique est passée : l'écran appelant reprend la main. */
   end: []
+  /** Une invite a reçu sa réponse : voici ce que le joueur a écrit. */
+  answer: [string]
 }>()
 
-const { lineup, speaker, place, shown, revealed, advance } = useDialogue(
+const { lineup, speaker, place, shown, revealed, prompt, answer, awaiting, advance } = useDialogue(
   computed(() => props.dialogue),
-  { onEnd: () => emit('end') },
+  {
+    onEnd: () => emit('end'),
+    onAnswer: written => emit('answer', written),
+  },
 )
 
 // Entrée fait avancer comme le clic, par le même chemin que les écrans de jeu.
