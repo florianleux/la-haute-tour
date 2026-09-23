@@ -33,9 +33,10 @@
 
          La réserve est comptée en lignes de texte (`lh`) et non en `cqw`
          calculés à la main : une taille de texte retouchée emporte la réserve
-         avec elle au lieu de se désynchroniser en silence. Cinq lignes en
-         mobile, quatre en desktop où la boîte est plus large : c'est ce que
-         tient la plus longue réplique qu'on s'autorise.
+         avec elle au lieu de se désynchroniser en silence. Cinq lignes, en
+         mobile comme en desktop : c'est ce que tient la plus longue réplique
+         qu'on s'autorise, et en desktop, où une question tient d'ordinaire en
+         une ligne, de quoi y ranger trois choix sans pousser la boîte.
 
          ponytail: au-delà, le texte déborde de la réserve au lieu de la pousser
          — c'est le signal qu'une réplique est trop longue pour la scène. Un
@@ -48,8 +49,8 @@
          — en `min-h`, pour que des réponses qui ne tiennent pas poussent la
          boîte plutôt que d'en sortir. La taille du texte est portée par ce
          cadre : les réponses la reprennent, et `lh` y vaut la même ligne. -->
-    <div class="min-h-[5lh] text-[4cqw] leading-relaxed text-stone-800 sm:min-h-[4lh] sm:text-2xl">
-      <p :class="choices ? '' : 'h-[5lh] sm:h-[4lh]'">
+    <div class="min-h-[5lh] text-[4cqw] leading-relaxed text-stone-800 sm:text-2xl">
+      <p :class="choices ? '' : 'h-[5lh]'">
         {{ text }}
       </p>
 
