@@ -53,43 +53,24 @@
         {{ text }}
       </p>
 
-      <!-- Les choix : une ligne par réponse, qu'on clique pour la dire — le
-           geste des point & click. Même règle que l'invite, ils ne paraissent
-           qu'une fois la question entièrement posée. -->
-      <div v-if="choices && revealed" class="flex flex-col items-start">
-        <BaseButton
-          v-for="(choice, rank) in choices"
-          :key="rank"
-          variant="option"
-          @click="emit('choose', rank)"
-        >
-          {{ choice }}
-        </BaseButton>
-      </div>
+      <!-- Les choix. Même règle que l'invite, ils ne paraissent qu'une fois la
+           question entièrement posée. -->
+      <DialogueChoiceList
+        v-if="choices && revealed"
+        :choices="choices"
+        @choose="emit('choose', $event)"
+      />
     </div>
 
     <!-- L'invite : le champ ne paraît qu'une fois la réplique sortie, sinon il
-         demanderait de répondre à une question à moitié posée. Il prend le
-         clavier en arrivant, et sa borne haute est celle du champ lui-même — la
-         frappe s'arrête plutôt que d'annoncer une faute après coup. La borne
-         basse, elle, retient le dialogue : voir `dialogueGesture`.
-
-         Entrée répond depuis le champ : le raccourci de la scène
-         (`useAdvanceOnEnter`) laisse la touche aux champs de saisie. -->
-    <div v-if="prompt && revealed" class="flex items-end gap-2">
-      <BaseInput
-        v-model="answer"
-        class="flex-1"
-        autofocus
-        clear
-        :label="prompt.label"
-        :maxlength="prompt.maxLength"
-        @keydown.enter.prevent="emit('submit')"
-      />
-      <BaseButton variant="text" :disabled="awaiting" @click="emit('submit')">
-        Répondre
-      </BaseButton>
-    </div>
+         demanderait de répondre à une question à moitié posée. -->
+    <DialoguePromptField
+      v-if="prompt && revealed"
+      v-model="answer"
+      :prompt="prompt"
+      :awaiting="awaiting"
+      @submit="emit('submit')"
+    />
 
     <!-- Le repère de suite, seul indice que le dialogue attend un geste. Il ne
          paraît qu'une fois la réplique entière sortie : avant, le geste sert à
