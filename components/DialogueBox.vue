@@ -12,7 +12,7 @@
        tenir d'un téléphone à l'autre ; en rem en desktop, où la scène occupe
        toute la fenêtre et où un `cqw` gonflerait le texte avec l'écran. -->
   <div
-    class="relative z-20 flex flex-col gap-[2cqw] px-[5cqw] py-[4cqw] sm:absolute sm:bottom-[5%] sm:left-1/2 sm:block sm:w-[80%] sm:max-w-5xl sm:-translate-x-1/2 sm:rounded-3xl sm:bg-stone-100/95 sm:px-8 sm:py-6 sm:shadow-2xl sm:ring-1 sm:ring-black/10"
+    class="relative z-20 flex flex-col gap-[2cqw] px-[5cqw] py-[4cqw] sm:absolute sm:bottom-[5%] sm:left-1/2 sm:block sm:w-[60%] sm:max-w-5xl sm:-translate-x-1/2 sm:rounded-3xl sm:bg-stone-100/95 sm:px-8 sm:py-6 sm:shadow-2xl sm:ring-1 sm:ring-black/10"
   >
     <!-- L'étiquette du nom, rangée du côté de celui qui parle : c'est ce qui
          dit lequel des deux portraits a la parole, sans avoir à lire le nom.
