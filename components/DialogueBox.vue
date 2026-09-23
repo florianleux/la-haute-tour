@@ -68,6 +68,20 @@
       </BaseButton>
     </div>
 
+    <!-- Les choix : une ligne par réponse, qu'on clique pour la dire — le geste
+         des point & click. Même règle que l'invite, ils ne paraissent qu'une
+         fois la question entièrement posée. -->
+    <div v-if="choices && revealed" class="flex flex-col items-start">
+      <BaseButton
+        v-for="(choice, rank) in choices"
+        :key="rank"
+        variant="text"
+        @click="emit('choose', rank)"
+      >
+        {{ choice }}
+      </BaseButton>
+    </div>
+
     <!-- Le repère de suite, seul indice que le dialogue attend un geste. Il ne
          paraît qu'une fois la réplique entière sortie : avant, le geste sert à
          la révéler, pas à passer.
@@ -89,7 +103,7 @@
 // réplique, ni combien il en reste : on lui donne ce qu'il y a à lire, elle le
 // met en page. C'est ce qui la laisse servir un dialogue de boss comme
 // n'importe quel autre.
-import type { DialoguePrompt, SpeakerPlace } from '~~/utils/dialogue'
+import type { DialogueChoices, DialoguePrompt, SpeakerPlace } from '~~/utils/dialogue'
 
 // Les classes sont écrites en entier, jamais construites par concaténation :
 // Tailwind ne voit que ce qui est littéral dans le source. Même table que
@@ -115,7 +129,12 @@ defineProps<{
   revealed: boolean
   /** Ce que la réplique demande d'écrire, s'il y a lieu. */
   prompt: DialoguePrompt | null
-  /** L'invite n'a pas sa réponse : le repère de suite reste éteint. */
+  /** Les réponses que la réplique propose de cliquer, s'il y a lieu. */
+  choices: DialogueChoices | null
+  /**
+   * L'invite n'a pas sa réponse, ou les choix attendent un clic : le repère de
+   * suite reste éteint.
+   */
   awaiting: boolean
 }>()
 
@@ -129,5 +148,7 @@ const answer = defineModel<string>('answer', { required: true })
 const emit = defineEmits<{
   /** Le joueur valide sa saisie : à la scène de faire avancer le dialogue. */
   submit: []
+  /** Le joueur clique le choix de ce rang. */
+  choose: [number]
 }>()
 </script>

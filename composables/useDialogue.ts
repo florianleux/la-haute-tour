@@ -1,6 +1,6 @@
 import { dialogueGesture, dialogueLineup, promptAnswered, revealedLength, speakerAt } from '../utils/dialogue'
 import { withNonBreakingSpaces } from '../utils/typography'
-import type { Dialogue, DialoguePrompt, LineupMember, Speaker, SpeakerPlace } from '../utils/dialogue'
+import type { Dialogue, DialogueChoices, DialogueGesture, DialoguePrompt, LineupMember, Speaker, SpeakerPlace } from '../utils/dialogue'
 import type { ComputedRef, Ref } from 'vue'
 
 /**
@@ -20,6 +20,12 @@ export interface DialogueOptions {
    * fait quelque chose, comme il décide déjà de la suite à `onEnd`.
    */
   onAnswer?: (answer: string) => void
+  /**
+   * Un choix vient d'être cliqué : voici son rang, de 0 au nombre de choix moins
+   * un. Le rang et non le texte : c'est l'écran appelant qui sait ce que chaque
+   * réponse veut dire, et il les a écrites dans cet ordre.
+   */
+  onChoose?: (rank: number) => void
   /**
    * L'horloge, quand l'appelant la tient — un test. Fournie, le défilé n'a plus
    * de minuterie à lui : il lit l'heure qu'on lui donne. Même couture que
@@ -43,10 +49,17 @@ export interface DialoguePlayback {
   prompt: ComputedRef<DialoguePrompt | null>
   /** Ce que le joueur écrit dans l'invite en cours. */
   answer: Ref<string>
-  /** L'invite attend encore une saisie valable : le geste ne passe pas. */
+  /** Les réponses que la réplique en cours propose, s'il y a lieu. */
+  choices: ComputedRef<DialogueChoices | null>
+  /**
+   * L'invite attend encore une saisie valable, ou les choix un clic : le geste
+   * ne passe pas.
+   */
   awaiting: ComputedRef<boolean>
   /** Le geste du joueur : révéler, passer, ou rendre la main. */
   advance: () => void
+  /** Le joueur clique le choix de ce rang : le dialogue passe à la suite. */
+  choose: (rank: number) => void
 }
 
 /**
@@ -98,10 +111,13 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
    */
   const prompt = computed(() => line.value.prompt ?? null)
   const answer = ref('')
+  const choices = computed(() => line.value.choices ?? null)
   const awaiting = computed(() => {
     const asked = prompt.value
 
-    return asked !== null && !promptAnswered(asked, answer.value)
+    // Des choix attendent toujours : c'est le clic sur l'un d'eux qui passe,
+    // jamais le geste.
+    return choices.value !== null || (asked !== null && !promptAnswered(asked, answer.value))
   })
 
   let timer: ReturnType<typeof setInterval> | null = null
@@ -164,6 +180,27 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
       options.onAnswer?.(answer.value.trim())
     }
 
+    perform(gesture)
+  }
+
+  function choose(rank: number): void {
+    // Rien à cliquer avant que la question soit entièrement posée : les choix ne
+    // sont pas encore affichés.
+    if (!choices.value || !revealed.value) {
+      return
+    }
+
+    // Même ordre que la saisie : le rang part avant que la réplique change.
+    options.onChoose?.(rank)
+    // Le clic a répondu : ce qui suit est ce qu'un geste ferait d'une réplique
+    // sortie et qui n'attend plus rien.
+    perform(dialogueGesture(
+      { index: index.value, revealed: true, awaiting: false },
+      dialogue.value.lines.length,
+    ))
+  }
+
+  function perform(gesture: DialogueGesture): void {
     switch (gesture) {
       case 'wait':
         break
@@ -190,5 +227,5 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   })
   onScopeDispose(stop)
 
-  return { lineup, speaker, place, shown, revealed, prompt, answer, awaiting, advance }
+  return { lineup, speaker, place, shown, revealed, prompt, answer, choices, awaiting, advance, choose }
 }

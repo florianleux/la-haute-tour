@@ -37,13 +37,32 @@ export interface DialoguePrompt {
   maxLength: number
 }
 
-/** Une prise de parole : d'où elle vient, ce qui s'y dit, ce qu'elle demande. */
-export interface DialogueLine<P extends SpeakerPlace = SpeakerPlace> {
-  place: P
-  text: string
-  /** Présente, la réplique attend une saisie avant de laisser passer. */
-  prompt?: DialoguePrompt
-}
+/**
+ * Les réponses qu'une réplique propose, dans l'ordre où elles s'affichent. Au
+ * moins une : sans elle, la réplique attendrait un clic qui ne peut pas venir.
+ * Voir le glossaire de specs/spec.md (« Choix »).
+ */
+export type DialogueChoices = readonly [string, ...string[]]
+
+/**
+ * Une prise de parole : d'où elle vient, ce qui s'y dit, ce qu'elle demande.
+ *
+ * Une invite ou des choix, jamais les deux : la réplique n'attendrait alors
+ * qu'une des deux réponses, et l'autre s'afficherait pour rien. Les `?: never`
+ * le tiennent, comme sur `Dialogue`.
+ */
+export type DialogueLine<P extends SpeakerPlace = SpeakerPlace> = { place: P, text: string } & (
+  | {
+    /** Présente, la réplique attend une saisie avant de laisser passer. */
+    prompt?: DialoguePrompt
+    choices?: never
+  }
+  | {
+    /** Présents, la réplique attend que le joueur en clique un. */
+    choices: DialogueChoices
+    prompt?: never
+  }
+)
 
 /**
  * Les répliques d'un dialogue : au moins une, dite par le type plutôt que par un
@@ -131,7 +150,7 @@ export interface DialogueProgress {
   index: number
   /** Son texte est entièrement sorti. */
   revealed: boolean
-  /** Son invite attend encore une saisie valable. */
+  /** Son invite attend encore une saisie valable, ou ses choix un clic. */
   awaiting: boolean
 }
 
@@ -144,9 +163,10 @@ export type DialogueGesture = 'reveal' | 'next' | 'end' | 'wait'
  * dialogue. Le joueur pressé n'attend donc jamais le défilé, et celui qui lit
  * n'a rien de plus à apprendre — c'est le même geste du début à la fin.
  *
- * Une invite l'arrête (`wait`) tant que sa saisie n'est pas valable : c'est le
- * seul moment où le geste ne fait rien, et il vient après le défilé — révéler
- * la réplique reste possible, c'est passer outre la question qui ne l'est pas.
+ * Une invite l'arrête (`wait`) tant que sa saisie n'est pas valable, des choix
+ * tant qu'aucun n'est cliqué : ce sont les seuls moments où le geste ne fait
+ * rien, et ils viennent après le défilé — révéler la réplique reste possible,
+ * c'est passer outre la question qui ne l'est pas.
  */
 export function dialogueGesture(
   { index, revealed, awaiting }: DialogueProgress,

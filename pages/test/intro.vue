@@ -2,6 +2,7 @@
   <DialogueScene
     :dialogue="dialogue"
     @answer="name = $event"
+    @choose="choose"
     @end="greeted = true"
   />
 </template>
@@ -12,15 +13,17 @@
 // écrit. Rien ne la déclenche dans le jeu — c'est une page de réglage, admin
 // seulement, comme pages/test/dialogue.vue.
 //
-// L'Inconnu salue, puis demande son nom au joueur : d'où les deux dialogues
-// enchaînés. L'affiche d'un dialogue est déclarée une fois pour toutes (voir
-// ADR 0010), si bien qu'un joueur qui passe de « ??? » à son nom change de
-// dialogue — la scène reprend alors au début, ce qui est exactement ce qu'on
-// veut ici.
+// L'Inconnu salue, demande son nom au joueur, puis ce qu'il est : d'où les
+// trois dialogues enchaînés. L'affiche d'un dialogue est déclarée une fois pour
+// toutes (voir ADR 0010), si bien qu'un joueur qui passe de « ??? » à son nom
+// change de dialogue — la scène reprend alors au début, ce qui est exactement ce
+// qu'on veut ici. La réponse du joueur, elle, ouvre le troisième : c'est lui qui
+// la dit, et un dialogue ne connaît pas d'avance ce qu'on y choisira.
 //
-// Ce que le joueur écrit ne part nulle part : aucun compte, aucune API. Le
-// nommer pour de bon est un autre travail.
+// Le nom ne part nulle part : aucun compte, aucune API — le nommer pour de bon
+// est l'issue #53. Le genre, lui, est gardé sur le compte du joueur servi.
 import type { Dialogue, Speaker } from '~~/utils/dialogue'
+import type { Gender } from '~~/shared/utils/genders'
 
 definePageMeta({ admin: true })
 
@@ -53,14 +56,46 @@ const GREETING: Dialogue = {
   ],
 }
 
-/** Ce qui se dit une fois le joueur nommé. Bouche-trou, à écrire. */
-function conversation(name: string): Dialogue {
+/** Ce que le joueur peut répondre à L'Inconnu, dans l'ordre où il le voit. */
+const REPLIES = ['Un aventurier', 'Une aventurière', 'C\'est pas tes oignons'] as const
+
+type Reply = typeof REPLIES[number]
+
+/** Le genre que dit chaque réponse. */
+const GENDER_OF: Record<Reply, Gender> = {
+  'Un aventurier': 'MALE',
+  'Une aventurière': 'FEMALE',
+  'C\'est pas tes oignons': 'UNDISCLOSED',
+}
+
+/**
+ * Le joueur nommé, L'Inconnu revient sur son « aventurier » de la rencontre et
+ * demande ce qu'il est.
+ */
+function question(name: string): Dialogue {
   return {
     background: BACKGROUND,
     left: { name, portrait: PORTRAIT },
     right: UNKNOWN,
     lines: [
       { place: 'right', text: `${name}. Soit.` },
+      {
+        place: 'right',
+        text: 'J\'ai dit aventurier. J\'ai peut-être parlé trop vite. T\'es quoi, au juste ?',
+        choices: REPLIES,
+      },
+    ],
+  }
+}
+
+/** Ce qui se dit une fois le joueur nommé. Bouche-trou, à écrire. */
+function conversation(name: string, reply: Reply): Dialogue {
+  return {
+    background: BACKGROUND,
+    left: { name, portrait: PORTRAIT },
+    right: UNKNOWN,
+    lines: [
+      { place: 'left', text: reply },
       { place: 'left', text: 'Et toi, qui es-tu ?' },
       {
         place: 'right',
@@ -75,8 +110,27 @@ function conversation(name: string): Dialogue {
 
 const name = ref('')
 const greeted = ref(false)
+/** Ce que le joueur a répondu à L'Inconnu. Null tant qu'il n'a rien cliqué. */
+const reply = ref<Reply | null>(null)
 
 // Servir un autre dialogue à la scène la reprend à sa première réplique (voir
-// useDialogue) : c'est ce qui enchaîne la rencontre et la suite, sans `:key`.
-const dialogue = computed<Dialogue>(() => (greeted.value ? conversation(name.value) : GREETING))
+// useDialogue) : c'est ce qui enchaîne les trois, sans `:key`. Le clic sur une
+// réponse suffit à passer à la conversation — la fin de la question qui le suit
+// n'a plus rien à changer.
+const dialogue = computed<Dialogue>(() => {
+  if (!greeted.value) {
+    return GREETING
+  }
+
+  return reply.value === null ? question(name.value) : conversation(name.value, reply.value)
+})
+
+async function choose(rank: number): Promise<void> {
+  const chosen = REPLIES[rank]
+
+  reply.value = chosen
+  // Le dialogue n'attend pas l'écriture : la réponse est dite tout de suite, et
+  // un échec n'a rien à changer à ce qui se joue ici — il se lit en console.
+  await $fetch('/api/profile/gender', { method: 'PUT', body: { gender: GENDER_OF[chosen] } })
+}
 </script>

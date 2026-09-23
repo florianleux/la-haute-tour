@@ -40,8 +40,10 @@
         :text="shown"
         :revealed="revealed"
         :prompt="prompt"
+        :choices="choices"
         :awaiting="awaiting"
         @submit="advance"
+        @choose="choose"
       />
 
       <!-- La rangée des personnages, sous la réplique en mobile. `sm:contents`
@@ -62,12 +64,13 @@
     <!-- Tout l'écran fait bouton, carte comprise : c'est le geste du genre, et
          il évite au joueur d'avoir une cible à viser.
 
-         Retiré pendant qu'une invite attend : il recouvrirait le champ, et
-         aucun z-index de la boîte n'y changerait rien — la carte porte un
-         `transform`, qui enferme la boîte dans son propre empilement. On
-         répond alors par Entrée ou « Répondre ». -->
+         Retiré pendant qu'une invite ou des choix attendent : il recouvrirait
+         le champ ou les réponses, et aucun z-index de la boîte n'y changerait
+         rien — la carte porte un `transform`, qui enferme la boîte dans son
+         propre empilement. On répond alors par Entrée ou « Répondre », ou en
+         cliquant un choix. -->
     <BaseSurfaceButton
-      v-if="!(prompt && revealed)"
+      v-if="!((prompt || choices) && revealed)"
       label="Suite du dialogue"
       @click="advance"
     />
@@ -78,9 +81,9 @@
 // Une scène de dialogue : un décor, un ou deux interlocuteurs, une boîte où le
 // texte défile. Elle joue le dialogue qu'on lui donne et n'en connaît rien
 // d'autre — aucun boss, aucune phase, aucun appel d'API : elle rend la main par
-// `end`, et ce qu'une invite a reçu par `answer`, à charge de l'écran appelant
-// d'en faire quelque chose. C'est ce qui la rend
-// jouable partout, du banc de design à l'introduction d'un boss.
+// `end`, ce qu'une invite a reçu par `answer` et le rang du choix cliqué par
+// `choose`, à charge de l'écran appelant d'en faire quelque chose. C'est ce qui
+// la rend jouable partout, du banc de design à l'introduction d'un boss.
 //
 // Lui servir un autre dialogue le reprend à sa première réplique (voir
 // useDialogue) : aucun `:key` à poser dessus.
@@ -93,13 +96,18 @@ const emit = defineEmits<{
   end: []
   /** Une invite a reçu sa réponse : voici ce que le joueur a écrit. */
   answer: [string]
+  /** Un choix a été cliqué : voici son rang. */
+  choose: [number]
 }>()
 
-const { lineup, speaker, place, shown, revealed, prompt, answer, awaiting, advance } = useDialogue(
+const {
+  lineup, speaker, place, shown, revealed, prompt, answer, choices, awaiting, advance, choose,
+} = useDialogue(
   computed(() => props.dialogue),
   {
     onEnd: () => emit('end'),
     onAnswer: written => emit('answer', written),
+    onChoose: rank => emit('choose', rank),
   },
 )
 

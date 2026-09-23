@@ -57,6 +57,17 @@ const ASKED: Dialogue = {
   ],
 }
 
+/** Un dialogue qui propose au joueur de cliquer sa réponse. */
+const CHOSEN: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  right: EOWYN,
+  lines: [
+    { place: 'right', text: 'Tu viens ?', choices: ['Oui', 'Non'] },
+    { place: 'left', text: 'Je te suis.' },
+  ],
+}
+
 const SOLO: Dialogue = {
   background: BG,
   center: GANDALF,
@@ -98,6 +109,29 @@ const HALF_PAIR: Dialogue = {
   lines: [{ place: 'left', text: 'Te voilà enfin.' }],
 }
 
+const PROMPT_AND_CHOICES: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  right: EOWYN,
+  lines: [
+    // @ts-expect-error une réplique attend une saisie ou un clic, pas les deux
+    {
+      place: 'right',
+      text: 'Dis ton nom.',
+      prompt: { label: 'Votre nom', minLength: 1, maxLength: 15 },
+      choices: ['Frodo'],
+    },
+  ],
+}
+
+const NO_CHOICES: Dialogue = {
+  background: BG,
+  left: GANDALF,
+  right: EOWYN,
+  // @ts-expect-error des choix vides attendraient un clic qui ne peut pas venir
+  lines: [{ place: 'right', text: 'Tu viens ?', choices: [] }],
+}
+
 const NO_LINES: Dialogue = {
   background: BG,
   left: GANDALF,
@@ -118,9 +152,13 @@ describe('les formes qu un dialogue accepte', () => {
   })
 
   it('refuse les formes bancales à la compilation, pas à l exécution', () => {
-    // Ces cinq-là n'existent que pour leur `@ts-expect-error` ; les citer ici
+    // Ces sept-là n'existent que pour leur `@ts-expect-error` ; les citer ici
     // empêche le lint de les déclarer inutilisées, et dit à quoi elles servent.
-    expect([THIRD_SPEAKER, EMPTY_MIDDLE, SOLO_ON_THE_LEFT, HALF_PAIR, NO_LINES]).toHaveLength(5)
+    const refused = [
+      THIRD_SPEAKER, EMPTY_MIDDLE, SOLO_ON_THE_LEFT, HALF_PAIR, NO_LINES, PROMPT_AND_CHOICES, NO_CHOICES,
+    ]
+
+    expect(refused).toHaveLength(7)
   })
 })
 
@@ -238,14 +276,16 @@ describe('le déroulé d un dialogue', () => {
   function play(dialogue: Dialogue, now: Ref<number>) {
     const ended: true[] = []
     const answers: string[] = []
+    const ranks: number[] = []
     const served = ref(dialogue)
     const playback = scope.run(() => useDialogue(served, {
       onEnd: () => ended.push(true),
       onAnswer: written => answers.push(written),
+      onChoose: rank => ranks.push(rank),
       now,
     }))!
 
-    return { ...playback, ended, answers, served }
+    return { ...playback, ended, answers, ranks, served }
   }
 
   beforeEach(() => {
@@ -407,5 +447,59 @@ describe('le déroulé d un dialogue', () => {
     expect(answers).toEqual(['Frodo'])
     expect(answer.value).toBe('')
     expect(prompt.value).toBeNull()
+  })
+
+  it('attend un clic sur les choix, que le geste ne remplace pas', () => {
+    const now = ref(START)
+    const { advance, awaiting, choices, shown } = play(CHOSEN, now)
+
+    now.value = START + 10_000
+    advance()
+
+    expect(choices.value).toEqual(['Oui', 'Non'])
+    expect(awaiting.value).toBe(true)
+    advance()
+    expect(shown.value).toBe('Tu viens\u00A0?')
+  })
+
+  it('ne prend pas de clic avant que la question soit posée', () => {
+    const now = ref(START)
+    const { choose, ranks, shown } = play(CHOSEN, now)
+
+    now.value = START + 30
+    choose(0)
+
+    expect(ranks).toEqual([])
+    expect(shown.value).toBe('T')
+  })
+
+  it('rend le rang du choix cliqué, puis passe à la suite', () => {
+    const now = ref(START)
+    const { advance, choose, choices, ranks, speaker } = play(CHOSEN, now)
+
+    now.value = START + 10_000
+    advance()
+    choose(1)
+
+    expect(ranks).toEqual([1])
+    expect(choices.value).toBeNull()
+    expect(speaker.value).toEqual(GANDALF)
+  })
+
+  it('rend la main quand les choix portent la dernière réplique', () => {
+    const now = ref(START)
+    const { advance, choose, ended, ranks } = play({
+      background: BG,
+      left: GANDALF,
+      right: EOWYN,
+      lines: [{ place: 'right', text: 'Tu viens ?', choices: ['Oui', 'Non'] }],
+    }, now)
+
+    now.value = START + 10_000
+    advance()
+    choose(0)
+
+    expect(ranks).toEqual([0])
+    expect(ended).toEqual([true])
   })
 })
