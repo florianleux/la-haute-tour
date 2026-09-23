@@ -43,10 +43,10 @@ describe('le genre donné à l introduction', () => {
     expect((await loadPlayer(db, playerId)).gender).toBe('FEMALE')
   })
 
-  it('garde aussi le refus de répondre', async () => {
-    await setGender(genderRequest({ gender: 'UNDISCLOSED' }, cookie))
+  it('garde aussi le genre neutre', async () => {
+    await setGender(genderRequest({ gender: 'NEUTRAL' }, cookie))
 
-    expect((await loadPlayer(db, playerId)).gender).toBe('UNDISCLOSED')
+    expect((await loadPlayer(db, playerId)).gender).toBe('NEUTRAL')
   })
 
   it('réécrit la réponse quand l introduction se rejoue', async () => {

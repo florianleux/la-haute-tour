@@ -65,7 +65,7 @@ type Reply = typeof REPLIES[number]
 const GENDER_OF: Record<Reply, Gender> = {
   'Un aventurier': 'MALE',
   'Une aventurière': 'FEMALE',
-  'C\'est pas tes oignons': 'UNDISCLOSED',
+  'C\'est pas tes oignons': 'NEUTRAL',
 }
 
 /**

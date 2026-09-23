@@ -7,6 +7,6 @@
  * aventurier », « Une aventurière », « C'est pas tes oignons ») vit côté écran,
  * comme les libellés des équipes. Voir specs/spec.md (glossaire, « Genre »).
  */
-export const GENDERS = ['MALE', 'FEMALE', 'UNDISCLOSED'] as const
+export const GENDERS = ['MALE', 'FEMALE', 'NEUTRAL'] as const
 
 export type Gender = typeof GENDERS[number]
