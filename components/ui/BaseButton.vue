@@ -29,8 +29,11 @@ const props = withDefaults(defineProps<{
   block?: boolean
   /** Action en cours : le bouton montre un loader et refuse un second clic. */
   loading?: boolean
-  /** `text` : le libellé seul, sans fond, pour une surface claire. */
-  variant?: 'primary' | 'ghost' | 'text'
+  /**
+   * `text` : le libellé seul, sans fond, pour une surface claire. `option` :
+   * pareil, en italique et resserré, pour une réponse parmi d'autres empilées.
+   */
+  variant?: 'primary' | 'ghost' | 'text' | 'option'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -43,16 +46,20 @@ const props = withDefaults(defineProps<{
 
 defineEmits<{ click: [MouseEvent] }>()
 
+/** Le gabarit d'un bouton seul. Une option, empilée avec d'autres, en veut un plus serré. */
+const PADDED = 'py-3 font-semibold'
+
 const VARIANTS = {
-  primary: 'bg-indigo-500 text-white hover:bg-indigo-400',
-  ghost: 'bg-transparent text-slate-300 hover:bg-slate-800',
-  text: 'bg-transparent text-stone-800 hover:underline',
+  primary: `${PADDED} bg-indigo-500 text-white hover:bg-indigo-400`,
+  ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
+  text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
+  option: 'py-1 italic bg-transparent text-stone-800 hover:underline',
 }
 
 const classes = computed(() => [
   // `relative` : le loader se pose par-dessus le libellé plutôt qu'à côté, pour
   // que le bouton garde sa largeur pendant l'attente.
-  'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold',
+  'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5 text-sm',
   'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
   'disabled:cursor-not-allowed disabled:opacity-50',
   props.block ? 'w-full' : '',

@@ -75,7 +75,7 @@
       <BaseButton
         v-for="(choice, rank) in choices"
         :key="rank"
-        variant="text"
+        variant="option"
         @click="emit('choose', rank)"
       >
         {{ choice }}
