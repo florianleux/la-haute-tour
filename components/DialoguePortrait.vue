@@ -17,7 +17,7 @@
   <img
     :src="speaker.portrait"
     alt=""
-    class="pointer-events-none h-[30svh] w-auto max-w-[46%] origin-bottom object-contain object-bottom transition duration-300 sm:absolute sm:bottom-0 sm:h-[78%] sm:max-w-[37%]"
+    class="pointer-events-none h-[34.5svh] w-auto max-w-[53%] origin-bottom object-contain object-bottom transition duration-300 sm:absolute sm:bottom-0 sm:h-[90%] sm:max-w-[42.5%]"
     :class="[PLACES[place], speaking ? 'z-10 scale-105 brightness-100 saturate-100' : 'scale-[0.8] brightness-75 saturate-50']"
   >
 </template>
