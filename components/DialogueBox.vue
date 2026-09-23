@@ -40,10 +40,33 @@
          ponytail: au-delà, le texte déborde de la réserve au lieu de la pousser
          — c'est le signal qu'une réplique est trop longue pour la scène. Un
          découpage automatique en plusieurs répliques serait la suite, le jour
-         où l'écriture en demande. -->
-    <p class="h-[5lh] text-[4cqw] leading-relaxed text-stone-800 sm:h-[4lh] sm:text-2xl">
-      {{ text }}
-    </p>
+         où l'écriture en demande.
+
+         Une réplique à choix fait exception : ses réponses se rangent dans la
+         réserve, juste sous la question, et non sous la réserve entière. Le
+         texte y perd sa hauteur figée, la réserve passe au cadre qui l'entoure
+         — en `min-h`, pour que des réponses qui ne tiennent pas poussent la
+         boîte plutôt que d'en sortir. La taille du texte est portée par ce
+         cadre : les réponses la reprennent, et `lh` y vaut la même ligne. -->
+    <div class="min-h-[5lh] text-[4cqw] leading-relaxed text-stone-800 sm:min-h-[4lh] sm:text-2xl">
+      <p :class="choices ? '' : 'h-[5lh] sm:h-[4lh]'">
+        {{ text }}
+      </p>
+
+      <!-- Les choix : une ligne par réponse, qu'on clique pour la dire — le
+           geste des point & click. Même règle que l'invite, ils ne paraissent
+           qu'une fois la question entièrement posée. -->
+      <div v-if="choices && revealed" class="flex flex-col items-start">
+        <BaseButton
+          v-for="(choice, rank) in choices"
+          :key="rank"
+          variant="option"
+          @click="emit('choose', rank)"
+        >
+          {{ choice }}
+        </BaseButton>
+      </div>
+    </div>
 
     <!-- L'invite : le champ ne paraît qu'une fois la réplique sortie, sinon il
          demanderait de répondre à une question à moitié posée. Il prend le
@@ -65,20 +88,6 @@
       />
       <BaseButton variant="text" :disabled="awaiting" @click="emit('submit')">
         Répondre
-      </BaseButton>
-    </div>
-
-    <!-- Les choix : une ligne par réponse, qu'on clique pour la dire — le geste
-         des point & click. Même règle que l'invite, ils ne paraissent qu'une
-         fois la question entièrement posée. -->
-    <div v-if="choices && revealed" class="flex flex-col items-start">
-      <BaseButton
-        v-for="(choice, rank) in choices"
-        :key="rank"
-        variant="option"
-        @click="emit('choose', rank)"
-      >
-        {{ choice }}
       </BaseButton>
     </div>
 

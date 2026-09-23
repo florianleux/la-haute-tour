@@ -31,7 +31,9 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   /**
    * `text` : le libellé seul, sans fond, pour une surface claire. `option` :
-   * pareil, en italique et resserré, pour une réponse parmi d'autres empilées.
+   * pareil, en italique et resserré, pour une réponse parmi d'autres empilées —
+   * à la taille du texte qui l'entoure, qu'elle reprend plutôt que d'imposer la
+   * sienne.
    */
   variant?: 'primary' | 'ghost' | 'text' | 'option'
   disabled?: boolean
@@ -46,8 +48,11 @@ const props = withDefaults(defineProps<{
 
 defineEmits<{ click: [MouseEvent] }>()
 
-/** Le gabarit d'un bouton seul. Une option, empilée avec d'autres, en veut un plus serré. */
-const PADDED = 'py-3 font-semibold'
+/**
+ * Le gabarit d'un bouton seul. Une option, empilée avec d'autres dans un texte,
+ * en veut un plus serré et garde la taille de ce texte.
+ */
+const PADDED = 'py-3 text-sm font-semibold'
 
 const VARIANTS = {
   primary: `${PADDED} bg-indigo-500 text-white hover:bg-indigo-400`,
@@ -59,7 +64,7 @@ const VARIANTS = {
 const classes = computed(() => [
   // `relative` : le loader se pose par-dessus le libellé plutôt qu'à côté, pour
   // que le bouton garde sa largeur pendant l'attente.
-  'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5 text-sm',
+  'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5',
   'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
   'disabled:cursor-not-allowed disabled:opacity-50',
   props.block ? 'w-full' : '',
