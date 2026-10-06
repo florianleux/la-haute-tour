@@ -32,8 +32,8 @@ const props = withDefaults(defineProps<{
   /**
    * `text` : le libellé seul, sans fond, pour une surface claire. `option` :
    * pareil, en italique et resserré, pour une réponse parmi d'autres empilées —
-   * à la taille du texte qui l'entoure, qu'elle reprend plutôt que d'imposer la
-   * sienne.
+   * à la taille et à la couleur du texte qui l'entoure, qu'elle reprend plutôt
+   * que d'imposer les siennes.
    */
   variant?: 'primary' | 'ghost' | 'text' | 'option'
   disabled?: boolean
@@ -58,7 +58,7 @@ const VARIANTS = {
   primary: `${PADDED} bg-indigo-500 text-white hover:bg-indigo-400`,
   ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
-  option: 'py-1 italic bg-transparent text-stone-800 hover:underline',
+  option: 'py-1 italic bg-transparent text-inherit hover:underline',
 }
 
 const classes = computed(() => [

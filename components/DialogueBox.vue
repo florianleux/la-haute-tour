@@ -50,7 +50,7 @@
          boîte plutôt que d'en sortir. La taille du texte est portée par ce
          cadre : les réponses la reprennent, et `lh` y vaut la même ligne. -->
     <div class="min-h-[5lh] text-[4cqw] leading-relaxed text-stone-800 sm:text-2xl">
-      <p :class="choices ? '' : 'h-[5lh]'">
+      <p :class="[choices ? '' : 'h-[5lh]', color ? TEXT_COLORS[color] : '']">
         {{ text }}
       </p>
 
@@ -58,6 +58,7 @@
            question entièrement posée. -->
       <DialogueChoiceList
         v-if="choices && revealed"
+        :class="choicesColor ? TEXT_COLORS[choicesColor] : ''"
         :choices="choices"
         @choose="emit('choose', $event)"
       />
@@ -94,7 +95,7 @@
 // réplique, ni combien il en reste : on lui donne ce qu'il y a à lire, elle le
 // met en page. C'est ce qui la laisse servir un dialogue de boss comme
 // n'importe quel autre.
-import type { DialogueChoices, DialoguePrompt, SpeakerPlace } from '~~/utils/dialogue'
+import type { DialogueChoices, DialoguePrompt, SpeakerColor, SpeakerPlace } from '~~/utils/dialogue'
 
 // Les classes sont écrites en entier, jamais construites par concaténation :
 // Tailwind ne voit que ce qui est littéral dans le source. Même table que
@@ -109,11 +110,20 @@ const SIDES: Record<SpeakerPlace, string> = {
   center: 'self-center sm:left-1/2 sm:-translate-x-1/2',
 }
 
+const TEXT_COLORS: Record<SpeakerColor, string> = {
+  orange: 'text-[#e47004]',
+  brown: 'text-[#bc6300]',
+}
+
 defineProps<{
   /** Qui parle. */
   name: string
   /** D'où il parle : l'étiquette se range de son côté. */
   place: SpeakerPlace
+  /** La couleur de ses répliques, s'il en a une. */
+  color?: SpeakerColor
+  /** La couleur de celui qui dit les choix — l'autre interlocuteur. */
+  choicesColor?: SpeakerColor
   /** Ce qui est sorti de sa réplique — pas la réplique entière. */
   text: string
   /** Elle est sortie en entier : le repère de suite s'allume. */

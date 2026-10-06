@@ -36,6 +36,8 @@
       <DialogueBox
         v-model:answer="answer"
         :name="speaker.name"
+        :color="speaker.color"
+        :choices-color="answerer?.color"
         :place="place"
         :text="shown"
         :revealed="revealed"
@@ -110,6 +112,10 @@ const {
     onChoose: rank => emit('choose', rank),
   },
 )
+
+// Les choix sont la réponse de l'autre : celui qui ne pose pas la question. Seul
+// au milieu de la scène, personne ne répond en couleur.
+const answerer = computed(() => lineup.value.find(member => member.place !== place.value)?.speaker)
 
 // Entrée fait avancer comme le clic, par le même chemin que les écrans de jeu.
 // Sans condition : un dialogue affiché est un dialogue qui attend un geste.

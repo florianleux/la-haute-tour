@@ -7,6 +7,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 - L'action se situe des années après le **Grand Événement**.
 - Le monde du jeu accorde une grande importance à la culture générale.
 - Le Grand Événement = la fin (fictive) de **QPUC**, émission culte de ce monde. (QPUC désigne ici la vraie émission « Questions pour un champion » ; sa fin dans ce lore est fictive.)
+- Comme redouté, la fin de QPUC est arrivée peu après la fin des **quotidiennes** : l'émission n'a pas tenu longtemps sans elles.
 - Sa fin a marqué un **déclin** : la culture est devenue de plus en plus rare. (Détails du déclin hors-scope — pas à développer.)
 - La **Tour** est un repère de culture, que tous les aventuriers veulent gravir.
 - Grimper la Tour motive par deux choses : **récolter la culture** et **accomplir la prophétie**.
@@ -40,6 +41,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 
 - Personnage mystérieux, encapuchonné, que le joueur rencontre **avant même l'introduction du jeu** (l'intro elle-même reste à développer séparément).
 - Donne au joueur des informations sur la prophétie, la Tour, etc.
+- À l'introduction, il révèle, à la demande du joueur : le Grand Événement, le déclin de la culture, la Tour et ses six étages (sans leurs noms), la prophétie — et les règles de base (questions, temps, vies, attente, rattrapage). La magie n'y est qu'évoquée. Texte : `pages/test/intro.vue`.
 - Aide le joueur par condescendance, pas par bonté : il pense, comme pour tous les aventuriers avant lui, qu'il échouera — donc lui donner des infos ne représente aucun risque à ses yeux.
 - **Twist final** : L'Inconnu est en réalité **Samuel Étienne** (référence au vrai présentateur de *Questions pour un champion*). C'est lui, le boss final, **Le Présentateur**.
 - **Antagoniste principal** du jeu : il ne veut pas que la prophétie s'accomplisse (que QPUC revienne), car il préfère sa vie actuelle de **streamer sur Twitch**.
@@ -57,7 +59,6 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 - Raison de la rivalité entre les deux guildes (volontairement laissé flou).
 - Le super boss final (Le Présentateur) : lieu narratif propre pour le combat, ou "hors lieu" (après l'Univers, sans étage associé) ? Design du combat non fait.
 - À quel moment/comment le joueur rencontre L'Inconnu avant l'intro (écran dédié, dialogue, autre) ?
-- Contenu exact de ce que L'Inconnu révèle sur la prophétie et la Tour.
 - Comment et quand le twist (L'Inconnu = Samuel Étienne) se révèle en jeu.
 - Tout flavor text par écran (intro, palier, gameOver, etc.).
 - Impact mécanique du 7ème boss sur `boss-1.md` (actuellement "un boss par étage, 6 au total") et sur la machine à états (`gameOver` après ce boss, pas après celui de l'étage 6).

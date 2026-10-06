@@ -10,6 +10,13 @@
  */
 export type SpeakerPlace = 'left' | 'right' | 'center'
 
+/**
+ * La couleur des répliques d'un interlocuteur, reprise de son habit. Un nom de
+ * couleur et non une classe : le composant la traduit, Tailwind ne générant
+ * que les classes écrites en entier dans le source.
+ */
+export type SpeakerColor = 'orange' | 'brown'
+
 export interface Speaker {
   /** Le nom écrit au-dessus de la réplique. */
   name: string
@@ -25,6 +32,8 @@ export interface Speaker {
    * délavé, que le retrait rendrait illisible. Voir specs/spec.md (« Retrait »).
    */
   retreats?: false
+  /** Absente, ses répliques gardent la couleur du texte de la boîte. */
+  color?: SpeakerColor
 }
 
 /**
