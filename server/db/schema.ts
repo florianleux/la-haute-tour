@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 import { ACHIEVEMENT_IDS } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
+import { GENDERS } from '../../shared/utils/genders'
 import { CHEST_STATES, SPELL_FACES, SPELL_IDS } from '../../shared/utils/spells'
 import { TEAM_IDS } from '../../shared/utils/teams'
 import type { AchievementId } from '../../shared/utils/achievements'
@@ -58,6 +59,12 @@ export const users = sqliteTable('users', {
    * ne se stocke jamais. Voir specs/equipes.md.
    */
   team: text('team', { enum: TEAM_IDS }),
+  /**
+   * Ce que le joueur a répondu à L'Inconnu, à l'introduction. Null tant qu'il
+   * n'a pas répondu. Rien ne le lit encore : il servira plus tard. Voir
+   * specs/spec.md (glossaire, « Genre »).
+   */
+  gender: text('gender', { enum: GENDERS }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /** When the wait ends. Null outside a wait. The phase derives from it. */
