@@ -13,12 +13,20 @@
        `origin-bottom` : c'est le seul point qui ne doit pas bouger quand il
        grandit, sinon il décollerait du bas à chaque réplique. `z-10` sur celui
        qui parle — agrandi, il passe devant l'autre plutôt que dessous, mais
-       reste sous la boîte. -->
+       reste sous la boîte.
+
+       Un interlocuteur dispensé de retrait (`retreats: false`) garde l'allure
+       de celui qui parle, mais pas son `z-10` : quand l'autre parle, c'est
+       l'autre qui passe devant. -->
   <img
     :src="speaker.portrait"
     alt=""
     class="pointer-events-none h-[34.5svh] w-auto max-w-[53%] origin-bottom object-contain object-bottom transition duration-300 sm:absolute sm:bottom-0 sm:h-[90%] sm:max-w-[42.5%]"
-    :class="[PLACES[place], speaking ? 'z-10 scale-105 brightness-100 saturate-100' : 'scale-[0.76] brightness-75 saturate-50']"
+    :class="[
+      PLACES[place],
+      { 'z-10': speaking },
+      speaking || speaker.retreats === false ? 'scale-105 brightness-100 saturate-100' : 'scale-[0.76] brightness-75 saturate-50',
+    ]"
   >
 </template>
 

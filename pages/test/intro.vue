@@ -18,7 +18,8 @@
 // toutes (voir ADR 0010), si bien qu'un joueur qui passe de « ??? » à son nom
 // change de dialogue — la scène reprend alors au début, ce qui est exactement ce
 // qu'on veut ici. La réponse du joueur, elle, ouvre le troisième : c'est lui qui
-// la dit, et un dialogue ne connaît pas d'avance ce qu'on y choisira.
+// la dit, et un dialogue ne connaît pas d'avance ce qu'on y choisira. C'est
+// aussi elle qui lui donne son portrait : silhouette jusque-là.
 //
 // Le nom ne part nulle part : aucun compte, aucune API — le nommer pour de bon
 // est l'issue #53. Le genre, lui, est gardé sur le compte du joueur servi.
@@ -31,7 +32,27 @@ definePageMeta({ admin: true })
 const BACKGROUND = '/images/blurry-cooldown-bg.webp'
 
 const UNKNOWN: Speaker = { name: 'L\'Inconnu', portrait: '/images/intro-unknown.webp' }
-const PORTRAIT = '/images/intro-player.webp'
+/**
+ * Le joueur tant qu'il n'a pas dit ce qu'il est : une silhouette, qui ne
+ * présume pas de sa réponse. Elle a le cadrage des trois portraits, si bien que
+ * le corps ne change pas de taille au moment où il répond.
+ */
+const SILHOUETTE = '/images/intro-player-unknown.webp'
+
+/**
+ * Le joueur sous sa silhouette. Jamais en retrait : déjà délavée, elle
+ * disparaîtrait dans le décor une fois reculée et assombrie.
+ */
+function faceless(name: string): Speaker {
+  return { name, portrait: SILHOUETTE, retreats: false }
+}
+
+/** Le portrait du joueur, une fois qu'il a dit ce qu'il est. */
+const PORTRAIT_OF: Record<Gender, string> = {
+  MALE: '/images/intro-player-male.webp',
+  FEMALE: '/images/intro-player-female.webp',
+  NEUTRAL: '/images/intro-player-neutral.webp',
+}
 
 /**
  * La rencontre : il salue, jauge, puis demande le nom. Condescendant — il aide
@@ -39,7 +60,7 @@ const PORTRAIT = '/images/intro-player.webp'
  */
 const GREETING: Dialogue = {
   background: BACKGROUND,
-  left: { name: '???', portrait: PORTRAIT },
+  left: faceless('???'),
   right: UNKNOWN,
   lines: [
     { place: 'right', text: 'Tiens. Encore un.' },
@@ -75,7 +96,7 @@ const GENDER_OF: Record<Reply, Gender> = {
 function question(name: string): Dialogue {
   return {
     background: BACKGROUND,
-    left: { name, portrait: PORTRAIT },
+    left: faceless(name),
     right: UNKNOWN,
     lines: [
       { place: 'right', text: `${name}. Soit.` },
@@ -92,7 +113,7 @@ function question(name: string): Dialogue {
 function conversation(name: string, reply: Reply): Dialogue {
   return {
     background: BACKGROUND,
-    left: { name, portrait: PORTRAIT },
+    left: { name, portrait: PORTRAIT_OF[GENDER_OF[reply]] },
     right: UNKNOWN,
     lines: [
       { place: 'left', text: reply },

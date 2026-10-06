@@ -19,6 +19,12 @@ export interface Speaker {
    * source, et l'image d'un interlocuteur est une donnée.
    */
   portrait: string
+  /**
+   * À `false`, le portrait ne passe jamais en retrait : il garde l'allure de
+   * celui qui parle, même quand ce n'est pas son tour. Pour un portrait déjà
+   * délavé, que le retrait rendrait illisible. Voir specs/spec.md (« Retrait »).
+   */
+  retreats?: false
 }
 
 /**
