@@ -13,9 +13,8 @@ const bodySchema = z.object({
  * le jeu, donc le joueur test incarné le cas échéant : c'est lui qui joue
  * l'introduction.
  *
- * Réécrit à chaque réponse plutôt que fixé à la première : l'introduction ne vit
- * encore qu'en banc de design (`/test/intro`), où elle se rejoue. Voir
- * specs/spec.md (glossaire, « Genre »).
+ * Réécrit à chaque réponse plutôt que fixé à la première : l'introduction se
+ * rejoue. Voir specs/spec.md (glossaire, « Genre »).
  */
 export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   const user = await requireAuth(event)

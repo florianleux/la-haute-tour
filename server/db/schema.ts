@@ -65,6 +65,12 @@ export const users = sqliteTable('users', {
    * specs/spec.md (glossaire, « Genre »).
    */
   gender: text('gender', { enum: GENDERS }),
+  /**
+   * Quand le joueur a fini l'introduction. Null tant qu'il ne l'a pas finie :
+   * elle lui est alors rejouée à chaque connexion. Voir specs/spec.md
+   * (glossaire, « Introduction »).
+   */
+  introDoneAt: integer('intro_done_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /** When the wait ends. Null outside a wait. The phase derives from it. */

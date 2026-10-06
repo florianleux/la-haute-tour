@@ -8,10 +8,9 @@
 </template>
 
 <script setup lang="ts">
-// Brouillon de l'introduction de l'aventure : la scène que le joueur verra au
-// tout début, jouée ici et nulle part ailleurs tant que son texte n'est pas
-// écrit. Rien ne la déclenche dans le jeu — c'est une page de réglage, admin
-// seulement, comme pages/test/dialogue.vue.
+// L'introduction de l'aventure : la scène par laquelle le joueur entre dans la
+// Tour. Toute page y ramène tant qu'il ne l'a pas finie (voir
+// middleware/auth.global.ts) ; finie, elle reste rejouable ici.
 //
 // L'Inconnu salue, demande son nom au joueur, puis ce qu'il est, et répond
 // ensuite à ses questions — la Tour, comment on y monte — jusqu'à ce que le
@@ -25,8 +24,6 @@
 // est l'issue #53. Le genre, lui, est gardé sur le compte du joueur servi.
 import type { Dialogue, DialogueLine, Speaker } from '~~/utils/dialogue'
 import type { Gender } from '~~/shared/utils/genders'
-
-definePageMeta({ admin: true })
 
 // Le décor flou de l'attente en attendant le sien, cf. components/PlayFrame.vue.
 const BACKGROUND = '/images/blurry-cooldown-bg.webp'
@@ -249,6 +246,8 @@ type Step =
   | { scene: 'reaction', reply: Reply }
   | { scene: 'topic', topic: Topic }
 
+const { refresh: refreshUser } = await useCurrentUser()
+
 const step = ref<Step>({ scene: 'greeting' })
 const name = ref('')
 /** Ce que le joueur a dit être. Null tant qu'il n'a pas répondu : silhouette. */
@@ -357,7 +356,11 @@ async function end(): Promise<void> {
       break
     case 'farewell':
       // L'introduction rend la main au jeu : la page de jeu affiche ce que la
-      // phase du joueur désigne, et c'est là qu'il commence.
+      // phase du joueur désigne, et c'est là qu'il commence. L'identité est
+      // relue avant d'y aller : gardée en cache, elle dirait encore
+      // l'introduction à faire, et le garde des pages y renverrait le joueur.
+      await $fetch('/api/profile/intro', { method: 'POST' })
+      await refreshUser()
       await navigateTo('/')
       break
   }

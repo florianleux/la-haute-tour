@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `intro_done_at` integer;

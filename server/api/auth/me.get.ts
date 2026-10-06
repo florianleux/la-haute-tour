@@ -9,6 +9,8 @@ import type { User } from '~~/server/db/schema'
 export type SessionUser = Pick<User, 'id' | 'username' | 'isAdmin'> & {
   /** ISO 8601: a `Date` doesn't survive the trip to the client. */
   createdAt: string
+  /** Il a fini l'introduction : sans ça, toute page l'y ramène. */
+  introDone: boolean
 }
 
 export interface MeResponse {
@@ -53,5 +55,6 @@ function sessionUser(user: User): SessionUser {
     username: user.username,
     isAdmin: user.isAdmin,
     createdAt: user.createdAt.toISOString(),
+    introDone: user.introDoneAt !== null,
   }
 }

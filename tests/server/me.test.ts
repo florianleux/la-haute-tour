@@ -42,6 +42,7 @@ describe('identité du joueur', () => {
         username: 'gandalf',
         isAdmin: false,
         createdAt: '2026-09-01T10:00:00.000Z',
+        introDone: false,
       },
       // Personne n'incarne personne, et un joueur ne se voit proposer aucune
       // identité : le sélecteur est réservé à l'admin.

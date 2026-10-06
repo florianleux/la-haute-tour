@@ -10,6 +10,7 @@ const { default: authMiddleware } = await import('../../middleware/auth.global')
 const MIDDLEWARE_DIR = fileURLToPath(new URL('../../middleware', import.meta.url))
 
 interface RouteStub {
+  path?: string
   meta: { public?: boolean, admin?: boolean }
 }
 
@@ -61,6 +62,30 @@ describe('middleware d authentification', () => {
     impersonate(testAdmin, { ...testUser, id: 42, username: 'Testeur A' })
 
     await middleware({ meta: { admin: true } })
+
+    expect(navigations()).toEqual([])
+  })
+
+  it('ramène à l introduction un joueur qui ne l a pas finie', async () => {
+    signIn({ ...testUser, introDone: false })
+
+    await middleware({ path: '/', meta: {} })
+
+    expect(navigations()).toEqual(['/intro'])
+  })
+
+  it('laisse jouer l introduction à qui ne l a pas finie', async () => {
+    signIn({ ...testUser, introDone: false })
+
+    await middleware({ path: '/intro', meta: {} })
+
+    expect(navigations()).toEqual([])
+  })
+
+  it('laisse l admin qui incarne un joueur test neuf revenir sur /admin', async () => {
+    impersonate(testAdmin, { ...testUser, id: 42, username: 'Testeur A', introDone: false })
+
+    await middleware({ path: '/admin', meta: { admin: true } })
 
     expect(navigations()).toEqual([])
   })

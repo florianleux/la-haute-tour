@@ -169,6 +169,13 @@
       "when": 1790185821460,
       "tag": "0023_spicy_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1791303562558,
+      "tag": "0024_quiet_tusk",
+      "breakpoints": true
     }
   ]
 }

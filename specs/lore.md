@@ -41,7 +41,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 
 - Personnage mystérieux, encapuchonné, que le joueur rencontre **avant même l'introduction du jeu** (l'intro elle-même reste à développer séparément).
 - Donne au joueur des informations sur la prophétie, la Tour, etc.
-- À l'introduction, il révèle, à la demande du joueur : le Grand Événement, le déclin de la culture, la Tour et ses six étages (sans leurs noms), la prophétie — et les règles de base (questions, temps, vies, attente, rattrapage). La magie n'y est qu'évoquée. Texte : `pages/test/intro.vue`.
+- À l'introduction, il révèle, à la demande du joueur : le Grand Événement, le déclin de la culture, la Tour et ses six étages (sans leurs noms), la prophétie — et les règles de base (questions, temps, vies, attente, rattrapage). La magie n'y est qu'évoquée. Texte : `pages/intro.vue`.
 - Aide le joueur par condescendance, pas par bonté : il pense, comme pour tous les aventuriers avant lui, qu'il échouera — donc lui donner des infos ne représente aucun risque à ses yeux.
 - **Twist final** : L'Inconnu est en réalité **Samuel Étienne** (référence au vrai présentateur de *Questions pour un champion*). C'est lui, le boss final, **Le Présentateur**.
 - **Antagoniste principal** du jeu : il ne veut pas que la prophétie s'accomplisse (que QPUC revienne), car il préfère sa vie actuelle de **streamer sur Twitch**.

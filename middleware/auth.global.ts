@@ -23,4 +23,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (to.meta.admin && !isAdmin.value) {
     return navigateTo('/')
   }
+
+  // Tant que l'introduction n'est pas finie, tout y ramène : c'est par elle que
+  // le joueur entre dans la Tour. Les pages d'admin restent ouvertes — l'admin
+  // qui incarne un joueur test neuf doit pouvoir en sortir. Voir specs/spec.md
+  // (glossaire, « Introduction »).
+  if (!user.value.introDone && !to.meta.admin && to.path !== '/intro') {
+    return navigateTo('/intro')
+  }
 })
