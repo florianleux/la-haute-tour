@@ -83,13 +83,6 @@ export interface GameScreen {
   pendingEffects: GameState["effects"];
   /** Ceux qui courent sur la tentative en jeu : l'ascension en affiche une icône. */
   activeEffects: GameState["effects"];
-  /**
-   * L'attente en cours a été raccourcie par un Répit. L'écran le dit, parce
-   * qu'une attente écourtée mène au rattrapage comme une autre : sans cette
-   * ligne, le joueur croit reprendre l'ascension et tombe sur un rattrapage.
-   * Voir specs/bonus.md#catalogue.
-   */
-  shortenedWait: boolean;
 }
 
 /** Les libellés du verdict de rattrapage, affichés sur le verdict de la
@@ -102,8 +95,6 @@ export interface RecoveryLine {
   position: number;
   total: number;
   successes: number;
-  /** Une Indulgence a rallongé ce rattrapage : l'écran le dit. */
-  lengthened: boolean;
   /** Le sort du rattrapage, annoncé dès que le verdict est scellé — quota
    *  atteint (succès) ou mathématiquement impossible (échec). */
   result: "resumed" | "waiting" | null;
@@ -149,13 +140,6 @@ export function gameScreen(state: GameState): GameScreen {
       (effect) => effect.state === "pending",
     ),
     activeEffects: state.effects.filter((effect) => effect.state === "active"),
-    // Les Répit d'une attente passée ne sont plus servis — server/utils/effects.ts
-    // les retire. Reste la garde de phase : hors attente, il n'y a rien à écourter.
-    shortenedWait:
-      state.phase === "cooldown" &&
-      state.effects.some(
-        (effect) => effect.spell === "RESPITE" && effect.face === "boon",
-      ),
     // Pendant une question, aucune action à part répondre. L'attente porte les
     // siennes — passer l'attente, lancer le rattrapage — et la fin de partie n'en
     // a plus aucune. Voir specs/ecrans.md#principes.
@@ -197,7 +181,6 @@ function recoveryLine(
     position: Math.min(recovery.played + 1, recovery.total),
     total: recovery.total,
     successes: recovery.successes,
-    lengthened: recovery.lengthened,
     result: over ? (recovery.resumes ? "resumed" : "waiting") : null,
   };
 }

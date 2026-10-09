@@ -17,9 +17,7 @@
 
     <template v-if="screen.question">
       <!-- Ce que les rubans disent en ascension, dit ici en une ligne : le
-           parchemin n'en dessine pas. Le joueur compte ses questions, et un
-           rattrapage rallongé par une Indulgence passe pour un bug sans cette
-           mention. Voir specs/bonus.md#catalogue.
+           parchemin n'en dessine pas. Le joueur compte ses questions.
 
            Sur la question seulement : un décompte sert à savoir où l'on en est
            de ce qu'on joue. Le verdict, lui, dit déjà ce qu'il advient — et
@@ -31,7 +29,6 @@
       >
         Rattrapage — {{ screen.recovery.position }}/{{ screen.recovery.total }},
         {{ screen.recovery.successes }} juste(s)
-        <template v-if="screen.recovery.lengthened">— rallongé par une Indulgence</template>
       </PlayText>
 
       <PlayText

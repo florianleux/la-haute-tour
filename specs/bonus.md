@@ -320,8 +320,8 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
   pas sa clé de boss** : le tirage 95/5 ne s'applique plus, le coffre est
   **forcé** de donner la clé — ni Sort, ni Mimic. Voir
   [`boss.md`](./boss.md#obtention-de-la-clé).
-- Le résultat s'affiche sur l'écran de coffre (ou, pour un Mimic, sur l'attente
-  qu'il ouvre aussitôt).
+- Le résultat d'un sort s'affiche sur l'écran de coffre. Un Mimic bascule
+  aussitôt en attente, et le poster d'attente ne le rappelle pas.
 
 **Le tirage a lieu au clic, côté serveur, et son résultat est persisté sur le
 verdict.** Le verdict porte donc trois états : *pas de coffre*, *coffre fermé*,

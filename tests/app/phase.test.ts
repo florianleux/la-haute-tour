@@ -85,12 +85,12 @@ describe('écran de jeu', () => {
     const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, lengthened: false }
 
     expect(gameScreen(state({ phase: 'recovery', recovery: ongoing, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 0, lengthened: false, result: null })
+      .toEqual({ position: 2, total: 3, successes: 0, result: null })
 
     const resumed = { total: 3, played: 1, successes: 1, resumes: true, sealed: true, lengthened: false }
 
     expect(gameScreen(state({ phase: 'recovery', recovery: resumed, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 1, lengthened: false, result: 'resumed' })
+      .toEqual({ position: 2, total: 3, successes: 1, result: 'resumed' })
 
     const failed = { total: 3, played: 3, successes: 0, resumes: false, sealed: true, lengthened: false }
 
@@ -177,38 +177,6 @@ describe('une question tourne', () => {
     expect(isAnswering(null)).toBe(false)
   })
 
-  // Une attente raccourcie par un Répit reste une attente : à son échéance, le
-  // rattrapage s'ouvre comme d'habitude. Le joueur doit le lire, sinon il croit
-  // reprendre l'ascension et tombe sur un rattrapage.
-  // Voir specs/bonus.md#répit.
-  describe('attente écourtée', () => {
-    it('la signale quand un Répit attend sur l attente en cours', () => {
-      const built = state({
-        phase: 'cooldown',
-        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'wait', stake: null }],
-      })
-
-      expect(gameScreen(built).shortenedWait).toBe(true)
-    })
-
-    it('ne la signale pas sans Répit', () => {
-      const built = state({
-        phase: 'cooldown',
-        effects: [{ spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'attempt', stake: null }],
-      })
-
-      expect(gameScreen(built).shortenedWait).toBe(false)
-    })
-
-    it('ne la signale pas hors attente : il n y a plus rien à écourter', () => {
-      const built = state({
-        phase: 'ascent',
-        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'wait', stake: null }],
-      })
-
-      expect(gameScreen(built).shortenedWait).toBe(false)
-    })
-  })
 })
 
 describe('barrage de maintenance', () => {

@@ -49,7 +49,7 @@
          « 4m 12s » en « 4M 12S ». -->
     <h1
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
-      :class="state.phase === 'cooldown' ? 'text-[5.5cqw] tabular-nums' : 'text-[5cqw] uppercase'"
+      :class="state.phase === 'cooldown' ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
     >
       {{ state.phase === 'cooldown' ? (waitRemaining || 'Attente') : 'Attente terminée' }}
     </h1>
@@ -73,15 +73,10 @@
       class="absolute left-[23%] top-[21%] flex h-[46%] w-[62%] flex-col items-center justify-center gap-[1.5cqw] overflow-hidden px-[2cqw] text-center text-[2.6cqw] leading-snug text-amber-800"
     >
       <!-- Le décompte est monté dans la bannière : le répéter ici ferait lire
-           deux fois le même chiffre à dix centimètres d'écart. -->
-      <p v-if="state.phase === 'cooldown'">
-        Tu as perdu ta dernière vie.
-      </p>
-      <p
-        v-else
-        class="text-[5.2cqw]"
-      >
-        Tu peux lancer ton rattrapage.
+           deux fois le même chiffre à dix centimètres d'écart. Une seule phrase
+           pour les deux phases : ce que le joueur a à faire, attendre ou jouer. -->
+      <p class="text-[5.2cqw]">
+        {{ state.phase === 'cooldown' ? 'Ton rattrapage sera disponible à la fin de l\'attente.' : 'Tu peux lancer ton rattrapage.' }}
       </p>
 
       <ParchmentNote
@@ -90,37 +85,6 @@
       >
         {{ RECOVERY_FAILURE_MESSAGE }}
       </ParchmentNote>
-
-      <!-- Une attente écourtée reste une attente : à son échéance, c'est le
-           rattrapage qui s'ouvre, pas l'ascension. Le dire ici évite au joueur
-           de croire qu'il reprend. Voir specs/bonus.md#catalogue. -->
-      <ParchmentNote
-        v-if="screen.shortenedWait"
-        tone="success"
-      >
-        Un Répit a raccourci ton attente. Elle mène au rattrapage comme une
-        attente pleine — plus tôt, c'est tout.
-      </ParchmentNote>
-
-      <!-- Un Mimic fait basculer en attente au moment même où le joueur l'ouvre :
-           son résultat se lit donc ici, pas sur l'écran de verdict qu'il vient de
-           quitter. Seulement pendant l'attente qu'il a ouverte : le rattrapage qui
-           suit n'a plus à la rappeler. Voir specs/bonus.md#coffre-et-mimic. -->
-      <template v-if="state.phase === 'cooldown' && screen.chest?.opened">
-        <ParchmentNote
-          v-if="screen.chest.mimic"
-          tone="danger"
-        >
-          Un mimic. Aucun objet, et toutes tes vies d'un coup.
-        </ParchmentNote>
-        <ParchmentNote
-          v-else-if="screen.chest.spell"
-          tone="success"
-        >
-          Le coffre contenait <strong><SpellMention :subject="screen.chest.spell" /></strong>.
-          Il rejoint ton inventaire.
-        </ParchmentNote>
-      </template>
 
       <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
            prochaine tentative, le Répit a déjà agi sur l'attente qu'il lit.
