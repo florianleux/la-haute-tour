@@ -69,21 +69,6 @@
       </PlayText>
     </template>
 
-    <!-- Ce qui court sur cette tentative. Le sort nommé plutôt qu'EffectPip,
-         comme sur l'attente : il n'y a pas de ruban pour les loger ici, et le
-         parchemin a la place d'écrire le sort en toutes lettres. -->
-    <div
-      v-if="screen.activeEffects.length"
-      class="flex flex-wrap justify-center gap-[1cqw]"
-    >
-      <SpellMention
-        v-for="(effect, index) in screen.activeEffects"
-        :key="index"
-        :subject="effect"
-        class="text-[2.1cqw]"
-      />
-    </div>
-
     <template #action>
       <CardButton
         v-if="screen.question"
