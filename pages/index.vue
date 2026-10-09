@@ -1,6 +1,6 @@
 <template>
   <RecoveryCard
-    v-if="state?.phase === 'recovery' && screen && (screen.question || screen.verdict)"
+    v-if="state?.phase === 'recovery' && !waiting && screen && (screen.question || screen.verdict)"
     :screen="screen"
     :model-value="typed"
     :seconds-left="secondsLeft"
@@ -221,6 +221,8 @@ watch(() => state.value?.verdict, (verdict) => {
 // L'écran d'attente sert aussi au rattrapage prêt à démarrer : même fiche de
 // révision, même file de contestation, mais le compteur cède la place au
 // bouton « Commencer le rattrapage ». Voir specs/ecrans.md#cooldown--attente.
+// Il passe avant RecoveryCard : le verdict de la question qui a pris la
+// dernière vie reste dans l'état, et le ferait relire au lieu du poster.
 const waiting = computed(() =>
   state.value?.phase === 'cooldown'
   || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
