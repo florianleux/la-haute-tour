@@ -92,7 +92,10 @@ interface Skin {
   /** Position, taille et dessin du médaillon. */
   medallion: string
   medallionRatio: string
-  /** Le centre du disque, où se pose le chiffre — mesuré sur l'image. */
+  /**
+   * Le centre du disque, où se pose le chiffre, et la taille du chiffre, en
+   * cqw du médaillon — les deux mesurés sur l'image.
+   */
   medallionInk: string
   /** La boîte où le texte s'empile, et son repli quand le clavier s'ouvre. */
   panel: string
@@ -106,20 +109,20 @@ const SKINS: Record<PlaySkin, Skin> = {
     background: 'bg-[url(/images/play-bg.webp)]',
     wrapper: '-mt-16 max-w-4xl py-8 sm:-mt-40 sm:py-16',
     frame: 'aspect-428/855 bg-[url(/images/mobile-play-card.webp)] sm:aspect-1980/775 sm:bg-[url(/images/game-card.webp)]',
-    medallion: 'top-[7%] w-[60%] bg-[url(/images/game-timer.webp)] sm:top-[-8%] sm:w-[30%]',
+    medallion: 'top-[7.5%] w-[45.9%] bg-[url(/images/game-timer.webp)] sm:top-[-6.8%] sm:w-[22.95%]',
     medallionRatio: '616 / 357',
-    medallionInk: 'top-[66%]',
+    medallionInk: 'top-[66%] text-[12cqw]',
     panel: 'left-[8%] top-[18%] h-[40%] w-[84%] max-sm:group-has-[#answer:focus]:top-[14%] max-sm:group-has-[#answer:focus]:h-[34%] sm:left-[24%] sm:top-[18%] sm:h-[62%] sm:w-[52%]',
   },
   // Le rattrapage : un parchemin cloué entre quatre piquets, sans ruban à
   // contourner, donc un panneau qui prend presque toute la feuille.
   //
-  // Le médaillon y est plus large que celui de l'ascension sans lire plus gros :
-  // son disque n'occupe que 30,5% de la hauteur du dessin contre 40,3% pour
-  // l'autre. La largeur ci-dessous est en deçà de ce qu'il faudrait pour deux
-  // disques strictement égaux — assumé, la taille au-dessus écrasait le haut du
-  // parchemin. Elle le laisse reposer sur le bord de la feuille plutôt que
-  // flotter au-dessus.
+  // Le médaillon y est plus large que celui de l'ascension pour un disque de
+  // même taille : son disque n'occupe que 30,5% de la hauteur du dessin contre
+  // 40,3% pour l'autre, d'où un dessin 1,33 fois plus grand. Le chiffre, lui,
+  // porte 20 % de plus que celui de l'ascension (11,5 cqw au lieu des 9,5 qui
+  // l'égalaient), réglé à l'œil comme la position : un peu au-dessus du bord
+  // haut du parchemin.
   recovery: {
     background: 'bg-[url(/images/blurry-cooldown-bg.webp)]',
     // Plus étroit que le `max-w-4xl` de l'ascension, et mesuré pour ça : les
@@ -130,10 +133,15 @@ const SKINS: Record<PlaySkin, Skin> = {
     // fichier image, d'où une valeur qui ne tombe pas sur un palier Tailwind.
     wrapper: '-mt-16 max-w-[40rem] py-8 sm:-mt-40 sm:py-16',
     frame: 'aspect-510/522 bg-[url(/images/recovery-modal-mobile.webp)] sm:aspect-740/501 sm:bg-[url(/images/recovery-modal-desktop.webp)]',
-    medallion: 'top-[4%] w-[58%] bg-[url(/images/recovery-modal-timer.webp)] sm:top-[9%] sm:w-[40%]',
+    medallion: 'top-[-15.6%] w-[57.9%] bg-[url(/images/recovery-modal-timer.webp)] sm:top-[4.8%] sm:w-[35%]',
     medallionRatio: '346 / 210',
-    medallionInk: 'top-[72%]',
-    panel: 'left-[10%] top-[22%] h-[62%] w-[80%] max-sm:group-has-[#answer:focus]:top-[18%] max-sm:group-has-[#answer:focus]:h-[52%] sm:left-[9%] sm:top-[27%] sm:h-[55%] sm:w-[82%]',
+    medallionInk: 'top-[75%] text-[11.5cqw]',
+    // Aussi large, en pixels, que celui de l'ascension (84% de 327 px en
+    // mobile, 466 px en desktop sur un cadre de 640) : le texte s'y compte en
+    // cqw du panneau, et c'est ce qui donne à la question et au champ la même
+    // taille sur les deux écrans. Il part du bas du médaillon, où se pose le
+    // décompte du tirage.
+    panel: 'left-[8%] top-[9%] h-[75%] w-[84%] max-sm:group-has-[#answer:focus]:top-[9%] max-sm:group-has-[#answer:focus]:h-[61%] sm:left-[13.6%] sm:top-[21%] sm:h-[61%] sm:w-[72.8%]',
   },
 }
 

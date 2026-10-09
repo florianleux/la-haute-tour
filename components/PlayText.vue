@@ -47,7 +47,7 @@ type Role =
   | 'mark'
 
 const ROLES: Record<Role, string> = {
-  progress: 'text-[4cqw] font-bold uppercase tracking-widest sm:text-[2.1cqw]',
+  progress: 'text-[3cqw] font-bold uppercase tracking-widest sm:text-[2.8cqw]',
   statement: 'text-[7.1cqw] leading-relaxed sm:text-[4.8cqw]',
   recall: 'text-[6.2cqw] sm:text-[3.5cqw]',
   headline: 'text-[8.3cqw] font-bold sm:text-[4.8cqw]',
@@ -55,12 +55,12 @@ const ROLES: Record<Role, string> = {
   aside: 'text-[3.9cqw] sm:text-[2.7cqw]',
   notice: 'text-[3.6cqw] font-semibold sm:text-[2.5cqw]',
   link: 'text-[3.3cqw] font-semibold underline underline-offset-2 sm:text-[2.5cqw]',
-  // Ces deux-là vivent dans le médaillon, qui est son propre @container (voir
-  // PlayFrame) : leur `cqw` se mesure donc sur le médaillon et non sur le
-  // cadre. Sans ça, deux médaillons de tailles différentes portaient le même
-  // texte en pixels, et le chiffre débordait du plus petit.
-  timer: 'text-[12cqw] font-bold tabular-nums',
-  mark: 'text-[18cqw] font-bold',
+  // Ces deux-là vivent dans le médaillon, dont chaque habillage fixe la taille
+  // de texte (`medallionInk`, voir PlayFrame) : les deux dessins n'ont pas le
+  // même disque, et c'est le disque qui doit porter le même chiffre. Le ✓/✗ se
+  // compte en em sur ce chiffre.
+  timer: 'font-bold tabular-nums',
+  mark: 'text-[1.5em] font-bold',
 }
 
 withDefaults(defineProps<{

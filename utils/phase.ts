@@ -42,7 +42,7 @@ export function nextActionLabel(state: GameState): string {
     }
 
     if (result === "waiting") {
-      return "Terminer le rattrapage";
+      return "Terminer";
     }
 
     return "Suivant";
@@ -95,6 +95,8 @@ export interface RecoveryLine {
   position: number;
   total: number;
   successes: number;
+  /** Les bonnes réponses exigées, bornées aux questions tirées. */
+  required: number;
   /** Le sort du rattrapage, annoncé dès que le verdict est scellé — quota
    *  atteint (succès) ou mathématiquement impossible (échec). */
   result: "resumed" | "waiting" | null;
@@ -181,6 +183,7 @@ function recoveryLine(
     position: Math.min(recovery.played + 1, recovery.total),
     total: recovery.total,
     successes: recovery.successes,
+    required: recovery.required,
     result: over ? (recovery.resumes ? "resumed" : "waiting") : null,
   };
 }

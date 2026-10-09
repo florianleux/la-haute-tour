@@ -17,7 +17,9 @@
 
     <template v-if="screen.question">
       <!-- Ce que les rubans disent en ascension, dit ici en une ligne : le
-           parchemin n'en dessine pas. Le joueur compte ses questions.
+           parchemin n'en dessine pas. Le joueur compte ses questions. Épinglée
+           en haut du panneau, sous le médaillon, pour que la question reste
+           centrée comme celle de l'ascension.
 
            Sur la question seulement : un décompte sert à savoir où l'on en est
            de ce qu'on joue. Le verdict, lui, dit déjà ce qu'il advient — et
@@ -25,10 +27,11 @@
       <PlayText
         v-if="screen.recovery"
         role="progress"
-        class="text-amber-900/60"
+        class="absolute top-[5%] inset-x-0 text-amber-900/60"
       >
-        Rattrapage — {{ screen.recovery.position }}/{{ screen.recovery.total }},
-        {{ screen.recovery.successes }} juste(s)
+        <!-- Deux lignes en mobile : d'une traite, elle en prendrait trois et
+             mordrait sur la question. -->
+        Question {{ screen.recovery.position }}/{{ screen.recovery.total }}<span class="max-sm:hidden"> · </span><br class="sm:hidden">{{ score }}
       </PlayText>
 
       <PlayText
@@ -131,6 +134,17 @@ defineEmits<{
   'dispute': []
   'advance': []
 }>()
+
+// « Question 3/5 · 2 réponses justes sur 3 requises » : où il en est, ce qu'il a,
+// ce qu'il lui faut. Le pluriel suit chaque nombre, zéro compris au singulier.
+const score = computed(() => {
+  const line = props.screen.recovery
+  if (!line) {
+    return ''
+  }
+  const s = (n: number): string => (n > 1 ? 's' : '')
+  return `${line.successes} réponse${s(line.successes)} juste${s(line.successes)} sur ${line.required} requise${s(line.required)}`
+})
 
 const statement = computed(() =>
   withNonBreakingSpaces(props.screen.question?.statement ?? ''),

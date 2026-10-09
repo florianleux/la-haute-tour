@@ -379,15 +379,20 @@ export function canDrawRecovery(poolSize: number, rules: FloorRules): boolean {
 }
 
 /**
- * Une seule bonne réponse suffit à repartir — le seuil vit dans les règles, et
- * une Indulgence noire l'y porte au nombre de questions tirées.
+ * Combien de bonnes réponses ce rattrapage exige. Une seule d'ordinaire — le
+ * seuil vit dans les règles, et une Indulgence noire l'y porte au nombre de
+ * questions tirées.
  *
  * Borné par ce que le rattrapage a réellement tiré : le pool s'arrête à ce qu'il
  * contient, et un perfect exigé sur plus de questions qu'il n'y en a serait
  * inatteignable. Voir specs/bonus.md#catalogue.
  */
+export function recoveryThreshold(drawn: number, rules: FloorRules): number {
+  return Math.min(rules.recoverySuccessesToResume, drawn)
+}
+
 export function resumesRecovery(successes: number, drawn: number, rules: FloorRules): boolean {
-  return successes >= Math.min(rules.recoverySuccessesToResume, drawn)
+  return successes >= recoveryThreshold(drawn, rules)
 }
 
 /**
@@ -403,7 +408,7 @@ export function sealedRecovery(
   total: number,
   rules: FloorRules,
 ): boolean {
-  const threshold = Math.min(rules.recoverySuccessesToResume, total)
+  const threshold = recoveryThreshold(total, rules)
   const remaining = total - played
   return successes >= threshold || successes + remaining < threshold
 }

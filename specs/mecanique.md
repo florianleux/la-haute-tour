@@ -63,7 +63,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 
 - **Feedback immédiat après chaque question** : le joueur sait tout de suite s'il a bon ou faux et voit la bonne réponse, puis passe à la suivante. Même mécanique qu'en ascension.
 - **Le rattrapage s'arrête dès que le verdict est scellé** — succès (quota de bonnes réponses atteint) ou échec (quota mathématiquement impossible à atteindre avec les questions restantes). Les questions non jouées restent dans le Pool Échecs sans que leur compteur de réussites progresse : c'est le tradeoff assumé d'un arrêt précoce, le joueur récupère ses vies plus vite mais le pool dégonfle moins vite.
-- Le verdict du rattrapage s'annonce sur l'écran de la question qui le scelle : « Rattrapage réussi » + bouton « Reprendre » qui enchaîne sur l'ascension, ou « Rattrapage raté » + bouton « Terminer le rattrapage » qui enchaîne sur l'attente.
+- Le verdict du rattrapage s'annonce sur l'écran de la question qui le scelle : « Rattrapage réussi » + bouton « Reprendre » qui enchaîne sur l'ascension, ou « Rattrapage raté » + bouton « Terminer » qui enchaîne sur l'attente.
 - Les questions de rattrapage sont déjà vues : elles ne font pas avancer la progression, seulement les compteurs du Pool Échecs.
 - **Timer par question** plus généreux qu'en ascension. Voir [`anti-triche.md`](./anti-triche.md).
 

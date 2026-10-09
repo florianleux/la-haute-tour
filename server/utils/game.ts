@@ -9,6 +9,7 @@ import {
   judgeRecovery,
   movePoolCounter,
   phaseOf,
+  recoveryThreshold,
   rollChest,
   resumesRecovery,
   sealedRecovery,
@@ -105,11 +106,10 @@ export interface RecoveryProgress {
   /** Whether finishing on this tally gives the lives back. */
   resumes: boolean
   /**
-   * Le rattrapage a tiré plus de questions que l'étage n'en donne d'ordinaire —
-   * une Indulgence est passée par là. Dit au joueur, sinon il compte ses
-   * questions et croit à un bug. Voir specs/bonus.md#catalogue.
+   * Les bonnes réponses que ce rattrapage exige, déjà bornées aux questions
+   * tirées : le joueur lit ici ce qu'il lui faut, Indulgence noire comprise.
    */
-  lengthened: boolean
+  required: number
 }
 
 export interface GameState {
@@ -344,10 +344,7 @@ async function recoveryProgress(
     // Voir specs/bonus.md#catalogue.
     resumes: resumesRecovery(successes, drawn.length, rules),
     sealed: sealedRecovery(successes, played.length, drawn.length, rules),
-    // Comparé à ce que l'étage donne d'ordinaire : le tirage s'arrête à la
-    // taille du pool, donc un rattrapage rallongé peut compter moins de
-    // questions qu'un autre — c'est l'écart à la règle qui le dit, pas un seuil.
-    lengthened: drawn.length > rulesForFloor(user.currentFloor).recoveryQuestions,
+    required: recoveryThreshold(drawn.length, rules),
   }
 }
 

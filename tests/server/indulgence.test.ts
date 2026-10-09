@@ -154,6 +154,15 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
       }
     }
 
+    it('annonce autant de bonnes réponses exigées que de questions tirées', async () => {
+      await fillPool(rules.recoveryQuestions * 3)
+      await curse()
+      await startRecovery()
+
+      expect((await readGameState(db, await reload(), WAIT_OVER)).recovery)
+        .toMatchObject({ total: rules.recoveryQuestions, required: rules.recoveryQuestions })
+    })
+
     it('exige que tout soit juste : une bonne réponse ne suffit plus', async () => {
       await fillPool(rules.recoveryQuestions * 3)
       await curse()
@@ -230,22 +239,12 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     expect(state.effects).toMatchObject([{ spell: 'INDULGENCE', face: 'boon', state: 'pending' }])
   })
 
-  // Le joueur compte ses questions : un rattrapage plus long qu'à l'ordinaire
-  // doit se dire, sinon il passe pour un bug.
-  it('se dit rallongé au joueur qui le joue', async () => {
-    await fillPool(rules.recoveryQuestions * 3)
-    await castIndulgence()
-    await startRecovery()
-
-    expect((await readGameState(db, await reload(), WAIT_OVER)).recovery)
-      .toMatchObject({ lengthened: true })
-  })
-
-  it('ne se dit pas rallongé quand rien ne l a rallongé', async () => {
+  // Le joueur lit ce qu'il lui faut au-dessus de chaque question.
+  it('n exige que le seuil des règles quand rien ne l a relevé', async () => {
     await fillPool(rules.recoveryQuestions * 3)
     await startRecovery()
 
     expect((await readGameState(db, await reload(), WAIT_OVER)).recovery)
-      .toMatchObject({ lengthened: false })
+      .toMatchObject({ required: rules.recoverySuccessesToResume })
   })
 })

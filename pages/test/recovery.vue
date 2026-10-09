@@ -90,7 +90,7 @@ const state = ref<GameState>({
     successes: sealed && correct ? 5 : 2,
     sealed,
     resumes: sealed && correct,
-    lengthened: Math.random() < 0.5,
+    required: 3,
   },
   recoveryResult: null,
   floorSeen: 544,

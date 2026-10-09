@@ -72,31 +72,33 @@ type Face = 'medallion' | 'plank'
 const ANCHORS: Record<Anchor, { position: string, width: string, text: string }> = {
   'image-bottom': {
     position: 'bottom-0 left-1/2',
-    width: 'w-[65%] sm:w-[32%]',
+    width: 'w-[58.5%] sm:w-[28.8%]',
     text: 'text-[6.6cqw] sm:text-[3.3cqw]',
   },
   'card-bottom': {
     position: 'top-[62%] left-1/2 sm:top-[76%] sm:bottom-0',
-    width: 'w-[65%] sm:w-[32%]',
+    width: 'w-[58.5%] sm:w-[28.8%]',
     text: 'text-[6.6cqw] sm:text-[3.3cqw]',
   },
   'poster': {
     position: 'top-[63%] left-[54%]',
-    width: 'w-[52%] sm:w-[34%]',
+    width: 'w-[46.8%] sm:w-[30.6%]',
     text: 'text-[4cqw] sm:text-[3cqw]',
   },
   'parchment-bottom': {
     // `translate-y-1/2` descend le bouton d'une demi-hauteur APRÈS le `top` :
     // son centre tombe donc à `top` + une hauteur entière, pas à `top`. Ces
     // valeurs sont le bord bas du parchemin — 91,4% en mobile, 89,2% en desktop,
-    // mesurés sous la largeur du bouton — moins la hauteur du bouton (14,6% du
-    // cadre), pour qu'il tombe à cheval sur ce bord et non entièrement dessous.
-    position: 'top-[77%] left-1/2 sm:top-[75%]',
-    width: 'w-[52%] sm:w-[34%]',
-    // « Terminer le rattrapage » est le plus long libellé que la planche porte,
-    // et elle est étroite : ces tailles sont celles qui le laissent tenir dans le
-    // bois sans le déborder, mesurées sur ce libellé-là.
-    text: 'text-[2.8cqw] sm:text-[2.1cqw]',
+    // mesurés sous la largeur du bouton — moins la hauteur du bouton (13,2% du
+    // cadre en mobile, 17,3% en desktop), pour qu'il tombe à cheval sur ce bord
+    // et non entièrement dessous.
+    position: 'top-[78%] left-1/2 sm:top-[72%]',
+    // Le même bouton, à l'œil, que celui de l'ascension. En mobile les deux
+    // cadres ont la même largeur, donc mêmes valeurs ; en desktop le cadre du
+    // rattrapage est 1,4 fois plus étroit (640 px contre 896, mesurés), d'où
+    // 28,8 % × 1,4 et 3,3 cqw × 1,4.
+    width: 'w-[58.5%] sm:w-[40.5%]',
+    text: 'text-[6.6cqw] sm:text-[4.6cqw]',
   },
 }
 
