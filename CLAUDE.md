@@ -7,7 +7,7 @@ Projet greenfield, aucun code encore écrit. Specs fonctionnelles dans [`specs/`
 - Nuxt 3 (Vue 3 + Nitro) — un seul codebase TypeScript, un seul process.
 - Turso (SQLite/libSQL) via Drizzle ORM.
 - Netlify (déploiement git push, serverless).
-- Discord OAuth2 (seule méthode d'auth).
+- Discord OAuth2 (seule méthode d'auth ; en dev local seulement, `/api/auth/dev` connecte un admin sans Discord — voir [`architecture.md`](specs/architecture.md#authentification)).
 
 Voir [`specs/architecture.md`](specs/architecture.md) pour le détail.
 

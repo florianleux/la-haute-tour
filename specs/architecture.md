@@ -12,6 +12,7 @@ Zéro gestion serveur, zéro infrastructure externe hors Discord et Turso.
 ## Authentification
 
 - **Discord OAuth2** uniquement. Pas d'email/mot de passe, pas de magic link.
+- Une seule exception, **en développement local** : `/api/auth/dev` connecte un admin de développement (`Admin local`, créé dans `local.db` à la première visite) sans passer par Discord, pour regarder les pages de test (`/test/*`, admin seulement) sans application Discord configurée. Le bouton « Connexion locale » de `/login` n'existe qu'en dev. Hors `nuxt dev`, `import.meta.dev` est faux au build : l'endpoint répond 404, la branche qui connecte n'est pas dans le bundle (`tests/server/dev-login.test.ts`).
 - On stocke le Discord ID, le pseudo (username Discord) et l'email s'il est disponible.
 - Le pseudo est synchronisé au login si le pseudo Discord change.
 - **Whitelist Discord** : seuls les Discord IDs whitelistés en base peuvent s'inscrire. Voir [`anti-triche.md`](./anti-triche.md).

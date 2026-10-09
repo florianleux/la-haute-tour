@@ -110,6 +110,16 @@ export async function useAuthSession(event: H3Event): Promise<SessionManager<Ses
 }
 
 /**
+ * Ouvre la session de ce joueur. L'incarnation ne survit pas à une connexion :
+ * sans cette remise à zéro, un second admin sur le même navigateur reprendrait
+ * celle du premier sans l'avoir demandée. Voir specs/admin.md#incarnation.
+ */
+export async function signIn(event: H3Event, userId: number): Promise<void> {
+  const session = await useAuthSession(event)
+  await session.update({ userId, oauthState: undefined, actingAsUserId: undefined })
+}
+
+/**
  * Le compte qui s'est connecté, quoi qu'il incarne. C'est lui qui porte les
  * droits : les lire sur l'identité incarnée verrouillerait l'admin dehors, le
  * joueur test n'étant pas admin — y compris pour l'endpoint qui met fin à

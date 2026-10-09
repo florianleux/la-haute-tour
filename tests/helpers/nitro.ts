@@ -14,7 +14,7 @@ import {
   useSession,
 } from 'h3'
 import type { EventHandler } from 'h3'
-import { getCurrentUser, getSessionUser, loginWithDiscord, requireAdmin, requireAuth, useAuthSession } from '../../server/utils/auth'
+import { getCurrentUser, getSessionUser, loginWithDiscord, requireAdmin, requireAuth, signIn, useAuthSession } from '../../server/utils/auth'
 import { buildAuthorizeUrl, toDiscordProfile } from '../../server/utils/discord'
 import type { DiscordProfile } from '../../server/utils/auth'
 
@@ -67,6 +67,7 @@ export function installNitroGlobals(discord: DiscordStubs = refusingDiscordStubs
     requireAuth,
     requireAdmin,
     loginWithDiscord,
+    signIn,
     buildAuthorizeUrl,
     toDiscordProfile,
     // Stubbed last so the network-facing pair never resolves to the real thing.
