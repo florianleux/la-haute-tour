@@ -1,4 +1,4 @@
-import type { SpellId } from '~~/shared/utils/spells'
+import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 
 /**
  * Le nom d'un sort, montré au joueur. Provisoire, contrairement à l'identifiant
@@ -18,19 +18,29 @@ export function spellLabel(spell: SpellId): string {
 }
 
 /**
- * Le médaillon d'un sort, sa version mixte : moitié blanche à gauche, moitié
- * noire à droite — pour montrer un sort sans présumer de la face qu'on lui
- * donnera. Chronomancie n'a pas encore le sien.
+ * Le médaillon d'un sort, en trois variantes : blanche pour la magie blanche,
+ * noire pour son miroir, et mixte — moitié blanche à gauche, moitié noire à
+ * droite — pour montrer un sort sans présumer de la face qu'on lui donnera.
+ * Chronomancie n'a pas encore le sien.
  */
-const SPELL_IMAGES: Partial<Record<SpellId, string>> = {
-  VITALITY: '/images/spell-vitality-mixed.webp',
-  RESPITE: '/images/spell-respite-mixed.webp',
-  INDULGENCE: '/images/spell-indulgence-mixed.webp',
-  PURGE: '/images/spell-purge-mixed.webp',
+const SPELL_IMAGE_SLUGS: Partial<Record<SpellId, string>> = {
+  VITALITY: 'vitality',
+  RESPITE: 'respite',
+  INDULGENCE: 'indulgence',
+  PURGE: 'purge',
 }
 
-export function spellImage(spell: SpellId): string | null {
-  return SPELL_IMAGES[spell] ?? null
+type SpellImageVariant = SpellFace | 'mixed'
+
+const SPELL_IMAGE_SUFFIXES: Record<SpellImageVariant, string> = {
+  boon: 'good',
+  curse: 'bad',
+  mixed: 'mixed',
+}
+
+export function spellImage(spell: SpellId, variant: SpellImageVariant = 'mixed'): string | null {
+  const slug = SPELL_IMAGE_SLUGS[spell]
+  return slug ? `/images/spell-${slug}-${SPELL_IMAGE_SUFFIXES[variant]}.webp` : null
 }
 
 /** Ce qu'un sort fait, face par face. */

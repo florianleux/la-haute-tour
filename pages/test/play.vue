@@ -52,13 +52,13 @@ function randomEffect(face: EffectView['face']): EffectView {
   }
 }
 
-// Deux au plus de chaque : c'est le maximum que l'écran doit encaisser, pas
-// une moyenne. Voir components/QuestionCard.vue.
-const boonCount = Math.floor(Math.random() * 3)
-const curseCount = Math.floor(Math.random() * 3)
-const effects = ref<EffectView[]>([
-  ...Array.from({ length: boonCount }, () => randomEffect('boon')),
-  ...Array.from({ length: curseCount }, () => randomEffect('curse')),
+// Un ou deux de chaque : deux est le maximum que l'écran doit encaisser, et un
+// ruban vide ne montre rien à régler. Voir components/QuestionCard.vue.
+// `useState` : tiré une fois au rendu serveur et repris tel quel au client —
+// deux tirages donneraient deux écrans à l'hydratation.
+const effects = useState<EffectView[]>('test-play-effects', () => [
+  ...Array.from({ length: 1 + Math.floor(Math.random() * 2) }, () => randomEffect('boon')),
+  ...Array.from({ length: 1 + Math.floor(Math.random() * 2) }, () => randomEffect('curse')),
 ])
 
 const question = ref<ServedQuestion | null>(null)
