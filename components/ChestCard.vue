@@ -53,31 +53,69 @@
 
           <!-- Le sort pioché, qui sort du coffre et flotte au-dessus. Deux
                boîtes parce que deux animations de `transform` sur le même
-               élément s'écrasent : l'extérieure le fait monter de la fente,
+               élément s'écrasent : l'extérieure le fait jaillir de la fente,
                l'intérieure le fait léviter. L'ombre portée sombre le détache
-               du coffre doré, le halo doré par-dessus le garde lumineux. -->
+               du coffre doré, le halo doré par-dessus le garde lumineux.
+               @container : les étincelles qui en partent comptent leur course
+               en cqw, donc en largeur de médaillon. -->
           <div
             v-if="chest.spell && spellImage(chest.spell)"
-            class="absolute left-1/2 top-[0%] w-[30%] -translate-x-1/2 motion-safe:animate-emerge"
+            class="absolute left-1/2 top-[0%] w-[30%] -translate-x-1/2 @container motion-safe:animate-emerge"
           >
-            <img
-              :src="spellImage(chest.spell)!"
-              :alt="spellLabel(chest.spell)"
-              class="w-full motion-safe:animate-float [filter:drop-shadow(0_6px_10px_rgb(0_0_0/0.5))_drop-shadow(0_0_12px_#fde68a)]"
-            >
+            <!-- Le climax, à l'apogée du jaillissement (entre 0,45 et 1,4 s,
+                 quand le médaillon tient à quatre fois sa taille) : des rayons
+                 tournent derrière lui, un reflet le traverse, une étoile
+                 s'allume sur son bord. Les trois durent 2,35 s comme
+                 `animate-emerge` et démarrent avec lui : leurs pourcentages
+                 tombent donc sur les mêmes instants. Ils grossissent avec le
+                 médaillon, d'où leur place dans cette boîte. -->
+            <div class="absolute left-1/2 top-1/2 aspect-square w-[230%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[repeating-conic-gradient(rgb(254_243_199/0.9)_0deg_8deg,transparent_8deg_24deg)] opacity-0 [mask-image:radial-gradient(circle,black_15%,transparent_68%)] motion-safe:animate-rays" />
+
+            <div class="relative motion-safe:animate-float">
+              <img
+                :src="spellImage(chest.spell)!"
+                :alt="spellLabel(chest.spell)"
+                class="w-full [filter:drop-shadow(0_6px_10px_rgb(0_0_0/0.5))_drop-shadow(0_0_12px_#fde68a)]"
+              >
+              <div class="absolute inset-[5%] overflow-hidden rounded-full">
+                <div class="absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgb(255_255_255/0.85)_50%,transparent_65%)] motion-safe:animate-sheen motion-reduce:hidden" />
+              </div>
+              <div class="absolute inset-0 drop-shadow-[0_0_8px_#fef3c7]">
+                <SparkleStar class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint" />
+                <SparkleStar class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]" />
+              </div>
+              <!-- Le scintillement autour du médaillon, une fois posé. -->
+              <div class="absolute inset-0 drop-shadow-[0_0_4px_#fef3c7]">
+                <SparkleStar
+                  v-for="(spark, index) in SPELL_SPARKS"
+                  :key="index"
+                  class="opacity-0 motion-safe:animate-sparkle"
+                  :style="{ left: spark.left, top: spark.top, width: spark.size, animationDelay: spark.delay }"
+                />
+              </div>
+            </div>
+
+            <!-- La gerbe, au moment où il retombe à sa place : les étincelles
+                 partent du centre dans toutes les directions, une seule fois. -->
+            <div class="absolute inset-0 drop-shadow-[0_0_6px_#fde68a]">
+              <SparkleStar
+                v-for="(spark, index) in SPELL_BURST"
+                :key="index"
+                class="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 motion-safe:animate-spark-out"
+                :style="spark"
+              />
+            </div>
           </div>
 
-          <!-- Les étincelles, dans le couvercle ouvert et juste au-dessus. Le
-               halo doré vient du parent : un `drop-shadow` sur l'étoile
-               elle-même serait rogné par son propre clip-path. -->
+          <!-- Les étincelles, dans le couvercle ouvert et juste au-dessus. -->
           <div
             v-if="revealed"
             class="absolute inset-0 drop-shadow-[0_0_3px_#fde68a]"
           >
-            <span
+            <SparkleStar
               v-for="(spark, index) in SPARKS"
               :key="index"
-              class="absolute aspect-square bg-white opacity-0 [clip-path:polygon(50%_0,61%_39%,100%_50%,61%_61%,50%_100%,39%_61%,0_50%,39%_39%)] motion-safe:animate-sparkle"
+              class="opacity-0 motion-safe:animate-sparkle"
               :style="{ left: spark.left, top: spark.top, width: spark.size, animationDelay: spark.delay }"
             />
           </div>
@@ -88,7 +126,14 @@
              mesureraient sur la card entière et le texte grossirait. -->
         <div class="@container w-[84%] shrink-0 text-center sm:w-[52%]">
           <PlayText
-            v-if="!chest.opened"
+            v-if="!chest.opened && refused"
+            role="recall"
+            class="font-semibold text-rose-700"
+          >
+            Le coffre résiste. Réessaie.
+          </PlayText>
+          <PlayText
+            v-else-if="!chest.opened"
             role="recall"
             class="text-amber-800"
           >
@@ -176,18 +221,65 @@ const SPARKS = [
   { left: '50%', top: '30%', size: '3%', delay: '1.2s' },
 ]
 
+/**
+ * Le scintillement autour du médaillon, en % de sa largeur. Les délais partent
+ * de 1,75 s : avant, il jaillit encore, et une étincelle grossie quatre
+ * fois avec lui ferait tache.
+ */
+const SPELL_SPARKS = [
+  { left: '-6%', top: '8%', size: '12%', delay: '1.75s' },
+  { left: '90%', top: '2%', size: '9%', delay: '2.25s' },
+  { left: '96%', top: '58%', size: '11%', delay: '1.95s' },
+  { left: '-10%', top: '66%', size: '8%', delay: '2.55s' },
+  { left: '44%', top: '-14%', size: '10%', delay: '2.85s' },
+  { left: '70%', top: '92%', size: '8%', delay: '2.1s' },
+]
+
+/**
+ * La gerbe : dix étincelles en étoile autour du centre, une sur deux plus
+ * loin et plus grosse pour que le cercle ne soit pas trop régulier. Lancées
+ * juste avant que le médaillon ne retombe à sa place (vers 1,63 s de
+ * `animate-emerge`). Distances en cqw, donc en largeur de médaillon.
+ */
+const SPELL_BURST = Array.from({ length: 10 }, (_, index) => {
+  const angle = ((index * 36 + (index % 2) * 14) * Math.PI) / 180
+  const distance = index % 2 ? 70 : 100
+
+  return {
+    '--dx': `${Math.round(Math.cos(angle) * distance)}cqw`,
+    '--dy': `${Math.round(Math.sin(angle) * distance)}cqw`,
+    'width': index % 2 ? '9%' : '14%',
+    'animationDelay': `${1.57 + (index % 3) * 0.04}s`,
+  }
+})
+
 const stage = ref<'idle' | 'bursting' | 'open'>('idle')
+/** Le serveur n'a pas ouvert le coffre : on le dit, au lieu d'un échec muet. */
+const refused = ref(false)
 const revealed = computed(() => stage.value === 'open' || props.chest.opened)
 
 // Un minuteur plutôt que `animationend` : sous « réduire les animations »,
 // `motion-safe:` retire l'animation et l'événement ne viendrait jamais.
 function burst(): void {
+  refused.value = false
   stage.value = 'bursting'
   setTimeout(() => {
     stage.value = 'open'
     emit('open')
   }, BURST_MS)
 }
+
+// La requête est finie et le coffre est toujours fermé : elle a échoué (réseau,
+// serveur). Le coffre se referme et OUVRIR redevient cliquable — sans ça, il
+// restait affiché ouvert, bouton éteint, et seul un rechargement sortait le
+// joueur de là. Le message d'échec de pages/index.vue ne s'affiche pas sur cet
+// écran, d'où le sien.
+watch(() => props.opening, (opening, wasOpening) => {
+  if (wasOpening && !opening && !props.chest.opened) {
+    stage.value = 'idle'
+    refused.value = true
+  }
+})
 
 // Un coffre refermé (le banc de test en resert un) repart de zéro.
 watch(() => props.chest.opened, (opened) => {
