@@ -17,6 +17,22 @@ export function spellLabel(spell: SpellId): string {
   return SPELL_LABELS[spell]
 }
 
+/**
+ * Le médaillon d'un sort, sa version mixte : moitié blanche à gauche, moitié
+ * noire à droite — pour montrer un sort sans présumer de la face qu'on lui
+ * donnera. Chronomancie n'a pas encore le sien.
+ */
+const SPELL_IMAGES: Partial<Record<SpellId, string>> = {
+  VITALITY: '/images/spell-vitality-mixed.webp',
+  RESPITE: '/images/spell-respite-mixed.webp',
+  INDULGENCE: '/images/spell-indulgence-mixed.webp',
+  PURGE: '/images/spell-purge-mixed.webp',
+}
+
+export function spellImage(spell: SpellId): string | null {
+  return SPELL_IMAGES[spell] ?? null
+}
+
 /** Ce qu'un sort fait, face par face. */
 export interface SpellEffectLabels {
   /** Magie blanche : sur soi ou sur un allié. */

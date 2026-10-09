@@ -50,9 +50,9 @@
 // cadres de jeu sont en paysage — une largeur en pourcentage n'y couvre pas la
 // même chose, donc le texte non plus.
 //
-// - 'image-bottom' : cadre large (desktop partout, et ChestCard qui n'a pas de
-//   variante mobile), le bas du bouton coïncide avec le bas de l'image.
-// - 'card-bottom' : QuestionCard/ResultCard en mobile, où le cadre portrait
+// - 'image-bottom' : cadre large (desktop partout), le bas du bouton coïncide
+//   avec le bas de l'image.
+// - 'card-bottom' : QuestionCard/ResultCard/ChestCard en mobile, où le cadre portrait
 //   laisse les rubans dépasser sous le bas réel du cadre — le bouton se cale sur
 //   ce bord-là, pas sur celui de l'image.
 // - 'poster' : WaitCard, où le bouton se pose sur le parchemin. `left-[54%]` et

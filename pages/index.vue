@@ -41,6 +41,8 @@
 
   <ChestCard
     v-else-if="viewingChest && state && screen && screen.chest"
+    :state="state"
+    :effects="screen.activeEffects"
     :chest="screen.chest"
     :action="screen.action"
     :opening="isRunning('chest')"
