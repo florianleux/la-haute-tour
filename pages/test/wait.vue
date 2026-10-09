@@ -44,7 +44,7 @@ const state = ref<GameState>({
       },
   cooldownUntil: new Date(Date.now() + 252_000).toISOString(),
   recovery: null,
-  recoveryResult: Math.random() < 0.3 ? 'failed' : null,
+  recoveryResult: null,
   floorSeen: 544,
   floorTotal: 1000,
   attemptSeen: 995,

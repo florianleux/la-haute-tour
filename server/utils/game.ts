@@ -129,8 +129,9 @@ export interface GameState {
   recovery: RecoveryProgress | null
   /**
    * Le sort du dernier rattrapage, posé une fois ses questions jouées.
-   * Un écran intermédiaire le lit avant que le joueur ne reprenne l'ascension
-   * (succès) ou ne voie sa nouvelle attente (échec). Effacé au clic suivant.
+   * Plus aucun écran ne le lit depuis que l'attente ne rappelle plus l'échec :
+   * le verdict de la question qui scelle le rattrapage l'annonce seul.
+   * Effacé au clic suivant.
    */
   recoveryResult: 'failed' | null
   /** Questions vues à l'étage courant. */
@@ -1263,8 +1264,7 @@ async function finishRecovery(
     .where(eq(users.id, user.id))
 
   // Le verdict du rattrapage se lit sur le verdict de la question qui l'a
-  // scellé, puis sur l'écran d'attente qui suit : il voyage avec l'état
-  // jusqu'à ce que le joueur reprenne.
+  // scellé ; il voyage avec l'état jusqu'à ce que le joueur reprenne.
   return withUnlocked(
     { ...await buildState(db, user.id, now), recoveryResult: 'failed' },
     unlocked,

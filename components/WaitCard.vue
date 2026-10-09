@@ -79,13 +79,6 @@
         {{ state.phase === 'cooldown' ? 'Ton rattrapage sera disponible à la fin de l\'attente.' : 'Tu peux lancer ton rattrapage.' }}
       </p>
 
-      <ParchmentNote
-        v-if="state.recoveryResult === 'failed'"
-        tone="danger"
-      >
-        {{ RECOVERY_FAILURE_MESSAGE }}
-      </ParchmentNote>
-
       <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
            prochaine tentative, le Répit a déjà agi sur l'attente qu'il lit.
            Voir specs/bonus.md#ancrage-et-durée-de-vie. -->
@@ -148,7 +141,6 @@
 // l'image. Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen } from '~~/utils/phase'
-import { RECOVERY_FAILURE_MESSAGE } from '~~/utils/phase'
 
 defineProps<{
   state: GameState

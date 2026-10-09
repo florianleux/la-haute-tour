@@ -86,7 +86,7 @@ export interface GameScreen {
 }
 
 /** Les libellés du verdict de rattrapage, affichés sur le verdict de la
- *  question qui le scelle et sur l'écran d'attente qui suit. */
+ *  question qui le scelle. */
 export const RECOVERY_SUCCESS_MESSAGE = "Rattrapage réussi : tes vies sont restaurées.";
 export const RECOVERY_FAILURE_MESSAGE = "Rattrapage raté : une nouvelle attente commence.";
 
