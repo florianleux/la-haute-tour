@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCountdown, formatDay, formatRemaining, formatWait } from '../../utils/date'
+import { formatCountdown, formatDay, formatDuration, formatRemaining, formatTime, formatWait } from '../../utils/date'
 
 describe('date lisible', () => {
   it('rend le jour en français', () => {
@@ -98,5 +98,25 @@ describe('attente à la minute', () => {
   it('ne compte jamais à l envers une fois l échéance passée', () => {
     expect(formatWait(inSeconds(-30), now)).toBe('terminée')
     expect(formatWait('', now)).toBe('terminée')
+  })
+})
+
+describe('durée de règle', () => {
+  it('tait les unités nulles', () => {
+    expect(formatDuration(12 * 3_600_000)).toBe('12 h')
+    expect(formatDuration(120_000)).toBe('2 min')
+    expect(formatDuration(90_000)).toBe('1 min 30 s')
+    expect(formatDuration(30_000)).toBe('30 s')
+    expect(formatDuration(3_600_000 + 15_000)).toBe('1 h 15 s')
+  })
+
+  it('arrondit à la seconde', () => {
+    expect(formatDuration(15_499)).toBe('15 s')
+  })
+})
+
+describe('heure', () => {
+  it('lit l heure à Paris', () => {
+    expect(formatTime('2026-09-01T16:42:00.000Z')).toBe('18:42')
   })
 })

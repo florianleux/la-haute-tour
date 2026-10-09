@@ -21,7 +21,20 @@ import type { SpellEffect, SpellFace, SpellId } from '../../shared/utils/spells'
  * (`WAIT_BOUND_SPELL_IDS` dans `shared/utils/spells.ts`) ; la modulation et
  * l'action instantanée le sont ici. Voir ADR 0004 et `specs/bonus.md#catalogue`.
  */
+/**
+ * Les règles qu'un sort peut changer de façon visible, et que l'infobulle d'un
+ * effet chiffre. Voir `stakeOf` dans server/utils/game.ts.
+ */
+export type StakeRule = 'lives' | 'ascentTimerMs' | 'cooldownMs' | 'recoveryQuestions' | 'recoverySuccessesToResume'
+
 interface SpellEntry {
+  /**
+   * La règle que chaque face change, celle que le joueur voit bouger. Écrite à
+   * côté de `modulateRules` pour qu'un sort ne se décrive qu'à un endroit.
+   * Absente pour un sort qui ne module rien.
+   */
+  stakes?: Record<SpellFace, StakeRule>
+
   /**
    * La part des règles que ce sort module. Reçoit les règles de l'étage (la
    * base, jamais l'accumulateur du fold) et les effets posés sur le joueur.
@@ -39,6 +52,7 @@ interface SpellEntry {
 
 export const SPELLS: Record<SpellId, SpellEntry> = {
   VITALITY: {
+    stakes: { boon: 'lives', curse: 'lives' },
     // Additive : le mode de cumul est propre à chaque sort. Le plancher n'est
     // pas la règle — c'est la limite d'effets négatifs qui garantit qu'il reste
     // une vie, et elle suffit tant qu'elle tient. Elle se tient au tirage, donc
@@ -52,6 +66,7 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   RESPITE: {
+    stakes: { boon: 'cooldownMs', curse: 'cooldownMs' },
     // Multiplicatif : diviser plutôt que soustraire est ce qui empêche une
     // attente d'atteindre zéro, quel que soit l'empilement. Le blanc raccourcit
     // l'attente — d'où la division. Voir specs/bonus.md#cumul.
@@ -74,6 +89,7 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   CHRONOMANCY: {
+    stakes: { boon: 'ascentTimerMs', curse: 'ascentTimerMs' },
     // Toute la tentative, ascension et rattrapage : Chronomancie ne porte pas
     // sur une question mais sur celles qu'ouvre la tentative où elle s'ancre.
     // Multiplicatif comme Répit, et pour la même raison : aucun empilement ne
@@ -89,6 +105,9 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   INDULGENCE: {
+    // Asymétrique comme sa modulation : la blanche rallonge le tirage, la noire
+    // relève le nombre de bonnes réponses exigées.
+    stakes: { boon: 'recoveryQuestions', curse: 'recoverySuccessesToResume' },
     // Indulgence n'est pas symétrique : sa face noire exige un perfect, elle ne
     // raccourcit pas le tirage. Seules les blanches comptent dans le nombre de
     // questions. Voir specs/bonus.md#cumul.

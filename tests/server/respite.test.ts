@@ -93,6 +93,17 @@ describe('Répit, sur l attente en cours', () => {
       .toBe(new Date(STARTED_AT.getTime() + rules.cooldownMs / rules.respiteFactor).toISOString())
   })
 
+  it('chiffre sur l effet la durée d origine et la durée réelle de l attente', async () => {
+    await castRespite()
+
+    const { effects } = await readGameState(db, await reload(), NOW)
+    expect(effects[0]?.stake).toEqual({
+      rule: 'cooldownMs',
+      before: rules.cooldownMs,
+      after: rules.cooldownMs / rules.respiteFactor,
+    })
+  })
+
   it('apparaît dans le récapitulatif de l attente', async () => {
     await castRespite()
 

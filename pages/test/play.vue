@@ -17,7 +17,6 @@
 // question tirée au hasard du deck et des chiffres arbitraires à la place d'une
 // vraie partie — pour régler le visuel sans dépendre d'une tentative réelle ni
 // perdre à l'écoulement du chrono. Admin seulement. Voir components/QuestionCard.vue.
-import { SPELL_IDS } from '~~/shared/utils/spells'
 import type { EffectView } from '~~/server/utils/effects'
 import type { GameState, ServedQuestion } from '~~/server/utils/game'
 import type { AdminQuestionsResponse } from '~~/server/api/admin/questions/index.get'
@@ -41,24 +40,13 @@ onBeforeUnmount(() => {
   }
 })
 
-const CASTER_NAMES = ['Gandalf', 'Bilbo', 'Frodo', 'Aragorn', 'Éowyn', 'Legolas']
-
-function randomEffect(face: EffectView['face']): EffectView {
-  return {
-    spell: SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
-    face,
-    casterName: CASTER_NAMES[Math.floor(Math.random() * CASTER_NAMES.length)],
-    state: 'active',
-  }
-}
-
 // Un ou deux de chaque : deux est le maximum que l'écran doit encaisser, et un
 // ruban vide ne montre rien à régler. Voir components/QuestionCard.vue.
 // `useState` : tiré une fois au rendu serveur et repris tel quel au client —
 // deux tirages donneraient deux écrans à l'hydratation.
 const effects = useState<EffectView[]>('test-play-effects', () => [
-  ...Array.from({ length: 1 + Math.floor(Math.random() * 2) }, () => randomEffect('boon')),
-  ...Array.from({ length: 1 + Math.floor(Math.random() * 2) }, () => randomEffect('curse')),
+  ...Array.from({ length: 1 + Math.floor(Math.random() * 2) }, () => randomEffect('active', 'boon')),
+  ...Array.from({ length: 1 + Math.floor(Math.random() * 2) }, () => randomEffect('active', 'curse')),
 ])
 
 const question = ref<ServedQuestion | null>(null)
@@ -113,4 +101,6 @@ const state = ref<GameState>({
   effects: [],
   unlocked: [],
 })
+
+provideGameState(state)
 </script>

@@ -93,6 +93,8 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Magie noire** | `curse` | La face négative, appliquée sur un ennemi. Miroir systématique de la face blanche. |
 | **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non. |
 | **Effet porté** | `isBorneBy` | Un effet qu'un joueur subit encore : en attente de sa prochaine tentative, courant sur celle en cours, ou visant l'attente où il se tient. Ce que son écran montre, et ce que le tirage compte. |
+| **Règles jouées** | `playedRules` | Les règles de l'étage telles que le joueur les subit : celles de l'étage, modulées par tous les effets qu'il porte et qui agissent déjà, cumul compris. |
+| **Enjeu** | `stake` | Ce qu'un effet change, en chiffres : la règle que sa face touche, de la valeur de l'étage à celle des règles jouées. Chiffré par le serveur, montré dans l'infobulle du sort ; aucun pour un effet qui n'agit pas encore. |
 | **Plafond d'effets négatifs** | `maxCurses` | Combien de magies noires un joueur porte au plus. Au-delà il sort du tirage des ennemis, silencieusement. Aucun plafond en face pour les positives. |
 | **Perfect exigé** | `perfectRequired` | Ce que l'Indulgence noire fait du rattrapage : autant de bonnes réponses que de questions tirées. Booléen, donc idempotent — deux noires valent une. Il ne remplace pas le seuil, il le porte à ce nombre. |
 | **Viser autrui** | `canTargetOthers` | Le joueur a une équipe, donc les catégories Allié et Ennemi lui sont proposées. Une seule et même condition pour les deux : sans équipe, aucune ne désigne de pool. |

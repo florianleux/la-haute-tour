@@ -26,7 +26,7 @@ import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { isWaitBound } from '../../shared/utils/spells'
 import { rulesForFloor } from './rules'
-import { rulesWithEffects } from './spellbook'
+import { rulesWithEffects, SPELLS } from './spellbook'
 import {
   acceptedAnswers,
   disputes,
@@ -40,7 +40,7 @@ import {
   seenQuestions,
   users,
 } from '../db/schema'
-import type { EffectView } from './effects'
+import type { EffectStake, EffectView, PlacedEffect } from './effects'
 import type { AchievementId } from '../../shared/utils/achievements'
 import type { AnswerSource, Phase } from './mechanics'
 import type { FloorRules } from './rules'
@@ -179,7 +179,7 @@ export interface PlayerSnapshot {
   /** Questions the current floor holds. */
   floorTotal: number
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
-  effects: EffectView[]
+  effects: PlacedEffect[]
   reservation?: Reservation
   /** The reserved question, loaded with the reservation. */
   question?: Question
@@ -650,18 +650,19 @@ function servesLoot(snapshot: PlayerSnapshot, reservation: Reservation, rules: F
 async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Promise<GameState> {
   const { user, reservation, question } = snapshot
   const seen = user.floorSeen
+  const played = playedRules(snapshot)
 
   const base = {
     floor: user.currentFloor,
     lives: user.lives,
-    maxLives: playedRules(snapshot).lives,
+    maxLives: played.lives,
     started: seen > 0 || reservation !== undefined,
     question: null as ServedQuestion | null,
     verdict: null as Verdict | null,
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
     // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
     // faut un perfect pour repartir.
-    recovery: user.lives <= 0 ? await recoveryProgress(db, user, playedRules(snapshot)) : null,
+    recovery: user.lives <= 0 ? await recoveryProgress(db, user, played) : null,
     recoveryResult: null as 'failed' | null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
@@ -670,7 +671,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
     // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une
     // icône, et ce qui module les règles doit se voir là où il agit.
-    effects: snapshot.effects,
+    effects: snapshot.effects.map(effect => ({ ...effect, stake: stakeOf(effect, user, played) })),
     // Vide par défaut, et rempli par la seule fonction qui vient d'écrire :
     // un état construit sans rien débloquer n'annonce rien.
     unlocked: [] as AchievementId[],
@@ -713,6 +714,34 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
   // Rien du jeu n'est servi pendant l'attente : le pool se lit à part, comme la
   // fiche de révision qu'il est censé être.
   return { ...base, phase, question: phase === 'cooldown' ? null : base.question }
+}
+
+/**
+ * Ce qu'un effet change, en chiffres : la règle que le grimoire lui attribue,
+ * de la base de l'étage aux règles jouées. Rien pour un effet qui n'agit pas
+ * encore, ni pour un sort qui ne module rien.
+ *
+ * L'attente se lit sur le joueur plutôt que dans les règles : elles ne durent
+ * pas toutes pareil (celle d'un rattrapage manqué est plus courte), et Répit en
+ * déplace l'échéance — l'écart entre son début et son échéance est sa durée
+ * réelle. Hors attente, il n'y en a pas à chiffrer.
+ */
+function stakeOf(effect: PlacedEffect, user: User, played: FloorRules): EffectStake | null {
+  const rule = SPELLS[effect.spell].stakes?.[effect.face]
+
+  // Même tri que les règles jouées : un sort lié à l'attente agit dès le lancer.
+  if (!rule || (effect.state === 'pending' && !isWaitBound(effect.spell))) {
+    return null
+  }
+
+  if (rule === 'cooldownMs') {
+    const { cooldownStartedAt: startedAt, cooldownUntil: until, cooldownBaseMs: baseMs } = user
+    return startedAt && until && baseMs !== null
+      ? { rule, before: baseMs, after: until.getTime() - startedAt.getTime() }
+      : null
+  }
+
+  return { rule, before: rulesForFloor(user.currentFloor)[rule], after: played[rule] }
 }
 
 async function buildState(db: Database, userId: number, now: Date): Promise<GameState> {

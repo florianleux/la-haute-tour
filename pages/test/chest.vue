@@ -45,6 +45,8 @@ const state: GameState = {
   unlocked: [],
 }
 
+provideGameState(state)
+
 const CLOSED: ChestView = { opened: false, mimic: false, spell: null }
 
 const chest = ref<ChestView>(CLOSED)

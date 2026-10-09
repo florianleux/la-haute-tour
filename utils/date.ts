@@ -25,6 +25,15 @@ export function formatDayTime(iso: string): string {
   return dayTimeFormat.format(new Date(iso))
 }
 
+/** Des secondes en heures, minutes et secondes : la découpe que les durées partagent. */
+function splitSeconds(seconds: number): { hours: number, minutes: number, secs: number } {
+  return {
+    hours: Math.floor(seconds / 3600),
+    minutes: Math.floor((seconds % 3600) / 60),
+    secs: seconds % 60,
+  }
+}
+
 /**
  * How long is left, as a player reads a wait — détaillé à la seconde, parce que
  * l'attente se compte à la seconde près. "11 h 58 min 12 s", "4 min 32 s", "32 s".
@@ -39,9 +48,7 @@ export function formatRemaining(iso: string, now: number): string {
     return 'terminée'
   }
 
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
+  const { hours, minutes, secs } = splitSeconds(seconds)
 
   if (hours > 0) {
     return `${hours} h ${minutes} min ${secs} s`
@@ -75,9 +82,7 @@ export function formatCountdown(iso: string, now: number): string {
     return 'terminée'
   }
 
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
+  const { hours, minutes, secs } = splitSeconds(seconds)
   const pad = (value: number): string => String(value).padStart(2, '0')
 
   if (hours > 0) {
@@ -107,4 +112,30 @@ export function formatWait(iso: string, now: number): string {
   const hours = Math.floor(minutes / 60)
 
   return hours > 0 ? `${hours} h ${minutes % 60} min` : `${minutes} min`
+}
+
+/** L'heure seule, même fuseau explicite : « 18:42 ». */
+const timeFormat = new Intl.DateTimeFormat('fr-FR', {
+  timeStyle: 'short',
+  timeZone: GAME_TIME_ZONE,
+})
+
+export function formatTime(iso: string): string {
+  return timeFormat.format(new Date(iso))
+}
+
+/**
+ * Une durée de règle, pas un décompte : « 12 h », « 2 min », « 1 min 30 s ».
+ * Les unités nulles se taisent — une attente de douze heures ne se lit pas
+ * « 12 h 0 min 0 s ». Arrondie à la seconde : un timer divisé tombe parfois
+ * entre deux.
+ */
+export function formatDuration(ms: number): string {
+  const { hours, minutes, secs } = splitSeconds(Math.round(ms / 1000))
+  const parts = [[hours, 'h'], [minutes, 'min'], [secs, 's']] as const
+
+  return parts
+    .filter(([value]) => value > 0)
+    .map(([value, unit]) => `${value} ${unit}`)
+    .join(' ') || '0 s'
 }

@@ -5,11 +5,11 @@
        Voir specs/bonus.md#catégories-de-cible. -->
   <dl class="text-[13px] leading-snug text-slate-500">
     <div class="flex gap-1.5">
-      <dt class="shrink-0 text-slate-400">Blanche</dt>
+      <dt class="shrink-0 text-slate-400">{{ spellFaceLabel('boon') }}</dt>
       <dd>{{ effects.boon }}</dd>
     </div>
     <div class="flex gap-1.5">
-      <dt class="shrink-0 text-slate-400">Noire</dt>
+      <dt class="shrink-0 text-slate-400">{{ spellFaceLabel('curse') }}</dt>
       <dd>{{ effects.curse }}</dd>
     </div>
   </dl>

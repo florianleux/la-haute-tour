@@ -1,4 +1,8 @@
+import { formatDuration, formatTime } from './date'
 import type { SpellFace, SpellId } from '~~/shared/utils/spells'
+import type { EffectStake, EffectView } from '~~/server/utils/effects'
+import type { StakeRule } from '~~/server/utils/spellbook'
+import type { GameState } from '~~/server/utils/game'
 
 /**
  * Le nom d'un sort, montré au joueur. Provisoire, contrairement à l'identifiant
@@ -41,6 +45,16 @@ const SPELL_IMAGE_SUFFIXES: Record<SpellImageVariant, string> = {
 export function spellImage(spell: SpellId, variant: SpellImageVariant = 'mixed'): string | null {
   const slug = SPELL_IMAGE_SLUGS[spell]
   return slug ? `/images/spell-${slug}-${SPELL_IMAGE_SUFFIXES[variant]}.webp` : null
+}
+
+/** Le nom de chaque face, celui du glossaire. Voir specs/spec.md. */
+const FACE_LABELS: Record<SpellFace, string> = {
+  boon: 'Magie blanche',
+  curse: 'Magie noire',
+}
+
+export function spellFaceLabel(face: SpellFace): string {
+  return FACE_LABELS[face]
 }
 
 /** Ce qu'un sort fait, face par face. */
@@ -86,4 +100,59 @@ const SPELL_EFFECTS: Record<SpellId, SpellEffectLabels> = {
 
 export function spellEffects(spell: SpellId): SpellEffectLabels {
   return SPELL_EFFECTS[spell]
+}
+
+/** Ce qu'un sort a changé, en chiffres : l'avant de l'étage, l'après joué. */
+export interface SpellStake {
+  label: string
+  before: string
+  after: string
+}
+
+/** Le nom de chaque règle qu'un sort peut changer, dit au joueur. */
+const STAKE_LABELS: Record<StakeRule, string> = {
+  lives: 'Vies',
+  ascentTimerMs: 'Temps de réponse',
+  cooldownMs: 'Attente',
+  recoveryQuestions: 'Questions au rattrapage',
+  recoverySuccessesToResume: 'Bonnes réponses exigées',
+}
+
+/** Les règles qui se comptent en millisecondes ; les autres sont des nombres. */
+const DURATION_RULES: ReadonlySet<StakeRule> = new Set(['ascentTimerMs', 'cooldownMs'])
+
+/**
+ * Ce que le serveur a chiffré d'un effet, mis en mots. Deux Chronomancies
+ * montrent le même 60 s → 240 s : c'est le timer que le joueur a vraiment.
+ * Voir server/utils/game.ts#stakeOf.
+ */
+export function spellStake(stake: EffectStake): SpellStake {
+  const format = (value: number): string => DURATION_RULES.has(stake.rule) ? formatDuration(value) : String(value)
+  return { label: STAKE_LABELS[stake.rule], before: format(stake.before), after: format(stake.after) }
+}
+
+/**
+ * Jusqu'à quand l'effet agit, ancré sur ce que le joueur peut compter : ses
+ * vies, l'heure de fin de son attente. Une tentative n'a pas de date de fin —
+ * elle finit à la dernière vie perdue, alors on dit combien il en reste.
+ * Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+export function spellLifetime(effect: EffectView, state: GameState): string {
+  if (effect.state === 'pending') {
+    return 'S\'active à ta prochaine tentative'
+  }
+
+  switch (effect.spell) {
+    case 'VITALITY':
+    case 'CHRONOMANCY':
+      return `Jusqu'à ta dernière vie perdue (encore ${state.lives} ♥)`
+    case 'RESPITE':
+      return state.cooldownUntil
+        ? `Jusqu'à la fin de ton attente (${formatTime(state.cooldownUntil)})`
+        : 'Jusqu\'à la fin de ton attente'
+    case 'INDULGENCE':
+      return 'Jusqu\'à la fin de ton prochain rattrapage'
+    case 'PURGE':
+      return 'Effet immédiat, déjà appliqué'
+  }
 }

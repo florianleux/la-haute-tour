@@ -122,6 +122,21 @@ describe('Chronomancie, sur toute la tentative', () => {
     expect(state.effects).toMatchObject([{ spell: 'CHRONOMANCY', face: 'boon', state: 'active' }])
   })
 
+  it('chiffre sur l effet le timer de l étage et le timer joué', async () => {
+    await castChronomancy()
+    await beginAttempt()
+
+    const state = await readGameState(db, await reload(), NOW)
+    expect(state.effects[0]?.stake).toEqual({ rule: 'ascentTimerMs', before: rules.ascentTimerMs, after: DOUBLED })
+  })
+
+  it('ne chiffre pas un effet qui n agit pas encore', async () => {
+    await castChronomancy()
+
+    const state = await readGameState(db, await reload(), NOW)
+    expect(state.effects).toMatchObject([{ state: 'pending', stake: null }])
+  })
+
   // Une tentative ne se clôt qu'au moment où la suivante s'ouvre : l'attente et
   // le rattrapage qui la suivent en font partie. Perdre ses vies ne suffit donc
   // pas à tuer l'effet — sans quoi le rattrapage se jouerait au timer nu.

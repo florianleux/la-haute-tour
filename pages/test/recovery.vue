@@ -20,8 +20,6 @@
 // vrai rattrapage — pour régler le visuel sans avoir à perdre trois vies puis
 // attendre. Modifier RecoveryCard modifie donc aussi bien cette page que la
 // vraie. Admin seulement. Voir pages/test/play.vue pour le même principe.
-import { SPELL_FACES, SPELL_IDS } from '~~/shared/utils/spells'
-import type { EffectView } from '~~/server/utils/effects'
 import type { GameState } from '~~/server/utils/game'
 import { gameScreen } from '~~/utils/phase'
 
@@ -43,17 +41,6 @@ onBeforeUnmount(() => {
     clearInterval(timer)
   }
 })
-
-const CASTER_NAMES = ['Gandalf', 'Bilbo', 'Frodo', 'Aragorn', 'Éowyn', 'Legolas']
-
-function randomEffect(): EffectView {
-  return {
-    spell: SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
-    face: SPELL_FACES[Math.floor(Math.random() * SPELL_FACES.length)],
-    casterName: CASTER_NAMES[Math.floor(Math.random() * CASTER_NAMES.length)],
-    state: 'active',
-  }
-}
 
 // Question ou verdict, et un verdict scellé une fois sur deux : les quatre états
 // que la carte doit encaisser, tirés à chaque rechargement.
@@ -111,9 +98,11 @@ const state = ref<GameState>({
   attemptSeen: 995,
   chest: null,
   maintenance: false,
-  effects: Array.from({ length: Math.floor(Math.random() * 3) }, randomEffect),
+  effects: Array.from({ length: Math.floor(Math.random() * 3) }, () => randomEffect('active')),
   unlocked: [],
 })
+
+provideGameState(state)
 
 // Le lien de contestation ne se propose que sur un verdict faux, comme en jeu.
 const contestable = !answering && !correct

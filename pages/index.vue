@@ -167,6 +167,9 @@ const { isAdmin } = await useCurrentUser()
 // fait que projeter cette décision. Voir utils/phase.ts.
 const screen = computed(() => (state.value ? gameScreen(state.value) : null))
 
+// Les infobulles des sorts y lisent les vies et l'échéance de l'attente.
+provideGameState(state)
+
 // Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
 // la page, il ferait tourner « Commencer le rattrapage » pendant qu'un admin
 // passe l'attente juste au-dessus.

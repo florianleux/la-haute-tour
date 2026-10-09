@@ -60,7 +60,7 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
 
       expect(state.phase).toBe('cooldown')
       expect(state.effects).toEqual([
-        { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending' },
+        { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', stake: null },
       ])
     })
 
@@ -72,7 +72,13 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
 
       expect(state.phase).toBe('ascent')
       expect(state.effects).toEqual([
-        { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'active' },
+        {
+          spell: 'VITALITY',
+          face: 'boon',
+          casterName: 'gandalf',
+          state: 'active',
+          stake: { rule: 'lives', before: rules.lives, after: rules.lives + rules.vitalityLives },
+        },
       ])
     })
 
@@ -157,7 +163,7 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
       const state = await readGameState(db, await reload(), NOW)
       expect((await reload()).lives).toBe(1)
       expect(state.effects).toEqual([
-        { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending' },
+        { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', stake: null },
       ])
     })
   })

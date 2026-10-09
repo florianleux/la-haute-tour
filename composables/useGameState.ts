@@ -1,4 +1,4 @@
-import type { Ref } from 'vue'
+import type { ComputedRef, InjectionKey, MaybeRefOrGetter, Ref } from 'vue'
 import type { GameState } from '~~/server/utils/game'
 
 /** Cache key of the game state read: one name, so nobody re-types the string. */
@@ -38,4 +38,21 @@ export async function useGameState(): Promise<GameStateRead> {
     loading: computed<boolean>(() => status.value === 'pending'),
     refresh,
   }
+}
+
+const SHOWN_STATE: InjectionKey<ComputedRef<GameState | null>> = Symbol('shown-game-state')
+
+/**
+ * L'état que la page affiche, offert aux composants qui en lisent un détail
+ * loin d'elle — l'infobulle d'un sort compte les vies et l'échéance de
+ * l'attente. Sans ça, l'état entier traverserait chaque liste qui montre un
+ * effet. Les pages de test l'appellent avec leur faux état.
+ */
+export function provideGameState(state: MaybeRefOrGetter<GameState | null>): void {
+  provide(SHOWN_STATE, computed(() => toValue(state)))
+}
+
+/** L'état que la page a offert ; null hors d'une page qui en offre un. */
+export function useShownGameState(): ComputedRef<GameState | null> {
+  return inject(SHOWN_STATE, computed(() => null))
 }

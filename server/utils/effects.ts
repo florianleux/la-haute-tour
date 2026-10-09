@@ -2,6 +2,7 @@ import { and, desc, eq, isNull, ne, notExists, sql } from 'drizzle-orm'
 import { isBorneBy } from './mechanics'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
+import type { StakeRule } from './spellbook'
 import { drawTarget } from './targets'
 import { activeEffects, inventory, users } from '../db/schema'
 import type { FloorRules } from './rules'
@@ -23,7 +24,23 @@ export interface EffectView {
   /** Le lanceur, nommé : l'anonymat vaut au lancer, plus après. */
   casterName: string
   state: 'pending' | 'active'
+  /** Ce que l'effet change, chiffré par l'état ; null quand rien n'est à chiffrer. */
+  stake: EffectStake | null
 }
+
+/**
+ * La règle qu'un effet touche, telle que le joueur la vit : la base de l'étage,
+ * puis les règles jouées, tous effets cumulés et pas seulement la part de
+ * celui-ci. Voir specs/bonus.md#cumul.
+ */
+export interface EffectStake {
+  rule: StakeRule
+  before: number
+  after: number
+}
+
+/** Un effet tel que la base le rend, avant que l'état ne chiffre ce qu'il change. */
+export type PlacedEffect = Omit<EffectView, 'stake'>
 
 /**
  * Une ligne du journal : ce que le joueur a lancé, sur qui, et quand. Le nom est
@@ -245,7 +262,7 @@ export type EffectRow = Awaited<EffectsQuery>[number]
  * fait ici plutôt qu'en base, parce que c'est le joueur qui porte de quoi
  * trancher. Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
-export function toEffectViews(rows: EffectRow[], user: User): EffectView[] {
+export function toEffectViews(rows: EffectRow[], user: User): PlacedEffect[] {
   return rows
     .filter(row => isBorneBy(row, user))
     .map(({ spell, face, casterName, anchoredAt }) => ({
