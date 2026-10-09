@@ -86,6 +86,12 @@
             :effect="effect"
           />
         </template>
+        <!-- Rien d'actif : un tiret plutôt qu'un ruban vide, qui se lirait
+             comme une valeur qui n'a pas chargé. Même hauteur qu'une pastille. -->
+        <span
+          v-else
+          class="text-[6.5cqw] font-bold leading-none text-rose-950/60 sm:ml-[1cqw] sm:text-[3cqw]"
+        >-</span>
       </div>
     </div>
     <div :class="RIGHT" class="sm:[--enter-delay:0.44s]">
@@ -104,6 +110,10 @@
             :effect="effect"
           />
         </template>
+        <span
+          v-else
+          class="text-[6.5cqw] font-bold leading-none text-rose-950/60 sm:ml-[1cqw] sm:text-[3cqw]"
+        >-</span>
       </div>
     </div>
   </div>
