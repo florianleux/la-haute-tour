@@ -114,7 +114,7 @@
         <!-- @container à la largeur du panneau de PlayFrame : les tailles de
              PlayText sont en cqw, mesurées sur ce panneau. Sans lui, elles se
              mesureraient sur la card entière et le texte grossirait. -->
-        <div class="@container w-[84%] shrink-0 text-center sm:w-[52%]">
+        <div class="pointer-events-auto @container w-[84%] shrink-0 text-center sm:w-[52%]">
           <PlayText
             v-if="!chest.opened && refused"
             role="recall"
@@ -145,7 +145,7 @@
             role="recall"
             class="font-semibold text-emerald-700"
           >
-            Le coffre contenait <strong>{{ spellLabel(chest.spell) }}</strong>. Il rejoint ton inventaire.
+            Le coffre contenait <strong><SpellMention :subject="chest.spell" /></strong>. Il rejoint ton inventaire.
           </PlayText>
         </div>
       </div>

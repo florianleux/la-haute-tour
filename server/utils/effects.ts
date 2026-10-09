@@ -2,7 +2,7 @@ import { and, desc, eq, isNull, ne, notExists, sql } from 'drizzle-orm'
 import { isBorneBy } from './mechanics'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
-import type { StakeRule } from './spellbook'
+import type { SpellLifetime, StakeRule } from './spellbook'
 import { drawTarget } from './targets'
 import { activeEffects, inventory, users } from '../db/schema'
 import type { FloorRules } from './rules'
@@ -14,8 +14,10 @@ import type { TargetKind } from '../../shared/utils/teams'
 
 /**
  * Un effet tel qu'un écran le montre : quel sort, quelle face, de qui, et s'il
- * attend encore la prochaine tentative ou s'il court sur celle en jeu. L'écran
- * d'attente lit les premiers, l'ascension affiche une icône par second.
+ * est ancré sur la tentative en jeu (`active`) ou non (`pending`). Non ancré
+ * veut dire à venir — ou, pour un sort lié à l'attente, déjà en action sur
+ * celle-ci : il ne s'ancre jamais. L'écran d'attente lit les premiers,
+ * l'ascension affiche une icône par second.
  * Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
  */
 export interface EffectView {
@@ -24,6 +26,8 @@ export interface EffectView {
   /** Le lanceur, nommé : l'anonymat vaut au lancer, plus après. */
   casterName: string
   state: 'pending' | 'active'
+  /** Jusqu'à quand il agit, lu au grimoire : l'écran le dit sans connaître le sort. */
+  lifetime: SpellLifetime
   /** Ce que l'effet change, chiffré par l'état ; null quand rien n'est à chiffrer. */
   stake: EffectStake | null
 }
@@ -82,7 +86,9 @@ export interface ReceivedView {
  * Ce que l'effet attend dépend du sort : Vitalité et Chronomancie s'ancrent sur
  * la prochaine tentative de la cible, tandis que Répit, Indulgence et Purge
  * trouvent leur déclencheur dans l'attente **de la cible** et agissent tout de
- * suite. Une cible qui ne vit pas d'attente n'a rien à leur donner à mordre.
+ * suite. Une cible qui ne vit pas d'attente n'a rien à donner à mordre à Répit
+ * ni à Indulgence ; Purge, elle, mord son Pool Échecs quelle que soit sa phase —
+ * sans que l'effet lui soit montré, faute d'attente à laquelle le rattacher.
  * Voir shared/utils/spells.ts et specs/bonus.md#ancrage-et-durée-de-vie.
  *
  * Un lancer sans exemplaire à consommer, ou une attente dont le budget est
@@ -270,6 +276,7 @@ export function toEffectViews(rows: EffectRow[], user: User): PlacedEffect[] {
       face,
       casterName,
       state: anchoredAt === null ? 'pending' : 'active',
+      lifetime: SPELLS[spell].lifetime,
     }))
 }
 

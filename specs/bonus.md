@@ -144,7 +144,7 @@ partiellement, en visant en priorité les mieux classés.
 | Chronomancie | chaque question de la tentative | non, différé |
 | Indulgence | le prochain rattrapage | **oui** — celui qui clôt l'attente en cours |
 | Purge | le Pool Échecs | **oui** — immédiat |
-| Répit | la prochaine attente | **oui** — l'échéance en cours est recalculée |
+| Répit | l'attente en cours | **oui** — l'échéance en cours est recalculée |
 
 C'est ce qui donne son sens au fait de lancer depuis l'écran d'attente : la cible
 étant elle-même en attente la plupart du temps, l'effet se voit tout de suite.
@@ -157,7 +157,7 @@ C'est ce qui donne son sens au fait de lancer depuis l'écran d'attente : la cib
 | **Chronomancie** | timer ×2 sur toute la tentative | timer ÷2 sur toute la tentative |
 | **Indulgence** | deux fois plus de questions tirées au prochain rattrapage | le prochain rattrapage exige un perfect |
 | **Purge** | une question au hasard sort du Pool Échecs de la cible | remet à zéro le compteur de réussites d'une question au hasard de son Pool Échecs |
-| **Répit** | prochaine attente ÷2 | prochaine attente ×2 |
+| **Répit** | attente en cours ÷2 | attente en cours ×2 |
 
 Chronomancie porte sur **toute la tentative**, pas sur une seule question.
 
@@ -208,8 +208,9 @@ Trois lieux d'affichage :
 
 - **L'écran d'attente** porte le récapitulatif de ce qui attend la prochaine
   tentative — effets actifs, positifs et négatifs, chacun avec le nom de son
-  lanceur — ainsi que ce qui frappe l'attente elle-même. Comme tous les effets
-  s'ancrent sur la tentative suivante, le joueur a tout lu avant de reprendre.
+  lanceur au survol — ainsi que ce qui frappe l'attente elle-même : Répit,
+  Indulgence et Purge agissent dès le lancer, les autres attendent la tentative
+  suivante. Le joueur a tout lu avant de reprendre.
 - **La page Sorts** porte le journal complet, en **deux listes horodatées** : ce que
   le joueur a lancé, sur qui — ou sur personne quand le pool était vide — et ce
   qu'il a reçu, de qui. C'est là que le lanceur lit que son sort a touché
@@ -218,6 +219,45 @@ Trois lieux d'affichage :
 - **L'ascension** affiche une **icône par effet actif**, pendant les questions
   concernées. Un joueur dont le timer démarre à 30 s trois jours après avoir lu
   l'avertissement doit pouvoir comprendre pourquoi plutôt que de croire à un bug.
+
+### L'infobulle d'un sort
+
+Partout où un effet se montre — médaillon des rubans en ascension, sort écrit en
+toutes lettres sur l'attente et le rattrapage — son survol ouvre une infobulle.
+Elle dit, dans l'ordre :
+
+- le **médaillon** du sort dans la face de l'effet, son **nom**, sa **face** et
+  son **lanceur** ;
+- la **définition** de la face (le texte du catalogue) ;
+- la **valeur réelle** que l'effet change : « Temps de réponse : 1 min → 2 min ».
+  La valeur de départ est celle de l'étage, celle d'arrivée les règles jouées —
+  **tous les effets cumulés**, pas la part de celui-ci. Deux Chronomancies
+  montrent donc la même ligne : c'est le timer que le joueur a vraiment. Rien à
+  chiffrer pour un effet qui n'agit pas encore, ni pour Purge ;
+- **jusqu'à quand** il agit, ancré sur ce que le joueur peut compter plutôt que
+  sur une date qui n'existe pas :
+
+| Durée de vie | Sorts | Ce que dit l'infobulle |
+|---|---|---|
+| la tentative | Vitalité, Chronomancie | « Jusqu'à ta dernière vie perdue (encore N ♥) » ; à zéro vie, « Jusqu'à la fin de ton rattrapage » ; en attente d'ancrage, « S'active à ta prochaine tentative » |
+| l'attente | Répit | « Jusqu'à la fin de ton attente (HH:MM) » |
+| le rattrapage | Indulgence | « Jusqu'à la fin de ton prochain rattrapage » |
+| l'instant | Purge | « Effet immédiat, déjà appliqué » |
+
+Un sort lié à l'attente agit dès le lancer : il n'est jamais « à venir ».
+
+Sur le parchemin, le sort s'écrit comme un mot de la phrase, **souligné en
+pointillés** et suivi de son médaillon : le pointillé annonce qu'un survol en dit
+plus. Le nom du lanceur ne tient pas dans la phrase ; il se lit dans l'infobulle,
+et par la synthèse vocale dans le texte de l'icône.
+
+Le **résultat d'un coffre** nomme le sort de la même façon. Un sort en poche n'a
+pas encore de face — elle dépendra de la cible : son infobulle montre son
+médaillon mixte et ses **deux faces**, chacune sous son étiquette, sans valeur ni
+durée.
+
+L'infobulle n'existe qu'**au survol, sur desktop**. Le mobile est hors périmètre
+pour l'instant.
 
 ## Question loot
 
@@ -329,6 +369,8 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 - **Écran verdict d'ascension** : l'annonce du coffre. **Écran de coffre** : son
   résultat une fois ouvert.
 - **Ascension** : une icône par effet actif, sur les questions concernées.
+- **Partout où un effet ou un sort se nomme** : une infobulle au survol, voir
+  [L'infobulle d'un sort](#linfobulle-dun-sort).
 
 ## Talismans — hors périmètre
 

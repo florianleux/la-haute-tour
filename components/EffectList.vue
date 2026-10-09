@@ -9,9 +9,9 @@
 </template>
 
 <script setup lang="ts">
-// Une rangée d'effets, badge par badge. Écrite une fois : l'attente récapitule
-// ce qui vient, l'ascension montre ce qui court, et les deux se ressemblent
-// parce que c'est le même état. Voir specs/bonus.md#écrans.
+// Une rangée d'effets, badge par badge, pour la vue de repli au thème sombre de
+// pages/index.vue. Les écrans de parchemin écrivent le sort en toutes lettres,
+// voir components/SpellMention.vue. Voir specs/bonus.md#écrans.
 import type { EffectView } from '~~/server/utils/effects'
 
 defineProps<{ effects: EffectView[] }>()

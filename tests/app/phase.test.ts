@@ -185,7 +185,7 @@ describe('une question tourne', () => {
     it('la signale quand un Répit attend sur l attente en cours', () => {
       const built = state({
         phase: 'cooldown',
-        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending', stake: null }],
+        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'wait', stake: null }],
       })
 
       expect(gameScreen(built).shortenedWait).toBe(true)
@@ -194,7 +194,7 @@ describe('une question tourne', () => {
     it('ne la signale pas sans Répit', () => {
       const built = state({
         phase: 'cooldown',
-        effects: [{ spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', stake: null }],
+        effects: [{ spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'attempt', stake: null }],
       })
 
       expect(gameScreen(built).shortenedWait).toBe(false)
@@ -203,7 +203,7 @@ describe('une question tourne', () => {
     it('ne la signale pas hors attente : il n y a plus rien à écourter', () => {
       const built = state({
         phase: 'ascent',
-        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending', stake: null }],
+        effects: [{ spell: 'RESPITE', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'wait', stake: null }],
       })
 
       expect(gameScreen(built).shortenedWait).toBe(false)

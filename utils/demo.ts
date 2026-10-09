@@ -1,6 +1,7 @@
-import { SPELL_FACES, SPELL_IDS } from '~~/shared/utils/spells'
+import { SPELL_FACES, SPELL_IDS, isWaitBound } from '~~/shared/utils/spells'
 import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 import type { EffectStake, EffectView } from '~~/server/utils/effects'
+import type { SpellLifetime } from '~~/server/utils/spellbook'
 import type { ChestView } from '~~/server/utils/game'
 
 // Les faux états des pages de test (pages/test/*), écrits une fois.
@@ -34,17 +35,31 @@ const DEMO_STAKES: Partial<Record<SpellId, Record<SpellFace, EffectStake>>> = {
   },
 }
 
+/**
+ * Ce que le grimoire dit de la durée des sorts qui ne tiennent pas toute la
+ * tentative — le grimoire vit côté serveur, la page de test ne le lit pas. Un
+ * sort absent tient la tentative. Voir server/utils/spellbook.ts.
+ */
+const DEMO_LIFETIMES: Partial<Record<SpellId, SpellLifetime>> = {
+  RESPITE: 'wait',
+  INDULGENCE: 'recovery',
+  PURGE: 'instant',
+}
+
 /** Un effet tiré au hasard ; la face aussi, sauf si la page la fixe. */
 export function randomEffect(state: EffectView['state'], face: SpellFace = pick(SPELL_FACES)): EffectView {
-  const spell = pick(SPELL_IDS)
+  // Un sort lié à l'attente ne s'ancre jamais : « active », il n'existe pas.
+  const spell = pick(state === 'active' ? SPELL_IDS.filter(id => !isWaitBound(id)) : SPELL_IDS)
 
   return {
     spell,
     face,
     casterName: pick(CASTER_NAMES),
     state,
-    // Comme le serveur : rien à chiffrer pour un effet qui n'agit pas encore.
-    stake: state === 'active' ? DEMO_STAKES[spell]?.[face] ?? null : null,
+    lifetime: DEMO_LIFETIMES[spell] ?? 'attempt',
+    // Comme le serveur : rien à chiffrer pour un effet qui n'agit pas encore —
+    // un sort lié à l'attente agit dès le lancer. Voir server/utils/game.ts#stakeOf.
+    stake: state === 'active' || isWaitBound(spell) ? DEMO_STAKES[spell]?.[face] ?? null : null,
   }
 }
 

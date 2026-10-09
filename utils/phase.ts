@@ -141,9 +141,10 @@ export function gameScreen(state: GameState): GameScreen {
     recovery: state.recovery && recoveryLine(state.recovery),
     phase: state.phase,
     chest,
-    // Deux lectures du même champ, parce que tous les effets s'ancrent sur la
-    // tentative suivante : ce qui attend se lit pendant l'attente, ce qui court
-    // s'affiche pendant l'ascension. Voir specs/bonus.md#écrans.
+    // Deux lectures du même champ. « pending » veut dire non ancré : un effet qui
+    // attend la tentative suivante, ou un sort lié à l'attente qui agit déjà sur
+    // celle-ci — les deux se lisent pendant l'attente. Ce qui court sur la
+    // tentative s'affiche pendant l'ascension. Voir specs/bonus.md#écrans.
     pendingEffects: state.effects.filter(
       (effect) => effect.state === "pending",
     ),

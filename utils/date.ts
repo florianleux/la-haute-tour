@@ -26,11 +26,11 @@ export function formatDayTime(iso: string): string {
 }
 
 /** Des secondes en heures, minutes et secondes : la découpe que les durées partagent. */
-function splitSeconds(seconds: number): { hours: number, minutes: number, secs: number } {
+function splitSeconds(totalSeconds: number): { hours: number, minutes: number, secs: number } {
   return {
-    hours: Math.floor(seconds / 3600),
-    minutes: Math.floor((seconds % 3600) / 60),
-    secs: seconds % 60,
+    hours: Math.floor(totalSeconds / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    secs: totalSeconds % 60,
   }
 }
 

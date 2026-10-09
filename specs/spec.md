@@ -91,9 +91,10 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Équipe** | `team` | L'une des deux appartenances, assignée par l'admin. Elle ne sert qu'à dériver allié ou ennemi au moment d'un lancer. Facultative : l'admin n'en a pas. Voir [`equipes.md`](./equipes.md). |
 | **Magie blanche** | `boon` | La face positive d'un sort, appliquée sur soi ou un allié. |
 | **Magie noire** | `curse` | La face négative, appliquée sur un ennemi. Miroir systématique de la face blanche. |
-| **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non. |
+| **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non — sauf un sort lié à l'attente (Répit, Indulgence, Purge), qui agit dès le lancer et meurt avec l'attente visée. |
 | **Effet porté** | `isBorneBy` | Un effet qu'un joueur subit encore : en attente de sa prochaine tentative, courant sur celle en cours, ou visant l'attente où il se tient. Ce que son écran montre, et ce que le tirage compte. |
 | **Règles jouées** | `playedRules` | Les règles de l'étage telles que le joueur les subit : celles de l'étage, modulées par tous les effets qu'il porte et qui agissent déjà, cumul compris. |
+| **Durée de vie** | `lifetime` | Jusqu'à quand un effet agit, une fois qu'il agit : toute la tentative (Vitalité, Chronomancie), l'attente où il est parti (Répit), le rattrapage qui la clôt (Indulgence), ou l'instant du lancer (Purge). Propre au sort. Voir [`bonus.md`](./bonus.md#ancrage-et-durée-de-vie). |
 | **Enjeu** | `stake` | Ce qu'un effet change, en chiffres : la règle que sa face touche, de la valeur de l'étage à celle des règles jouées. Chiffré par le serveur, montré dans l'infobulle du sort ; aucun pour un effet qui n'agit pas encore. |
 | **Plafond d'effets négatifs** | `maxCurses` | Combien de magies noires un joueur porte au plus. Au-delà il sort du tirage des ennemis, silencieusement. Aucun plafond en face pour les positives. |
 | **Perfect exigé** | `perfectRequired` | Ce que l'Indulgence noire fait du rattrapage : autant de bonnes réponses que de questions tirées. Booléen, donc idempotent — deux noires valent une. Il ne remplace pas le seuil, il le porte à ce nombre. |
@@ -101,7 +102,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Face** | `face` | Laquelle des deux magies un effet porte : blanche (`boon`) sur soi ou un allié, noire (`curse`) sur un ennemi. Gravée au lancer, jamais redéduite de la cible. |
 | **Ancrage** | `anchor` | Le moment où un effet en attente se fixe sur une tentative — celle qui s'ouvre. Il vaut alors le début de cette tentative, et meurt quand elle finit. |
 | **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable en attente seulement. |
-| **Grimoire** | `spellbook` | Le module qui possède ce que fait chaque sort : sa modulation des règles et son action instantanée. Un sort = une entrée. Voir [`server/utils/spellbook.ts`](../server/utils/spellbook.ts). |
+| **Grimoire** | `spellbook` | Le module qui possède ce que fait chaque sort : sa modulation des règles, son action instantanée, sa durée de vie et la règle qu'il chiffre. Un sort = une entrée. Voir [`server/utils/spellbook.ts`](../server/utils/spellbook.ts). |
 | **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 50e question résolue de l'étage ouvre un coffre si elle est juste. |
 | **Coffre** | `chest` | Ce qui s'ouvre au verdict d'une question loot réussie. Donne un sort, ou un Mimic. |
 | **Mimic** | `mimic` | Le coffre piégé : aucun objet, et toutes les vies de la tentative retirées d'un coup. |

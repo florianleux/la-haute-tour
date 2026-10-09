@@ -34,7 +34,7 @@ const SPELL_IMAGE_SLUGS: Partial<Record<SpellId, string>> = {
   PURGE: 'purge',
 }
 
-type SpellImageVariant = SpellFace | 'mixed'
+export type SpellImageVariant = SpellFace | 'mixed'
 
 const SPELL_IMAGE_SUFFIXES: Record<SpellImageVariant, string> = {
   boon: 'good',
@@ -102,6 +102,19 @@ export function spellEffects(spell: SpellId): SpellEffectLabels {
   return SPELL_EFFECTS[spell]
 }
 
+/**
+ * Ce dont une infobulle ou une mention parle : un effet posé sur le joueur, ou
+ * un sort en poche — le résultat d'un coffre, qui n'a pas encore de face. Un
+ * seul champ pour que le sort et l'effet ne puissent pas se contredire.
+ */
+export type SpellSubject = EffectView | SpellId
+
+export function splitSubject(subject: SpellSubject): { spell: SpellId, effect: EffectView | null } {
+  return typeof subject === 'string'
+    ? { spell: subject, effect: null }
+    : { spell: subject.spell, effect: subject }
+}
+
 /** Ce qu'un sort a changé, en chiffres : l'avant de l'étage, l'après joué. */
 export interface SpellStake {
   label: string
@@ -134,25 +147,29 @@ export function spellStake(stake: EffectStake): SpellStake {
 /**
  * Jusqu'à quand l'effet agit, ancré sur ce que le joueur peut compter : ses
  * vies, l'heure de fin de son attente. Une tentative n'a pas de date de fin —
- * elle finit à la dernière vie perdue, alors on dit combien il en reste.
+ * elle finit à la dernière vie perdue, alors on dit combien il en reste ; à
+ * zéro vie elle court encore, jusqu'au bout du rattrapage.
+ *
+ * Seul un effet qui tient la tentative attend celle-ci : les autres agissent dès
+ * le lancer, sur l'attente où le joueur se tient, et ne sont jamais « à venir ».
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
 export function spellLifetime(effect: EffectView, state: GameState): string {
-  if (effect.state === 'pending') {
-    return 'S\'active à ta prochaine tentative'
-  }
-
-  switch (effect.spell) {
-    case 'VITALITY':
-    case 'CHRONOMANCY':
-      return `Jusqu'à ta dernière vie perdue (encore ${state.lives} ♥)`
-    case 'RESPITE':
+  switch (effect.lifetime) {
+    case 'attempt':
+      if (effect.state === 'pending') {
+        return 'S\'active à ta prochaine tentative'
+      }
+      return state.lives > 0
+        ? `Jusqu'à ta dernière vie perdue (encore ${state.lives} ♥)`
+        : 'Jusqu\'à la fin de ton rattrapage'
+    case 'wait':
       return state.cooldownUntil
         ? `Jusqu'à la fin de ton attente (${formatTime(state.cooldownUntil)})`
         : 'Jusqu\'à la fin de ton attente'
-    case 'INDULGENCE':
+    case 'recovery':
       return 'Jusqu\'à la fin de ton prochain rattrapage'
-    case 'PURGE':
+    case 'instant':
       return 'Effet immédiat, déjà appliqué'
   }
 }

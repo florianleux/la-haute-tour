@@ -74,7 +74,7 @@ describe('lancer sur un allié', () => {
     await cast('VITALITY')
 
     expect(await effectsOn(samsagace)).toEqual([
-      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending' },
+      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'attempt' },
     ])
     expect(await effectsOn(caster)).toEqual([])
   })
@@ -101,7 +101,7 @@ describe('lancer sur un allié', () => {
 
     const state = await readGameState(db, await loadPlayer(db, waiting.id), NOW)
     expect(state.effects).toMatchObject([
-      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending' },
+      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'attempt' },
     ])
   })
 

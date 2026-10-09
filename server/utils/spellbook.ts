@@ -8,26 +8,38 @@ import { SPELL_IDS } from '../../shared/utils/spells'
 import type { SpellEffect, SpellFace, SpellId } from '../../shared/utils/spells'
 
 /**
+ * Les règles qu'un sort peut changer de façon visible, et que l'infobulle d'un
+ * effet chiffre. Dérivées des règles elles-mêmes : un nom qui n'en est pas une
+ * ne compile pas. Voir `stakeOf` dans server/utils/game.ts.
+ */
+export type StakeRule = Extract<keyof FloorRules, 'lives' | 'ascentTimerMs' | 'cooldownMs' | 'recoveryQuestions' | 'recoverySuccessesToResume'>
+
+/**
+ * Jusqu'à quand un effet agit, une fois qu'il agit : toute la tentative, l'attente
+ * où il est parti, le rattrapage qui la clôt, ou l'instant du lancer.
+ * Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ */
+export type SpellLifetime = 'attempt' | 'wait' | 'recovery' | 'instant'
+
+/**
  * Le grimoire : ce que fait chaque sort, en un seul endroit.
  *
  * Un sort a deux faces d'action : il **module les règles** de la tentative où il
- * s'ancre (Vitalité change les vies, Chronomancie les timers, Répit l'attente,
- * Indulgence le tirage de rattrapage), et il peut **agir à l'instant** du lancer
+ * s'ancre, ou de l'attente qu'il vise (Vitalité change les vies, Chronomancie
+ * les timers, Répit l'attente en cours, Indulgence le tirage de rattrapage), et il peut **agir à l'instant** du lancer
  * (Purge vide une ligne du Pool Échecs, Répit recalcule l'échéance). Le grimoire
  * possède les deux ; le reste du système dispatch par identifiant de sort.
  *
  * Ajouter un sort au catalogue, c'est ajouter une entrée ci-dessous — et rien
  * d'autre. Le déclencheur « attente ou tentative » est déjà un catalogue
- * (`WAIT_BOUND_SPELL_IDS` dans `shared/utils/spells.ts`) ; la modulation et
- * l'action instantanée le sont ici. Voir ADR 0004 et `specs/bonus.md#catalogue`.
+ * (`WAIT_BOUND_SPELL_IDS` dans `shared/utils/spells.ts`) ; la modulation,
+ * l'action instantanée, la durée de vie et la règle que l'infobulle chiffre le
+ * sont ici. Voir ADR 0004 et `specs/bonus.md#catalogue`.
  */
-/**
- * Les règles qu'un sort peut changer de façon visible, et que l'infobulle d'un
- * effet chiffre. Voir `stakeOf` dans server/utils/game.ts.
- */
-export type StakeRule = 'lives' | 'ascentTimerMs' | 'cooldownMs' | 'recoveryQuestions' | 'recoverySuccessesToResume'
-
 interface SpellEntry {
+  /** Jusqu'à quand l'effet agit, ce que son infobulle dit au joueur. */
+  lifetime: SpellLifetime
+
   /**
    * La règle que chaque face change, celle que le joueur voit bouger. Écrite à
    * côté de `modulateRules` pour qu'un sort ne se décrive qu'à un endroit.
@@ -52,6 +64,7 @@ interface SpellEntry {
 
 export const SPELLS: Record<SpellId, SpellEntry> = {
   VITALITY: {
+    lifetime: 'attempt',
     stakes: { boon: 'lives', curse: 'lives' },
     // Additive : le mode de cumul est propre à chaque sort. Le plancher n'est
     // pas la règle — c'est la limite d'effets négatifs qui garantit qu'il reste
@@ -66,6 +79,7 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   RESPITE: {
+    lifetime: 'wait',
     stakes: { boon: 'cooldownMs', curse: 'cooldownMs' },
     // Multiplicatif : diviser plutôt que soustraire est ce qui empêche une
     // attente d'atteindre zéro, quel que soit l'empilement. Le blanc raccourcit
@@ -89,6 +103,7 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   CHRONOMANCY: {
+    lifetime: 'attempt',
     stakes: { boon: 'ascentTimerMs', curse: 'ascentTimerMs' },
     // Toute la tentative, ascension et rattrapage : Chronomancie ne porte pas
     // sur une question mais sur celles qu'ouvre la tentative où elle s'ancre.
@@ -105,6 +120,7 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   INDULGENCE: {
+    lifetime: 'recovery',
     // Asymétrique comme sa modulation : la blanche rallonge le tirage, la noire
     // relève le nombre de bonnes réponses exigées.
     stakes: { boon: 'recoveryQuestions', curse: 'recoverySuccessesToResume' },
@@ -136,6 +152,7 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   PURGE: {
+    lifetime: 'instant',
     // Purge ne module rien : elle mord le Pool Échecs à l'instant du lancer. Le
     // pool existe quelle que soit la phase de la cible, donc elle agit même sur
     // qui n'attend pas. Sa face décide de ce qu'elle y fait : la blanche en sort

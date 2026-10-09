@@ -43,7 +43,7 @@
          à droite par la corde nouée sur le piquet gauche. Elle porte le décompte
          pendant l'attente : c'est le seul chiffre que le joueur vient chercher,
          et le drapeau est ce qu'on lit en premier. Hors attente il n'y a plus
-         rien à décompter, la bannière reprend donc le nom de la phase.
+         rien à décompter : la bannière dit que l'attente est finie.
          `tabular-nums` comme le chrono de l'ascension, sinon le cadrage tremble
          à chaque seconde ; pas d'`uppercase` sur le décompte, qui rendrait
          « 4m 12s » en « 4M 12S ». -->
@@ -51,7 +51,7 @@
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
       :class="state.phase === 'cooldown' ? 'text-[5.5cqw] tabular-nums' : 'text-[5cqw] uppercase'"
     >
-      {{ state.phase === 'cooldown' ? (waitRemaining || 'Attente') : 'Rattrapage' }}
+      {{ state.phase === 'cooldown' ? (waitRemaining || 'Attente') : 'Attente terminée' }}
     </h1>
 
     <!-- Le panneau de parchemin porte tout ce que l'écran a à dire : décompte,
@@ -77,8 +77,11 @@
       <p v-if="state.phase === 'cooldown'">
         Tu as perdu ta dernière vie.
       </p>
-      <p v-else>
-        Ton attente est terminée. Tu peux lancer ton rattrapage.
+      <p
+        v-else
+        class="text-[5.2cqw]"
+      >
+        Tu peux lancer ton rattrapage.
       </p>
 
       <ParchmentNote
@@ -114,7 +117,7 @@
           v-else-if="screen.chest.spell"
           tone="success"
         >
-          Le coffre contenait <strong>{{ spellLabel(screen.chest.spell) }}</strong>.
+          Le coffre contenait <strong><SpellMention :subject="screen.chest.spell" /></strong>.
           Il rejoint ton inventaire.
         </ParchmentNote>
       </template>
@@ -124,25 +127,20 @@
            Voir specs/bonus.md#ancrage-et-durée-de-vie. -->
       <div
         v-if="screen.pendingEffects.length"
-        class="w-full border-t border-amber-900/20 pt-[1.5cqw]"
+        class="mt-[5cqw] w-full"
       >
         <p class="text-[2.3cqw] font-semibold uppercase tracking-wide text-amber-900/70">
-          Ce qui est sur toi
+          Sorts lancés sur toi
         </p>
-        <p class="mt-[0.8cqw] text-[2cqw] italic text-amber-900/60">
-          Ces sorts s'appliquent à ta prochaine tentative et disparaîtront avec
-          elle — sauf le Répit, qui agit sur l'attente en cours.
-        </p>
-        <!-- Le badge nommé plutôt qu'EffectPip, qui sert aux rubans de
-             l'ascension et tait le sort faute de place — le poster en a. Il porte
-             aussi le nom du lanceur en aria-label, que specs/bonus.md exige
-             lisible et qu'un survol seul rendrait inatteignable au doigt. -->
+        <!-- Le sort écrit en toutes lettres plutôt qu'EffectPip, qui sert aux
+             rubans de l'ascension et tait le sort faute de place — le poster en
+             a. -->
         <div class="mt-[1.2cqw] flex flex-wrap justify-center gap-[1cqw]">
-          <EffectBadge
+          <SpellMention
             v-for="(effect, index) in screen.pendingEffects"
             :key="index"
-            :effect="effect"
-            theme="parchment"
+            :subject="effect"
+            class="text-[2.1cqw]"
           />
         </div>
       </div>

@@ -21,11 +21,13 @@
 <script setup lang="ts">
 // Le médaillon d'un effet, face comprise : un seul endroit décide entre le
 // dessin et l'étincelle. Voir utils/spells.ts#spellImage.
-import type { SpellFace, SpellId } from '~~/shared/utils/spells'
+import type { SpellId } from '~~/shared/utils/spells'
+import type { SpellImageVariant } from '~~/utils/spells'
 
 const props = withDefaults(defineProps<{
   spell: SpellId
-  face: SpellFace
+  /** `mixed` pour un sort qui n'a pas encore de face : en poche, pas posé. */
+  face: SpellImageVariant
   /** Vide quand le texte voisin nomme déjà le sort. */
   alt?: string
   fallbackClass?: string

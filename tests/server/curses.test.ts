@@ -63,7 +63,7 @@ describe('magie noire, sur un ennemi', () => {
 
     const fresh = await loadPlayer(db, target.id)
     expect(toEffectViews(await effectsQuery(db, target.id), fresh)).toEqual([
-      { spell: 'VITALITY', face: 'curse', casterName: 'gandalf', state: 'pending' },
+      { spell: 'VITALITY', face: 'curse', casterName: 'gandalf', state: 'pending', lifetime: 'attempt' },
     ])
   })
 
@@ -137,7 +137,7 @@ describe('magie noire, sur un ennemi', () => {
 
     const state = await readGameState(db, await loadPlayer(db, target.id), NOW)
     expect(state.effects).toMatchObject([
-      { spell: 'CHRONOMANCY', face: 'curse', casterName: 'gandalf', state: 'pending' },
+      { spell: 'CHRONOMANCY', face: 'curse', casterName: 'gandalf', state: 'pending', lifetime: 'attempt' },
     ])
   })
 

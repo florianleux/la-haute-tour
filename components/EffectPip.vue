@@ -1,10 +1,10 @@
 <template>
   <!-- Le survol ouvre l'infobulle du sort : le pip seul ne suffit pas à s'en
-       souvenir. Voir specs/bonus.md#catalogue.
+       souvenir. Voir specs/bonus.md#linfobulle-dun-sort.
        Le médaillon blanc dit un bonus, le noir un malus. L'ombre le détache du
        ruban. -->
   <SpellTooltip
-    :effect="effect"
+    :subject="effect"
     class="cursor-pointer transition-transform hover:scale-110"
   >
     <SpellMedallion

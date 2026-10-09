@@ -1,8 +1,9 @@
 <template>
   <!-- Enveloppe l'icône survolée : le survol se branche ici une fois, pas dans
-       chaque icône qui ouvre l'infobulle. -->
+       chaque icône qui ouvre l'infobulle. Ne fait que ça — la mise en page
+       appartient à ce qu'elle enveloppe. -->
   <span
-    class="inline-flex"
+    class="inline-block"
     @mouseenter="anchor = $event.currentTarget as HTMLElement"
     @mouseleave="anchor = null"
   >
@@ -19,21 +20,21 @@
       >
         <div class="flex items-center gap-3">
           <SpellMedallion
-            :spell="effect.spell"
-            :face="effect.face"
+            :spell="spell"
+            :face="effect?.face ?? 'mixed'"
             class="w-[3.75rem] shrink-0 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.4))]"
             fallback-class="border-2 border-amber-900/40 text-xl text-amber-900"
           />
 
           <div class="min-w-0">
             <p class="text-base font-bold">
-              {{ spellLabel(effect.spell) }}
+              {{ spellLabel(spell) }}
             </p>
-            <p class="mt-1 flex flex-wrap gap-1 text-xs">
-              <span
-                class="rounded border px-1.5 py-px font-medium"
-                :class="FACE_TONES[effect.face]"
-              >{{ spellFaceLabel(effect.face) }}</span>
+            <p
+              v-if="effect"
+              class="mt-1 flex flex-wrap gap-1 text-xs"
+            >
+              <span :class="[FACE_TAG_CLASS, FACE_TONES[effect.face]]">{{ spellFaceLabel(effect.face) }}</span>
               <span class="rounded border border-amber-900/30 bg-amber-900/5 px-1.5 py-px">
                 Lancé par {{ effect.casterName }}
               </span>
@@ -41,9 +42,30 @@
           </div>
         </div>
 
-        <p class="mt-3">
-          {{ spellEffects(effect.spell)[effect.face] }}
+        <p
+          v-if="effect"
+          class="mt-3"
+        >
+          {{ spellEffects(spell)[effect.face] }}
         </p>
+        <!-- Un sort en poche n'a pas encore de face : les deux se lisent, celle
+             qu'il prendra dépend de la cible. Voir specs/bonus.md#catégories-de-cible. -->
+        <dl
+          v-else
+          class="mt-3 space-y-2"
+        >
+          <div
+            v-for="face in SPELL_FACES"
+            :key="face"
+          >
+            <dt>
+              <span :class="[FACE_TAG_CLASS, 'text-xs', FACE_TONES[face]]">{{ spellFaceLabel(face) }}</span>
+            </dt>
+            <dd class="mt-1">
+              {{ spellEffects(spell)[face] }}
+            </dd>
+          </div>
+        </dl>
 
         <!-- La valeur réelle, tous effets cumulés. -->
         <p
@@ -54,7 +76,7 @@
         </p>
 
         <p
-          v-if="state"
+          v-if="effect && state"
           class="mt-2 italic text-amber-900/70"
         >
           {{ spellLifetime(effect, state) }}
@@ -67,11 +89,19 @@
 <script setup lang="ts">
 // Ce qu'un effet posé sur le joueur fait, au survol de son icône : le sort, sa
 // définition, la valeur qu'il change pour de vrai et jusqu'à quand. Partagée
-// par le médaillon des rubans et le badge nommé de l'attente — un seul dessin.
+// par EffectPip (rubans), SpellMention (parchemins, coffre) et EffectBadge
+// (thème sombre) — un seul dessin. Voir specs/bonus.md#linfobulle-dun-sort.
+// Sans effet, c'est un sort en poche (le résultat d'un coffre) : son nom et ses
+// deux faces, rien à chiffrer.
 // Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
+import { SPELL_FACES } from '~~/shared/utils/spells'
 import type { EffectView } from '~~/server/utils/effects'
+import type { SpellSubject } from '~~/utils/spells'
 
-const props = defineProps<{ effect: EffectView }>()
+const props = defineProps<{ subject: SpellSubject }>()
+
+const spell = computed(() => splitSubject(props.subject).spell)
+const effect = computed(() => splitSubject(props.subject).effect)
 
 // Offert par la page : les vies et l'échéance de l'attente disent jusqu'à quand
 // l'effet agit.
@@ -79,6 +109,10 @@ const state = useShownGameState()
 
 /** L'icône survolée ; null quand rien ne l'est. */
 const anchor = ref<HTMLElement | null>(null)
+
+// La même étiquette de face, que l'effet en porte une ou que le sort en poche
+// montre les deux.
+const FACE_TAG_CLASS = 'inline-block rounded border px-1.5 py-px font-medium'
 
 const FACE_TONES: Record<EffectView['face'], string> = {
   boon: 'border-sky-500/50 bg-sky-100 text-sky-800',
@@ -89,7 +123,7 @@ const WIDTH = 288
 const GAP = 8
 
 // Chiffrée par le serveur ; rien pour un effet qui n'agit pas encore.
-const stake = computed(() => (props.effect.stake ? spellStake(props.effect.stake) : null))
+const stake = computed(() => (effect.value?.stake ? spellStake(effect.value.stake) : null))
 
 // Du côté où il y a de la place : à gauche d'une icône posée dans la moitié
 // droite de l'écran (les rubans), à droite sinon. Lu au survol, l'icône ne

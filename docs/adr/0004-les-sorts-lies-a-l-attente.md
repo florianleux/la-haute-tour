@@ -36,7 +36,8 @@ lue par `isWaitBound()`.
 
 ## Conséquences
 
-Deux endroits l'interrogent, et deux seulement.
+Deux endroits du jeu l'interrogent, et deux seulement — un troisième, d'écran,
+s'y est ajouté depuis (voir plus bas).
 
 `actsOnCurrentWait()` borne ces effets à l'attente pendant laquelle ils sont
 partis : passée celle-ci, ils ne sont plus servis. C'est ce qui rend Indulgence
@@ -58,3 +59,19 @@ une autre attente et serait passé à travers la limite de lancers par attente.
 
 Un sort ajouté au catalogue n'a donc qu'une question à se poser : son
 déclencheur est-il l'attente, ou la tentative suivante ? Le reste suit.
+
+## Depuis
+
+L'infobulle d'un sort (voir [`specs/bonus.md`](../../specs/bonus.md#linfobulle-dun-sort))
+a suivi la même règle, et l'a étendue au grimoire :
+
+- `stakeOf()` (`server/utils/game.ts`) interroge `isWaitBound()` pour chiffrer
+  un effet qui n'est pas encore ancré mais agit déjà — le troisième lecteur, le
+  même tri que `playedRules()`.
+- **La durée de vie** d'un effet (`lifetime` : tentative, attente, rattrapage,
+  instant) et **la règle qu'il chiffre** (`stakes`) sont des propriétés de
+  l'entrée du grimoire (`server/utils/spellbook.ts`), pas des branches d'écran.
+  L'écran choisit son texte sur la durée de vie, jamais sur le nom du sort.
+
+Ajouter un sort reste donc ajouter une entrée — le déclencheur dans le catalogue
+partagé, le reste dans le grimoire.

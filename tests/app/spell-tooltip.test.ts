@@ -4,7 +4,7 @@ import type { EffectView } from '../../server/utils/effects'
 import type { GameState } from '../../server/utils/game'
 
 function effect(overrides: Partial<EffectView>): EffectView {
-  return { spell: 'VITALITY', face: 'boon', casterName: 'Bilbo', state: 'active', stake: null, ...overrides }
+  return { spell: 'VITALITY', face: 'boon', casterName: 'Bilbo', state: 'active', lifetime: 'attempt', stake: null, ...overrides }
 }
 
 describe('valeur d un sort', () => {
@@ -26,8 +26,15 @@ describe('durée d un sort', () => {
     expect(spellLifetime(effect({ spell: 'CHRONOMANCY' }), state)).toBe('Jusqu\'à ta dernière vie perdue (encore 2 ♥)')
   })
 
-  it('donne l heure de fin de l attente au Répit', () => {
-    expect(spellLifetime(effect({ spell: 'RESPITE' }), state)).toBe('Jusqu\'à la fin de ton attente (18:42)')
+  it('court jusqu au bout du rattrapage quand les vies sont tombées', () => {
+    expect(spellLifetime(effect({ spell: 'CHRONOMANCY' }), { ...state, lives: 0 })).toBe('Jusqu\'à la fin de ton rattrapage')
+  })
+
+  // Un Répit n'est jamais ancré : il agit sur l'attente où il est parti, et la
+  // base le rend donc « pending » tout du long. Voir server/utils/effects.ts.
+  it('donne l heure de fin de l attente au Répit, qui agit déjà', () => {
+    expect(spellLifetime(effect({ spell: 'RESPITE', lifetime: 'wait', state: 'pending' }), state))
+      .toBe('Jusqu\'à la fin de ton attente (18:42)')
   })
 
   it('dit qu un effet en attente n agit pas encore', () => {

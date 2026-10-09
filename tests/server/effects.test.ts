@@ -49,7 +49,7 @@ describe('lancer et ancrage des effets', () => {
 
     expect(await copies()).toBe(0)
     expect(await readEffects(userId)).toEqual([
-      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending' },
+      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'attempt' },
     ])
   })
 
@@ -127,7 +127,7 @@ describe('lancer et ancrage des effets', () => {
     expect(opened.lives).toBe(rules.lives + 1)
     await db.update(users).set({ attemptStartedAt: NOW, lives: opened.lives }).where(eq(users.id, userId))
     expect(await readEffects(userId)).toEqual([
-      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'active' },
+      { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'active', lifetime: 'attempt' },
     ])
   })
 

@@ -87,7 +87,7 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
   - Affichage par pages de dix, chargées à la demande en faisant défiler.
   - Trié par **dernier échec**, du plus récent au plus ancien par défaut, inversable. Une question ratée à nouveau en rattrapage remonte en tête : ce qui résiste est ce qu'on veut relire.
 - Les **erreurs de la tentative** qui vient de s'achever, chacune avec un bouton de contestation, sauf celles déjà contestées.
-- Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur — et ceux qui frappent l'attente elle-même. Tous les effets s'ancrant sur la tentative suivante, le joueur a tout lu avant de reprendre.
+- Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur au survol — et ceux qui frappent l'attente elle-même (Répit, Indulgence et Purge agissent dès le lancer). Le joueur a tout lu avant de reprendre. Chaque sort s'écrit en toutes lettres et ouvre son infobulle, voir [`bonus.md`](./bonus.md#linfobulle-dun-sort).
 - L'accès à la page **Sorts**, par l'icône baguette.
 
 ### `recovery` — rattrapage

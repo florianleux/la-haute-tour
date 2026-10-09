@@ -216,7 +216,7 @@ function playedRules(snapshot: PlayerSnapshot, floor = snapshot.user.currentFloo
   return rulesWithEffects(
     rulesForFloor(floor),
     // Les sorts liés à l'attente sont déjà bornés à celle du joueur : ce module
-    // ne sert que ceux-là. Voir server/utils/effects.ts.
+    // ne sert que ceux-là. Voir server/utils/mechanics.ts#isBorneBy.
     snapshot.effects.filter(effect => effect.state === 'active' || isWaitBound(effect.spell)),
   )
 }
