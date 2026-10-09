@@ -85,21 +85,17 @@
                 <SparkleStar class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]" />
               </div>
               <!-- Le scintillement autour du médaillon, une fois posé. -->
-              <div class="absolute inset-0 drop-shadow-[0_0_4px_#fef3c7]">
-                <SparkleStar
-                  v-for="(spark, index) in SPELL_SPARKS"
-                  :key="index"
-                  class="opacity-0 motion-safe:animate-sparkle"
-                  :style="{ left: spark.left, top: spark.top, width: spark.size, animationDelay: spark.delay }"
-                />
-              </div>
+              <SparkleField
+                :sparks="SPELL_SPARKS"
+                class="drop-shadow-[0_0_4px_#fef3c7]"
+              />
             </div>
 
             <!-- La gerbe, au moment où il retombe à sa place : les étincelles
                  partent du centre dans toutes les directions, une seule fois. -->
             <div class="absolute inset-0 drop-shadow-[0_0_6px_#fde68a]">
               <SparkleStar
-                v-for="(spark, index) in SPELL_BURST"
+                v-for="(spark, index) in SPELL_SPRAY"
                 :key="index"
                 class="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 motion-safe:animate-spark-out"
                 :style="spark"
@@ -108,17 +104,11 @@
           </div>
 
           <!-- Les étincelles, dans le couvercle ouvert et juste au-dessus. -->
-          <div
+          <SparkleField
             v-if="revealed"
-            class="absolute inset-0 drop-shadow-[0_0_3px_#fde68a]"
-          >
-            <SparkleStar
-              v-for="(spark, index) in SPARKS"
-              :key="index"
-              class="opacity-0 motion-safe:animate-sparkle"
-              :style="{ left: spark.left, top: spark.top, width: spark.size, animationDelay: spark.delay }"
-            />
-          </div>
+            :sparks="SPARKS"
+            class="drop-shadow-[0_0_3px_#fde68a]"
+          />
         </div>
 
         <!-- @container à la largeur du panneau de PlayFrame : les tailles de
@@ -241,7 +231,7 @@ const SPELL_SPARKS = [
  * juste avant que le médaillon ne retombe à sa place (vers 1,63 s de
  * `animate-emerge`). Distances en cqw, donc en largeur de médaillon.
  */
-const SPELL_BURST = Array.from({ length: 10 }, (_, index) => {
+const SPELL_SPRAY = Array.from({ length: 10 }, (_, index) => {
   const angle = ((index * 36 + (index % 2) * 14) * Math.PI) / 180
   const distance = index % 2 ? 70 : 100
 
