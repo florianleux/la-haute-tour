@@ -233,3 +233,206 @@
     31.3%, 100% { opacity: 0; transform: scale(0) rotate(135deg); }
   }
 }
+
+/* `inline` : Tailwind recopie la valeur dans chaque utilitaire au lieu de
+   pointer vers une variable posée sur :root — sans ça, --enter-delay serait
+   lu sur :root, où il n'existe pas, et non sur l'élément animé. */
+@theme inline {
+  /* L'arrivée des cadres de jeu, quand on entre dans une phase — pas entre
+     une question et son verdict. Même vocabulaire que le sort du coffre :
+     la chute accélère (ease-in) et s'étire dans le sens du mouvement,
+     l'impact écrase, le rebond s'amortit. Tout reste sous 1 s : le chrono
+     de la question court déjà. Voir components/PlayFrame.vue.
+
+     Les éléments qui partent après l'impact lisent leur délai dans
+     --enter-delay : un `[animation-delay:…]` à côté serait écrasé par le
+     raccourci `animation` des `animate-*` préfixés, émis après lui. */
+
+  /* Le cadre de l'ascension tombe d'en haut et rebondit sur sa base. */
+  --animate-drop-in: drop-in 0.65s linear both;
+
+  @keyframes drop-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-110%) scale(0.92, 1.12);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    6% { opacity: 1; }
+    45% {
+      transform: translateY(0) scale(1.12, 0.86);
+      animation-timing-function: ease-out;
+    }
+    62% {
+      transform: translateY(-4%) scale(0.95, 1.06);
+      animation-timing-function: ease-in-out;
+    }
+    80% {
+      transform: translateY(0) scale(1.03, 0.98);
+      animation-timing-function: ease-in-out;
+    }
+    100% { opacity: 1; transform: none; }
+  }
+
+  /* Le parchemin du rattrapage tombe et se plante sur ses piquets : impact
+     plus lourd que l'ascension, puis il oscille sur sa base avant de se
+     figer (follow-through). Le décor tremble (`jolt`) au même
+     instant, à 33 %. */
+  --animate-plant: plant 0.9s linear both;
+
+  @keyframes plant {
+    0% {
+      opacity: 0;
+      transform: translateY(-120%) scale(0.9, 1.15) rotate(0);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    5% { opacity: 1; }
+    33% {
+      transform: translateY(0) scale(1.1, 0.85) rotate(0);
+      animation-timing-function: ease-out;
+    }
+    45% {
+      transform: translateY(-3%) scale(0.96, 1.05) rotate(0);
+      animation-timing-function: ease-in-out;
+    }
+    56% {
+      transform: translateY(0) scale(1.02, 0.98) rotate(-3deg);
+      animation-timing-function: ease-in-out;
+    }
+    68% {
+      transform: scale(1) rotate(2.2deg);
+      animation-timing-function: ease-in-out;
+    }
+    80% {
+      transform: rotate(-1.2deg);
+      animation-timing-function: ease-in-out;
+    }
+    90% {
+      transform: rotate(0.5deg);
+      animation-timing-function: ease-in-out;
+    }
+    100% { opacity: 1; transform: none; }
+  }
+
+  /* Le médaillon, qui tombe sur le bord du cadre juste après lui
+     (overlapping action) et s'y écrase. */
+  --animate-medallion-drop: medallion-drop 0.5s linear var(--enter-delay, 0s) both;
+
+  @keyframes medallion-drop {
+    0% {
+      opacity: 0;
+      transform: translateY(-150%) scale(0.85, 1.2);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    10% { opacity: 1; }
+    45% {
+      transform: translateY(0) scale(1.25, 0.75);
+      animation-timing-function: ease-out;
+    }
+    65% {
+      transform: translateY(-12%) scale(0.92, 1.1);
+      animation-timing-function: ease-in-out;
+    }
+    82% {
+      transform: translateY(0) scale(1.06, 0.95);
+      animation-timing-function: ease-in-out;
+    }
+    100% { opacity: 1; transform: none; }
+  }
+
+  /* Le bouton du bas de carte, qui tombe avec le cadre mais ne s'arrête pas
+     avec lui (follow-through) : il traîne un peu derrière pendant la chute,
+     continue sa course à l'impact (40 %, calé sur `drop-in` comme sur
+     `plant`), s'écrase, rebondit au-dessus de sa place, puis s'y pose. C'est
+     ce décalage qui le détache du fond de la carte. */
+  --animate-button-bounce: button-bounce 0.75s linear both;
+
+  @keyframes button-bounce {
+    0% {
+      transform: translateY(-20%) scale(0.95, 1.08);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    40% {
+      transform: translateY(0) scale(1, 1);
+      animation-timing-function: ease-out;
+    }
+    48% {
+      transform: translateY(25%) scale(1.15, 0.85);
+      animation-timing-function: ease-out;
+    }
+    64% {
+      transform: translateY(-30%) scale(0.92, 1.1);
+      animation-timing-function: ease-in;
+    }
+    78% {
+      transform: translateY(8%) scale(1.06, 0.95);
+      animation-timing-function: ease-in-out;
+    }
+    90% {
+      transform: translateY(-5%) scale(0.98, 1.02);
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: none; }
+  }
+
+  /* Un ruban de l'ascension (desktop) qui sort de derrière le cadre, dépasse
+     sa place puis claque comme un drapeau. --dir : 1 pour ceux de gauche
+     (cachés à droite, sous le cadre), -1 pour ceux de droite. Les
+     pourcentages comptent en largeur de card : un ruban en fait 18 au plus. */
+  --animate-ribbon-out: ribbon-out 0.5s linear var(--enter-delay, 0s) both;
+
+  @keyframes ribbon-out {
+    0% {
+      transform: translateX(calc(var(--dir) * 18%)) skewY(0);
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    45% {
+      transform: translateX(calc(var(--dir) * -1.5%)) skewY(calc(var(--dir) * -4deg));
+      animation-timing-function: ease-in-out;
+    }
+    65% {
+      transform: translateX(calc(var(--dir) * 0.5%)) skewY(calc(var(--dir) * 3deg));
+      animation-timing-function: ease-in-out;
+    }
+    82% {
+      transform: translateX(0) skewY(calc(var(--dir) * -1.5deg));
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: none; }
+  }
+
+  /* Un ruban de l'ascension (mobile) qui se déroule sous le cadre, depuis son
+     bord bas : il s'allonge trop, se rétracte, et son bout balance. */
+  --animate-ribbon-unroll: ribbon-unroll 0.5s linear var(--enter-delay, 0s) both;
+
+  @keyframes ribbon-unroll {
+    0% {
+      transform: scaleY(0) skewX(0);
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    50% {
+      transform: scaleY(1.08) skewX(-3deg);
+      animation-timing-function: ease-in-out;
+    }
+    70% {
+      transform: scaleY(0.96) skewX(2deg);
+      animation-timing-function: ease-in-out;
+    }
+    85% {
+      transform: scaleY(1.02) skewX(-1deg);
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: none; }
+  }
+
+  /* Le décor qui encaisse l'impact du parchemin. Légèrement agrandi pendant
+     la secousse : sans ça, ses bords décollent de l'écran. */
+  --animate-jolt: jolt 0.25s linear var(--enter-delay, 0s) both;
+
+  @keyframes jolt {
+    0%, 100% { transform: none; }
+    20% { transform: translate(-6px, 4px) scale(1.03); }
+    40% { transform: translate(5px, -3px) scale(1.03); }
+    60% { transform: translate(-3px, 2px) scale(1.02); }
+    80% { transform: translate(2px, -1px) scale(1.01); }
+  }
+}

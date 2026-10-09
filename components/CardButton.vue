@@ -2,9 +2,13 @@
   <!-- À cheval sur le bord bas du cadre. Le positionnement (translate de calage)
        vit sur ce conteneur ; le hover (scale) vit sur le bouton lui-même, pour
        ne pas composer les deux transforms — sinon le texte dérive légèrement
-       de son repère au survol. -->
+       de son repère au survol. L'entrée (scale) y vit aussi : le calage passe
+       par la propriété `translate`, l'animation par `transform`, les deux se
+       composent sans se gêner. Elle ne joue que dans un cadre qui arrive
+       (`data-arriving`, voir PlayFrame) : le bouton tombe avec lui et rebondit
+       à l'impact. -->
   <div
-    class="absolute z-20 -translate-x-1/2 translate-y-1/2"
+    class="absolute z-20 -translate-x-1/2 translate-y-1/2 group-data-arriving:motion-safe:animate-button-bounce"
     :class="[ANCHORS[anchor].position, ANCHORS[anchor].width]"
     :style="{ aspectRatio: face === 'plank' ? '328 / 95' : '634 / 175' }"
   >

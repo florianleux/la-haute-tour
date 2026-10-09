@@ -4,6 +4,7 @@
   <div
     class="fixed inset-0 z-0 bg-cover bg-center"
     :class="SKINS[skin].background"
+    :data-arriving="arriving || undefined"
   />
 
   <div
@@ -13,20 +14,33 @@
     <!-- container-type (@container) fait de la largeur du cadre l'unité `cqw`
          de tout ce qu'il porte : le texte rétrécit avec l'illustration au lieu
          de rester en px et de se détacher de ses repères. bg-contain le laisse
-         rétrécir entier. `group` sert au décalage clavier du panneau ci-dessous. -->
+         rétrécir entier. `group` sert au décalage clavier du panneau ci-dessous,
+         et `data-arriving` à l'entrée des enfants, rubans compris : ils lisent
+         l'attribut (`group-data-arriving:`) sans prop à faire descendre. -->
     <div
-      class="group relative mx-auto w-full @container bg-contain bg-center bg-no-repeat"
-      :class="SKINS[skin].frame"
+      class="group relative mx-auto w-full origin-bottom @container"
+      :class="[SKINS[skin].frame, SKINS[skin].entrance]"
+      :data-arriving="arriving || undefined"
     >
       <!-- Les rubans, quand l'illustration en dessine (l'ascension oui, le
-           parchemin du rattrapage non). -->
+           parchemin du rattrapage non). Sous l'illustration : ils sortent de
+           derrière elle. -->
       <slot name="ribbons" />
+
+      <!-- L'illustration, rognée à son cadre seul (`art`) : les rubans qu'elle
+           dessine aussi sont redessinés, mobiles, par StatsRibbons — sans le
+           rognage, ils resteraient visibles à leur place pendant qu'ils
+           sortent. -->
+      <div
+        class="pointer-events-none absolute inset-0 bg-contain bg-center bg-no-repeat"
+        :class="SKINS[skin].art"
+      />
 
       <!-- Le médaillon, à cheval sur le bord haut : chrono pendant la question,
            juste/faux sur le verdict. Même rôle des deux côtés, deux dessins. -->
       <div
         v-if="$slots.medallion"
-        class="absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2 @container bg-contain bg-center bg-no-repeat"
+        class="absolute left-1/2 z-20 origin-bottom -translate-x-1/2 -translate-y-1/2 @container bg-contain bg-center bg-no-repeat group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
         :class="SKINS[skin].medallion"
         :style="{ aspectRatio: SKINS[skin].medallionRatio }"
       >
@@ -65,6 +79,20 @@
   </div>
 </template>
 
+<script lang="ts">
+// L'habillage du dernier cadre démonté, le temps du patch en cours. Chaque card
+// monte son propre PlayFrame : passer de la question au verdict démonte l'un
+// (onBeforeUnmount, synchrone) et monte l'autre dans le même patch. Un cadre
+// qui monte juste après un cadre du même habillage continue la scène ; sinon,
+// il arrive — chargement de page, retour d'attente (WaitCard n'a pas de
+// cadre, le minuteur a vidé la variable), passage au rattrapage et retour.
+// Suppose que l'ancien cadre se démonte et le nouveau se monte dans le même
+// patch synchrone : une card asynchrone, un <Suspense> ou une <Transition
+// mode="out-in"> entre les deux ferait rejouer l'entrée à chaque écran.
+// Côté serveur, rien ne se démonte : le premier rendu arrive des deux côtés.
+let leaving: string | null = null
+</script>
+
 <script setup lang="ts">
 // Le cadre de jeu : décor, illustration, médaillon, panneau de texte et
 // emplacement du bouton. Partagé par l'ascension (QuestionCard, ResultCard) et
@@ -83,12 +111,16 @@
 type PlaySkin = 'ascent' | 'recovery'
 
 interface Skin {
-  /** Le décor plein écran, derrière le cadre. */
+  /** Le décor plein écran, derrière le cadre, et ce qu'il encaisse à l'arrivée. */
   background: string
   /** Gouttières et calage vertical du cadre dans la page. */
   wrapper: string
-  /** L'illustration du cadre et son format, mobile puis `sm:`. */
+  /** Le format du cadre, mobile puis `sm:`. */
   frame: string
+  /** L'illustration du cadre, rognée à lui seul quand elle dessine des rubans. */
+  art: string
+  /** L'arrivée du cadre (voir `leaving`), sur l'attribut `data-arriving`. */
+  entrance: string
   /** Position, taille et dessin du médaillon. */
   medallion: string
   medallionRatio: string
@@ -108,7 +140,12 @@ const SKINS: Record<PlaySkin, Skin> = {
   ascent: {
     background: 'bg-[url(/images/play-bg.webp)]',
     wrapper: '-mt-16 max-w-4xl py-8 sm:-mt-40 sm:py-16',
-    frame: 'aspect-428/855 bg-[url(/images/mobile-play-card.webp)] sm:aspect-1980/775 sm:bg-[url(/images/game-card.webp)]',
+    frame: 'aspect-428/855 sm:aspect-1980/775',
+    // Le cadre seul : en mobile, tout ce qui est au-dessus du bas du cadre
+    // (609 px sur 855) ; en desktop, entre ses deux montants (353 et 1627 px
+    // sur 1980). Mesuré sur les images.
+    art: 'bg-[url(/images/mobile-play-card.webp)] [clip-path:inset(0_0_28.7%_0)] sm:bg-[url(/images/game-card.webp)] sm:[clip-path:inset(0_17.8%)]',
+    entrance: 'data-arriving:motion-safe:animate-drop-in',
     medallion: 'top-[7.5%] w-[45.9%] bg-[url(/images/game-timer.webp)] sm:top-[-6.8%] sm:w-[22.95%]',
     medallionRatio: '616 / 357',
     medallionInk: 'top-[66%] text-[12cqw]',
@@ -124,7 +161,8 @@ const SKINS: Record<PlaySkin, Skin> = {
   // l'égalaient), réglé à l'œil comme la position : un peu au-dessus du bord
   // haut du parchemin.
   recovery: {
-    background: 'bg-[url(/images/blurry-cooldown-bg.webp)]',
+    // Il tremble à l'impact du parchemin, 33 % de `animate-plant`.
+    background: 'bg-[url(/images/blurry-cooldown-bg.webp)] data-arriving:motion-safe:animate-jolt [--enter-delay:0.3s]',
     // Plus étroit que le `max-w-4xl` de l'ascension, et mesuré pour ça : les
     // deux illustrations n'ont pas la même proportion de page utile. Le cadre
     // de la tour laisse 52% de sa largeur au texte, le parchemin 82% — à
@@ -132,7 +170,9 @@ const SKINS: Record<PlaySkin, Skin> = {
     // C'est la page écrite qui doit faire la même taille des deux côtés, pas le
     // fichier image, d'où une valeur qui ne tombe pas sur un palier Tailwind.
     wrapper: '-mt-16 max-w-[40rem] py-8 sm:-mt-40 sm:py-16',
-    frame: 'aspect-510/522 bg-[url(/images/recovery-modal-mobile.webp)] sm:aspect-740/501 sm:bg-[url(/images/recovery-modal-desktop.webp)]',
+    frame: 'aspect-510/522 sm:aspect-740/501',
+    art: 'bg-[url(/images/recovery-modal-mobile.webp)] sm:bg-[url(/images/recovery-modal-desktop.webp)]',
+    entrance: 'data-arriving:motion-safe:animate-plant',
     medallion: 'top-[-15.6%] w-[57.9%] bg-[url(/images/recovery-modal-timer.webp)] sm:top-[4.8%] sm:w-[35%]',
     medallionRatio: '346 / 210',
     medallionInk: 'top-[75%] text-[11.5cqw]',
@@ -145,5 +185,14 @@ const SKINS: Record<PlaySkin, Skin> = {
   },
 }
 
-defineProps<{ skin: PlaySkin }>()
+const props = defineProps<{ skin: PlaySkin }>()
+
+const arriving = leaving !== props.skin
+
+onBeforeUnmount(() => {
+  leaving = props.skin
+  setTimeout(() => {
+    leaving = null
+  })
+})
 </script>
