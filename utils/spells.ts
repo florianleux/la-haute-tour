@@ -77,16 +77,16 @@ export interface SpellEffectLabels {
  */
 const SPELL_EFFECTS: Record<SpellId, SpellEffectLabels> = {
   VITALITY: {
-    boon: 'Une vie de plus pour la prochaine tentative.',
-    curse: 'Une vie de moins pour la prochaine tentative.',
+    boon: 'Une vie de plus sur la tentative.',
+    curse: 'Une vie de moins sur la tentative.',
   },
   RESPITE: {
     boon: 'Divise par deux l\'attente en cours, tout de suite.',
     curse: 'Double l\'attente en cours.',
   },
   CHRONOMANCY: {
-    boon: 'Double le temps de réponse sur toute la prochaine tentative.',
-    curse: 'Divise par deux le temps de réponse sur toute la prochaine tentative.',
+    boon: 'Double le temps de réponse sur toute la tentative.',
+    curse: 'Divise par deux le temps de réponse sur toute la tentative.',
   },
   INDULGENCE: {
     boon: 'Deux fois plus de questions tirées au prochain rattrapage.',
@@ -164,9 +164,14 @@ export function spellLifetime(effect: EffectView, state: GameState): string {
         ? `Jusqu'à ta dernière vie perdue (encore ${state.lives} ♥)`
         : 'Jusqu\'à la fin de ton rattrapage'
     case 'wait':
-      return state.cooldownUntil
+      // Porté jusqu'au bout du rattrapage qui suit, alors que l'attente est
+      // échue : une heure de fin au futur serait déjà passée.
+      if (!state.cooldownUntil) {
+        return 'Jusqu\'à la fin de ton attente'
+      }
+      return state.phase === 'cooldown'
         ? `Jusqu'à la fin de ton attente (${formatTime(state.cooldownUntil)})`
-        : 'Jusqu\'à la fin de ton attente'
+        : `Sur ton attente, terminée à ${formatTime(state.cooldownUntil)}`
     case 'recovery':
       return 'Jusqu\'à la fin de ton prochain rattrapage'
     case 'instant':

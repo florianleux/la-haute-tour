@@ -223,7 +223,8 @@ Trois lieux d'affichage :
 ### L'infobulle d'un sort
 
 Partout où un effet se montre — médaillon des rubans en ascension, sort écrit en
-toutes lettres sur l'attente et le rattrapage — son survol ouvre une infobulle.
+toutes lettres sur l'attente — son survol ouvre une infobulle. Le rattrapage ne
+liste pas encore les sorts qui agissent sur lui (issue #55).
 Elle dit, dans l'ordre :
 
 - le **médaillon** du sort dans la face de l'effet, son **nom**, sa **face** et

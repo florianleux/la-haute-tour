@@ -20,7 +20,7 @@ describe('valeur d un sort', () => {
 })
 
 describe('durée d un sort', () => {
-  const state = { lives: 2, cooldownUntil: '2026-09-01T16:42:00.000Z' } as GameState
+  const state = { phase: 'cooldown', lives: 2, cooldownUntil: '2026-09-01T16:42:00.000Z' } as GameState
 
   it('compte les vies qui restent à la tentative', () => {
     expect(spellLifetime(effect({ spell: 'CHRONOMANCY' }), state)).toBe('Jusqu\'à ta dernière vie perdue (encore 2 ♥)')
@@ -35,6 +35,12 @@ describe('durée d un sort', () => {
   it('donne l heure de fin de l attente au Répit, qui agit déjà', () => {
     expect(spellLifetime(effect({ spell: 'RESPITE', lifetime: 'wait', state: 'pending' }), state))
       .toBe('Jusqu\'à la fin de ton attente (18:42)')
+  })
+
+  // Le Répit reste porté jusqu'au bout du rattrapage qui suit l'attente.
+  it('dit l attente terminée une fois qu elle est échue', () => {
+    expect(spellLifetime(effect({ spell: 'RESPITE', lifetime: 'wait', state: 'pending' }), { ...state, phase: 'recovery' }))
+      .toBe('Sur ton attente, terminée à 18:42')
   })
 
   it('dit qu un effet en attente n agit pas encore', () => {
