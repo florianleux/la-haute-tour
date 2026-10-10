@@ -14,7 +14,7 @@
  */
 import { createClient } from '@libsql/client'
 import { createError } from 'h3'
-import { eq } from 'drizzle-orm'
+import { count, eq, getTableName } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../server/db/schema'
@@ -176,15 +176,22 @@ function install(db: Database): void {
 }
 
 const TABLES = [
-  'users', 'questions', 'accepted_answers', 'seen_questions', 'missed_pool', 'reservations',
-  'recovery_questions', 'inventory', 'active_effects', 'achievements', 'attempts', 'deck_floors',
-  'whitelist', 'settings', 'disputes', 'focus_losses', 'question_categories', 'categories',
+  schema.users, schema.questions, schema.acceptedAnswers, schema.seenQuestions, schema.missedPool,
+  schema.reservations, schema.recoveryQuestions, schema.inventory, schema.activeEffects,
+  schema.achievements, schema.attempts, schema.deckFloors, schema.whitelist, schema.settings,
+  schema.disputes, schema.focusLosses, schema.questionCategories, schema.categories,
 ]
 
-async function refreshSizes(): Promise<void> {
+/**
+ * Écrite par le query builder, mais envoyée par le client nu : la mesure ne doit
+ * pas se compter elle-même.
+ */
+async function refreshSizes(db: Database): Promise<void> {
   for (const table of TABLES) {
-    const result = await raw.execute(`select count(*) as n from ${table}`)
-    tableSizes.set(table, Number((result.rows[0] as Record<string, unknown>).n))
+    const { sql, params } = db.select({ n: count() }).from(table).toSQL()
+    const result = await raw.execute({ sql, args: params })
+    // Drizzle ne nomme pas la colonne dans le SQL : elle se lit par sa place.
+    tableSizes.set(getTableName(table), Number(Object.values(result.rows[0] as Record<string, unknown>)[0]))
   }
 }
 
@@ -417,7 +424,7 @@ async function main(): Promise<void> {
 
   const db = await build()
   install(db)
-  await refreshSizes()
+  await refreshSizes(db)
 
   const start = new Date('2026-10-01T08:00:00.000Z')
   const tallies: Tally[] = []
@@ -432,7 +439,7 @@ async function main(): Promise<void> {
     const tally: Tally = { ascent: 0, recovery: 0, cooldowns: 0, chests: 0, casts: 0, days: 0, finished: false }
     tallies.push(tally)
     await playerLoop(db, player.id, tally, seed, start)
-    await refreshSizes()
+    await refreshSizes(db)
     process.stderr.write(
       `  joueur ${index + 1}/${PLAYERS} — ascension ${tally.ascent}, rattrapage ${tally.recovery}, `
       + `attentes ${tally.cooldowns}, jours ${tally.days}${tally.finished ? ', tour finie' : ''}\n`,
