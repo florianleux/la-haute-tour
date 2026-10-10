@@ -93,6 +93,16 @@ export async function wholeDeckSize(db: Database): Promise<number> {
   return rows.reduce((sum, row) => sum + row.total, 0)
 }
 
+function buildFloorSizeShift(db: Database, floor: number, delta: number) {
+  return db
+    .insert(deckFloors)
+    .values({ floor, total: delta })
+    .onConflictDoUpdate({
+      target: deckFloors.floor,
+      set: { total: sql`${deckFloors.total} + ${delta}` },
+    })
+}
+
 /**
  * Le compte d'un étage bouge d'autant. Rendu comme requête plutôt qu'exécuté :
  * l'édition du deck l'écrit dans le même lot que la question elle-même, sinon
@@ -103,16 +113,6 @@ export async function wholeDeckSize(db: Database): Promise<number> {
  */
 export function shiftFloorSize(db: Database, floor: number, delta: number): FloorSizeShift {
   return buildFloorSizeShift(db, floor, delta)
-}
-
-function buildFloorSizeShift(db: Database, floor: number, delta: number) {
-  return db
-    .insert(deckFloors)
-    .values({ floor, total: delta })
-    .onConflictDoUpdate({
-      target: deckFloors.floor,
-      set: { total: sql`${deckFloors.total} + ${delta}` },
-    })
 }
 
 /**
