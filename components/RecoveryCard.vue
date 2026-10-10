@@ -59,11 +59,11 @@
       <!-- Le sort du rattrapage s'annonce sur le verdict de la question qui le
            scelle. Voir specs/ecrans.md#recovery--rattrapage. -->
       <PlayText
-        v-if="screen.recovery?.result"
+        v-if="screen.recovery && screen.recovery.resumes !== null"
         role="notice"
-        :class="screen.recovery.result === 'resumed' ? 'text-emerald-700' : 'text-amber-700'"
+        :class="screen.recovery.resumes ? 'text-emerald-700' : 'text-amber-700'"
       >
-        {{ screen.recovery.result === 'resumed'
+        {{ screen.recovery.resumes
           ? RECOVERY_SUCCESS_MESSAGE
           : RECOVERY_FAILURE_MESSAGE }}
       </PlayText>

@@ -17,7 +17,7 @@ export function usePlayerCooldown(player: Ref<PlayerCard>, now: Ref<number>): Pl
   return {
     inCooldown: computed(() => player.value.phase === 'cooldown'),
     remaining: computed(() =>
-      (player.value.cooldownUntil ? formatCooldown(player.value.cooldownUntil, now.value) : null),
+      (player.value.cooldownUntil ? formatCooldownMinutes(player.value.cooldownUntil, now.value) : null),
     ),
   }
 }

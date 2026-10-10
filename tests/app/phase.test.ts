@@ -85,17 +85,17 @@ describe('écran de jeu', () => {
     const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, required: 1 }
 
     expect(gameScreen(state({ phase: 'recovery', recovery: ongoing, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 0, required: 1, result: null })
+      .toEqual({ position: 2, total: 3, successes: 0, required: 1, resumes: null })
 
     const resumed = { total: 3, played: 1, successes: 1, resumes: true, sealed: true, required: 1 }
 
     expect(gameScreen(state({ phase: 'recovery', recovery: resumed, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 1, required: 1, result: 'resumed' })
+      .toEqual({ position: 2, total: 3, successes: 1, required: 1, resumes: true })
 
     const failed = { total: 3, played: 3, successes: 0, resumes: false, sealed: true, required: 1 }
 
-    expect(gameScreen(state({ phase: 'recovery', recovery: failed, verdict })).recovery?.result)
-      .toBe('cooldown')
+    expect(gameScreen(state({ phase: 'recovery', recovery: failed, verdict })).recovery?.resumes)
+      .toBe(false)
   })
 })
 

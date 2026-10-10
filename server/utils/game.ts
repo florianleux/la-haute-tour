@@ -123,7 +123,7 @@ export interface GameState {
   started: boolean
   question: ServedQuestion | null
   verdict: Verdict | null
-  /** ISO 8601 end of the wait, null outside a wait. */
+  /** ISO 8601 end of the cooldown, null outside a cooldown. */
   cooldownUntil: string | null
   /** Tally of the recovery under way, null outside one. */
   recovery: RecoveryProgress | null
@@ -423,7 +423,7 @@ interface Resolution {
 
 /**
  * Records the outcome of a reservation: the question becomes seen, a failure costs
- * a life and joins the missed pool, and losing the last life starts the wait.
+ * a life and joins the missed pool, and losing the last life starts the cooldown.
  *
  * Returns the rows as it left them: the caller rebuilds the state from those rather
  * than paying a round trip to read back what it just wrote.
@@ -827,7 +827,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
 }
 
 /**
- * A wait that ends on a pool too small to draw a recovery from simply gives the
+ * A cooldown that ends on a pool too small to draw a recovery from simply gives the
  * lives back. Nothing is reserved and no clock starts — the phase follows from the
  * time having passed. See specs/mecanique.md#tentative-attente-et-rattrapage.
  */
@@ -1131,7 +1131,7 @@ async function reserve(
 }
 
 /**
- * The player has no lives left. Either the wait is still running — nothing to do —
+ * The player has no lives left. Either the cooldown is still running — nothing to do —
  * or a recovery starts, continues, or ends here. The recovery stops as soon as
  * the verdict is sealed: quota reached (success) or mathematically impossible
  * (failure). See specs/mecanique.md#déroulement-du-rattrapage.
@@ -1211,7 +1211,7 @@ async function advanceRecovery(
 }
 
 /**
- * Settles the recovery verdict — lives back on success, a shorter wait on failure
+ * Settles the recovery verdict — lives back on success, a shorter cooldown on failure
  * — and, on success, chains directly to ascent by drawing the next question.
  * No intermediate screen: the verdict of the sealing question carries the
  * message, and the button « Reprendre » leads straight to the next question.
@@ -1276,7 +1276,7 @@ async function finishRecovery(
 export interface MissedPoolEntryView {
   questionId: string
   statement: string
-  /** Shown here on purpose: the wait screen is a revision sheet, not a punishment. */
+  /** Shown here on purpose: the cooldown screen is a revision sheet, not a punishment. */
   answerLabel: string
   /** What the player answered — justifies disputing. Null on timeout. */
   submittedAnswer: string | null

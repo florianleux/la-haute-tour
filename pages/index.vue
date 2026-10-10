@@ -1,6 +1,6 @@
 <template>
   <RecoveryCard
-    v-if="state?.phase === 'recovery' && !cooldownScreen && screen && (screen.question || screen.verdict)"
+    v-if="state?.phase === 'recovery' && !showsCooldownCard && screen && (screen.question || screen.verdict)"
     :screen="screen"
     :model-value="typed"
     :seconds-left="secondsLeft"
@@ -27,7 +27,7 @@
   />
 
   <CooldownCard
-    v-else-if="cooldownScreen && !readingFall && state && screen"
+    v-else-if="showsCooldownCard && !readingFall && state && screen"
     :state="state"
     :screen="screen"
     :cooldown-remaining="cooldownRemaining"
@@ -225,7 +225,7 @@ watch(() => state.value?.verdict, (verdict) => {
 // bouton « Commencer le rattrapage ». Voir specs/ecrans.md#cooldown--attente.
 // Il passe avant RecoveryCard : le verdict de la question qui a pris la
 // dernière vie reste dans l'état, et le ferait relire au lieu du poster.
-const cooldownScreen = computed(() =>
+const showsCooldownCard = computed(() =>
   state.value?.phase === 'cooldown'
   || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
 )
@@ -240,13 +240,13 @@ const fallenOn = ref<string | null>(null)
 
 watch(() => state.value?.verdict?.questionId, () => {
   const verdict = state.value?.verdict
-  if (verdict?.lifeLost && cooldownScreen.value) {
+  if (verdict?.lifeLost && showsCooldownCard.value) {
     fallenOn.value = verdict.questionId
   }
 })
 
 const readingFall = computed(() =>
-  cooldownScreen.value && fallenOn.value !== null && fallenOn.value === state.value?.verdict?.questionId,
+  showsCooldownCard.value && fallenOn.value !== null && fallenOn.value === state.value?.verdict?.questionId,
 )
 
 // Le seul chemin qui entre ici avec viewingChest à vrai est ChestCard une
@@ -269,7 +269,7 @@ async function openTheChest(): Promise<void> {
   // Un Mimic bascule directement en attente — CooldownCard le montre, pas cet
   // écran. Rien à révéler ici dans ce cas : on referme derrière soi.
   // Voir specs/bonus.md#coffre-et-mimic.
-  if (cooldownScreen.value) {
+  if (showsCooldownCard.value) {
     viewingChest.value = false
   }
 }

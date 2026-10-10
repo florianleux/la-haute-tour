@@ -35,13 +35,13 @@ export function nextActionLabel(state: GameState): string {
       return "Commencer le rattrapage";
     }
 
-    const result = recoveryLine(state.recovery).result;
+    const { resumes } = recoveryLine(state.recovery);
 
-    if (result === "resumed") {
+    if (resumes === true) {
       return "Reprendre";
     }
 
-    if (result === "cooldown") {
+    if (resumes === false) {
       return "Terminer";
     }
 
@@ -98,8 +98,9 @@ export interface RecoveryLine {
   /** Les bonnes réponses exigées, bornées aux questions tirées. */
   required: number;
   /** Le sort du rattrapage, annoncé dès que le verdict est scellé — quota
-   *  atteint (succès) ou mathématiquement impossible (échec). */
-  result: "resumed" | "cooldown" | null;
+   *  atteint (true : le joueur reprend) ou mathématiquement impossible (false).
+   *  Null tant qu'il ne l'est pas. */
+  resumes: boolean | null;
 }
 
 /**
@@ -184,6 +185,6 @@ function recoveryLine(
     total: recovery.total,
     successes: recovery.successes,
     required: recovery.required,
-    result: over ? (recovery.resumes ? "resumed" : "cooldown") : null,
+    resumes: over ? recovery.resumes : null,
   };
 }

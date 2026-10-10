@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCountdown, formatDay, formatDuration, formatReturnAt, formatRemaining, formatTime, formatCooldown } from '../../utils/date'
+import { formatCountdown, formatDay, formatDuration, formatReturnAt, formatRemaining, formatTime, formatCooldownMinutes } from '../../utils/date'
 
 describe('date lisible', () => {
   it('rend le jour en français', () => {
@@ -84,20 +84,20 @@ describe('attente à la minute', () => {
   }
 
   it('compte en heures et minutes sur une longue attente', () => {
-    expect(formatCooldown(inSeconds(11 * 3600 + 58 * 60 + 12), now)).toBe('11 h 59 min')
+    expect(formatCooldownMinutes(inSeconds(11 * 3600 + 58 * 60 + 12), now)).toBe('11 h 59 min')
   })
 
   it('compte en minutes sous l heure', () => {
-    expect(formatCooldown(inSeconds(4 * 60), now)).toBe('4 min')
+    expect(formatCooldownMinutes(inSeconds(4 * 60), now)).toBe('4 min')
   })
 
   it('arrondit au-dessus : ce qui reste reste', () => {
-    expect(formatCooldown(inSeconds(30), now)).toBe('1 min')
+    expect(formatCooldownMinutes(inSeconds(30), now)).toBe('1 min')
   })
 
   it('ne compte jamais à l envers une fois l échéance passée', () => {
-    expect(formatCooldown(inSeconds(-30), now)).toBe('terminée')
-    expect(formatCooldown('', now)).toBe('terminée')
+    expect(formatCooldownMinutes(inSeconds(-30), now)).toBe('terminée')
+    expect(formatCooldownMinutes('', now)).toBe('terminée')
   })
 })
 
