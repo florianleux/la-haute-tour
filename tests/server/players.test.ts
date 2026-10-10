@@ -112,27 +112,27 @@ describe('fiches joueurs', () => {
 describe('repartir de zéro', () => {
   let db: Database
   let userId: number
-  let questionIds: string[]
+  let questionId: string
 
   beforeEach(async () => {
     db = await createTestDatabase()
-    questionIds = await seedFloor(db, 1, 3)
+    ;[questionId] = await seedFloor(db, 1, 1)
     userId = await createPlayer(db)
   })
 
-  /** Une question ratée sur une vraie réponse, donc contestable. */
-  async function miss(questionId: string): Promise<void> {
+  /** La question ratée sur une vraie réponse, donc contestable. */
+  async function miss(): Promise<void> {
     await markSeen(db, userId, questionId, { floor: 1, correct: false, submittedAnswer: 'nawak' })
     await db.insert(missedPool).values({ userId, questionId, floor: 1, lastFailedAt: NOW })
   }
 
   it('ne laisse aucune contestation à arbitrer sur la fiche', async () => {
-    await miss(questionIds[0])
-    await db.insert(disputes).values({ userId, questionId: questionIds[0], status: 'pending', createdAt: NOW })
+    await db.insert(disputes).values({ userId, questionId, status: 'pending', createdAt: NOW })
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
 
-    expect((await playerRoster(db, NOW))[0].pendingDisputes).toBe(0)
+    const card = (await playerRoster(db, NOW)).find(player => player.userId === userId)
+    expect(card?.pendingDisputes).toBe(0)
   })
 
   it('remet les vues de toujours à zéro, même chez un vrai joueur', async () => {
@@ -144,19 +144,19 @@ describe('repartir de zéro', () => {
   })
 
   it('rend contestable une question déjà contestée, ratée de nouveau', async () => {
-    await miss(questionIds[0])
+    await miss()
     await db.insert(disputes).values({
       userId,
-      questionId: questionIds[0],
+      questionId,
       status: 'rejected',
       createdAt: NOW,
       settledAt: NOW,
     })
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
-    await miss(questionIds[0])
+    await miss()
 
     expect(await disputableErrors(db, await loadPlayer(db, userId)))
-      .toMatchObject([{ questionId: questionIds[0] }])
+      .toMatchObject([{ questionId }])
   })
 })
