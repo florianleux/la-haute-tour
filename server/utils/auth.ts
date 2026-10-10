@@ -4,6 +4,7 @@ import type { Database } from '../db/client'
 import { useDatabase } from '../db/client'
 import { users, whitelist } from '../db/schema'
 import type { User } from '../db/schema'
+import { rulesForFloor } from './rules'
 
 export interface DiscordProfile {
   discordId: string
@@ -46,7 +47,7 @@ export async function loginWithDiscord(
       avatar: profile.avatar,
       isAdmin: false,
       currentFloor: 1,
-      lives: 3,
+      lives: rulesForFloor(1).lives,
       // L'équipe décidée à l'invitation, et seulement à la création : une
       // whitelist rééditée ne déplace personne, la fiche joueur fait foi
       // ensuite. Voir specs/equipes.md.
