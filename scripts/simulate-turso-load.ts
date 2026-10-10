@@ -177,7 +177,8 @@ function install(db: Database): void {
 }
 
 /** Toutes les tables du schéma, lues dans le schéma : une table ajoutée y est d'office. */
-const TABLES = Object.values(schema).filter((value): value is SQLiteTable => is(value, SQLiteTable))
+const TABLES = Object.values(schema as Record<string, unknown>)
+  .filter((value): value is SQLiteTable => is(value, SQLiteTable))
 
 /**
  * Écrite par le query builder, mais envoyée par le client nu : la mesure ne doit
