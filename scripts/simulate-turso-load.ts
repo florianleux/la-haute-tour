@@ -14,7 +14,8 @@
  */
 import { createClient } from '@libsql/client'
 import { createError } from 'h3'
-import { count, eq, getTableName } from 'drizzle-orm'
+import { count, eq, getTableName, is } from 'drizzle-orm'
+import { SQLiteTable } from 'drizzle-orm/sqlite-core'
 import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../server/db/schema'
@@ -175,12 +176,8 @@ function install(db: Database): void {
   }
 }
 
-const TABLES = [
-  schema.users, schema.questions, schema.acceptedAnswers, schema.seenQuestions, schema.missedPool,
-  schema.reservations, schema.recoveryQuestions, schema.inventory, schema.activeEffects,
-  schema.achievements, schema.attempts, schema.deckFloors, schema.whitelist, schema.settings,
-  schema.disputes, schema.focusLosses, schema.questionCategories, schema.categories,
-]
+/** Toutes les tables du schéma, lues dans le schéma : une table ajoutée y est d'office. */
+const TABLES = Object.values(schema).filter((value): value is SQLiteTable => is(value, SQLiteTable))
 
 /**
  * Écrite par le query builder, mais envoyée par le client nu : la mesure ne doit
@@ -188,10 +185,9 @@ const TABLES = [
  */
 async function refreshSizes(db: Database): Promise<void> {
   for (const table of TABLES) {
-    const { sql, params } = db.select({ n: count() }).from(table).toSQL()
+    const { sql, params } = db.select({ n: count().as('n') }).from(table).toSQL()
     const result = await raw.execute({ sql, args: params })
-    // Drizzle ne nomme pas la colonne dans le SQL : elle se lit par sa place.
-    tableSizes.set(getTableName(table), Number(Object.values(result.rows[0] as Record<string, unknown>)[0]))
+    tableSizes.set(getTableName(table), Number((result.rows[0] as Record<string, unknown>).n))
   }
 }
 
