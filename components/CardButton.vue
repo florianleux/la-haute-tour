@@ -25,9 +25,11 @@
            plutôt que de la reprendre. Même mécanique que BaseButton, et
            BaseSpinner hérite de la couleur par `border-current`, donc il suit
            l'encre du médaillon comme celle de la planche. -->
+      <!-- Un mot trop long ne passe pas à la ligne : il déborde du médaillon.
+           On le rétrécit, en em pour suivre la taille de chaque ancre. -->
       <span
         class="contents"
-        :class="loading ? 'invisible' : ''"
+        :class="[loading ? 'invisible' : '', longWord ? 'text-[0.65em]' : '']"
       >
         {{ label }}
       </span>
@@ -111,7 +113,7 @@ const FACES: Record<Face, string> = {
   plank: 'bg-[url(/images/recovery-modal-button.webp)] text-amber-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]',
 }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   label: string
   disabled?: boolean
   loading?: boolean
@@ -125,4 +127,9 @@ withDefaults(defineProps<{
 })
 
 defineEmits<{ click: [] }>()
+
+// ponytail: seuil au nombre de lettres, mesuré sur « Redescendre » (11) qui
+// débordait et « Reprendre » (9) qui tenait — à remplacer par une mesure du
+// texte si un libellé tombe entre les deux.
+const longWord = computed(() => props.label.split(/\s+/).some(word => word.length > 9))
 </script>
