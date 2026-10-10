@@ -1,7 +1,7 @@
 <template>
   <!-- Qui joue, à gauche : réservé à l'admin, et sur toutes les pages comme la
        barre elle-même. Voir specs/admin.md#incarnation. -->
-  <div v-if="isAdmin" class="absolute left-4 top-4">
+  <div v-if="isAdmin" class="absolute left-4 top-4 z-20">
     <ImpersonationSelect
       :acting-as="user"
       :impersonator="impersonator"
@@ -9,7 +9,7 @@
     />
   </div>
 
-  <nav v-if="user" class="absolute right-4 top-4 flex items-center gap-3">
+  <nav v-if="user" class="absolute right-4 top-4 z-20 flex items-center gap-3">
     <BaseIconLink
       v-for="icon in icons"
       :key="icon.key"
