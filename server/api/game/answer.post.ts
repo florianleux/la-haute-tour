@@ -4,9 +4,9 @@ import { submitAnswer } from '~~/server/utils/game'
 import type { GameState } from '~~/server/utils/game'
 
 // An empty answer is a legitimate submission — the timer running out, or the page
-// being left — and it is simply wrong. See specs/validation.md. Trimmed here, once:
-// an answer made of spaces is an empty one for everything downstream, disputes and
-// achievements included.
+// being left — and it is simply wrong. See specs/validation.md. Trimmed at the
+// boundary: an answer made of spaces is an empty one for everything downstream,
+// disputes and achievements included.
 const bodySchema = z.object({
   answer: z.string().trim(),
   /**
