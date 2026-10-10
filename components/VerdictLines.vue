@@ -1,9 +1,9 @@
 <template>
   <!-- Le juste jaillit, juste après le tampon du médaillon, et lâche une
-       gerbe d'étincelles à son plus gros. -->
+       gerbe d'étincelles à son plus gros. Le faux, lui, secoue la tête. -->
   <PlayText
     role="headline"
-    :class="verdict.correct ? 'relative text-emerald-700 motion-safe:animate-cheer [--enter-delay:0.1s]' : 'text-rose-700'"
+    :class="verdict.correct ? 'relative text-emerald-700 motion-safe:animate-cheer [--enter-delay:0.1s]' : 'text-rose-700 motion-safe:animate-shake [--enter-delay:0.1s]'"
   >
     {{ verdict.correct ? 'Correct !' : 'Incorrect...' }}
     <SparkleSpray
@@ -43,7 +43,7 @@
     role="notice"
     class="text-rose-700"
   >
-    Tu perds une vie !
+    {{ lastLife ? "C'était ta dernière vie ! Cette tentative s'arrête là !" : 'Tu perds une vie !' }}
   </PlayText>
 
   <!-- Voir specs/validation.md : la contestation se propose là où le désaccord
@@ -76,6 +76,8 @@ defineProps<{
   verdict: Verdict
   contestable: boolean
   contesting: boolean
+  /** La vie perdue était la dernière : la tentative s'arrête sur ce verdict. */
+  lastLife?: boolean
 }>()
 
 defineEmits<{ dispute: [] }>()

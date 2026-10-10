@@ -80,8 +80,24 @@
         <span
           v-for="n in 3"
           :key="n"
-          :class="n <= state.lives ? 'text-rose-950' : 'text-rose-950/30'"
-        >♥</span>
+          :class="[n <= state.lives ? 'text-rose-950' : 'text-rose-950/30', n === lostHeart && 'relative inline-block']"
+        >♥<template v-if="n === lostHeart">
+          <!-- Le cœur plein, posé sur le cœur éteint, qui tremble et éclate. -->
+          <span
+            class="absolute inset-0 text-rose-950 opacity-0 motion-safe:animate-heart-break"
+            :style="{ '--enter-delay': `${TICKS.lives}ms` }"
+          >♥</span>
+          <SparkleSpray
+            :sparks="HEART_SPRAY"
+            class="drop-shadow-[0_0_3px_#e11d48]"
+          />
+          <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
+            <span
+              class="whitespace-nowrap text-[4.5cqw] font-bold text-white opacity-0 [text-shadow:0_1px_2px_rgb(76_5_25/0.8)] motion-safe:animate-float-away sm:text-[1.8cqw]"
+              :style="{ '--enter-delay': `${TICKS.lives + BURST_MS}ms` }"
+            >-1</span>
+          </span>
+        </template></span>
       </p>
     </div>
     <div :class="RIGHT" class="sm:[--enter-delay:0.37s]">
@@ -152,7 +168,12 @@ const props = defineProps<{
    * prendre un, et le disent — le chiffre gonfle, un « +1 » s'en échappe.
    */
   counted?: boolean
+  /** La question qui vient d'être jouée a coûté une vie : son cœur éclate. */
+  lifeLost?: boolean
 }>()
+
+/** Le cœur qui vient de s'éteindre : le premier après ceux qui restent. */
+const lostHeart = computed(() => (props.lifeLost ? props.state.lives + 1 : null))
 
 // Le chiffre qui gonfle, et le « +1 » accroché à lui (`inline-block relative`,
 // à sa largeur près) : à droite du chiffre en mobile, où il est centré ; à
@@ -167,7 +188,24 @@ const PLUS_ONE = 'pointer-events-none absolute left-full top-0 whitespace-nowrap
  * après le « Correct ! », décalés de 0,1 s l'un de l'autre. Le délai des
  * animations et le changement de chiffre lisent la même valeur.
  */
-const TICKS = { floorSeen: 450, attemptSeen: 550 } as const
+const TICKS = { floorSeen: 450, attemptSeen: 550, lives: 450 } as const
+
+/**
+ * Le cœur perdu éclate à 55 % de `animate-heart-break` (0,7 s) : c'est là que
+ * partent ses éclats et son « -1 ». Distances en em du cœur, qui n'a pas la
+ * même taille en mobile et en desktop.
+ */
+const BURST_MS = 385
+const HEART_SPRAY = Array.from({ length: 6 }, (_, index) => {
+  const angle = ((index * 60 + 30) * Math.PI) / 180
+
+  return {
+    dx: `${(Math.cos(angle) * 1.1).toFixed(2)}em`,
+    dy: `${(Math.sin(angle) * 1.1).toFixed(2)}em`,
+    size: index % 2 ? '0.3em' : '0.45em',
+    delay: `${((TICKS.lives + BURST_MS) / 1000 + (index % 3) * 0.03).toFixed(2)}s`,
+  }
+})
 
 // Le chiffre d'avant tient jusqu'à son tic, puis passe au chiffre du serveur
 // en même temps que le « +1 » éclot : sinon le « +1 » s'ajoute à un chiffre

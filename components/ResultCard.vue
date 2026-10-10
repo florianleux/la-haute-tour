@@ -1,13 +1,16 @@
 <template>
-  <PlayFrame skin="ascent">
+  <PlayFrame
+    skin="ascent"
+    :reaction="reaction"
+  >
     <template #ribbons>
-      <!-- Le serveur compte aussi la question ratée (Palier et Série prennent
-           un sur tout verdict d'ascension) ; seul le juste le fête, pour
-           l'instant. -->
+      <!-- Palier et Série prennent un sur tout verdict d'ascension, juste ou
+           faux (le rattrapage n'arrive pas ici, voir RecoveryCard). -->
       <StatsRibbons
         :state="state"
         :effects="effects"
-        :counted="screen.verdict?.correct"
+        :counted="Boolean(screen.verdict)"
+        :life-lost="screen.verdict?.lifeLost"
       />
     </template>
 
@@ -26,6 +29,7 @@
         :verdict="screen.verdict"
         :contestable="contestable"
         :contesting="contesting"
+        :last-life="state.lives <= 0"
         @dispute="$emit('dispute')"
       />
 
@@ -110,6 +114,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ dispute: [], 'enter-chest': [], advance: [] }>()
+
+// Le cadre saute de joie sur le juste, encaisse un coup sur la vie perdue.
+const reaction = computed(() => {
+  if (props.screen.verdict?.correct) {
+    return 'hop'
+  }
+  return props.screen.verdict?.lifeLost ? 'hit' : undefined
+})
 
 // Le coffre fermé retient le joueur, mais ce n'est plus ce bouton qui
 // l'ouvre : « Suivant » mène à un écran à part (ChestCard), l'ouverture

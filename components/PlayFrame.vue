@@ -7,9 +7,15 @@
     :data-arriving="arriving || undefined"
   />
 
+  <!-- Le coup reçu : le bord de l'écran rougit, le temps d'un éclair. -->
+  <div
+    v-if="reaction === 'hit'"
+    class="pointer-events-none fixed inset-0 z-20 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgb(185_28_28/0.75)_100%)] opacity-0 motion-safe:animate-vignette-flash"
+  />
+
   <div
     class="relative z-10 mx-auto w-full"
-    :class="SKINS[skin].wrapper"
+    :class="[SKINS[skin].wrapper, reaction && REACTIONS[reaction]]"
   >
     <!-- container-type (@container) fait de la largeur du cadre l'unité `cqw`
          de tout ce qu'il porte : le texte rétrécit avec l'illustration au lieu
@@ -185,7 +191,21 @@ const SKINS: Record<PlaySkin, Skin> = {
   },
 }
 
-const props = defineProps<{ skin: PlaySkin }>()
+const props = defineProps<{
+  skin: PlaySkin
+  /**
+   * Le cadre entier, rubans compris, réagit au verdict : `hit` sur une vie
+   * perdue (il encaisse un coup et le bord de l'écran rougit), `hop` sur une
+   * bonne réponse (il fait un petit saut). Sur l'enveloppe et non sur le
+   * cadre, dont l'`animation` d'arrivée écraserait celle-ci.
+   */
+  reaction?: 'hit' | 'hop'
+}>()
+
+const REACTIONS = {
+  hit: 'motion-safe:animate-hit',
+  hop: 'motion-safe:animate-hop',
+} as const
 
 const arriving = leaving !== props.skin
 
