@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { disputes, missedPool } from '../../server/db/schema'
+import { eq } from 'drizzle-orm'
+import { disputes, missedPool, users } from '../../server/db/schema'
 import { contestableErrors } from '../../server/utils/disputes'
 import { playerRoster, resetPlayer } from '../../server/utils/players'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -132,6 +133,14 @@ describe('repartir de zéro', () => {
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
 
     expect((await playerRoster(db, NOW))[0].pendingDisputes).toBe(0)
+  })
+
+  it('remet les vues de toujours à zéro, même chez un vrai joueur', async () => {
+    await db.update(users).set({ seenTotal: 42 }).where(eq(users.id, userId))
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    expect((await loadPlayer(db, userId)).seenTotal).toBe(0)
   })
 
   it('rend contestable une question déjà contestée, ratée de nouveau', async () => {

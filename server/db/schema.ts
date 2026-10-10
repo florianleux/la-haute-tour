@@ -148,7 +148,7 @@ export const users = sqliteTable('users', {
   streak: integer('streak').notNull().default(0),
   /**
    * Questions vues depuis toujours, tous étages et toutes tentatives confondus.
-   * Ne redescend jamais, pas même à la remise à zéro d'un joueur.
+   * Ne redescend jamais, sauf à la remise à zéro du joueur.
    *
    * Porté plutôt que compté, pour la raison qui vaut à `floorSeen`. Et il ne se
    * déduit pas des questions vues : celles-ci ne gardent qu'une ligne par
