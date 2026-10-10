@@ -77,8 +77,8 @@ export async function contestableErrors(db: Database, user: User): Promise<Conte
 
 /**
  * Ouvre une contestation. Refusée si la question n'est pas contestable — réponse
- * vide, erreur d'une tentative passée, ou question déjà contestée : deux
- * contestations sur la même question n'ajoutent rien à arbitrer.
+ * vide, départ de page, question sortie du Pool Échecs de l'étage, ou déjà
+ * contestée : deux contestations sur la même question n'ajoutent rien à arbitrer.
  */
 export async function openDispute(
   db: Database,

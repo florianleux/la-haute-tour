@@ -55,7 +55,7 @@ Une réponse vide n'est **pas contestable** : accepter une telle contestation aj
 
 ### Quand
 
-- Le joueur conteste les erreurs de sa **tentative en cours**, et celles de la tentative qui vient de s'achever tant qu'il est en attente.
+- Le joueur conteste toute erreur encore au **Pool Échecs de l'étage courant**, quelle que soit la tentative où il l'a commise — une seule fois par question. Une réponse vide et une question résolue par un départ de page ne se contestent pas (voir plus haut et [`anti-triche.md`](./anti-triche.md#perte-de-focus)).
 - Deux endroits : sur l'écran de **verdict**, au moment où le désaccord naît — le joueur vient de lire « faux » et la bonne réponse — et sur l'écran d'**attente**, filet pour qui est passé trop vite à la question suivante.
 - L'écran de verdict n'est pas chronométré : contester n'ouvre aucune brèche.
 - **Bouton seul**, pas de message libre.
