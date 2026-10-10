@@ -86,7 +86,7 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 - Le **Pool Échecs de l'étage**, avec les réponses : c'est une fiche de révision, pas une punition. Il n'y a ni classement ni score à défendre ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable.
   - Affichage par pages de dix, chargées à la demande en faisant défiler.
   - Trié par **dernier échec**, du plus récent au plus ancien par défaut, inversable. Une question ratée à nouveau en rattrapage remonte en tête : ce qui résiste est ce qu'on veut relire.
-- Dans ce même Pool, un bouton de contestation sur chaque erreur encore contestable — toutes tentatives de l'étage confondues, sauf celles déjà contestées. Voir [`validation.md`](./validation.md#quand).
+- Dans ce même Pool, un bouton de contestation sur chaque erreur contestable. Voir [`validation.md`](./validation.md#quand).
 - Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur au survol — et ceux qui frappent l'attente elle-même (Répit, Indulgence et Purge agissent dès le lancer). Le joueur a tout lu avant de reprendre. Chaque sort s'écrit en toutes lettres et ouvre son infobulle, voir [`bonus.md`](./bonus.md#linfobulle-dun-sort).
 - L'accès à la page **Sorts**, par l'icône baguette.
 

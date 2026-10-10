@@ -29,12 +29,10 @@ export interface DisputableError {
 }
 
 /**
- * Les erreurs que le joueur peut encore contester : toutes celles de son Pool
- * Échecs sur l'étage courant, une seule fois par question.
+ * Les erreurs contestables du joueur. Voir specs/validation.md#quand.
  *
  * Une réponse vide n'en fait jamais partie : l'accepter ajouterait la chaîne
- * vide aux réponses acceptées, et validerait le vide pour tout le monde. Une
- * question résolue par un départ de page non plus.
+ * vide aux réponses acceptées, et validerait le vide pour tout le monde.
  */
 export async function disputableErrors(db: Database, user: User): Promise<DisputableError[]> {
   const alreadyDisputed = db
@@ -83,9 +81,8 @@ export async function disputableErrors(db: Database, user: User): Promise<Disput
 }
 
 /**
- * Ouvre une contestation. Refusée si la question n'est pas contestable — réponse
- * vide, départ de page, question sortie du Pool Échecs de l'étage, ou déjà
- * contestée : deux contestations sur la même question n'ajoutent rien à arbitrer.
+ * Ouvre une contestation. Refusée si la question n'est pas parmi les erreurs
+ * contestables (disputableErrors).
  */
 export async function openDispute(
   db: Database,
