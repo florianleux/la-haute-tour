@@ -120,7 +120,8 @@ export function isAnswering(state: GameState | null): boolean {
  * L'attente : la seule phase où les Sorts existent, donc la seule d'où la page
  * qui les porte est atteignable. Dit ici, comme isAnswering, plutôt qu'à chaque
  * endroit qui en dépend — la baguette de la barre et la garde de la page.
- * Voir specs/ecrans.md#sorts.
+ * Voir specs/ecrans.md#sorts. La carte d'attente le lit aussi, pour séparer
+ * l'attente qui court du rattrapage prêt à démarrer.
  */
 export function isCooldown(state: GameState | null): boolean {
   return state?.phase === "cooldown";

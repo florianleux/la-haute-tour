@@ -49,9 +49,9 @@
          « 4m 12s » en « 4M 12S ». -->
     <h1
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
-      :class="state.phase === 'cooldown' ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
+      :class="inCooldown ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
     >
-      {{ state.phase === 'cooldown' ? (cooldownRemaining || 'Attente') : 'Attente terminée' }}
+      {{ inCooldown ? (cooldownRemaining || 'Attente') : 'Attente terminée' }}
     </h1>
 
     <!-- Le panneau de parchemin porte tout ce que l'écran a à dire : décompte,
@@ -76,7 +76,7 @@
            deux fois le même chiffre à dix centimètres d'écart. Une seule phrase
            pour les deux phases : ce que le joueur a à faire, attendre ou jouer. -->
       <p class="text-[4.16cqw]">
-        {{ state.phase === 'cooldown' && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
+        {{ inCooldown && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
       </p>
 
       <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
@@ -142,7 +142,7 @@
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen } from '~~/utils/phase'
 
-defineProps<{
+const props = defineProps<{
   state: GameState
   screen: GameScreen
   cooldownRemaining: string
@@ -153,4 +153,6 @@ defineProps<{
 }>()
 
 defineEmits<{ skipCooldown: [], advance: [] }>()
+
+const inCooldown = computed(() => isCooldown(props.state))
 </script>
