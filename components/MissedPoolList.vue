@@ -45,25 +45,15 @@
           </span>
 
           <!-- Bouton contester : icône mégaphone ronde -->
-          <button
+          <BaseIconButton
             v-else-if="isContestable(entry.questionId)"
-            type="button"
-            class="cursor-pointer rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-100"
-            aria-label="Contester cette question"
+            label="Contester cette question"
             @click="onContest(entry.questionId)"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              class="h-5 w-5"
-              aria-hidden="true"
-            >
-              <path
-                d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1Zm10.5-4.5a1 1 0 0 0-1.4 0l-.6.6a1 1 0 0 0 0 1.4 5 5 0 0 1 0 7l.6.6a1 1 0 0 0 1.4 0l.6-.6a1 1 0 0 0 0-1.4 3 3 0 0 1 0-4.2l-.6-.6a1 1 0 0 0 0-1.4Z"
-              />
-            </svg>
-          </button>
+            <path
+              d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1Zm10.5-4.5a1 1 0 0 0-1.4 0l-.6.6a1 1 0 0 0 0 1.4 5 5 0 0 1 0 7l.6.6a1 1 0 0 0 1.4 0l.6-.6a1 1 0 0 0 0-1.4 3 3 0 0 1 0-4.2l-.6-.6a1 1 0 0 0 0-1.4Z"
+            />
+          </BaseIconButton>
         </div>
       </li>
     </BaseList>
