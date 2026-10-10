@@ -4,7 +4,7 @@ import type { Database } from '../db/client'
 import { useDatabase } from '../db/client'
 import { users, whitelist } from '../db/schema'
 import type { User } from '../db/schema'
-import { startOfGame } from './players'
+import { startOfGame } from './mechanics'
 
 export interface DiscordProfile {
   discordId: string

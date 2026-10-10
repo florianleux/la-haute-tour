@@ -1,6 +1,6 @@
 import { useDatabase } from '~~/server/db/client'
 import { users, whitelist } from '~~/server/db/schema'
-import { startOfGame } from '~~/server/utils/players'
+import { startOfGame } from '~~/server/utils/mechanics'
 
 /**
  * Connexion locale, sans Discord : un admin de développement, créé à la

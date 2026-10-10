@@ -18,6 +18,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Ascension** | `ascent` | Progression du joueur à travers les questions de l'étage courant. |
 | **Tentative** | `attempt` | Période de jeu qui va des vies pleines jusqu'à la perte de la dernière vie. S'achève en attente, ou se poursuit si une contestation rend une vie. Sa longueur se compte en questions vues, et n'est inscrite qu'au moment où la suivante s'ouvre. |
 | **Vies** | `lives` | Unités perdues sur erreur. Restaurées au nombre plein à chaque reprise après attente. |
+| **Début de partie** | `startOfGame` | Étage 1, vies pleines selon le jeu de règles : l'état d'un compte neuf — réel, test ou de dev — comme d'un joueur remis à zéro. |
 | **Vue** | `seen` | Question résolue en ascension, juste ou fausse. Seule unité de progression : c'est le nombre de vues qui fait passer d'étage et termine la partie. |
 | **Réservation** | `reservation` | La question servie au joueur, horodatée, en attente de résolution. Une seule à la fois. Se résout par une réponse ou par l'expiration du timer. |
 | **État de jeu** | `gameState` | Ce que le serveur répond à « où en est le joueur » : phase, étage, vies, et ce que la phase contient. Servi par un seul endpoint de lecture, sans effet. |

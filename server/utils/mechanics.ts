@@ -1,6 +1,7 @@
 import { isAnswerAccepted } from './answers'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { isCooldownBound, SPELL_IDS } from '../../shared/utils/spells'
+import { rulesForFloor } from './rules'
 import type { FloorRules } from './rules'
 import type { SpellId } from '../../shared/utils/spells'
 import type { DrawnTargetKind } from '../../shared/utils/teams'
@@ -436,4 +437,14 @@ export function judgeRecovery(
     livesAfter: resumes ? rules.lives : 0,
     cooldownUntil: resumes ? null : new Date(now.getTime() + rules.cooldownAfterFailedRecoveryMs),
   }
+}
+
+/**
+ * Le début de partie : étage 1, vies pleines selon le jeu de règles. Écrit à la
+ * création de tout compte — réel, test ou de dev — comme à sa remise à zéro,
+ * pour qu'aucun ne parte de la valeur par défaut de la colonne.
+ * Voir specs/spec.md#glossaire.
+ */
+export function startOfGame(): Pick<User, 'currentFloor' | 'lives'> {
+  return { currentFloor: 1, lives: rulesForFloor(1).lives }
 }

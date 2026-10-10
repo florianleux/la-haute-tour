@@ -13,9 +13,8 @@ import {
   seenQuestions,
   users,
 } from '../db/schema'
-import { phaseOf } from './mechanics'
+import { phaseOf, startOfGame } from './mechanics'
 import { numericRouteId } from './routes'
-import { rulesForFloor } from './rules'
 import type { H3Event } from 'h3'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -135,15 +134,6 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     pendingDisputes: row.pendingDisputes,
     team: row.user.team,
   }))
-}
-
-/**
- * Là où toute partie commence : étage 1, vies pleines selon le jeu de règles.
- * Écrit à la création de tout compte — réel, test ou de dev — comme à sa remise
- * à zéro, pour qu'aucun ne parte de la valeur par défaut de la colonne.
- */
-export function startOfGame(): Pick<User, 'currentFloor' | 'lives'> {
-  return { currentFloor: 1, lives: rulesForFloor(1).lives }
 }
 
 /**
