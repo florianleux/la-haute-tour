@@ -138,7 +138,7 @@ describe('repartir de zéro', () => {
   it('remet les compteurs des succès à zéro, même chez un vrai joueur', async () => {
     await db
       .update(users)
-      .set({ seenTotal: 42, lastPlayedDay: '2026-09-03', daysPlayed: 5, playStreak: 2, cooldownBaseMs: 1_000 })
+      .set({ seenTotal: 42, lastPlayedDay: '2026-09-03', daysPlayed: 5, playStreak: 2 })
       .where(eq(users.id, userId))
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
@@ -148,6 +148,20 @@ describe('repartir de zéro', () => {
       lastPlayedDay: null,
       daysPlayed: 0,
       playStreak: 0,
+    })
+  })
+
+  it('ne laisse aucune attente derrière lui, durée comprise', async () => {
+    await db
+      .update(users)
+      .set({ lives: 0, cooldownUntil: NOW, cooldownStartedAt: NOW, cooldownBaseMs: 1_000 })
+      .where(eq(users.id, userId))
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    expect(await loadPlayer(db, userId)).toMatchObject({
+      cooldownUntil: null,
+      cooldownStartedAt: null,
       cooldownBaseMs: null,
     })
   })

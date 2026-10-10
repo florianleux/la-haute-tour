@@ -144,10 +144,9 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
  * mondes. Voir specs/admin.md#gestion-des-joueurs.
  */
 export async function resetPlayer(db: Database, player: User, now: Date): Promise<void> {
-  // Le palmarès n'est pas la partie : remettre un joueur à zéro remet sa partie à
-  // zéro, pas ce qu'il a accompli. Les joueurs test font exception — ils existent
-  // pour rejouer des situations, et une « première fois » ne se testerait qu'une
-  // seule fois si leurs succès survivaient. Voir specs/succes.md#remise-à-zéro.
+  // La partie et ses compteurs repartent de zéro, le palmarès d'un vrai joueur
+  // reste ; celui d'un joueur test tombe avec le reste.
+  // Voir specs/succes.md#remise-à-zéro.
   await db.batch([
     db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
@@ -170,8 +169,6 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         floorSeen: 0,
         attemptSeen: 0,
         attemptStartedAt: now,
-        // Les compteurs des succès repartent avec la partie, le palmarès d'un
-        // vrai joueur non. Voir specs/succes.md#remise-à-zéro.
         streak: 0,
         seenTotal: 0,
         lastPlayedDay: null,

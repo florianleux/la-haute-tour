@@ -152,7 +152,7 @@ export const users = sqliteTable('users', {
    *
    * Porté plutôt que compté, pour la raison qui vaut à `floorSeen`. Et il ne se
    * déduit pas des questions vues : celles-ci ne gardent qu'une ligne par
-   * question, à vie.
+   * question, jusqu'à la remise à zéro.
    */
   seenTotal: integer('seen_total').notNull().default(0),
   /**
