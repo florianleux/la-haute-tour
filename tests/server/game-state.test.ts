@@ -74,6 +74,15 @@ describe('endpoints de jeu', () => {
     expect(verdict.question).toBeNull()
   })
 
+  it('tient une réponse faite d espaces pour une réponse vide', async () => {
+    await next(post('/next', {}, cookie))
+
+    const verdict = await (await answer(post('/answer', { answer: '   ' }, cookie))).json()
+
+    expect(verdict.verdict).toMatchObject({ correct: false })
+    expect(verdict.unlocked).toContain('EMPTY_ANSWER')
+  })
+
   it('rejette un corps de réponse sans champ answer', async () => {
     await next(post('/next', {}, cookie))
 
