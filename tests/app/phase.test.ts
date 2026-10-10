@@ -99,6 +99,25 @@ describe('écran de jeu', () => {
   })
 })
 
+describe('écran d attente', () => {
+  it('sert l attente elle-même', () => {
+    expect(gameScreen(state({ phase: 'cooldown', verdict })).showsCooldownCard).toBe(true)
+  })
+
+  it('sert le rattrapage prêt à démarrer', () => {
+    expect(gameScreen(state({ phase: 'recovery' })).showsCooldownCard).toBe(true)
+  })
+
+  it('cède la place au rattrapage en cours, question servie comme verdict à lire', () => {
+    const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, required: 1 }
+
+    expect(gameScreen(state({ phase: 'recovery', recovery: ongoing, question })).showsCooldownCard)
+      .toBe(false)
+    expect(gameScreen(state({ phase: 'recovery', recovery: ongoing, verdict })).showsCooldownCard)
+      .toBe(false)
+  })
+})
+
 describe('action de la page de jeu', () => {
   it('enchaîne sur la question suivante après un verdict d ascension', () => {
     expect(nextActionLabel(state({ phase: 'ascent', verdict }))).toBe('Suivant')

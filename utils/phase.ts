@@ -75,6 +75,10 @@ export interface GameScreen {
   recovery: RecoveryLine | null;
   /** La phase que le serveur a rendue — l'écran l'annonce, il n'en déduit rien. */
   phase: GameState["phase"];
+  /** L'écran d'attente : l'attente elle-même, ou le rattrapage prêt à démarrer.
+   *  Il prime sur la carte de rattrapage : le verdict de la question qui a pris
+   *  la dernière vie reste dans l'état, et le ferait relire au lieu du poster. */
+  showsCooldownCard: boolean;
   /** Le libellé du bouton qui fait avancer, null quand rien n'avance ici. */
   action: string | null;
   /** Le coffre à ouvrir, null quand il n'y en a pas à cet endroit. */
@@ -134,6 +138,12 @@ export function gameScreen(state: GameState): GameScreen {
     verdict: answering ? null : state.verdict,
     recovery: state.recovery && recoveryLine(state.recovery),
     phase: state.phase,
+    // Même fiche de révision, même file de contestation : seul le compteur cède
+    // la place au bouton « Commencer le rattrapage ».
+    // Voir specs/ecrans.md#cooldown--attente.
+    showsCooldownCard:
+      state.phase === "cooldown" ||
+      (state.phase === "recovery" && !answering && !state.recovery),
     chest,
     // Deux lectures du même champ. « pending » veut dire non ancré : un effet qui
     // attend la tentative suivante, ou un sort lié à l'attente qui agit déjà sur
