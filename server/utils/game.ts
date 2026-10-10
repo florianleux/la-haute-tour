@@ -1221,11 +1221,11 @@ async function finishRecovery(
   db: Database,
   snapshot: PlayerSnapshot,
   user: User,
-  rules: FloorRules,
+  recoveryRules: FloorRules,
   now: Date,
 ): Promise<GameState> {
-  const progress = await recoveryProgress(db, user, rules)
-  const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, rules, now)
+  const progress = await recoveryProgress(db, user, recoveryRules)
+  const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, recoveryRules, now)
 
   // Le tirage joué en entier, et juste de bout en bout. Depuis que le rattrapage
   // s'arrête au verdict scellé, cela n'arrive que lorsque le quota exige tout le
@@ -1252,9 +1252,9 @@ async function finishRecovery(
 
     // Le rattrapage réussi enchaîne directement sur l'ascension : plus d'écran
     // intermédiaire. drawAndReserve ne lit que currentFloor et floorCursor,
-    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit. Les
-    // règles, elles, sont celles de la tentative qui s'ouvre : la question est
-    // la sienne, et ses effets fraîchement ancrés jouent dès elle.
+    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit. La
+    // question est celle de la tentative qui s'ouvre : ses effets fraîchement
+    // ancrés jouent dès elle.
     await drawAndReserve(db, user, attemptRules, now)
 
     return withUnlocked(await buildState(db, user.id, now), unlocked)

@@ -51,6 +51,26 @@ describe('Chronomancie, sur toute la tentative', () => {
     await openAttempt(db, await reload(), NOW)
   }
 
+  /**
+   * Un Pool Échecs de quoi tirer, puis une attente échue : le rattrapage s'ouvre
+   * à la lecture suivante. Rend la bonne réponse de chaque énoncé ainsi raté.
+   */
+  async function readyRecovery(): Promise<Map<string, string>> {
+    const answers = new Map<string, string>()
+    for (let i = 0; i < rules.poolSizeForRecovery; i++) {
+      const statement = `Ratée ${i} ?`
+      const questionId = await createQuestion(db, { statement, accepted: [`r${i}`] })
+      await markSeen(db, player.id, questionId, { floor: 1, correct: false })
+      await db.insert(missedPool).values({ userId: player.id, questionId, floor: 1, lastFailedAt: NOW })
+      answers.set(statement, `r${i}`)
+    }
+    await db
+      .update(users)
+      .set({ lives: 0, cooldownUntil: new Date(NOW.getTime() - 1_000) })
+      .where(eq(users.id, player.id))
+    return answers
+  }
+
   /** Le temps accordé par la question actuellement servie. */
   async function servedTimer(at: Date): Promise<number> {
     const state = await readGameState(db, await reload(), at)
@@ -83,18 +103,7 @@ describe('Chronomancie, sur toute la tentative', () => {
   it('double aussi le timer des questions de rattrapage', async () => {
     await castChronomancy()
     await beginAttempt()
-
-    // Un Pool Échecs de quoi tirer, puis une attente échue : le rattrapage
-    // s'ouvre à la lecture suivante.
-    for (let i = 0; i < rules.poolSizeForRecovery; i++) {
-      const questionId = await createQuestion(db, { statement: `Ratée ${i} ?`, accepted: [`r${i}`] })
-      await markSeen(db, player.id, questionId, { floor: 1, correct: false })
-      await db.insert(missedPool).values({ userId: player.id, questionId, floor: 1, lastFailedAt: NOW })
-    }
-    await db
-      .update(users)
-      .set({ lives: 0, cooldownUntil: new Date(NOW.getTime() - 1_000) })
-      .where(eq(users.id, player.id))
+    await readyRecovery()
 
     await serveNextQuestion(db, await reload(), NOW)
 
@@ -106,23 +115,14 @@ describe('Chronomancie, sur toute la tentative', () => {
   // dont la première question est réservée dans la foulée.
   it('double le timer de la première question servie après un rattrapage réussi', async () => {
     await castChronomancy()
-
-    for (let i = 0; i < rules.poolSizeForRecovery; i++) {
-      const questionId = await createQuestion(db, { statement: `Ratée ${i} ?`, accepted: [`r${i}`] })
-      await markSeen(db, player.id, questionId, { floor: 1, correct: false })
-      await db.insert(missedPool).values({ userId: player.id, questionId, floor: 1, lastFailedAt: NOW })
-    }
-    await db
-      .update(users)
-      .set({ cooldownUntil: new Date(NOW.getTime() - 1_000) })
-      .where(eq(users.id, player.id))
+    const answers = await readyRecovery()
 
     // Le rattrapage se joue au timer nu, jusqu'au verdict scellé.
     let state = await serveNextQuestion(db, await reload(), NOW)
+    expect(state.phase).toBe('recovery')
     while (state.phase === 'recovery') {
       expect(await servedTimer(NOW)).toBe(rules.recoveryTimerMs)
-      const index = state.question!.statement.replace(/\D/g, '')
-      await submitAnswer(db, await reload(), `r${index}`, NOW)
+      await submitAnswer(db, await reload(), answers.get(state.question!.statement)!, NOW)
       state = await serveNextQuestion(db, await reload(), NOW)
     }
 
