@@ -138,6 +138,15 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
 }
 
 /**
+ * Là où toute partie commence : étage 1, vies pleines selon le jeu de règles.
+ * Écrit à la création de tout compte — réel, test ou de dev — comme à sa remise
+ * à zéro, pour qu'aucun ne parte de la valeur par défaut de la colonne.
+ */
+export function startOfGame(): Pick<User, 'currentFloor' | 'lives'> {
+  return { currentFloor: 1, lives: rulesForFloor(1).lives }
+}
+
+/**
  * Effacer la partie d'un joueur et le rendre neuf : étage 1, vies pleines, plus
  * rien vu ni raté. D'abord écrit pour les joueurs test (`resetTestPlayer`, qui
  * s'appuie dessus), et ouvert depuis à un vrai joueur bloqué ou testé en
@@ -158,27 +167,26 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
     db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),
     db.delete(reservations).where(eq(reservations.userId, player.id)),
     db.delete(attempts).where(eq(attempts.userId, player.id)),
-    // Tranchées comprises : gardées, elles interdiraient de recontester une
-    // question que le joueur rate de nouveau. Les réponses qu'elles ont fait
-    // accepter restent sur la question. Voir specs/admin.md#gestion-des-joueurs.
+    // Tranchées comprises. Voir specs/admin.md#gestion-des-joueurs.
     db.delete(disputes).where(eq(disputes.userId, player.id)),
     db
       .update(users)
       .set({
-        currentFloor: 1,
-        lives: rulesForFloor(1).lives,
+        ...startOfGame(),
         cooldownUntil: null,
         cooldownStartedAt: null,
+        cooldownBaseMs: null,
         floorCursor: 0,
         floorSeen: 0,
         attemptSeen: 0,
         attemptStartedAt: now,
-        // Les compteurs repartent avec la partie : la série décrit la tentative
-        // en cours, qui n'existe plus, et les vues de toujours la partie
-        // effacée. Les jours joués, non — ils disent une assiduité, et personne
-        // n'a « désassisté » en étant remis à zéro. Voir specs/succes.md#remise-à-zéro.
+        // Les compteurs des succès repartent avec la partie, le palmarès d'un
+        // vrai joueur non. Voir specs/succes.md#remise-à-zéro.
         streak: 0,
         seenTotal: 0,
+        lastPlayedDay: null,
+        daysPlayed: 0,
+        playStreak: 0,
         // Le palmarès porté tombe avec les lignes qu'il double : le laisser
         // plein ferait croire au jeu que le joueur test possède encore ce qu'on
         // vient d'effacer, et aucune « première fois » ne se réécrirait.

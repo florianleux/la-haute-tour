@@ -2,7 +2,7 @@ import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
 import { upcomingQuestions } from './deck'
 import { cooldownFields, cooldownFrom } from './mechanics'
-import { requirePlayer, resetPlayer } from './players'
+import { requirePlayer, resetPlayer, startOfGame } from './players'
 import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
 import {
@@ -74,6 +74,7 @@ export async function createTestPlayer(db: Database, now: Date): Promise<User> {
       discordId: `test-${crypto.randomUUID()}`,
       username: testPlayerName(rank),
       isTest: true,
+      ...startOfGame(),
       // Une tentative ouverte à l'instant : sans elle, tout ce que le joueur
       // test verra plus tard daterait de l'époque zéro.
       attemptStartedAt: now,

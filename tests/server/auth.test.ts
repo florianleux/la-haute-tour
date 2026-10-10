@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { loginWithDiscord } from '../../server/utils/auth'
 import { users, whitelist } from '../../server/db/schema'
+import { rulesForFloor } from '../../server/utils/rules'
 import { createTestDatabase } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 
@@ -39,7 +40,7 @@ describe('loginWithDiscord', () => {
         email: 'gandalf@example.com',
         isAdmin: false,
         currentFloor: 1,
-        lives: 3,
+        lives: rulesForFloor(1).lives,
       },
     })
   })

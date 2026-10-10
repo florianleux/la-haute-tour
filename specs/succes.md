@@ -110,8 +110,9 @@ jouer, n'en fait pas un — c'est la partie qu'on compte, pas la visite.
 
 ### Positions notables — 3
 
-Atteindre un numéro précis sur le compteur de questions vues depuis toujours —
-toutes tentatives, tous étages confondus, un compteur qui ne redescend jamais.
+Atteindre un numéro précis sur le compteur de questions vues — toutes
+tentatives, tous étages confondus, un compteur qui ne redescend qu'à la remise à
+zéro du joueur.
 
 Question n°**67**, n°**666**, n°**1312**.
 
@@ -150,7 +151,7 @@ porte déjà ses questions vues. Voir
 | Ce qu'il faut savoir | Ce qui le porte |
 |---|---|
 | La série en cours | `streak`, remis à zéro à toute vie perdue et à toute tentative neuve |
-| Les questions vues depuis toujours | `seenTotal` |
+| Les questions vues depuis la dernière remise à zéro | `seenTotal` |
 | Les jours joués | `lastPlayedDay`, `daysPlayed`, `playStreak` |
 | Le premier arrivé en haut | Un champ unique des réglages, réclamé une seule fois |
 | Ce qui est déjà acquis | Le **palmarès** (`achievementsHeld`), porté par le joueur. La table des succès reste la source — elle seule les date ; le palmarès la double pour qu'aucune requête de jeu n'ait à la relire |
@@ -189,8 +190,8 @@ pouvait être réécrite dans un sens, elle devrait pouvoir l'être dans l'autre
 
 ## Remise à zéro
 
-Remettre un joueur à zéro efface sa partie, pas son palmarès : ses compteurs
-repartent de zéro, ses succès restent.
+Remettre un joueur à zéro efface sa partie, pas son palmarès : ses compteurs —
+série, questions vues, jours joués — repartent de zéro, ses succès restent.
 
 **Sauf pour un joueur test**, dont les succès sont effacés avec le reste. Ils
 existent précisément pour rejouer des situations : sans cela, une « première fois »

@@ -1,5 +1,6 @@
 import { useDatabase } from '~~/server/db/client'
 import { users, whitelist } from '~~/server/db/schema'
+import { startOfGame } from '~~/server/utils/players'
 
 /**
  * Connexion locale, sans Discord : un admin de développement, créé à la
@@ -31,6 +32,7 @@ export default defineEventHandler(async (event): Promise<void> => {
       discordId: DEV_DISCORD_ID,
       username: 'Admin local',
       isAdmin: true,
+      ...startOfGame(),
       introDoneAt: now,
       attemptStartedAt: now,
     })

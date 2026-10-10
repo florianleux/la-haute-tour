@@ -4,7 +4,7 @@ import type { Database } from '../db/client'
 import { useDatabase } from '../db/client'
 import { users, whitelist } from '../db/schema'
 import type { User } from '../db/schema'
-import { rulesForFloor } from './rules'
+import { startOfGame } from './players'
 
 export interface DiscordProfile {
   discordId: string
@@ -20,7 +20,7 @@ export type LoginResult =
 
 /**
  * Whitelist first: a Discord ID that isn't whitelisted creates no account.
- * Otherwise create the player (floor 1, 3 lives, not admin, l'équipe décidée à
+ * Otherwise create the player (at the start of the game, not admin, l'équipe décidée à
  * l'invitation) or re-sync their username/email/avatar without ever touching
  * their game state — ni leur équipe.
  */
@@ -46,8 +46,7 @@ export async function loginWithDiscord(
       email: profile.email,
       avatar: profile.avatar,
       isAdmin: false,
-      currentFloor: 1,
-      lives: rulesForFloor(1).lives,
+      ...startOfGame(),
       // L'équipe décidée à l'invitation, et seulement à la création : une
       // whitelist rééditée ne déplace personne, la fiche joueur fait foi
       // ensuite. Voir specs/equipes.md.

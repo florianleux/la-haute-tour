@@ -135,12 +135,21 @@ describe('repartir de zéro', () => {
     expect(card?.pendingDisputes).toBe(0)
   })
 
-  it('remet les vues de toujours à zéro, même chez un vrai joueur', async () => {
-    await db.update(users).set({ seenTotal: 42 }).where(eq(users.id, userId))
+  it('remet les compteurs des succès à zéro, même chez un vrai joueur', async () => {
+    await db
+      .update(users)
+      .set({ seenTotal: 42, lastPlayedDay: '2026-09-03', daysPlayed: 5, playStreak: 2, cooldownBaseMs: 1_000 })
+      .where(eq(users.id, userId))
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
 
-    expect((await loadPlayer(db, userId)).seenTotal).toBe(0)
+    expect(await loadPlayer(db, userId)).toMatchObject({
+      seenTotal: 0,
+      lastPlayedDay: null,
+      daysPlayed: 0,
+      playStreak: 0,
+      cooldownBaseMs: null,
+    })
   })
 
   it('rend contestable une question déjà contestée, ratée de nouveau', async () => {
