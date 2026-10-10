@@ -19,7 +19,7 @@
 // plutôt qu'une vraie partie — pour régler le visuel sans dépendre d'une
 // question réellement jouée. Modifier ResultCard modifie donc aussi bien
 // cette page que la vraie. Admin seulement. Voir pages/test/play.vue et
-// pages/test/wait.vue pour le même principe.
+// pages/test/cooldown.vue pour le même principe.
 import type { GameState } from '~~/server/utils/game'
 import { gameScreen } from '~~/utils/phase'
 

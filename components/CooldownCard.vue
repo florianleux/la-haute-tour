@@ -51,7 +51,7 @@
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
       :class="state.phase === 'cooldown' ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
     >
-      {{ state.phase === 'cooldown' ? (waitRemaining || 'Attente') : 'Attente terminée' }}
+      {{ state.phase === 'cooldown' ? (cooldownRemaining || 'Attente') : 'Attente terminée' }}
     </h1>
 
     <!-- Le panneau de parchemin porte tout ce que l'écran a à dire : décompte,
@@ -132,7 +132,7 @@
 
 <script setup lang="ts">
 // L'écran d'attente — cooldown comme rattrapage prêt à démarrer. Partagé entre
-// la vraie partie (pages/index.vue) et son banc de design (pages/test/wait.vue) :
+// la vraie partie (pages/index.vue) et son banc de design (pages/test/cooldown.vue) :
 // modifier l'un modifie l'autre, comme QuestionCard pour l'ascension.
 //
 // Reskin parchemin/médiéval au même titre que l'ascension : les deux phases se
@@ -145,7 +145,7 @@ import type { GameScreen } from '~~/utils/phase'
 defineProps<{
   state: GameState
   screen: GameScreen
-  waitRemaining: string
+  cooldownRemaining: string
   loading: boolean
   isAdmin: boolean
   skipping: boolean

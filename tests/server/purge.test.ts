@@ -13,7 +13,7 @@ installNitroGlobals()
 
 const NOW = new Date('2026-09-06T12:00:00.000Z')
 const rules = rulesForFloor(1)
-const WAIT_OVER = new Date(NOW.getTime() + rules.cooldownMs + 1_000)
+const COOLDOWN_OVER = new Date(NOW.getTime() + rules.cooldownMs + 1_000)
 
 describe('Purge, sur le Pool Échecs', () => {
   let db: Database
@@ -174,7 +174,7 @@ describe('Purge, sur le Pool Échecs', () => {
 
     await castPurge()
 
-    const state = await readGameState(db, await reload(), WAIT_OVER)
+    const state = await readGameState(db, await reload(), COOLDOWN_OVER)
     expect(state.phase).toBe('ascent')
     expect(state.lives).toBe(rules.lives)
   })
@@ -183,9 +183,9 @@ describe('Purge, sur le Pool Échecs', () => {
     await fillPool(rules.poolSizeForRecovery + 1)
 
     await castPurge()
-    await serveNextQuestion(db, await reload(), WAIT_OVER)
+    await serveNextQuestion(db, await reload(), COOLDOWN_OVER)
 
-    expect((await readGameState(db, await reload(), WAIT_OVER)).phase).toBe('recovery')
+    expect((await readGameState(db, await reload(), COOLDOWN_OVER)).phase).toBe('recovery')
   })
 
   it('se lit sur l écran d attente, et au journal du lanceur', async () => {

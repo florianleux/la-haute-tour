@@ -95,7 +95,7 @@ describe('écran de jeu', () => {
     const failed = { total: 3, played: 3, successes: 0, resumes: false, sealed: true, required: 1 }
 
     expect(gameScreen(state({ phase: 'recovery', recovery: failed, verdict })).recovery?.result)
-      .toBe('waiting')
+      .toBe('cooldown')
   })
 })
 

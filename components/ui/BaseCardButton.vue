@@ -61,7 +61,7 @@
 // - 'card-bottom' : QuestionCard/ResultCard/ChestCard en mobile, où le cadre portrait
 //   laisse les rubans dépasser sous le bas réel du cadre — le bouton se cale sur
 //   ce bord-là, pas sur celui de l'image.
-// - 'poster' : WaitCard, où le bouton se pose sur le parchemin. `left-[54%]` et
+// - 'poster' : CooldownCard, où le bouton se pose sur le parchemin. `left-[54%]` et
 //   non `left-1/2` : l'illustration n'est pas symétrique (bannière débordant à
 //   droite, corde pendant à gauche), si bien que le parchemin y est centré sur
 //   54%. Mesuré, pas estimé — le corps de la feuille va de x=182 à x=807 sur 918.

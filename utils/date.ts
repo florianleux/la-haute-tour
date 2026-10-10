@@ -102,7 +102,7 @@ export function formatCountdown(iso: string, now: number): string {
  * Arrondie au-dessus : trente secondes restantes se lisent « 1 min », parce
  * qu'une attente qui reste est une attente.
  */
-export function formatWait(iso: string, now: number): string {
+export function formatCooldown(iso: string, now: number): string {
   const minutes = Math.ceil((new Date(iso).getTime() - now) / 60_000)
 
   if (!Number.isFinite(minutes) || minutes <= 0) {

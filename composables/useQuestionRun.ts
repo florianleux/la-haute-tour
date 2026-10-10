@@ -13,7 +13,7 @@ export interface QuestionRun {
   /** Secondes restantes sur la question en cours, null hors question. */
   secondsLeft: Ref<number | null>
   /** Temps restant avant la reprise, tel qu'on le lit sur l'écran d'attente. */
-  waitRemaining: Ref<string>
+  cooldownRemaining: Ref<string>
   /** Envoie la réponse saisie. */
   submit: () => Promise<void>
   /** Passe à la suite : commencer, question suivante, démarrer un rattrapage. */
@@ -84,7 +84,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     return Math.max(0, Math.ceil((new Date(deadline).getTime() - now.value) / 1000))
   })
 
-  const waitRemaining = computed(
+  const cooldownRemaining = computed(
     () => formatCountdown(state.value?.cooldownUntil ?? '', now.value),
   )
 
@@ -226,7 +226,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     state,
     typed,
     secondsLeft,
-    waitRemaining,
+    cooldownRemaining,
     submit,
     advance,
     skipCooldown,

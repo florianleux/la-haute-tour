@@ -38,10 +38,10 @@ export function isCastable(spell: SpellId): spell is CastableSpellId {
  * Les autres attendent la prochaine tentative et s'ancrent dessus.
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
-export const WAIT_BOUND_SPELL_IDS = ['RESPITE', 'INDULGENCE', 'PURGE'] as const
+export const COOLDOWN_BOUND_SPELL_IDS = ['RESPITE', 'INDULGENCE', 'PURGE'] as const
 
-export function isWaitBound(spell: SpellId): boolean {
-  return (WAIT_BOUND_SPELL_IDS as readonly SpellId[]).includes(spell)
+export function isCooldownBound(spell: SpellId): boolean {
+  return (COOLDOWN_BOUND_SPELL_IDS as readonly SpellId[]).includes(spell)
 }
 
 /**

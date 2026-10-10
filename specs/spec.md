@@ -87,6 +87,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Tirage de cible** | `drawTarget` | Le geste serveur qui change une catégorie en quelqu'un : filtrer les éligibles, les classer par progression, puis tirer en pondérant par le rang. Rend personne quand le pool est vide. |
 | **Cible éligible** | `eligible` | Un joueur que le tirage garde : ni en fin de partie, ni jamais commencé, et lié au lanceur. Le filtre passe avant le classement, pour qu'un écarté ne pèse pas dans la distribution. |
 | **Commencé** | `hasStarted` | Le joueur a vu au moins une question. Ce n'est pas une phase : un compte jamais ouvert est en ascension comme un autre, mais aucun effet ne l'atteindrait. |
+| **Sort lié à l'attente** | `cooldownBound` | Un sort qui agit sur l'attente en cours de sa cible plutôt que sur sa prochaine tentative : Répit, Indulgence, Purge. Agit dès le lancer, et meurt avec l'attente visée. Voir [ADR 0004](../docs/adr/0004-les-sorts-lies-a-l-attente.md). |
 | **Attente visée** | `targetCooldownStartedAt` | L'attente **de la cible** sur laquelle un sort lié à l'attente agit, par son début. Distincte de celle du lancer dès qu'on vise quelqu'un d'autre ; nulle quand la cible n'attend pas. |
 | **Équipe** | `team` | L'une des deux appartenances, assignée par l'admin. Elle ne sert qu'à dériver allié ou ennemi au moment d'un lancer. Facultative : l'admin n'en a pas. Voir [`equipes.md`](./equipes.md). |
 | **Magie blanche** | `boon` | La face positive d'un sort, appliquée sur soi ou un allié. |

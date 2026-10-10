@@ -1,6 +1,6 @@
 <template>
   <RecoveryCard
-    v-if="state?.phase === 'recovery' && !waiting && screen && (screen.question || screen.verdict)"
+    v-if="state?.phase === 'recovery' && !cooldownScreen && screen && (screen.question || screen.verdict)"
     :screen="screen"
     :model-value="typed"
     :seconds-left="secondsLeft"
@@ -26,11 +26,11 @@
     @submit="run('submit', submit)"
   />
 
-  <WaitCard
-    v-else-if="waiting && !readingFall && state && screen"
+  <CooldownCard
+    v-else-if="cooldownScreen && !readingFall && state && screen"
     :state="state"
     :screen="screen"
-    :wait-remaining="waitRemaining"
+    :cooldown-remaining="cooldownRemaining"
     :loading="loading"
     :is-admin="isAdmin"
     :skipping="isRunning('skipCooldown')"
@@ -147,7 +147,7 @@ const {
   state,
   typed,
   secondsLeft,
-  waitRemaining,
+  cooldownRemaining,
   submit,
   advance,
   skipCooldown,
@@ -225,7 +225,7 @@ watch(() => state.value?.verdict, (verdict) => {
 // bouton « Commencer le rattrapage ». Voir specs/ecrans.md#cooldown--attente.
 // Il passe avant RecoveryCard : le verdict de la question qui a pris la
 // dernière vie reste dans l'état, et le ferait relire au lieu du poster.
-const waiting = computed(() =>
+const cooldownScreen = computed(() =>
   state.value?.phase === 'cooldown'
   || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
 )
@@ -240,13 +240,13 @@ const fallenOn = ref<string | null>(null)
 
 watch(() => state.value?.verdict?.questionId, () => {
   const verdict = state.value?.verdict
-  if (verdict?.lifeLost && waiting.value) {
+  if (verdict?.lifeLost && cooldownScreen.value) {
     fallenOn.value = verdict.questionId
   }
 })
 
 const readingFall = computed(() =>
-  waiting.value && fallenOn.value !== null && fallenOn.value === state.value?.verdict?.questionId,
+  cooldownScreen.value && fallenOn.value !== null && fallenOn.value === state.value?.verdict?.questionId,
 )
 
 // Le seul chemin qui entre ici avec viewingChest à vrai est ChestCard une
@@ -266,10 +266,10 @@ async function goNext(): Promise<void> {
 
 async function openTheChest(): Promise<void> {
   await run('chest', openChest)
-  // Un Mimic bascule directement en attente — WaitCard le montre, pas cet
+  // Un Mimic bascule directement en attente — CooldownCard le montre, pas cet
   // écran. Rien à révéler ici dans ce cas : on referme derrière soi.
   // Voir specs/bonus.md#coffre-et-mimic.
-  if (waiting.value) {
+  if (cooldownScreen.value) {
     viewingChest.value = false
   }
 }

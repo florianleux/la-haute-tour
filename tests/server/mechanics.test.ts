@@ -20,12 +20,12 @@ describe('phase', () => {
   })
 
   it('est l attente tant que son échéance n est pas atteinte', () => {
-    const waiting = {
+    const inCooldown = {
       ...ascent,
       user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }),
     }
 
-    expect(phaseOf(waiting, NOW)).toBe('cooldown')
+    expect(phaseOf(inCooldown, NOW)).toBe('cooldown')
   })
 
   it('devient rattrapage à l échéance, sans qu aucune tâche ne tourne', () => {

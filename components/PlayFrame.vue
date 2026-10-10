@@ -90,7 +90,7 @@
 // monte son propre PlayFrame : passer de la question au verdict démonte l'un
 // (onBeforeUnmount, synchrone) et monte l'autre dans le même patch. Un cadre
 // qui monte juste après un cadre du même habillage continue la scène ; sinon,
-// il arrive — chargement de page, retour d'attente (WaitCard n'a pas de
+// il arrive — chargement de page, retour d'attente (CooldownCard n'a pas de
 // cadre, le minuteur a vidé la variable), passage au rattrapage et retour.
 // Suppose que l'ancien cadre se démonte et le nouveau se monte dans le même
 // patch synchrone : une card asynchrone, un <Suspense> ou une <Transition

@@ -88,7 +88,7 @@ describe('joueurs admin', () => {
   })
 
   it('passer l attente laisse une échéance dépassée, jamais nulle', async () => {
-    const waiting = await createPlayer(db, {
+    const playerInCooldown = await createPlayer(db, {
       discordId: '555',
       username: 'radagast',
       lives: 0,
@@ -96,14 +96,14 @@ describe('joueurs admin', () => {
     })
 
     const response = await skip(jsonRequest(
-      `http://test/players/${waiting}/skip-cooldown`,
+      `http://test/players/${playerInCooldown}/skip-cooldown`,
       'POST',
       undefined,
       adminCookie,
     ))
 
     expect(response.status).toBe(200)
-    const player = await loadPlayer(db, waiting)
+    const player = await loadPlayer(db, playerInCooldown)
     // Non nulle : c'est elle, dépassée, qui autorise la lecture suivante à rendre
     // les vies quand le Pool Échecs est trop petit pour un rattrapage.
     expect(player.cooldownUntil).not.toBeNull()

@@ -33,13 +33,13 @@ describe('durée d un sort', () => {
   // Un Répit n'est jamais ancré : il agit sur l'attente où il est parti, et la
   // base le rend donc « pending » tout du long. Voir server/utils/effects.ts.
   it('donne l heure de fin de l attente au Répit, qui agit déjà', () => {
-    expect(spellLifetime(effect({ spell: 'RESPITE', lifetime: 'wait', state: 'pending' }), state))
+    expect(spellLifetime(effect({ spell: 'RESPITE', lifetime: 'cooldown', state: 'pending' }), state))
       .toBe('Jusqu\'à la fin de ton attente (18:42)')
   })
 
   // Le Répit reste porté jusqu'au bout du rattrapage qui suit l'attente.
   it('dit l attente terminée une fois qu elle est échue', () => {
-    expect(spellLifetime(effect({ spell: 'RESPITE', lifetime: 'wait', state: 'pending' }), { ...state, phase: 'recovery' }))
+    expect(spellLifetime(effect({ spell: 'RESPITE', lifetime: 'cooldown', state: 'pending' }), { ...state, phase: 'recovery' }))
       .toBe('Sur ton attente, terminée à 18:42')
   })
 

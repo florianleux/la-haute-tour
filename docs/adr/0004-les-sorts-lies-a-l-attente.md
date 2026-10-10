@@ -31,15 +31,15 @@ n'est pas fini.
 ## Décision
 
 La famille est une propriété du catalogue, pas une suite de cas particuliers :
-`WAIT_BOUND_SPELL_IDS` dans [`shared/utils/spells.ts`](../../shared/utils/spells.ts),
-lue par `isWaitBound()`.
+`COOLDOWN_BOUND_SPELL_IDS` dans [`shared/utils/spells.ts`](../../shared/utils/spells.ts),
+lue par `isCooldownBound()`.
 
 ## Conséquences
 
 Deux endroits du jeu l'interrogent, et deux seulement — un troisième, d'écran,
 s'y est ajouté depuis (voir plus bas).
 
-`actsOnCurrentWait()` borne ces effets à l'attente pendant laquelle ils sont
+`actsOnCurrentCooldown()` borne ces effets à l'attente pendant laquelle ils sont
 partis : passée celle-ci, ils ne sont plus servis. C'est ce qui rend Indulgence
 et Purge **ponctuelles sans code de consommation** — aucun champ « dépensé »,
 aucune suppression de ligne. L'attente qui s'achève emporte l'effet, qu'un
@@ -65,7 +65,7 @@ déclencheur est-il l'attente, ou la tentative suivante ? Le reste suit.
 L'infobulle d'un sort (voir [`specs/bonus.md`](../../specs/bonus.md#linfobulle-dun-sort))
 a suivi la même règle, et l'a étendue au grimoire :
 
-- `stakeOf()` (`server/utils/game.ts`) interroge `isWaitBound()` pour chiffrer
+- `stakeOf()` (`server/utils/game.ts`) interroge `isCooldownBound()` pour chiffrer
   un effet qui n'est pas encore ancré mais agit déjà — le troisième lecteur, le
   même tri que `playedRules()`.
 - **La durée de vie** d'un effet (`lifetime` : tentative, attente, rattrapage,

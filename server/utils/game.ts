@@ -25,7 +25,7 @@ import {
 import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
-import { isWaitBound } from '../../shared/utils/spells'
+import { isCooldownBound } from '../../shared/utils/spells'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import {
@@ -218,7 +218,7 @@ function playedRules(snapshot: PlayerSnapshot, floor = snapshot.user.currentFloo
     rulesForFloor(floor),
     // Les sorts liés à l'attente sont déjà bornés à celle du joueur : ce module
     // ne sert que ceux-là. Voir server/utils/mechanics.ts#isBorneBy.
-    snapshot.effects.filter(effect => effect.state === 'active' || isWaitBound(effect.spell)),
+    snapshot.effects.filter(effect => effect.state === 'active' || isCooldownBound(effect.spell)),
   )
 }
 
@@ -728,7 +728,7 @@ function stakeOf(effect: PlacedEffect, user: User, played: FloorRules): EffectSt
   const rule = SPELLS[effect.spell].stakes?.[effect.face]
 
   // Même tri que les règles jouées : un sort lié à l'attente agit dès le lancer.
-  if (!rule || (effect.state === 'pending' && !isWaitBound(effect.spell))) {
+  if (!rule || (effect.state === 'pending' && !isCooldownBound(effect.spell))) {
     return null
   }
 
@@ -815,9 +815,9 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
   // Une attente qui vient de s'achever est le seul cas où une lecture a quelque
   // chose à écrire. Un palier ou une fin de partie n'en font pas partie : il n'y
   // a plus de vies à y rendre.
-  const waitOver = phaseOfSnapshot(snapshot, false, now) === 'recovery'
+  const cooldownOver = phaseOfSnapshot(snapshot, false, now) === 'recovery'
 
-  if (!waitOver) {
+  if (!cooldownOver) {
     return stateFrom(db, snapshot, now)
   }
 
@@ -1004,8 +1004,8 @@ export async function openPlayerChest(
   // vie ordinaire : l'attente démarre, et le verdict de la question — juste, elle
   // l'était — reste lisible par-dessus. La série tombe avec les vies : « toute vie
   // perdue casse la série » ne souffre pas d'exception, pas même celle-ci.
-  const wait = cooldownFields(cooldownFrom(rules, now), now)
-  const killed = { lives: 0, streak: 0, ...wait }
+  const cooldown = cooldownFields(cooldownFrom(rules, now), now)
+  const killed = { lives: 0, streak: 0, ...cooldown }
 
   await db.update(users).set(killed).where(eq(users.id, user.id))
 
@@ -1143,8 +1143,8 @@ async function advanceRecovery(
   rules: FloorRules,
   now: Date,
 ): Promise<GameState> {
-  const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
-  if (waiting) {
+  const inCooldown = user.cooldownUntil !== null && now < user.cooldownUntil
+  if (inCooldown) {
     return buildState(db, user.id, now)
   }
 

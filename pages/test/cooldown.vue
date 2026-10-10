@@ -1,8 +1,8 @@
 <template>
-  <WaitCard
+  <CooldownCard
     :state="state"
     :screen="screen"
-    wait-remaining="4m 12s"
+    cooldown-remaining="4m 12s"
     :loading="false"
     :is-admin="true"
     :skipping="false"
@@ -14,9 +14,9 @@
 
 <script setup lang="ts">
 // Banc de design de l'écran d'attente : même composant qu'en jeu
-// (WaitCard), mais un état tiré au hasard à chaque chargement plutôt
+// (CooldownCard), mais un état tiré au hasard à chaque chargement plutôt
 // qu'une vraie partie — pour régler le visuel sans dépendre d'une attente
-// réelle. Modifier WaitCard modifie donc aussi bien cette page que la
+// réelle. Modifier CooldownCard modifie donc aussi bien cette page que la
 // vraie. Admin seulement. Voir pages/test/play.vue pour le même principe.
 import type { GameState } from '~~/server/utils/game'
 import { gameScreen } from '~~/utils/phase'

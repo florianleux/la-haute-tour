@@ -8,7 +8,7 @@
         <BaseHint>
           Étage {{ testPlayer.floor }} — {{ testPlayer.floorSeen }}/{{ testPlayer.floorTotal }} vues,
           {{ testPlayer.lives }} vie(s), {{ phaseLabel(testPlayer.phase) }}
-          <template v-if="waiting && remaining"> — {{ remaining }}</template>
+          <template v-if="inCooldown && remaining"> — {{ remaining }}</template>
         </BaseHint>
       </div>
       <BaseButton variant="ghost" :disabled="busy" @click="emit('remove')">
@@ -53,7 +53,7 @@
       <BaseButton variant="ghost" :disabled="busy" @click="emit('sendToCooldown')">
         Mettre en attente
       </BaseButton>
-      <BaseButton variant="ghost" :disabled="busy || !waiting" @click="emit('skipCooldown')">
+      <BaseButton variant="ghost" :disabled="busy || !inCooldown" @click="emit('skipCooldown')">
         Passer l'attente
       </BaseButton>
       <BaseButton variant="ghost" :disabled="busy" @click="emit('grantLife')">
@@ -115,5 +115,5 @@ const stepsValue = computed({
   set: (value: string) => { steps.value = Number(value) },
 })
 
-const { waiting, remaining } = usePlayerWait(toRef(props, 'testPlayer'), toRef(props, 'now'))
+const { inCooldown, remaining } = usePlayerCooldown(toRef(props, 'testPlayer'), toRef(props, 'now'))
 </script>

@@ -163,7 +163,7 @@ export function spellLifetime(effect: EffectView, state: GameState): string {
       return state.lives > 0
         ? `Jusqu'à ta dernière vie perdue (encore ${state.lives} ♥)`
         : 'Jusqu\'à la fin de ton rattrapage'
-    case 'wait':
+    case 'cooldown':
       // Porté jusqu'au bout du rattrapage qui suit, alors que l'attente est
       // échue : une heure de fin au futur serait déjà passée.
       if (!state.cooldownUntil) {

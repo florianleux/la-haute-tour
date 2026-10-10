@@ -41,7 +41,7 @@ export function nextActionLabel(state: GameState): string {
       return "Reprendre";
     }
 
-    if (result === "waiting") {
+    if (result === "cooldown") {
       return "Terminer";
     }
 
@@ -99,7 +99,7 @@ export interface RecoveryLine {
   required: number;
   /** Le sort du rattrapage, annoncé dès que le verdict est scellé — quota
    *  atteint (succès) ou mathématiquement impossible (échec). */
-  result: "resumed" | "waiting" | null;
+  result: "resumed" | "cooldown" | null;
 }
 
 /**
@@ -184,6 +184,6 @@ function recoveryLine(
     total: recovery.total,
     successes: recovery.successes,
     required: recovery.required,
-    result: over ? (recovery.resumes ? "resumed" : "waiting") : null,
+    result: over ? (recovery.resumes ? "resumed" : "cooldown") : null,
   };
 }

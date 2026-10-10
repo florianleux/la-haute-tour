@@ -209,7 +209,7 @@ function beyondBudget(db: Database, casterId: number, startedAt: Date, cap: numb
 }
 
 /** Ce qu'il reste de lancers à ce joueur pour l'attente où il se tient. */
-export async function castsLeftThisWait(db: Database, caster: User): Promise<number> {
+export async function castsLeftThisCooldown(db: Database, caster: User): Promise<number> {
   const { castsPerCooldown } = rulesForFloor(caster.currentFloor)
 
   if (!caster.cooldownStartedAt) {

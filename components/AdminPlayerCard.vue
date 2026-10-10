@@ -31,7 +31,7 @@
         </dt>
         <dd>{{ teamLabel(player.team) }}</dd>
       </div>
-      <div v-if="waiting && remaining" class="flex justify-between gap-4">
+      <div v-if="inCooldown && remaining" class="flex justify-between gap-4">
         <dt class="text-slate-500">
           Déblocage dans
         </dt>
@@ -52,7 +52,7 @@
       <BaseButton
         variant="ghost"
         :loading="running === 'skipCooldown'"
-        :disabled="!waiting || busy"
+        :disabled="!inCooldown || busy"
         @click="$emit('skipCooldown')"
       >
         Passer l'attente
@@ -112,5 +112,5 @@ const teamOptions = [
   ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
 ]
 
-const { waiting, remaining } = usePlayerWait(toRef(props, 'player'), toRef(props, 'now'))
+const { inCooldown, remaining } = usePlayerCooldown(toRef(props, 'player'), toRef(props, 'now'))
 </script>

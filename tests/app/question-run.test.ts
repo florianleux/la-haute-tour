@@ -222,8 +222,8 @@ describe('déroulé d une question', () => {
       cooldownUntil: new Date(NOW + 90 * 60_000).toISOString(),
     }))
 
-    const { waitRemaining } = await run({ now: ref(NOW) })
+    const { cooldownRemaining } = await run({ now: ref(NOW) })
 
-    expect(waitRemaining.value).toBe('01:30:00')
+    expect(cooldownRemaining.value).toBe('01:30:00')
   })
 })

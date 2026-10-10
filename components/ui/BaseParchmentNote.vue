@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 // Une ligne de commentaire sur un parchemin : rappel, résultat, état. Les écrans
-// reskinés en parchemin (WaitCard, et les suivants) en empilent plusieurs, toutes
+// reskinés en parchemin (CooldownCard, et les suivants) en empilent plusieurs, toutes
 // de la même taille et du même italique — les recopier en ligne à chaque fois est
 // ce que CLAUDE.md interdit.
 //

@@ -1,6 +1,6 @@
 import { isAnswerAccepted } from './answers'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { isWaitBound, SPELL_IDS } from '../../shared/utils/spells'
+import { isCooldownBound, SPELL_IDS } from '../../shared/utils/spells'
 import type { FloorRules } from './rules'
 import type { SpellId } from '../../shared/utils/spells'
 import type { DrawnTargetKind } from '../../shared/utils/teams'
@@ -50,8 +50,8 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
   }
 
   if (user.lives <= 0) {
-    const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
-    return waiting ? 'cooldown' : 'recovery'
+    const inCooldown = user.cooldownUntil !== null && now < user.cooldownUntil
+    return inCooldown ? 'cooldown' : 'recovery'
   }
 
   return 'ascent'
@@ -90,7 +90,7 @@ export interface BorneEffect {
  * doivent répondre pareil. Voir specs/bonus.md#limite-deffets-négatifs.
  */
 export function isBorneBy(effect: BorneEffect, user: User): boolean {
-  return actsOnCurrentWait(effect, user)
+  return actsOnCurrentCooldown(effect, user)
     && (effect.anchoredAt === null || stillRunning(effect.anchoredAt, user))
 }
 
@@ -101,8 +101,8 @@ export function isBorneBy(effect: BorneEffect, user: User): boolean {
  * touchée, ou rallongerait un rattrapage qu'il n'a pas ouvert — c'est là ce que
  * « ponctuel » veut dire. Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
-function actsOnCurrentWait(effect: BorneEffect, user: User): boolean {
-  if (!isWaitBound(effect.spell)) {
+function actsOnCurrentCooldown(effect: BorneEffect, user: User): boolean {
+  if (!isCooldownBound(effect.spell)) {
     return true
   }
 

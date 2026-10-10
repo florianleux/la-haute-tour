@@ -125,7 +125,7 @@
           >
             Ce coffre rutilant doit renfermer quelque chose de précieux...
           </PlayText>
-          <!-- Mêmes deux messages que sur l'écran d'attente (WaitCard, qui les
+          <!-- Mêmes deux messages que sur l'écran d'attente (CooldownCard, qui les
                rend sur son poster) : chaque écran reskiné porte sa copie, faute
                d'un composant partagé qui survivrait aux deux habillages.
                Voir specs/bonus.md#coffre-et-mimic. -->

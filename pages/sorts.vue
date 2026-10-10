@@ -23,8 +23,8 @@
     <!-- Le seul retour instantané du système : l'échéance recule sous les yeux
          du joueur, sur l'écran d'où il vient de lancer.
          Voir specs/bonus.md#catalogue. -->
-    <BaseHint v-if="waitRemaining" class="mt-4">
-      Reprise dans {{ waitRemaining }}.
+    <BaseHint v-if="cooldownRemaining" class="mt-4">
+      Reprise dans {{ cooldownRemaining }}.
     </BaseHint>
 
     <BaseNotice v-if="failed">
@@ -173,7 +173,7 @@ const { state, refresh: refreshGame } = await useGameState()
 // assez fin pour qu'aucun chiffre affiché ne soit faux, et le Répit la fait
 // reculer d'un coup au retour du lancer.
 const now = useClockTick()
-const waitRemaining = computed(() =>
+const cooldownRemaining = computed(() =>
   (state.value?.cooldownUntil ? formatRemaining(state.value.cooldownUntil, now.value) : ''),
 )
 

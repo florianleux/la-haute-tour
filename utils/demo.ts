@@ -1,4 +1,4 @@
-import { SPELL_FACES, SPELL_IDS, isWaitBound } from '~~/shared/utils/spells'
+import { SPELL_FACES, SPELL_IDS, isCooldownBound } from '~~/shared/utils/spells'
 import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 import type { EffectStake, EffectView } from '~~/server/utils/effects'
 import type { SpellLifetime } from '~~/server/utils/spellbook'
@@ -41,7 +41,7 @@ const DEMO_STAKES: Partial<Record<SpellId, Record<SpellFace, EffectStake>>> = {
  * sort absent tient la tentative. Voir server/utils/spellbook.ts.
  */
 const DEMO_LIFETIMES: Partial<Record<SpellId, SpellLifetime>> = {
-  RESPITE: 'wait',
+  RESPITE: 'cooldown',
   INDULGENCE: 'recovery',
   PURGE: 'instant',
 }
@@ -49,7 +49,7 @@ const DEMO_LIFETIMES: Partial<Record<SpellId, SpellLifetime>> = {
 /** Un effet tiré au hasard ; la face aussi, sauf si la page la fixe. */
 export function randomEffect(state: EffectView['state'], face: SpellFace = pick(SPELL_FACES)): EffectView {
   // Un sort lié à l'attente ne s'ancre jamais : « active », il n'existe pas.
-  const spell = pick(state === 'active' ? SPELL_IDS.filter(id => !isWaitBound(id)) : SPELL_IDS)
+  const spell = pick(state === 'active' ? SPELL_IDS.filter(id => !isCooldownBound(id)) : SPELL_IDS)
 
   return {
     spell,
@@ -59,7 +59,7 @@ export function randomEffect(state: EffectView['state'], face: SpellFace = pick(
     lifetime: DEMO_LIFETIMES[spell] ?? 'attempt',
     // Comme le serveur : rien à chiffrer pour un effet qui n'agit pas encore —
     // un sort lié à l'attente agit dès le lancer. Voir server/utils/game.ts#stakeOf.
-    stake: state === 'active' || isWaitBound(spell) ? DEMO_STAKES[spell]?.[face] ?? null : null,
+    stake: state === 'active' || isCooldownBound(spell) ? DEMO_STAKES[spell]?.[face] ?? null : null,
   }
 }
 
