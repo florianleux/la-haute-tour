@@ -112,7 +112,7 @@
          qu'une fois l'attente échue. Un seul emplacement suffit donc, entre le
          bas du panneau et les pierres des piquets. -->
     <BaseCardButton
-      v-if="state.phase === 'recovery'"
+      v-if="!inCooldown"
       label="Commencer"
       anchor="poster"
       face="plank"

@@ -1,6 +1,7 @@
 import { useGameState } from './useGameState'
 import { usePlay } from './usePlay'
 import { formatCountdown } from '../utils/date'
+import { isCooldown } from '../utils/phase'
 import type { Ref } from 'vue'
 import type { AnswerSource } from '~~/server/utils/mechanics'
 import type { GameState } from '~~/server/utils/game'
@@ -90,7 +91,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
 
   const cooldownOver = computed(() => {
     const deadline = state.value?.cooldownUntil
-    return state.value?.phase === 'cooldown'
+    return isCooldown(state.value)
       && deadline !== null
       && deadline !== undefined
       && now.value >= new Date(deadline).getTime()

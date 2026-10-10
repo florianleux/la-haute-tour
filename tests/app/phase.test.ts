@@ -108,6 +108,12 @@ describe('écran d attente', () => {
     expect(gameScreen(state({ phase: 'recovery' })).showsCooldownCard).toBe(true)
   })
 
+  // Le verdict de la question qui a pris la dernière vie reste dans l'état : il
+  // ne doit pas faire relire le rattrapage au lieu du poster.
+  it('sert le rattrapage prêt à démarrer malgré le verdict de la dernière vie', () => {
+    expect(gameScreen(state({ phase: 'recovery', verdict })).showsCooldownCard).toBe(true)
+  })
+
   it('cède la place au rattrapage en cours, question servie comme verdict à lire', () => {
     const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, required: 1 }
 
