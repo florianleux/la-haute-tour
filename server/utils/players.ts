@@ -162,6 +162,10 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
     db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),
     db.delete(reservations).where(eq(reservations.userId, player.id)),
     db.delete(attempts).where(eq(attempts.userId, player.id)),
+    // Tranchées comprises : gardées, elles interdiraient de recontester une
+    // question que le joueur rate de nouveau. Les réponses qu'elles ont fait
+    // accepter restent sur la question. Voir specs/admin.md#gestion-des-joueurs.
+    db.delete(disputes).where(eq(disputes.userId, player.id)),
     db
       .update(users)
       .set({
