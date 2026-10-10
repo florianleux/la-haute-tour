@@ -80,7 +80,7 @@
       <!-- « Suivant » mène à l'écran de coffre tant qu'il est fermé, sinon
            c'est l'action suivante — jamais les deux en même temps.
            Voir utils/phase.ts. -->
-      <CardButton
+      <BaseCardButton
         v-if="bottomAction"
         :label="bottomAction.label"
         anchor="card-bottom"

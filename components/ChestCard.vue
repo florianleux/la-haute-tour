@@ -146,14 +146,14 @@
         </div>
       </div>
 
-      <CardButton
+      <BaseCardButton
         v-if="!chest.opened"
         label="OUVRIR"
         anchor="card-bottom"
         :disabled="opening || stage !== 'idle'"
         @click="burst"
       />
-      <CardButton
+      <BaseCardButton
         v-else
         :label="action ?? 'Suivant'"
         anchor="card-bottom"

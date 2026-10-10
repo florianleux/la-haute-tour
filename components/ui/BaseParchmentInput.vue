@@ -19,8 +19,8 @@
 //
 // Ce n'est pas un BaseInput : celui-là porte le thème sombre et son propre fond,
 // et le recouvrir en ligne est ce que CLAUDE.md interdit. Même rôle, deux
-// thèmes, donc deux composants — le partage que CardButton fait déjà avec
-// BaseButton et ParchmentNote avec BaseHint.
+// thèmes, donc deux composants — le partage que BaseCardButton fait déjà avec
+// BaseButton et BaseParchmentNote avec BaseHint.
 //
 // L'`id="answer"` est écrit ici parce qu'il ne désigne rien d'autre : c'est lui
 // que PlayFrame guette (`group-has-[#answer:focus]`) pour remonter le panneau

@@ -102,16 +102,16 @@
         </div>
       </div>
 
-      <ParchmentNote v-if="loading">
+      <BaseParchmentNote v-if="loading">
         Mise à jour de ta partie…
-      </ParchmentNote>
+      </BaseParchmentNote>
     </div>
 
     <!-- Les deux actions ne coexistent jamais : « Passer l'attente » n'existe
          que pour l'admin pendant le cooldown, « Commencer le rattrapage »
          qu'une fois l'attente échue. Un seul emplacement suffit donc, entre le
          bas du panneau et les pierres des piquets. -->
-    <CardButton
+    <BaseCardButton
       v-if="state.phase === 'recovery'"
       label="Commencer"
       anchor="poster"
@@ -119,7 +119,7 @@
       :loading="advancing"
       @click="$emit('advance')"
     />
-    <CardButton
+    <BaseCardButton
       v-else-if="isAdmin"
       label="Passer"
       anchor="poster"

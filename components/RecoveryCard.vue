@@ -41,7 +41,7 @@
         {{ statement }}
       </PlayText>
 
-      <PlayInput
+      <BaseParchmentInput
         :model-value="modelValue"
         @update:model-value="$emit('update:modelValue', $event)"
         @submit="$emit('submit')"
@@ -70,7 +70,7 @@
     </template>
 
     <template #action>
-      <CardButton
+      <BaseCardButton
         v-if="screen.question"
         label="Valider"
         anchor="parchment-bottom"
@@ -78,7 +78,7 @@
         :disabled="submitting"
         @click="$emit('submit')"
       />
-      <CardButton
+      <BaseCardButton
         v-else-if="screen.action"
         :label="screen.action"
         anchor="parchment-bottom"
