@@ -101,6 +101,35 @@ describe('Chronomancie, sur toute la tentative', () => {
     expect(await servedTimer(NOW)).toBe(rules.recoveryTimerMs * rules.chronomancyFactor)
   })
 
+  // Lancée pendant l'attente, elle n'agit pas sur le rattrapage, qui appartient
+  // encore à la tentative finissante : elle attend celle que sa réussite ouvre,
+  // dont la première question est réservée dans la foulée.
+  it('double le timer de la première question servie après un rattrapage réussi', async () => {
+    await castChronomancy()
+
+    for (let i = 0; i < rules.poolSizeForRecovery; i++) {
+      const questionId = await createQuestion(db, { statement: `Ratée ${i} ?`, accepted: [`r${i}`] })
+      await markSeen(db, player.id, questionId, { floor: 1, correct: false })
+      await db.insert(missedPool).values({ userId: player.id, questionId, floor: 1, lastFailedAt: NOW })
+    }
+    await db
+      .update(users)
+      .set({ cooldownUntil: new Date(NOW.getTime() - 1_000) })
+      .where(eq(users.id, player.id))
+
+    // Le rattrapage se joue au timer nu, jusqu'au verdict scellé.
+    let state = await serveNextQuestion(db, await reload(), NOW)
+    while (state.phase === 'recovery') {
+      expect(await servedTimer(NOW)).toBe(rules.recoveryTimerMs)
+      const index = state.question!.statement.replace(/\D/g, '')
+      await submitAnswer(db, await reload(), `r${index}`, NOW)
+      state = await serveNextQuestion(db, await reload(), NOW)
+    }
+
+    expect(state.phase).toBe('ascent')
+    expect(await servedTimer(NOW)).toBe(DOUBLED)
+  })
+
   it('reste arbitrée par le serveur : l échéance est fixée à la réservation', async () => {
     await castChronomancy()
     await beginAttempt()

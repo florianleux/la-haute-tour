@@ -1248,12 +1248,14 @@ async function finishRecovery(
     // tentative qui s'ouvre, effets compris — d'où openAttempt plutôt que le
     // décompte du verdict, qui ne connaît que les règles de l'étage.
     await closeAttempt(db, user, now)
-    await openAttempt(db, user, now)
+    const attemptRules = await openAttempt(db, user, now)
 
     // Le rattrapage réussi enchaîne directement sur l'ascension : plus d'écran
     // intermédiaire. drawAndReserve ne lit que currentFloor et floorCursor,
-    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit.
-    await drawAndReserve(db, user, rules, now)
+    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit. Les
+    // règles, elles, sont celles de la tentative qui s'ouvre : la question est
+    // la sienne, et ses effets fraîchement ancrés jouent dès elle.
+    await drawAndReserve(db, user, attemptRules, now)
 
     return withUnlocked(await buildState(db, user.id, now), unlocked)
   }
