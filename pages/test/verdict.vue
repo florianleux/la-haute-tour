@@ -31,41 +31,47 @@ const QUESTIONS = [
   { statement: 'Qui a peint la Joconde ?', answerLabel: 'Léonard de Vinci', submitted: 'Michel-Ange' },
 ]
 
-const picked = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)]
-const correct = Math.random() < 0.5
-const phase = Math.random() < 0.7 ? 'ascent' : Math.random() < 0.5 ? 'floorEnd' : 'gameOver'
+// Tirés une fois, côté serveur, puis relus tels quels par le client
+// (useState) : tirés deux fois, le serveur pouvait rendre un verdict juste et
+// le client un faux, et l'hydratation gardait les classes de l'un sous le
+// texte de l'autre.
+const state = useState<GameState>('test-verdict-state', () => {
+  const picked = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)]
+  const correct = Math.random() < 0.5
+  const phase = Math.random() < 0.7 ? 'ascent' : Math.random() < 0.5 ? 'floorEnd' : 'gameOver'
 
-const contestable = ref(!correct && Math.random() < 0.5)
-const leftThePage = ref(Math.random() < 0.2)
-
-const state = ref<GameState>({
-  phase,
-  floor: 1,
-  lives: 1 + Math.floor(Math.random() * 3),
-  maxLives: 3,
-  started: true,
-  question: null,
-  verdict: {
-    questionId: 'test-verdict',
-    statement: picked.statement,
-    correct,
-    answerLabel: picked.answerLabel,
-    submittedAnswer: correct ? picked.answerLabel : picked.submitted,
-    lifeLost: !correct,
-  },
-  cooldownUntil: null,
-  recovery: null,
-  recoveryResult: null,
-  // Palier 545, sur un étage qui en compte largement plus.
-  floorSeen: 544,
-  floorTotal: 1000,
-  // Série : question 995.
-  attemptSeen: 995,
-  chest: randomChest(),
-  maintenance: false,
-  effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('active')),
-  unlocked: [],
+  return {
+    phase,
+    floor: 1,
+    lives: 1 + Math.floor(Math.random() * 3),
+    maxLives: 3,
+    started: true,
+    question: null,
+    verdict: {
+      questionId: 'test-verdict',
+      statement: picked.statement,
+      correct,
+      answerLabel: picked.answerLabel,
+      submittedAnswer: correct ? picked.answerLabel : picked.submitted,
+      lifeLost: !correct,
+    },
+    cooldownUntil: null,
+    recovery: null,
+    recoveryResult: null,
+    // Palier 545, sur un étage qui en compte largement plus.
+    floorSeen: 544,
+    floorTotal: 1000,
+    // Série : question 995.
+    attemptSeen: 995,
+    chest: randomChest(),
+    maintenance: false,
+    effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('active')),
+    unlocked: [],
+  }
 })
+
+const contestable = useState('test-verdict-contestable', () => !state.value.verdict?.correct && Math.random() < 0.5)
+const leftThePage = useState('test-verdict-left', () => Math.random() < 0.2)
 
 provideGameState(state)
 

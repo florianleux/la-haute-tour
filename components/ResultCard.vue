@@ -1,9 +1,13 @@
 <template>
   <PlayFrame skin="ascent">
     <template #ribbons>
+      <!-- Le serveur compte aussi la question ratée (Palier et Série prennent
+           un sur tout verdict d'ascension) ; seul le juste le fête, pour
+           l'instant. -->
       <StatsRibbons
         :state="state"
         :effects="effects"
+        :counted="screen.verdict?.correct"
       />
     </template>
 

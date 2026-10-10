@@ -435,4 +435,85 @@
     60% { transform: translate(-3px, 2px) scale(1.02); }
     80% { transform: translate(2px, -1px) scale(1.01); }
   }
+
+  /* Le verdict juste, sur l'écran qui suit la question. Il ne repasse pas par
+     l'arrivée du cadre (même habillage que la question), donc il porte sa
+     propre mise en scène. Voir components/VerdictLines.vue. */
+
+  /* Le ✓ du médaillon, frappé comme un tampon : il arrive gros et penché,
+     s'écrase à plat sur le disque, puis se redresse. */
+  --animate-stamp: stamp 0.45s linear var(--enter-delay, 0s) both;
+
+  @keyframes stamp {
+    0% {
+      opacity: 0;
+      transform: scale(2.6) rotate(-25deg);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    45% {
+      opacity: 1;
+      transform: scale(1.3, 0.7) rotate(0);
+      animation-timing-function: ease-out;
+    }
+    65% {
+      transform: scale(0.9, 1.12);
+      animation-timing-function: ease-in-out;
+    }
+    82% {
+      transform: scale(1.05, 0.96);
+      animation-timing-function: ease-in-out;
+    }
+    100% { opacity: 1; transform: none; }
+  }
+
+  /* « Correct ! » qui jaillit : trop gros, écrasé, puis il tremble comme de
+     la gélatine en se balançant un peu avant de se poser. */
+  --animate-cheer: cheer 0.6s linear var(--enter-delay, 0s) both;
+
+  @keyframes cheer {
+    0% {
+      opacity: 0;
+      transform: scale(0.2);
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    30% {
+      opacity: 1;
+      transform: scale(1.6, 1.15) rotate(-4deg);
+      animation-timing-function: ease-in-out;
+    }
+    48% {
+      transform: scale(0.9, 1.12) rotate(2deg);
+      animation-timing-function: ease-in-out;
+    }
+    64% {
+      transform: scale(1.06, 0.95) rotate(-1deg);
+      animation-timing-function: ease-in-out;
+    }
+    80% {
+      transform: scale(0.98, 1.02) rotate(0);
+      animation-timing-function: ease-in-out;
+    }
+    100% { opacity: 1; transform: none; }
+  }
+
+  /* Un chiffre des rubans qui vient de changer : il gonfle et revient. */
+  --animate-bump: bump 0.45s ease-out var(--enter-delay, 0s) both;
+
+  @keyframes bump {
+    0%, 100% { transform: none; }
+    30% { transform: scale(1.35); }
+    55% { transform: scale(0.92); }
+    75% { transform: scale(1.06); }
+  }
+
+  /* Le « +1 » à côté de ce chiffre : il éclot, monte et s'évapore. */
+  --animate-float-away: float-away 1.3s ease-out var(--enter-delay, 0s) both;
+
+  @keyframes float-away {
+    0% { opacity: 0; transform: translateY(40%) scale(0.4); }
+    15% { opacity: 1; transform: translateY(0) scale(1.3); }
+    28% { opacity: 1; transform: translateY(-10%) scale(1); }
+    70% { opacity: 1; transform: translateY(-60%) scale(1); }
+    100% { opacity: 0; transform: translateY(-140%) scale(0.9); }
+  }
 }

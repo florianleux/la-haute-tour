@@ -33,7 +33,15 @@
 
       <span
         class="absolute left-[5%] top-[82%] w-[24%] text-center text-[7cqw] font-bold text-emerald-950 sm:left-[3%] sm:top-[39%] sm:w-[14%] sm:text-right sm:text-[3.3cqw]"
-      >{{ state.floorSeen }}</span>
+      >
+        <span
+          :class="counted && BUMPED"
+          :style="{ '--enter-delay': `${TICKS.floorSeen}ms` }"
+        >{{ state.floorSeen - (ticked.floorSeen ? 0 : 1) }}<span
+          v-if="counted"
+          :class="PLUS_ONE"
+        >+1</span></span>
+      </span>
       <span
         class=" invisible sm:visible  sm:absolute left-[19%] top-[83%] w-[10%] text-left text-[2.4cqw] text-emerald-950 sm:left-[3%] sm:top-[49%] sm:w-[14%] sm:text-right sm:text-[1.1cqw]"
       >/{{ state.floorTotal }}</span>
@@ -46,7 +54,13 @@
       </p>
       <p
         class="absolute left-[5%] top-[88%] w-[24%] text-center text-[7cqw] font-bold text-emerald-950 sm:left-[3%] sm:top-[69%]  sm:w-[14%] sm:text-right sm:text-[3.3cqw]">
-        {{ state.attemptSeen }}
+        <span
+          :class="counted && BUMPED"
+          :style="{ '--enter-delay': `${TICKS.attemptSeen}ms` }"
+        >{{ state.attemptSeen - (ticked.attemptSeen ? 0 : 1) }}<span
+          v-if="counted"
+          :class="PLUS_ONE"
+        >+1</span></span>
       </p>
     </div>
   </div>
@@ -133,7 +147,44 @@ import type { EffectView } from '~~/server/utils/effects'
 const props = defineProps<{
   state: GameState
   effects: EffectView[]
+  /**
+   * La question qui vient d'être jouée a compté : Palier et Série viennent de
+   * prendre un, et le disent — le chiffre gonfle, un « +1 » s'en échappe.
+   */
+  counted?: boolean
 }>()
+
+// Le chiffre qui gonfle, et le « +1 » accroché à lui (`inline-block relative`,
+// à sa largeur près) : à droite du chiffre en mobile, où il est centré ; à
+// gauche en desktop, où il est collé au cadre qui le masquerait. Le « +1 »
+// hérite du délai de son chiffre. Sous « réduire les animations », ni
+// gonflement ni « +1 » : le chiffre change, c'est tout.
+const BUMPED = 'relative inline-block motion-safe:animate-bump'
+const PLUS_ONE = 'pointer-events-none absolute left-full top-0 whitespace-nowrap px-[0.3em] text-[4.5cqw] text-white opacity-0 [text-shadow:0_1px_2px_rgb(2_44_34/0.8)] motion-safe:animate-float-away sm:left-auto sm:right-full sm:text-[1.8cqw]'
+
+/**
+ * Quand Palier et Série prennent leur un, en ms après l'arrivée du verdict :
+ * après le « Correct ! », décalés de 0,1 s l'un de l'autre. Le délai des
+ * animations et le changement de chiffre lisent la même valeur.
+ */
+const TICKS = { floorSeen: 450, attemptSeen: 550 } as const
+
+// Le chiffre d'avant tient jusqu'à son tic, puis passe au chiffre du serveur
+// en même temps que le « +1 » éclot : sinon le « +1 » s'ajoute à un chiffre
+// déjà compté. Ce n'est qu'un retard d'affichage — la valeur montrée reste
+// celle de l'état, moins le un qui n'a pas encore été dit.
+const ticked = reactive({ floorSeen: !props.counted, attemptSeen: !props.counted })
+
+onMounted(() => {
+  if (!props.counted) {
+    return
+  }
+  for (const key of ['floorSeen', 'attemptSeen'] as const) {
+    setTimeout(() => {
+      ticked[key] = true
+    }, TICKS[key])
+  }
+})
 
 // Les calques plein cadre ne prennent pas la souris : empilés, le dernier
 // couvrirait les pastilles des autres. Seules les pastilles la reprennent.

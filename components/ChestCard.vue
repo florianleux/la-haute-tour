@@ -93,14 +93,10 @@
 
             <!-- La gerbe, au moment où il retombe à sa place : les étincelles
                  partent du centre dans toutes les directions, une seule fois. -->
-            <div class="absolute inset-0 drop-shadow-[0_0_6px_#fde68a]">
-              <SparkleStar
-                v-for="(spark, index) in SPELL_SPRAY"
-                :key="index"
-                class="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 motion-safe:animate-spark-out"
-                :style="spark"
-              />
-            </div>
+            <SparkleSpray
+              :sparks="SPELL_SPRAY"
+              class="drop-shadow-[0_0_6px_#fde68a]"
+            />
           </div>
 
           <!-- Les étincelles, dans le couvercle ouvert et juste au-dessus. -->
@@ -236,10 +232,10 @@ const SPELL_SPRAY = Array.from({ length: 10 }, (_, index) => {
   const distance = index % 2 ? 70 : 100
 
   return {
-    '--dx': `${Math.round(Math.cos(angle) * distance)}cqw`,
-    '--dy': `${Math.round(Math.sin(angle) * distance)}cqw`,
-    'width': index % 2 ? '9%' : '14%',
-    'animationDelay': `${1.57 + (index % 3) * 0.04}s`,
+    dx: `${Math.round(Math.cos(angle) * distance)}cqw`,
+    dy: `${Math.round(Math.sin(angle) * distance)}cqw`,
+    size: index % 2 ? '9%' : '14%',
+    delay: `${(1.57 + (index % 3) * 0.04).toFixed(2)}s`,
   }
 })
 
