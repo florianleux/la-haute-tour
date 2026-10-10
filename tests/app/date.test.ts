@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCountdown, formatDay, formatDuration, formatRemaining, formatTime, formatWait } from '../../utils/date'
+import { formatCountdown, formatDay, formatDuration, formatReturnAt, formatRemaining, formatTime, formatWait } from '../../utils/date'
 
 describe('date lisible', () => {
   it('rend le jour en français', () => {
@@ -118,5 +118,22 @@ describe('durée de règle', () => {
 describe('heure', () => {
   it('lit l heure à Paris', () => {
     expect(formatTime('2026-09-01T16:42:00.000Z')).toBe('18:42')
+  })
+})
+
+describe('heure de retour', () => {
+  // 10h00 à Paris.
+  const now = new Date('2026-09-03T08:00:00.000Z').getTime()
+
+  it('donne l heure seule le jour même', () => {
+    expect(formatReturnAt('2026-09-03T11:34:00.000Z', now)).toBe('à 13h34')
+  })
+
+  it('dit demain quand l attente passe minuit à Paris', () => {
+    expect(formatReturnAt('2026-09-04T01:56:00.000Z', now)).toBe('demain à 3h56')
+  })
+
+  it('donne la date au-delà de demain', () => {
+    expect(formatReturnAt('2026-09-05T08:00:00.000Z', now)).toBe('le 5 septembre à 10h00')
   })
 })

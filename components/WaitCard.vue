@@ -75,8 +75,8 @@
       <!-- Le décompte est monté dans la bannière : le répéter ici ferait lire
            deux fois le même chiffre à dix centimètres d'écart. Une seule phrase
            pour les deux phases : ce que le joueur a à faire, attendre ou jouer. -->
-      <p class="text-[5.2cqw]">
-        {{ state.phase === 'cooldown' ? 'Ton rattrapage sera disponible à la fin de l\'attente.' : 'Tu peux lancer ton rattrapage.' }}
+      <p class="text-[4.16cqw]">
+        {{ state.phase === 'cooldown' && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
       </p>
 
       <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa

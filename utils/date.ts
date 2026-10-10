@@ -124,6 +124,28 @@ export function formatTime(iso: string): string {
   return timeFormat.format(new Date(iso))
 }
 
+/** Le jour calendaire à Paris, « 2026-09-01 » : de quoi comparer deux dates au jour près. */
+const calendarDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: GAME_TIME_ZONE })
+
+/**
+ * Quand revenir, comme on le dit à voix haute : « à 13h34 », « demain à 3h56 »,
+ * « le 12 octobre à 3h56 ». Le jour se compare à Paris, pas sur la machine.
+ */
+export function formatReturnAt(iso: string, now: number): string {
+  const time = formatTime(iso).replace(/^0?(\d+):/, '$1h')
+  const day = calendarDayFormat.format(new Date(iso))
+
+  if (day === calendarDayFormat.format(now)) {
+    return `à ${time}`
+  }
+
+  if (day === calendarDayFormat.format(now + 86_400_000)) {
+    return `demain à ${time}`
+  }
+
+  return `le ${formatDay(iso).replace(/ \d{4}$/, '')} à ${time}`
+}
+
 /**
  * Une durée de règle, pas un décompte : « 12 h », « 2 min », « 1 min 30 s ».
  * Les unités nulles se taisent — une attente de douze heures ne se lit pas
