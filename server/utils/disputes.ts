@@ -41,17 +41,16 @@ export async function disputableErrors(db: Database, user: User): Promise<Disput
     .where(eq(disputes.userId, user.id))
 
   // Quitter la page n'est pas un motif d'arbitrage : le joueur a perdu la main,
-  // pas été mal jugé. C'est l'échec en cours qui compte — celui que le départ
-  // de page a résolu, au même instant —, pas la question : ratée plus tard sur
-  // une vraie réponse, elle redevient contestable.
-  // Voir specs/anti-triche.md#perte-de-focus.
+  // pas été mal jugé. Ce qui est écarté, c'est la réponse que le départ de page
+  // a soumise — la question vue et la perte de focus portent le même instant,
+  // celui de submitAnswer —, pas la question. Voir specs/validation.md#quand.
   const lostFocus = db
     .select({ id: focusLosses.id })
     .from(focusLosses)
     .where(and(
       eq(focusLosses.userId, missedPool.userId),
       eq(focusLosses.questionId, missedPool.questionId),
-      eq(focusLosses.lostAt, missedPool.lastFailedAt),
+      eq(focusLosses.lostAt, seenQuestions.seenAt),
     ))
 
   const rows = await db
