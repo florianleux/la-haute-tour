@@ -122,7 +122,7 @@ export async function journeyStats(db: Database, user: User): Promise<JourneySta
     .from(attempts)
     .where(eq(attempts.userId, user.id))
 
-  const [contested] = await db
+  const [disputeCounts] = await db
     .select({
       value: count(),
       won: sql<number>`sum(case when ${disputes.status} = 'accepted' then 1 else 0 end)`,
@@ -140,8 +140,8 @@ export async function journeyStats(db: Database, user: User): Promise<JourneySta
     attempts: runs.value,
     longestAttempt: runs.longest,
     shortestAttempt: runs.shortest,
-    disputes: contested.value,
-    disputesWon: contested.won ?? 0,
+    disputes: disputeCounts.value,
+    disputesWon: disputeCounts.won ?? 0,
   }
 }
 

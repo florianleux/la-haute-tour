@@ -1,19 +1,19 @@
 import type { Ref } from 'vue'
-import type { ContestableError } from '~~/server/utils/disputes'
-import type { ContestableResponse } from '~~/server/api/game/contestable.get'
+import type { DisputableError } from '~~/server/utils/disputes'
+import type { DisputableResponse } from '~~/server/api/game/disputable-errors.get'
 
-/** Cache key of the contestable errors read: one name, so nobody re-types the string. */
-export const CONTESTABLE_KEY = 'contestable-errors'
+/** Cache key of the disputable errors read: one name, so nobody re-types the string. */
+export const DISPUTABLE_KEY = 'disputable-errors'
 
 export interface Disputes {
   /** Les erreurs du pool que le joueur peut encore contester. */
-  errors: Ref<ContestableError[]>
+  errors: Ref<DisputableError[]>
   /** Cette question est-elle encore contestable ? */
-  isContestable: (questionId: string) => boolean
+  isDisputable: (questionId: string) => boolean
   /** Conteste une question. Rend false si le serveur a refusé. */
-  contest: (questionId: string) => Promise<boolean>
+  sendDispute: (questionId: string) => Promise<boolean>
   /** La question en cours de contestation, null quand aucune n'est en vol. */
-  contestingId: Ref<string | null>
+  disputingId: Ref<string | null>
   failed: Ref<boolean>
   refresh: () => Promise<void>
 }
@@ -29,13 +29,13 @@ export interface Disputes {
  * Voir specs/validation.md#contestation.
  */
 export function useDisputes(): Disputes {
-  const errors = useState<ContestableError[]>(CONTESTABLE_KEY, () => [])
-  const contestingId = useState<string | null>('contesting-id', () => null)
-  const failed = useState<boolean>('contestable-failed', () => false)
+  const errors = useState<DisputableError[]>(DISPUTABLE_KEY, () => [])
+  const disputingId = useState<string | null>('disputing-id', () => null)
+  const failed = useState<boolean>('disputable-failed', () => false)
 
   async function refresh(): Promise<void> {
     try {
-      const res = await $fetch<ContestableResponse>('/api/game/contestable', useApiFetchOptions())
+      const res = await $fetch<DisputableResponse>('/api/game/disputable-errors', useApiFetchOptions())
       errors.value = res.errors
       failed.value = false
     }
@@ -44,8 +44,8 @@ export function useDisputes(): Disputes {
     }
   }
 
-  async function contest(questionId: string): Promise<boolean> {
-    contestingId.value = questionId
+  async function sendDispute(questionId: string): Promise<boolean> {
+    disputingId.value = questionId
 
     try {
       await $fetch('/api/game/disputes', { method: 'POST', body: { questionId } })
@@ -56,15 +56,15 @@ export function useDisputes(): Disputes {
       return false
     }
     finally {
-      contestingId.value = null
+      disputingId.value = null
     }
   }
 
   return {
     errors,
-    isContestable: questionId => errors.value.some(error => error.questionId === questionId),
-    contest,
-    contestingId,
+    isDisputable: questionId => errors.value.some(error => error.questionId === questionId),
+    sendDispute,
+    disputingId,
     failed,
     refresh,
   }

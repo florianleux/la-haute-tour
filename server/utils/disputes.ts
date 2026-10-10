@@ -20,7 +20,7 @@ import type { User } from '../db/schema'
  * change ; l'arbitrage lui-même est humain. Voir specs/validation.md#contestation.
  */
 
-export interface ContestableError {
+export interface DisputableError {
   questionId: string
   statement: string
   /** La réponse affichée de la question — celle que le joueur a lue sur son échec. */
@@ -36,7 +36,7 @@ export interface ContestableError {
  * vide aux réponses acceptées, et validerait le vide pour tout le monde. Une
  * question résolue par un départ de page non plus.
  */
-export async function contestableErrors(db: Database, user: User): Promise<ContestableError[]> {
+export async function disputableErrors(db: Database, user: User): Promise<DisputableError[]> {
   const alreadyDisputed = db
     .select({ questionId: disputes.questionId })
     .from(disputes)
@@ -72,7 +72,7 @@ export async function contestableErrors(db: Database, user: User): Promise<Conte
     .orderBy(asc(missedPool.lastFailedAt))
 
   return rows
-    .filter((row): row is ContestableError => row.submittedAnswer !== null)
+    .filter((row): row is DisputableError => row.submittedAnswer !== null)
 }
 
 /**
@@ -86,9 +86,9 @@ export async function openDispute(
   questionId: string,
   now: Date,
 ): Promise<void> {
-  const contestable = await contestableErrors(db, user)
+  const disputable = await disputableErrors(db, user)
 
-  if (!contestable.some(error => error.questionId === questionId)) {
+  if (!disputable.some(error => error.questionId === questionId)) {
     throw createError({ statusCode: 400, statusMessage: 'Question non contestable' })
   }
 

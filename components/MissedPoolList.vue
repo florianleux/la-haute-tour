@@ -31,7 +31,7 @@
 
         <div class="flex shrink-0 items-center gap-2">
           <!-- Contestation en cours : spinner + texte -->
-          <template v-if="contestingId === entry.questionId || entry.disputeStatus === 'pending'">
+          <template v-if="disputingId === entry.questionId || entry.disputeStatus === 'pending'">
             <BaseSpinner />
             <span class="text-xs text-slate-400">Contestation en cours…</span>
           </template>
@@ -46,9 +46,9 @@
 
           <!-- Bouton contester : icône mégaphone ronde -->
           <BaseIconButton
-            v-else-if="isContestable(entry.questionId)"
+            v-else-if="isDisputable(entry.questionId)"
             label="Contester cette question"
-            @click="onContest(entry.questionId)"
+            @click="onDispute(entry.questionId)"
           >
             <path
               d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1Zm10.5-4.5a1 1 0 0 0-1.4 0l-.6.6a1 1 0 0 0 0 1.4 5 5 0 0 1 0 7l.6.6a1 1 0 0 0 1.4 0l.6-.6a1 1 0 0 0 0-1.4 3 3 0 0 1 0-4.2l-.6-.6a1 1 0 0 0 0-1.4Z"
@@ -80,7 +80,7 @@
 // composable l'expose toujours — `order` et `toggleOrder` attendent qu'un bouton
 // les rappelle — mais les lire ici sans s'en servir ne fait que mentir.
 const { entries, total, loading, hasMore, loaded, failed, loadMore } = useMissedPool()
-const { isContestable, contest, contestingId } = useDisputes()
+const { isDisputable, sendDispute, disputingId } = useDisputes()
 
 // Rien à dire tant que la première page n'est pas revenue, ni quand la lecture
 // a échoué : « aucune erreur » et « je ne sais pas » ne sont pas la même nouvelle.
@@ -109,24 +109,24 @@ onMounted(async () => {
 
 onUnmounted(() => observer?.disconnect())
 
-// Quand une contestation part du verdict (pas d'ici), contestingId passe d'un
+// Quand une contestation part du verdict (pas d'ici), disputingId passe d'un
 // id à null. Si la question n'est plus contestable, c'est que le POST a réussi :
 // on met à jour l'entrée du pool localement. Voir Q16/D.
-watch(contestingId, (newId, oldId) => {
+watch(disputingId, (newId, oldId) => {
   if (oldId && !newId) {
     const entry = entries.value.find(e => e.questionId === oldId)
-    if (entry && !isContestable(oldId)) {
+    if (entry && !isDisputable(oldId)) {
       entry.disputeStatus = 'pending'
     }
   }
 })
 
-async function onContest(questionId: string): Promise<void> {
+async function onDispute(questionId: string): Promise<void> {
   const entry = entries.value.find(e => e.questionId === questionId)
   if (entry) {
     entry.disputeStatus = 'pending'
   }
-  const success = await contest(questionId)
+  const success = await sendDispute(questionId)
   if (!success && entry) {
     entry.disputeStatus = 'none'
   }

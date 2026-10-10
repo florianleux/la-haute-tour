@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { focusLosses, missedPool, seenQuestions, users } from '../../server/db/schema'
-import { contestableErrors } from '../../server/utils/disputes'
+import { disputableErrors } from '../../server/utils/disputes'
 import { serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -103,6 +103,6 @@ describe('perte de focus', () => {
   it('n est pas contestable : ce motif ne s arbitre pas', async () => {
     await leaveThePage('Bordo')
 
-    expect(await contestableErrors(db, await reload())).toEqual([])
+    expect(await disputableErrors(db, await reload())).toEqual([])
   })
 })

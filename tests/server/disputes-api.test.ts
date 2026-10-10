@@ -15,12 +15,12 @@ import type { Database } from '../../server/db/client'
 
 installNitroGlobals()
 
-const { default: contestableHandler } = await import('../../server/api/game/contestable.get')
+const { default: disputableHandler } = await import('../../server/api/game/disputable-errors.get')
 const { default: openHandler } = await import('../../server/api/game/disputes.post')
 const { default: queueHandler } = await import('../../server/api/admin/disputes/index.get')
 const { default: settleHandler } = await import('../../server/api/admin/disputes/[id].put')
 
-const contestable = mountHandler('/contestable', contestableHandler)
+const disputable = mountHandler('/disputable-errors', disputableHandler)
 const open = mountHandler('/disputes', openHandler)
 const queue = mountHandler('/disputes', queueHandler)
 const settle = mountRoute('put', '/disputes/:id', settleHandler)
@@ -59,7 +59,7 @@ describe('contestation par l API', () => {
   }
 
   it('refuse tout à un visiteur sans session', async () => {
-    expect((await contestable(apiRequest('http://test/contestable'))).status).toBe(401)
+    expect((await disputable(apiRequest('http://test/disputable-errors'))).status).toBe(401)
     expect((await open(jsonRequest('http://test/disputes', 'POST', { questionId }))).status).toBe(401)
   })
 
@@ -71,7 +71,7 @@ describe('contestation par l API', () => {
   })
 
   it('sert au joueur ses erreurs contestables', async () => {
-    const response = await contestable(apiRequest('http://test/contestable', playerCookie))
+    const response = await disputable(apiRequest('http://test/disputable-errors', playerCookie))
 
     expect(response.status).toBe(200)
     const { errors } = await response.json()

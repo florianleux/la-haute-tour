@@ -5,12 +5,12 @@
     :model-value="typed"
     :seconds-left="secondsLeft"
     :submitting="isRunning('submit')"
-    :contestable="Boolean(screen.verdict && isContestable(screen.verdict.questionId))"
-    :contesting="Boolean(screen.verdict && contestingId === screen.verdict.questionId)"
+    :disputable="Boolean(screen.verdict && isDisputable(screen.verdict.questionId))"
+    :disputing="Boolean(screen.verdict && disputingId === screen.verdict.questionId)"
     :advancing="isRunning('advance')"
     @update:model-value="typed = $event"
     @submit="run('submit', submit)"
-    @dispute="screen.verdict && dispute(screen.verdict.questionId)"
+    @dispute="screen.verdict && onDispute(screen.verdict.questionId)"
     @advance="goNext"
   />
 
@@ -56,11 +56,11 @@
     :state="state"
     :screen="screen"
     :effects="screen.activeEffects"
-    :contestable="Boolean(screen.verdict && isContestable(screen.verdict.questionId))"
-    :contesting="Boolean(screen.verdict && contestingId === screen.verdict.questionId)"
+    :disputable="Boolean(screen.verdict && isDisputable(screen.verdict.questionId))"
+    :disputing="Boolean(screen.verdict && disputingId === screen.verdict.questionId)"
     :left-the-page="leftThePage"
     :advancing="isRunning('advance')"
-    @dispute="screen.verdict && dispute(screen.verdict.questionId)"
+    @dispute="screen.verdict && onDispute(screen.verdict.questionId)"
     @enter-chest="viewingChest = true"
     @advance="goNext"
   />
@@ -130,7 +130,7 @@
       </BaseButton>
     </template>
 
-    <BaseNotice v-if="contestFailed">
+    <BaseNotice v-if="disputeFailed">
       La contestation n'est pas partie. Réessaie.
     </BaseNotice>
     <BaseNotice v-if="actionFailed">
@@ -199,11 +199,11 @@ useAdvanceOnEnter(goNext, canAdvance)
 
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
 // désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
-const { isContestable, contest, contestingId, refresh: refreshDisputes } = useDisputes()
-const contestFailed = ref(false)
+const { isDisputable, sendDispute, disputingId, refresh: refreshDisputes } = useDisputes()
+const disputeFailed = ref(false)
 
-async function dispute(questionId: string): Promise<void> {
-  contestFailed.value = !(await contest(questionId))
+async function onDispute(questionId: string): Promise<void> {
+  disputeFailed.value = !(await sendDispute(questionId))
 }
 
 // Les contestables se chargent au montage : useDisputes ne fetch plus à la

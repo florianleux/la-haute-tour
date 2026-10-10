@@ -51,8 +51,8 @@
     <template v-else-if="screen.verdict">
       <VerdictLines
         :verdict="screen.verdict"
-        :contestable="contestable"
-        :contesting="contesting"
+        :disputable="disputable"
+        :disputing="disputing"
         @dispute="$emit('dispute')"
       />
 
@@ -108,8 +108,8 @@ const props = defineProps<{
   modelValue: string
   secondsLeft: number | null
   submitting: boolean
-  contestable: boolean
-  contesting: boolean
+  disputable: boolean
+  disputing: boolean
   advancing: boolean
 }>()
 

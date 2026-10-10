@@ -57,6 +57,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Introduction** | `intro` | La scène où L'Inconnu accueille le joueur, lui demande son nom et ce qu'il est, puis lui raconte la Tour et comment y monter (`/intro`). Jouée à la première connexion, et à chaque connexion suivante tant qu'elle n'est pas finie : toute autre page y ramène. Finie quand le joueur clique « Commencer l'ascension » (`introDoneAt`), qui l'envoie au jeu. Rejouable ensuite, sans rien changer à sa partie. |
 | **Défilé** | `reveal` | La sortie d'une réplique, caractère par caractère. Son rythme (`revealMs`) est celui du jeu, sauf quand un dialogue en demande un autre. |
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
+| **Erreur contestable** | `disputableError` (`isDisputable`) | Une erreur que le joueur peut encore contester : encore au Pool Échecs de l'étage courant, pas déjà contestée, ni vide ni résolue par une perte de focus. Voir [`validation.md`](./validation.md#quand). |
 | **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Visible de l'administration seulement, et non contestable. |
 | **Whitelist** | `whitelist` | Discord IDs autorisés à s'inscrire, alimentée manuellement. |
 | **Énoncé** | `statement` | Le texte de la question posée au joueur. |

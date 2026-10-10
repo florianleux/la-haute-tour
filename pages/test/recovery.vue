@@ -4,8 +4,8 @@
     :model-value="typed"
     :seconds-left="secondsLeft"
     :submitting="false"
-    :contestable="contestable"
-    :contesting="false"
+    :disputable="disputable"
+    :disputing="false"
     :advancing="false"
     @update:model-value="typed = $event"
     @submit="() => {}"
@@ -105,7 +105,7 @@ const state = ref<GameState>({
 provideGameState(state)
 
 // Le lien de contestation ne se propose que sur un verdict faux, comme en jeu.
-const contestable = !answering && !correct
+const disputable = !answering && !correct
 
 const screen = computed(() => gameScreen(state.value))
 </script>

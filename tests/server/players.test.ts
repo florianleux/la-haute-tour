@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { disputes, missedPool, users } from '../../server/db/schema'
-import { contestableErrors } from '../../server/utils/disputes'
+import { disputableErrors } from '../../server/utils/disputes'
 import { playerRoster, resetPlayer } from '../../server/utils/players'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
@@ -156,7 +156,7 @@ describe('repartir de zéro', () => {
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
     await miss(questionIds[0])
 
-    expect(await contestableErrors(db, await loadPlayer(db, userId)))
+    expect(await disputableErrors(db, await loadPlayer(db, userId)))
       .toMatchObject([{ questionId: questionIds[0] }])
   })
 })

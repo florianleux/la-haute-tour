@@ -1278,7 +1278,7 @@ export interface MissedPoolEntryView {
   statement: string
   /** Shown here on purpose: the wait screen is a revision sheet, not a punishment. */
   answerLabel: string
-  /** What the player answered — justifies contesting. Null on timeout. */
+  /** What the player answered — justifies disputing. Null on timeout. */
   submittedAnswer: string | null
   poolSuccesses: number
   lastFailedAt: string

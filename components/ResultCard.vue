@@ -27,8 +27,8 @@
     <template v-if="screen.verdict">
       <VerdictLines
         :verdict="screen.verdict"
-        :contestable="contestable"
-        :contesting="contesting"
+        :disputable="disputable"
+        :disputing="disputing"
         :last-life="state.lives <= 0"
         @dispute="$emit('dispute')"
       />
@@ -107,8 +107,8 @@ const props = defineProps<{
   state: GameState
   screen: GameScreen
   effects: EffectView[]
-  contestable: boolean
-  contesting: boolean
+  disputable: boolean
+  disputing: boolean
   leftThePage: boolean
   advancing: boolean
 }>()

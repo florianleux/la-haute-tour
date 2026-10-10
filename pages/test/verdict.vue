@@ -3,8 +3,8 @@
     :state="state"
     :screen="screen"
     :effects="state.effects"
-    :contestable="contestable"
-    :contesting="false"
+    :disputable="disputable"
+    :disputing="false"
     :left-the-page="leftThePage"
     :advancing="false"
     @dispute="() => {}"
@@ -70,7 +70,7 @@ const state = useState<GameState>('test-verdict-state', () => {
   }
 })
 
-const contestable = useState('test-verdict-contestable', () => !state.value.verdict?.correct && Math.random() < 0.5)
+const disputable = useState('test-verdict-disputable', () => !state.value.verdict?.correct && Math.random() < 0.5)
 const leftThePage = useState('test-verdict-left', () => Math.random() < 0.2)
 
 provideGameState(state)
