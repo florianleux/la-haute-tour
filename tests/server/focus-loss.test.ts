@@ -101,8 +101,24 @@ describe('perte de focus', () => {
   })
 
   it('n est pas contestable : ce motif ne s arbitre pas', async () => {
-    await leaveThePage('Bordo')
+    // Une réponse fausse : « Bordo » passerait pour juste, et il n'y aurait
+    // alors rien à contester de toute façon.
+    await leaveThePage('Lyon')
 
     expect(await disputableErrors(db, await reload())).toEqual([])
+  })
+
+  // Ce qui ne se conteste pas, c'est l'échec résolu par le départ de page —
+  // pas la question : ratée plus tard sur une vraie réponse, elle se conteste
+  // comme une autre. Voir specs/validation.md#quand.
+  it('laisse contester la même question ratée ensuite sur une vraie réponse', async () => {
+    const questionId = await leaveThePage('Lyon')
+    // Un échec plus récent que le départ de page, sur une réponse tapée.
+    await db
+      .update(missedPool)
+      .set({ lastFailedAt: new Date(NOW.getTime() + 60_000) })
+      .where(eq(missedPool.questionId, questionId))
+
+    expect(await disputableErrors(db, await reload())).toMatchObject([{ questionId }])
   })
 })

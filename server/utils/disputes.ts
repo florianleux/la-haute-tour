@@ -1,4 +1,4 @@
-import { and, asc, eq, ne, notInArray } from 'drizzle-orm'
+import { and, asc, eq, ne, notExists, notInArray } from 'drizzle-orm'
 import { unlock } from './achievements'
 import { grantLife } from './lives'
 import {
@@ -43,11 +43,18 @@ export async function disputableErrors(db: Database, user: User): Promise<Disput
     .where(eq(disputes.userId, user.id))
 
   // Quitter la page n'est pas un motif d'arbitrage : le joueur a perdu la main,
-  // pas été mal jugé. Voir specs/anti-triche.md#perte-de-focus.
+  // pas été mal jugé. C'est l'échec en cours qui compte — celui que le départ
+  // de page a résolu, au même instant —, pas la question : ratée plus tard sur
+  // une vraie réponse, elle redevient contestable.
+  // Voir specs/anti-triche.md#perte-de-focus.
   const lostFocus = db
-    .select({ questionId: focusLosses.questionId })
+    .select({ id: focusLosses.id })
     .from(focusLosses)
-    .where(eq(focusLosses.userId, user.id))
+    .where(and(
+      eq(focusLosses.userId, missedPool.userId),
+      eq(focusLosses.questionId, missedPool.questionId),
+      eq(focusLosses.lostAt, missedPool.lastFailedAt),
+    ))
 
   const rows = await db
     .select({
@@ -67,7 +74,7 @@ export async function disputableErrors(db: Database, user: User): Promise<Disput
       eq(missedPool.floor, user.currentFloor),
       ne(seenQuestions.submittedAnswer, ''),
       notInArray(missedPool.questionId, alreadyDisputed),
-      notInArray(missedPool.questionId, lostFocus),
+      notExists(lostFocus),
     ))
     .orderBy(asc(missedPool.lastFailedAt))
 
