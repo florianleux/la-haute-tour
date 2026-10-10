@@ -93,7 +93,8 @@
 // qui continue de parler, pas un autre. Voir specs/ecrans.md#jeu.
 //
 // Le verdict du rattrapage n'atteint jamais cette carte : la phase `recovery`
-// est servie par RecoveryCard, question et verdict compris.
+// est servie par RecoveryCard, question et verdict compris. Les phases
+// `cooldown` et `recovery` n'y arrivent que par le verdict de la dernière vie.
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen } from '~~/utils/phase'
 import type { EffectView } from '~~/server/utils/effects'
@@ -116,6 +117,12 @@ const emit = defineEmits<{ dispute: [], 'enter-chest': [], advance: [] }>()
 const bottomAction = computed(() => {
   if (props.screen.chest && !props.screen.chest.opened) {
     return { label: 'Suivant', loading: false, run: () => emit('enter-chest') }
+  }
+
+  // Le verdict de la question qui a pris la dernière vie : le serveur est déjà
+  // en attente, ce bouton ne fait que mener au poster (voir pages/index.vue).
+  if (props.screen.phase === 'cooldown' || props.screen.phase === 'recovery') {
+    return { label: 'Redescendre', loading: false, run: () => emit('advance') }
   }
 
   if (props.screen.action) {

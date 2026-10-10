@@ -27,7 +27,7 @@
   />
 
   <WaitCard
-    v-else-if="waiting && state && screen"
+    v-else-if="waiting && !readingFall && state && screen"
     :state="state"
     :screen="screen"
     :wait-remaining="waitRemaining"
@@ -192,7 +192,9 @@ async function run(action: PlayAction, move: () => Promise<void>): Promise<void>
 
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, Entrée répond.
-const canAdvance = computed(() => Boolean(screen.value?.action) && !screen.value?.question && !pending.value)
+const canAdvance = computed(() =>
+  readingFall.value || (Boolean(screen.value?.action) && !screen.value?.question && !pending.value),
+)
 useAdvanceOnEnter(goNext, canAdvance)
 
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
@@ -228,12 +230,36 @@ const waiting = computed(() =>
   || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
 )
 
+// La réponse qui prend la dernière vie se lit comme les autres avant le poster :
+// le serveur est déjà en attente, la page retient son verdict le temps d'un clic
+// sur « Redescendre ». Aller purement client, comme le coffre. Armé sur l'id, pas
+// l'objet : une relecture rend le même verdict dans un nouvel objet et le
+// rouvrirait. Sans `immediate` : une page rechargée en pleine attente va droit au
+// poster. `lifeLost` écarte le Mimic et les verdicts de rattrapage.
+const fallenOn = ref<string | null>(null)
+
+watch(() => state.value?.verdict?.questionId, () => {
+  const verdict = state.value?.verdict
+  if (verdict?.lifeLost && waiting.value) {
+    fallenOn.value = verdict.questionId
+  }
+})
+
+const readingFall = computed(() =>
+  waiting.value && fallenOn.value !== null && fallenOn.value === state.value?.verdict?.questionId,
+)
+
 // Le seul chemin qui entre ici avec viewingChest à vrai est ChestCard une
 // fois le coffre ouvert — refermer l'écran est donc toujours correct, quelle
 // que soit la destination (nouvelle question, palier, fin de partie). Couvre
 // aussi le raccourci Entrée (useAdvanceOnEnter), qui n'a qu'un seul point
 // d'entrée pour « avancer ».
 async function goNext(): Promise<void> {
+  if (readingFall.value) {
+    fallenOn.value = null
+    return
+  }
+
   await run('advance', advance)
   viewingChest.value = false
 }
