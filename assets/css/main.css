@@ -743,34 +743,35 @@
   }
 }
 
-/* Le calque du Volumen (public/images/volumen-scroll.webp, 1920×1080) : ses
+/* Le calque du Volumen (public/images/volumen-scroll.webp, 1596×1048, rogné
+   par scripts/img-trim-webp.sh : les rouleaux touchent ses bords) : ses
    repères, relevés à la main, en pixels du calque. Une nouvelle image, de
    nouvelles mesures — ici seulement : pages/index/volumen.vue et les keyframes
    unroll / roll-up les lisent. Posé sur la boîte de dialogue, hérité par tout
    ce qu'elle contient. */
 @utility question-log-scroll-metrics {
-  /* Pixels affichés par pixel du calque : la taille des rouleaux. */
+  /* Pixels affichés par pixel du calque : la taille des rouleaux. Calée sur
+     le dessin d'origine (1920×1080, avant rognage), dont le calque garde
+     l'échelle. */
   --k: calc(min(100vw / 1920, 100dvh / 1080) * 0.9);
-  /* Le vide transparent à gauche et à droite des rouleaux. */
-  --margin: 163;
   /* Un rouleau : sa largeur, le centre du gauche, celui du droit depuis le
      bord droit, et la hauteur de leurs poignées du haut. */
   --rod-w: 221;
-  --rod-l: 273;
-  --rod-r: 274;
-  --cap-y: 190;
+  --rod-l: 111;
+  --rod-r: 112;
+  --cap-y: 174;
   /* Le haut du papier, sous les poignées ; le retrait du texte des bords. */
-  --paper-y: 215;
-  --text-x: 240;
+  --paper-y: 199;
+  --text-x: 78;
   /* Les coupes du 9-slice : les coins gardent les rouleaux intacts, le
      papier s'étire entre eux. */
-  --cut-t: 250;
-  --cut-r: 390;
-  --cut-b: 245;
-  --cut-l: 410;
+  --cut-t: 234;
+  --cut-r: 228;
+  --cut-b: 229;
+  --cut-l: 248;
   /* Le fond uni posé sous le papier, un peu en retrait de ses bords. */
-  --fill-x: 215;
-  --fill-y: 232;
+  --fill-x: 53;
+  --fill-y: 216;
   /* Roulé : le papier dévoilé jusqu'au rouleau droit, posé contre le gauche,
      et le décalage de ce rouleau depuis sa place déroulée. Lus par les
      keyframes, mesurés sur la boîte de qui les lit (les 100 %). */

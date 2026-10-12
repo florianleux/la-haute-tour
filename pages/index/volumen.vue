@@ -14,14 +14,14 @@
 
          Le bas du parchemin — bord du papier et rouleaux — tombe sous l'écran :
          seules les poignées du haut se voient, et le papier descend jusqu'en bas
-         pour laisser plus de place à la lecture. En largeur, les marges
-         transparentes du calque sortent de l'écran : les rouleaux se posent à
-         4 % des bords, quelle que soit la largeur. Repères du calque :
+         pour laisser plus de place à la lecture. En largeur, le calque est
+         rogné au ras des rouleaux : ils se posent à 4 % des bords de l'écran,
+         quelle que soit la largeur. Repères du calque :
          `question-log-scroll-metrics`, dans main.css. `overflow-clip` et non `hidden` : une
          boîte `hidden` se fait défiler par le navigateur pour montrer ce qui
          prend le focus, et décalait tout le parchemin vers le haut. -->
     <div
-      class="relative mt-[6dvh] h-[round(calc(94dvh+var(--k)*var(--cut-b)),1px)] w-[round(calc(92vw+var(--k)*var(--margin)*2),1px)] shrink-0 origin-bottom"
+      class="relative mt-[6dvh] h-[round(calc(94dvh+var(--k)*var(--cut-b)),1px)] w-[round(92vw,1px)] shrink-0 origin-bottom"
       :class="closing ? 'motion-safe:animate-sink [--enter-delay:0.12s]' : 'motion-safe:animate-rise'"
       @click.self="close"
     >
@@ -43,7 +43,7 @@
       <!-- Le papier attrape ses clics : seuls les vides autour des rouleaux
            ferment. Il couvre d'un rouleau à l'autre, du haut du papier au bas
            de la boîte. -->
-      <div class="absolute inset-x-[calc(var(--k)*var(--margin))] top-[calc(var(--k)*var(--paper-y))] bottom-0" />
+      <div class="absolute inset-x-0 top-[calc(var(--k)*var(--paper-y))] bottom-0" />
 
       <!-- Le titre, posé au-dessus du papier entre les deux poignées, dans
            l'éclat des noms du camp. Il jaillit pendant le déroulé, quand le
