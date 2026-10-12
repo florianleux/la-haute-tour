@@ -1,6 +1,75 @@
 <template>
   <div class="fixed inset-0 z-0 bg-[url(/images/cooldown-bg.webp)] bg-cover bg-center" />
 
+  <!-- Les objets du camp, posés sur le décor. Chaque image est recadrée depuis
+       un calque 1920×1080 aligné sur cooldown-bg.webp, et replacée à ses
+       coordonnées d'origine en % d'une boîte 16:9 : COVER (la bannière) reproduit
+       le `bg-cover bg-center` du décor, GROUND (la corde et le sol) reste calée
+       sur la hauteur de la fenêtre. Voir ces deux constantes plus bas.
+
+       Deux profondeurs : la corde et la bannière passent derrière le poster,
+       ce qui est posé au sol devant — comme sur l'illustration. Une boîte par
+       couche, parce qu'un `fixed` crée son propre contexte d'empilement : un
+       z-index posé à l'intérieur ne passerait pas le poster.
+
+       Sur un écran étroit, le cover rogne les côtés du décor, et les objets
+       des bords avec lui : c'est le prix d'un ancrage au décor. -->
+  <div
+    v-for="(layer, index) in layers"
+    :key="index"
+    class="pointer-events-none fixed inset-0 @container-size"
+    :class="layer.depth"
+  >
+    <div
+      class="absolute left-1/2 aspect-video -translate-x-1/2"
+      :class="layer.box"
+    >
+      <template
+        v-for="prop in layer.items"
+        :key="prop.src"
+      >
+        <NuxtLink
+          v-if="prop.to"
+          :to="prop.to"
+          :aria-label="prop.label"
+          class="pointer-events-auto absolute focus-visible:outline-2 focus-visible:outline-white/70"
+          :class="[prop.place, layer.origin, HOVER]"
+        >
+          <img
+            :src="prop.src"
+            alt=""
+            class="w-full"
+          >
+          <SparkleField
+            :sparks="CAMP_SPARKS"
+            class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          />
+        </NuxtLink>
+        <div
+          v-else
+          class="absolute"
+          :class="[prop.place, prop.advance && ['pointer-events-auto', layer.origin, HOVER]]"
+        >
+          <img
+            :src="prop.src"
+            alt=""
+            class="w-full"
+          >
+          <SparkleField
+            v-if="prop.advance"
+            :sparks="CAMP_SPARKS"
+            class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          />
+          <BaseSurfaceButton
+            v-if="prop.advance"
+            :label="action?.label ?? ''"
+            @click="advancing || $emit('advance')"
+          />
+        </div>
+      </template>
+    </div>
+  </div>
+
   <!-- Le poster est presque carré (918×980) là où le cadre de l'ascension est en
        paysage : le contraindre par la largeur seule le ferait déborder en
        hauteur dès que la fenêtre est large et basse. La largeur prend donc le
@@ -108,12 +177,12 @@
     </div>
 
     <!-- Les deux actions ne coexistent jamais : « Passer l'attente » n'existe
-         que pour l'admin pendant le cooldown, « Commencer le rattrapage »
+         que pour l'admin pendant le cooldown, « Commencer »
          qu'une fois l'attente échue. Un seul emplacement suffit donc, entre le
          bas du panneau et les pierres des piquets. -->
     <CardButton
-      v-if="state.phase === 'recovery'"
-      label="Commencer"
+      v-if="action"
+      :label="action.label"
       anchor="poster"
       face="plank"
       :loading="advancing"
@@ -140,17 +209,116 @@
 // poster, positionné en absolu et dimensionné en cqw — rien ne subsiste sous
 // l'image. Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
-import type { GameScreen } from '~~/utils/phase'
+import type { TeamId } from '~~/shared/utils/teams'
+import type { GameScreen, PlayAction } from '~~/utils/phase'
 
-defineProps<{
+const props = defineProps<{
   state: GameState
   screen: GameScreen
+  /** « Commencer » une fois l'attente échue, null pendant. Voir utils/phase.ts (playView). */
+  action: PlayAction | null
   waitRemaining: string
   loading: boolean
   isAdmin: boolean
   skipping: boolean
   advancing: boolean
+  /** La guilde du joueur, qui choisit la couleur de la bannière. Sans équipe, pas de bannière. */
+  team: TeamId | null
 }>()
 
 defineEmits<{ skipCooldown: [], advance: [] }>()
+
+interface CampProp {
+  src: string
+  /** Position et largeur en % du décor 1920×1080, relevées sur le calque d'origine. */
+  place: string
+  /** Page ouverte au clic. */
+  to?: string
+  label?: string
+  /** Lance le rattrapage, comme « Commencer ». */
+  advance?: boolean
+}
+
+const BANNERS: Record<TeamId, string> = {
+  AZURE: '/images/cooldown-banner-azure.webp',
+  CRIMSON: '/images/cooldown-banner-crimson.webp',
+}
+
+// La corde déroulée dit que l'on peut remonter : elle n'apparaît qu'avec
+// l'action qui suit l'attente — rattrapage ou ascension, selon ce que le serveur
+// propose — et la déclenche. Pendant l'attente, roulée au sol, elle n'est que
+// décor.
+//
+// Le parchemin et le sac mènent à des pages pas encore créées : décor sans lien
+// d'ici là, plutôt qu'un lien vers une 404.
+// Au survol, un objet cliquable se soulève et luit d'un halo argenté. Deux
+// drop-shadow superposés plutôt qu'une box-shadow : ils suivent le contour
+// détouré de l'image, pas son rectangle — un cœur blanc serré pour l'éclat,
+// un voile gris-bleu plus large pour l'argent. Le halo s'étend aux
+// étincelles, qui n'en ont pas d'autre.
+const HOVER = 'group transition duration-200 hover:scale-[1.01] hover:[filter:drop-shadow(0_0_3px_rgb(255_255_255/0.95))_drop-shadow(0_0_12px_rgb(203_213_225/0.85))]'
+
+/**
+ * Les étincelles du survol, en % de la boîte de l'objet : semées sur toute sa
+ * surface, l'objet étant de forme quelconque (corde haute et fine, sac large),
+ * délais étalés sur le cycle de `animate-sparkle`. Taille en % de la largeur.
+ */
+const CAMP_SPARKS = [
+  { left: '12%', top: '18%', size: '9%', delay: '0s' },
+  { left: '78%', top: '10%', size: '7%', delay: '0.6s' },
+  { left: '45%', top: '42%', size: '6%', delay: '1.1s' },
+  { left: '85%', top: '58%', size: '8%', delay: '0.3s' },
+  { left: '20%', top: '72%', size: '6%', delay: '0.9s' },
+  { left: '60%', top: '84%', size: '7%', delay: '1.4s' },
+]
+
+// La boîte du décor : le `bg-cover bg-center` de cooldown-bg.webp, reproduit.
+const COVER = 'top-1/2 w-[max(100cqw,100cqh*16/9)] -translate-y-1/2'
+
+// La boîte du sol : la même tant que la fenêtre est plus étroite que 16:9 (le
+// cover y est alors calé sur la hauteur). Plus large, le cover se cale sur la
+// largeur et rogne le bas du décor — les objets posés y tombaient à moitié hors
+// écran, et grossissaient quand le poster, lui, suit la hauteur. Le sol reste
+// donc calé sur la hauteur et posé au bas de la fenêtre : mêmes taille et
+// place par rapport au poster qu'en 16:9, quelle que soit la largeur.
+const GROUND = 'bottom-0 w-[calc(100cqh*16/9)]'
+
+// Ce qui pend grandit depuis son point d'attache, ce qui est posé depuis le
+// sol : centré, le scale ferait décoller les objets ou glisser la corde.
+const layers = computed((): { depth: string, box: string, origin: string, items: CampProp[] }[] => [
+  // La corde suit le sol, où elle repose, déroulée ou non : calée sur le
+  // décor, son rouleau tombait hors écran sur une fenêtre large. Déroulée, elle
+  // descend du haut de la fenêtre jusqu'au sol, à toutes les largeurs. Derrière
+  // le poster, comme la bannière, et non devant avec le reste du sol.
+  {
+    depth: 'z-[5]',
+    box: GROUND,
+    origin: 'origin-top',
+    items: [
+      props.action
+        ? { src: '/images/cooldown-rope-up.webp', place: 'left-[17.92%] top-0 w-[15%]', advance: true }
+        : { src: '/images/cooldown-rope-coiled.webp', place: 'left-[21.61%] top-[83.33%] w-[11.3%]' },
+    ],
+  },
+  {
+    depth: 'z-[5]',
+    box: COVER,
+    origin: 'origin-top',
+    items: [
+      ...(props.team ? [{ src: BANNERS[props.team], place: 'left-[78.33%] top-[14.44%] w-[16.72%]', to: '/succes', label: 'Mes succès' }] : []),
+    ],
+  },
+  {
+    // Sur mobile le cover zoome sur le centre du décor : le livre y monterait
+    // sur « Commencer ». Le sol y repasse donc derrière le poster.
+    depth: 'z-[5] sm:z-20',
+    box: GROUND,
+    origin: 'origin-bottom',
+    items: [
+      { src: '/images/cooldown-scroll.webp', place: 'left-[32.55%] top-[84.44%] w-[14.95%]' },
+      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[80%] w-[16.61%]', to: '/sorts', label: 'Mes sorts' },
+      { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]' },
+    ],
+  },
+])
 </script>

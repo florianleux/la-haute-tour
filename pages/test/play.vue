@@ -18,7 +18,7 @@
 // vraie partie — pour régler le visuel sans dépendre d'une tentative réelle ni
 // perdre à l'écoulement du chrono. Admin seulement. Voir components/QuestionCard.vue.
 import type { EffectView } from '~~/server/utils/effects'
-import type { GameState, ServedQuestion } from '~~/server/utils/game'
+import type { ServedQuestion } from '~~/server/utils/game'
 import type { AdminQuestionsResponse } from '~~/server/api/admin/questions/index.get'
 
 definePageMeta({ admin: true })
@@ -78,29 +78,17 @@ if (total.value?.total) {
   }
 }
 
-const state = ref<GameState>({
-  phase: 'ascent',
-  floor: 1,
+const state = ref(demoState({
   // En ascension, jamais zéro : à zéro vie, le joueur est en attente, pas en
   // train de répondre. Voir server/utils/mechanics.ts.
   lives: 1 + Math.floor(Math.random() * 3),
-  maxLives: 3,
   started: true,
-  question: null,
-  verdict: null,
-  cooldownUntil: null,
-  recovery: null,
-  recoveryResult: null,
   // Palier 545, sur un étage qui en compte largement plus.
   floorSeen: 544,
   floorTotal: 1000,
   // Série : question 995.
   attemptSeen: 995,
-  chest: null,
-  maintenance: false,
-  effects: [],
-  unlocked: [],
-})
+}))
 
 provideGameState(state)
 </script>

@@ -23,12 +23,6 @@ export interface QuestionRun {
   /** Ouvre le coffre d'une question loot réussie. */
   openChest: () => Promise<void>
   pending: Ref<boolean>
-  /**
-   * Vrai quand c'est le départ de la page qui a envoyé la dernière réponse. Le
-   * joueur doit le lire : sinon il croit à un bug.
-   * Voir specs/anti-triche.md#perte-de-focus.
-   */
-  leftThePage: Ref<boolean>
   /** Une action a échoué. */
   actionFailed: Ref<boolean>
   /** L'état n'a pas pu être lu. */
@@ -73,7 +67,6 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   const typed = ref('')
   const now = options.now ?? ref(Date.now())
   const visible = options.visible ?? ref(true)
-  const leftThePage = ref(false)
 
   const secondsLeft = computed<number | null>(() => {
     const deadline = state.value?.question?.expiresAt
@@ -113,7 +106,6 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
 
   async function advance(): Promise<void> {
     typed.value = ''
-    leftThePage.value = false
     await next()
   }
 
@@ -145,7 +137,6 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
       }
 
       autoSubmitted = served
-      leftThePage.value = source === 'focusLoss'
       send(source)
     }
 
@@ -232,7 +223,6 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     skipCooldown,
     openChest,
     pending,
-    leftThePage,
     actionFailed,
     readFailed,
     loading,

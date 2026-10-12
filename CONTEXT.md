@@ -22,7 +22,7 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Comment est-ce lu et écrit ? | [`server/utils/game.ts`](server/utils/game.ts) — lectures, écritures, réservation |
 | Où en est le joueur, sans rien changer ? | [`server/utils/game.ts`](server/utils/game.ts) — `readPhase()` : la phase seule, lecture pure, pour les gardes |
 | Quelle question vient ensuite ? | [`server/utils/deck.ts`](server/utils/deck.ts) — `upcomingQuestions()` : l'ordre du deck, partagé par l'ascension et les gestes d'admin |
-| Ce qu'affiche l'écran de jeu | [`utils/phase.ts`](utils/phase.ts) — `gameScreen()` : ce que la carte montre pour un état donné |
+| Ce qu'affiche l'écran de jeu | [`utils/phase.ts`](utils/phase.ts) — `gameScreen()` : ce que la carte montre pour un état donné ; `playView()` : quelle carte, et ce que fait son bouton |
 | Ce qu'un dialogue peut être, et ce qu'un geste y fait | [`utils/dialogue.ts`](utils/dialogue.ts) — la forme qui interdit un troisième interlocuteur, `dialogueLineup()`, `dialogueGesture()` et le défilé, sans DOM |
 | Le déroulé d'un dialogue | [`composables/useDialogue.ts`](composables/useDialogue.ts) — la réplique en cours, son défilé, le geste qui avance les deux |
 | Ce qu'un dialogue montre | [`components/DialogueScene.vue`](components/DialogueScene.vue) — décor, portraits, boîte ; elle rend la main par `end` et ne connaît aucune phase |

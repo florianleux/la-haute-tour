@@ -77,15 +77,14 @@
     </template>
 
     <template #action>
-      <!-- « Suivant » mène à l'écran de coffre tant qu'il est fermé, sinon
-           c'est l'action suivante — jamais les deux en même temps.
-           Voir utils/phase.ts. -->
+      <!-- Le libellé et le geste se décident dans utils/phase.ts (playView) :
+           entrer dans le coffre, redescendre au poster, ou la suite. -->
       <CardButton
-        v-if="bottomAction"
-        :label="bottomAction.label"
+        v-if="action"
+        :label="action.label"
         anchor="card-bottom"
-        :disabled="bottomAction.loading"
-        @click="bottomAction.run"
+        :disabled="advancing"
+        @click="$emit('advance')"
       />
     </template>
   </PlayFrame>
@@ -100,20 +99,21 @@
 // est servie par RecoveryCard, question et verdict compris. Les phases
 // `cooldown` et `recovery` n'y arrivent que par le verdict de la dernière vie.
 import type { GameState } from '~~/server/utils/game'
-import type { GameScreen } from '~~/utils/phase'
+import type { GameScreen, PlayAction } from '~~/utils/phase'
 import type { EffectView } from '~~/server/utils/effects'
 
 const props = defineProps<{
   state: GameState
   screen: GameScreen
   effects: EffectView[]
+  /** Le libellé du bouton du bas, null quand rien n'avance d'ici. */
+  action: PlayAction | null
   contestable: boolean
   contesting: boolean
-  leftThePage: boolean
   advancing: boolean
 }>()
 
-const emit = defineEmits<{ dispute: [], 'enter-chest': [], advance: [] }>()
+defineEmits<{ dispute: [], advance: [] }>()
 
 // Le cadre saute de joie sur le juste, encaisse un coup sur la vie perdue.
 const reaction = computed(() => {
@@ -121,26 +121,5 @@ const reaction = computed(() => {
     return 'hop'
   }
   return props.screen.verdict?.lifeLost ? 'hit' : undefined
-})
-
-// Le coffre fermé retient le joueur, mais ce n'est plus ce bouton qui
-// l'ouvre : « Suivant » mène à un écran à part (ChestCard), l'ouverture
-// elle-même y a son propre bouton « OUVRIR ». Voir specs/bonus.md#coffre-et-mimic.
-const bottomAction = computed(() => {
-  if (props.screen.chest && !props.screen.chest.opened) {
-    return { label: 'Suivant', loading: false, run: () => emit('enter-chest') }
-  }
-
-  // Le verdict de la question qui a pris la dernière vie : le serveur est déjà
-  // en attente, ce bouton ne fait que mener au poster (voir pages/index.vue).
-  if (props.screen.phase === 'cooldown' || props.screen.phase === 'recovery') {
-    return { label: 'Redescendre', loading: false, run: () => emit('advance') }
-  }
-
-  if (props.screen.action) {
-    return { label: props.screen.action, loading: props.advancing, run: () => emit('advance') }
-  }
-
-  return null
 })
 </script>

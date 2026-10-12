@@ -125,10 +125,8 @@
           >
             Ce coffre rutilant doit renfermer quelque chose de précieux...
           </PlayText>
-          <!-- Mêmes deux messages que sur l'écran d'attente (WaitCard, qui les
-               rend sur son poster) : chaque écran reskiné porte sa copie, faute
-               d'un composant partagé qui survivrait aux deux habillages.
-               Voir specs/bonus.md#coffre-et-mimic. -->
+          <!-- Le Mimic bascule la partie en attente : la page passe aussitôt au
+               poster, et ce message n'y est pas lu. Voir specs/bonus.md#coffre-et-mimic. -->
           <PlayText
             v-else-if="chest.mimic"
             role="recall"
@@ -153,9 +151,10 @@
         :disabled="opening || stage !== 'idle'"
         @click="burst"
       />
+      <!-- playView en donne toujours un une fois le coffre ouvert. -->
       <CardButton
-        v-else
-        :label="action ?? 'Suivant'"
+        v-else-if="action"
+        :label="action.label"
         anchor="card-bottom"
         :disabled="advancing"
         @click="$emit('advance')"
@@ -173,6 +172,7 @@
 // « OUVRIR » ne part pas tout de suite : le coffre tremble d'abord de plus en
 // plus fort, puis s'ouvre en fondu, et c'est seulement là que le tirage est
 // demandé — le résultat ne peut pas arriver avant que le coffre soit ouvert.
+import type { PlayAction } from '~~/utils/phase'
 import type { ChestView, GameState } from '~~/server/utils/game'
 import type { EffectView } from '~~/server/utils/effects'
 
@@ -180,8 +180,9 @@ const props = defineProps<{
   state: GameState
   effects: EffectView[]
   chest: ChestView
-  /** L'action suivante une fois le coffre ouvert — null tant qu'il ne l'est pas. */
-  action: string | null
+  /** L'action suivante une fois le coffre ouvert — null tant qu'il ne l'est pas.
+   *  Voir utils/phase.ts (playView). */
+  action: PlayAction | null
   opening: boolean
   advancing: boolean
 }>()

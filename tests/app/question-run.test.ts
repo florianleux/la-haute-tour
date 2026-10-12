@@ -2,6 +2,7 @@ import { effectScope, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
 import type { GameState } from '../../server/utils/game'
+import { demoState } from '../../utils/demo'
 
 const { serve, answerWith, breakNetwork, signIn, calls, refresh, reset } = installAppGlobals()
 
@@ -27,26 +28,7 @@ function run(options: QuestionRunOptions): Promise<QuestionRun> {
 }
 
 function gameState(overrides: Partial<GameState> = {}): GameState {
-  return {
-    phase: 'ascent',
-    floor: 1,
-    lives: 3,
-    maxLives: 3,
-    started: true,
-    question: null,
-    verdict: null,
-    cooldownUntil: null,
-    recovery: null,
-    recoveryResult: null,
-    floorSeen: 0,
-    floorTotal: 0,
-    attemptSeen: 0,
-    chest: null,
-  maintenance: false,
-  effects: [],
-  unlocked: [],
-    ...overrides,
-  }
+  return demoState({ started: true, ...overrides })
 }
 
 function servedAt(msFromNow: number): GameState {
@@ -168,7 +150,7 @@ describe('déroulé d une question', () => {
     serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     const now = ref(NOW)
     const visible = ref(true)
-    const { typed, leftThePage } = await run({ now, visible })
+    const { typed } = await run({ now, visible })
     typed.value = 'bordeaux'
 
     visible.value = false
@@ -177,15 +159,13 @@ describe('déroulé d une question', () => {
     await nextTick()
 
     expect(calls()).toEqual(['fetch POST /api/game/answer'])
-    // Le joueur doit pouvoir comprendre, plutôt que de croire à un bug.
-    expect(leftThePage.value).toBe(true)
   })
 
   it('ignore une absence plus courte que la tolérance', async () => {
     serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     const now = ref(NOW)
     const visible = ref(true)
-    const { leftThePage } = await run({ now, visible })
+    await run({ now, visible })
 
     visible.value = false
     await nextTick()
@@ -196,7 +176,6 @@ describe('déroulé d une question', () => {
     await nextTick()
 
     expect(calls()).toEqual([])
-    expect(leftThePage.value).toBe(false)
   })
 
   it('ne surveille rien hors question : verdict, attente, accueil', async () => {

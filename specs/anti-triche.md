@@ -28,7 +28,6 @@
 - **La détection ne tourne que pendant qu'un timer tourne** — en ascension et en rattrapage. Jamais sur un écran de verdict, ni pendant l'attente, ni sur le profil : une attente de douze heures sous surveillance n'aurait aucun sens.
 - **Conséquence : la réponse est soumise en l'état.** Champ vide → réponse fausse et ses conséquences ordinaires. Bonne réponse déjà saisie → elle est validée. La sanction est de perdre la main sur la question, pas une vie retirée d'office.
 - En rattrapage, où le joueur n'a plus de vie à perdre, la question est simplement comptée fausse et son compteur de réussites revient à zéro.
-- **Le joueur est informé** : « tu as quitté la page, ta réponse a été envoyée. » Un joueur honnête doit pouvoir comprendre ce qui s'est passé plutôt que de croire à un bug.
 - **Un flag est enregistré**, visible de l'administration seulement.
 - **Pas de contestation** possible sur ce motif.
 

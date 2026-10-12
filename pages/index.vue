@@ -1,142 +1,127 @@
 <template>
-  <RecoveryCard
-    v-if="state?.phase === 'recovery' && !waiting && screen && (screen.question || screen.verdict)"
-    :screen="screen"
-    :model-value="typed"
-    :seconds-left="secondsLeft"
-    :submitting="isRunning('submit')"
-    :contestable="Boolean(screen.verdict && isContestable(screen.verdict.questionId))"
-    :contesting="Boolean(screen.verdict && contestingId === screen.verdict.questionId)"
-    :advancing="isRunning('advance')"
-    @update:model-value="typed = $event"
-    @submit="run('submit', submit)"
-    @dispute="screen.verdict && dispute(screen.verdict.questionId)"
-    @advance="goNext"
-  />
+  <div class="contents">
+    <!-- `contents` : une seule racine pour la page, sans boîte pour la mise en
+         page — les cartes restent les enfants directs du <main> du gabarit. -->
+    <!-- Au-dessus de toute carte, dans la bande des succès : une action refusée
+         doit se lire quel que soit l'écran en cours. -->
+    <BaseToastStack v-if="contestFailed || actionFailed">
+      <BaseToast v-if="contestFailed">
+        La contestation n'est pas partie. Réessaie.
+      </BaseToast>
+      <BaseToast v-if="actionFailed">
+        L'action a échoué. Réessaie.
+      </BaseToast>
+    </BaseToastStack>
 
-  <QuestionCard
-    v-else-if="state?.phase === 'ascent' && screen?.question"
-    :state="state"
-    :question="screen.question"
-    :model-value="typed"
-    :seconds-left="secondsLeft"
-    :submitting="isRunning('submit')"
-    :effects="screen.activeEffects"
-    @update:model-value="typed = $event"
-    @submit="run('submit', submit)"
-  />
+    <RecoveryCard
+      v-if="view?.card === 'recovery'"
+      :screen="view.screen"
+      :action="view.action"
+      :model-value="typed"
+      :seconds-left="secondsLeft"
+      :submitting="isRunning('submit')"
+      :contestable="contestable"
+      :contesting="contesting"
+      :advancing="isRunning('advance')"
+      @update:model-value="typed = $event"
+      @submit="run('submit', submit)"
+      @dispute="disputeVerdict"
+      @advance="goNext"
+    />
 
-  <WaitCard
-    v-else-if="waiting && !readingFall && state && screen"
-    :state="state"
-    :screen="screen"
-    :wait-remaining="waitRemaining"
-    :loading="loading"
-    :is-admin="isAdmin"
-    :skipping="isRunning('skipCooldown')"
-    :advancing="isRunning('advance')"
-    @skip-cooldown="run('skipCooldown', skipCooldown)"
-    @advance="goNext"
-  />
+    <QuestionCard
+      v-else-if="view?.card === 'question' && state"
+      :state="state"
+      :question="view.question"
+      :model-value="typed"
+      :seconds-left="secondsLeft"
+      :submitting="isRunning('submit')"
+      :effects="view.screen.activeEffects"
+      @update:model-value="typed = $event"
+      @submit="run('submit', submit)"
+    />
 
-  <ChestCard
-    v-else-if="viewingChest && state && screen && screen.chest"
-    :state="state"
-    :effects="screen.activeEffects"
-    :chest="screen.chest"
-    :action="screen.action"
-    :opening="isRunning('chest')"
-    :advancing="isRunning('advance')"
-    @open="openTheChest"
-    @advance="goNext"
-  />
+    <WaitCard
+      v-else-if="view?.card === 'wait' && state"
+      :state="state"
+      :screen="view.screen"
+      :action="view.action"
+      :wait-remaining="waitRemaining"
+      :loading="loading"
+      :is-admin="isAdmin"
+      :skipping="isRunning('skipCooldown')"
+      :advancing="isRunning('advance')"
+      :team="user?.team ?? null"
+      @skip-cooldown="run('skipCooldown', skipCooldown)"
+      @advance="goNext"
+    />
 
-  <ResultCard
-    v-else-if="state && screen && (screen.verdict || screen.phase === 'floorEnd' || screen.phase === 'gameOver')"
-    :state="state"
-    :screen="screen"
-    :effects="screen.activeEffects"
-    :contestable="Boolean(screen.verdict && isContestable(screen.verdict.questionId))"
-    :contesting="Boolean(screen.verdict && contestingId === screen.verdict.questionId)"
-    :left-the-page="leftThePage"
-    :advancing="isRunning('advance')"
-    @dispute="screen.verdict && dispute(screen.verdict.questionId)"
-    @enter-chest="viewingChest = true"
-    @advance="goNext"
-  />
+    <ChestCard
+      v-else-if="view?.card === 'chest' && state"
+      :state="state"
+      :effects="view.screen.activeEffects"
+      :chest="view.chest"
+      :action="view.action"
+      :opening="isRunning('chest')"
+      :advancing="isRunning('advance')"
+      @open="run('chest', openChest)"
+      @advance="goNext"
+    />
 
-  <BaseCard v-else>
-    <BaseNotice v-if="readFailed">
-      Impossible de lire ta partie. Recharge la page.
-    </BaseNotice>
+    <ResultCard
+      v-else-if="view?.card === 'result' && state"
+      :state="state"
+      :screen="view.screen"
+      :effects="view.screen.activeEffects"
+      :action="view.action"
+      :contestable="contestable"
+      :contesting="contesting"
+      :advancing="isRunning('advance')"
+      @dispute="disputeVerdict"
+      @advance="goNext"
+    />
 
-    <template v-if="state && screen">
-      <div v-if="state.phase === 'ascent'" class="grid grid-cols-3 gap-3">
-        <BaseStat label="Étage" :value="state.floor" />
-        <BaseStat label="Vies" :value="state.lives" />
-        <BaseStat label="Tentative" :value="state.attemptSeen" />
-      </div>
+    <BaseCard v-else>
+      <BaseNotice v-if="readFailed">
+        Impossible de lire ta partie. Recharge la page.
+      </BaseNotice>
 
-      <BaseHint v-if="state.phase === 'ascent'" class="mt-2">
-        Étage {{ state.floor }} — question {{ state.question ? state.floorSeen + 1 : state.floorSeen }} / {{ state.floorTotal }}
-      </BaseHint>
+      <!-- L'ascension au repos : rien en cours, le joueur la commence ou la
+           reprend. -->
+      <template v-if="view?.card === 'start' && state">
+        <!-- Le rattrapage tiré mais sans question ni verdict passe aussi par ici :
+             seul son bouton s'affiche, pas les chiffres de l'ascension. -->
+        <div v-if="state.phase === 'ascent'" class="grid grid-cols-3 gap-3">
+          <BaseStat label="Étage" :value="state.floor" />
+          <BaseStat label="Vies" :value="state.lives" />
+          <BaseStat label="Tentative" :value="state.attemptSeen" />
+        </div>
 
-      <!-- Une icône par effet actif : un joueur dont les chiffres ont changé
-           doit pouvoir comprendre pourquoi plutôt que de croire à un bug.
-           C'est un état, comme les vies — pas une action. -->
-      <EffectList v-if="screen.activeEffects.length" :effects="screen.activeEffects" class="mt-3" />
-
-      <!-- Le décompte du rattrapage et la mention de l'Indulgence vivent dans
-           RecoveryCard, qui porte cette phase en entier. -->
-
-      <!-- Question en cours : aucune action à part répondre. -->
-      <form v-if="screen.question" class="mt-6" @submit.prevent="run('submit', submit)">
-        <!-- Le joueur sait avant de répondre que ce passage vaut un coffre.
-             Voir specs/bonus.md#question-loot. -->
-        <BaseHint v-if="screen.question.lootQuestion" class="mb-3" tone="success">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="mr-1 inline h-4 w-4 align-text-bottom" aria-hidden="true">
-            <path d="M20 7h-2.2a3 3 0 0 0-4.3-4A3 3 0 0 0 12 4.2 3 3 0 0 0 10.5 3a3 3 0 0 0-4.3 4H4a1 1 0 0 0-1 1v3h8V7h2v4h8V8a1 1 0 0 0-1-1ZM9 5a1 1 0 1 1 0 2H8.4L9 5Zm6 0 .6 2H15a1 1 0 1 1 0-2ZM4 13h7v8H5a1 1 0 0 1-1-1v-7Zm9 8v-8h7v7a1 1 0 0 1-1 1h-6Z" />
-          </svg>
-          Question loot — réponds juste et tu ouvres un coffre.
+        <BaseHint v-if="state.phase === 'ascent'" class="mt-2">
+          Étage {{ state.floor }} — question {{ state.floorSeen }} / {{ state.floorTotal }}
         </BaseHint>
-        <BaseHeadline weight="light">{{ screen.question.statement }}</BaseHeadline>
-        <BaseHint class="mt-2">
-          {{ secondsLeft }} s
-        </BaseHint>
-        <!-- Le champ prend le clavier dès que la question paraît : Entrée envoie
-             la réponse, puis enchaîne, et on ne sort jamais du clavier entre deux
-             questions. Voir specs/ecrans.md#jeu. -->
-        <BaseInput
-          v-model="typed"
-          autofocus
-          label="Ta réponse"
-          class="mt-4"
+
+        <!-- Une icône par effet actif : un joueur dont les chiffres ont changé
+             doit pouvoir comprendre pourquoi plutôt que de croire à un bug.
+             C'est un état, comme les vies — pas une action. -->
+        <EffectList
+          v-if="view.screen.activeEffects.length"
+          :effects="view.screen.activeEffects"
+          class="mt-3"
         />
-        <BaseButton block class="mt-4" :loading="isRunning('submit')" @click="run('submit', submit)">
-          Répondre
+
+        <BaseButton
+          v-if="view.action"
+          block
+          class="mt-6"
+          :loading="isRunning('advance')"
+          @click="goNext"
+        >
+          {{ view.action.label }}
         </BaseButton>
-      </form>
-
-      <!-- Verdict, palier et fin de partie vivent dans ResultCard, plus haut
-           dans cette page : hors de ce fallback, jamais atteints ici. -->
-      <BaseButton
-        v-if="screen.action"
-        block
-        class="mt-6"
-        :loading="isRunning('advance')"
-        @click="run('advance', advance)"
-      >
-        {{ screen.action }}
-      </BaseButton>
-    </template>
-
-    <BaseNotice v-if="contestFailed">
-      La contestation n'est pas partie. Réessaie.
-    </BaseNotice>
-    <BaseNotice v-if="actionFailed">
-      L'action a échoué. Réessaie.
-    </BaseNotice>
-  </BaseCard>
+      </template>
+    </BaseCard>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -153,7 +138,6 @@ const {
   skipCooldown,
   openChest,
   pending,
-  leftThePage,
   actionFailed,
   readFailed,
   loading,
@@ -161,49 +145,40 @@ const {
 
 // L'admin peut passer l'attente de la partie qu'il regarde — la sienne, ou
 // celle du joueur test qu'il incarne. Le bouton ne se montre qu'à lui.
-const { isAdmin } = await useCurrentUser()
-
-// Ce que la carte montre se décide en un seul endroit, testable : la page ne
-// fait que projeter cette décision. Voir utils/phase.ts.
-const screen = computed(() => (state.value ? gameScreen(state.value) : null))
+const { user, isAdmin } = await useCurrentUser()
 
 // Les infobulles des sorts y lisent les vies et l'échéance de l'attente.
 provideGameState(state)
 
 // Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
-// la page, il ferait tourner « Commencer le rattrapage » pendant qu'un admin
-// passe l'attente juste au-dessus.
-type PlayAction = 'submit' | 'advance' | 'skipCooldown' | 'chest'
-const running = ref<PlayAction | null>(null)
+// la page, il ferait tourner « Commencer » pendant qu'un admin passe l'attente
+// juste au-dessus.
+type PendingButton = 'submit' | 'advance' | 'skipCooldown' | 'chest'
+const running = ref<PendingButton | null>(null)
 
-// L'écran de coffre (ChestCard) est un aller purement client, ouvert
-// depuis le verdict quand un coffre attend — jamais depuis le serveur.
-const viewingChest = ref(false)
-
-function isRunning(action: PlayAction): boolean {
+function isRunning(action: PendingButton): boolean {
   return pending.value && running.value === action
 }
 
-async function run(action: PlayAction, move: () => Promise<void>): Promise<void> {
+async function run(action: PendingButton, move: () => Promise<void>): Promise<void> {
   running.value = action
   await move()
   running.value = null
 }
-
-// Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
-// suivant. Jamais pendant qu'une question tourne — là, Entrée répond.
-const canAdvance = computed(() =>
-  readingFall.value || (Boolean(screen.value?.action) && !screen.value?.question && !pending.value),
-)
-useAdvanceOnEnter(goNext, canAdvance)
 
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
 // désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
 const { isContestable, contest, contestingId, refresh: refreshDisputes } = useDisputes()
 const contestFailed = ref(false)
 
-async function dispute(questionId: string): Promise<void> {
-  contestFailed.value = !(await contest(questionId))
+const verdictId = computed(() => view.value?.screen.verdict?.questionId ?? null)
+const contestable = computed(() => verdictId.value !== null && isContestable(verdictId.value))
+const contesting = computed(() => verdictId.value !== null && contestingId.value === verdictId.value)
+
+async function disputeVerdict(): Promise<void> {
+  if (verdictId.value !== null) {
+    contestFailed.value = !(await contest(verdictId.value))
+  }
 }
 
 // Les contestables se chargent au montage : useDisputes ne fetch plus à la
@@ -220,57 +195,52 @@ watch(() => state.value?.verdict, (verdict) => {
   }
 })
 
-// L'écran d'attente sert aussi au rattrapage prêt à démarrer : même fiche de
-// révision, même file de contestation, mais le compteur cède la place au
-// bouton « Commencer le rattrapage ». Voir specs/ecrans.md#cooldown--attente.
-// Il passe avant RecoveryCard : le verdict de la question qui a pris la
-// dernière vie reste dans l'état, et le ferait relire au lieu du poster.
-const waiting = computed(() =>
-  state.value?.phase === 'cooldown'
-  || (state.value?.phase === 'recovery' && !state.value.question && !state.value.recovery),
-)
-
-// La réponse qui prend la dernière vie se lit comme les autres avant le poster :
-// le serveur est déjà en attente, la page retient son verdict le temps d'un clic
-// sur « Redescendre ». Aller purement client, comme le coffre. Armé sur l'id, pas
-// l'objet : une relecture rend le même verdict dans un nouvel objet et le
-// rouvrirait. Sans `immediate` : une page rechargée en pleine attente va droit au
-// poster. `lifeLost` écarte le Mimic et les verdicts de rattrapage.
+// Deux allers purement client, que le serveur ignore : l'écran du coffre, ouvert
+// depuis le verdict quand un coffre attend, et la chute, lue avant le poster.
+// Quelle carte en découle se décide dans utils/phase.ts (playView), testé : la
+// page ne fait qu'exécuter.
+const chestOf = ref<string | null>(null)
 const fallenOn = ref<string | null>(null)
 
+const view = computed(() =>
+  state.value
+    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value })
+    : null,
+)
+
+// Armé sur l'id, pas l'objet : une relecture rend le même verdict dans un nouvel
+// objet et le rouvrirait. Sans `immediate` : une page rechargée en pleine
+// attente va droit au poster.
 watch(() => state.value?.verdict?.questionId, () => {
-  const verdict = state.value?.verdict
-  if (verdict?.lifeLost && waiting.value) {
-    fallenOn.value = verdict.questionId
+  const held = state.value && fallQuestionId(state.value)
+  if (held) {
+    fallenOn.value = held
   }
 })
 
-const readingFall = computed(() =>
-  waiting.value && fallenOn.value !== null && fallenOn.value === state.value?.verdict?.questionId,
-)
+// Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
+// suivant. Jamais pendant qu'une question tourne — là, la carte n'a pas d'action
+// et Entrée répond.
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action))
 
-// Le seul chemin qui entre ici avec viewingChest à vrai est ChestCard une
-// fois le coffre ouvert — refermer l'écran est donc toujours correct, quelle
-// que soit la destination (nouvelle question, palier, fin de partie). Couvre
-// aussi le raccourci Entrée (useAdvanceOnEnter), qui n'a qu'un seul point
-// d'entrée pour « avancer ».
+// Le seul point d'entrée pour « avancer », bouton comme Entrée : le geste vient
+// de playView, la page l'exécute.
 async function goNext(): Promise<void> {
-  if (readingFall.value) {
-    fallenOn.value = null
-    return
-  }
+  const action = view.value?.action
 
-  await run('advance', advance)
-  viewingChest.value = false
-}
-
-async function openTheChest(): Promise<void> {
-  await run('chest', openChest)
-  // Un Mimic bascule directement en attente — WaitCard le montre, pas cet
-  // écran. Rien à révéler ici dans ce cas : on referme derrière soi.
-  // Voir specs/bonus.md#coffre-et-mimic.
-  if (waiting.value) {
-    viewingChest.value = false
+  switch (action?.move) {
+    case 'leaveFall':
+      fallenOn.value = null
+      return
+    case 'enterChest':
+      chestOf.value = action.chestOf
+      return
+    case 'advance':
+      // Seul l'aller serveur attend la fin d'un envoi en vol : entrer dans le
+      // coffre ou quitter la chute ne demandent rien à personne.
+      if (!pending.value) {
+        await run('advance', advance)
+      }
   }
 }
 </script>

@@ -79,8 +79,8 @@
         @click="$emit('submit')"
       />
       <CardButton
-        v-else-if="screen.action"
-        :label="screen.action"
+        v-else-if="action"
+        :label="action.label"
         anchor="parchment-bottom"
         face="plank"
         :loading="advancing"
@@ -100,11 +100,13 @@
 // plus le palier, la fin de partie, le coffre et les rubans, dont le rattrapage
 // n'a rien — pas de coffre (isLootQuestion rend false en rattrapage), pas de
 // palier, pas de vie perdue. Ce qui reste tient dans un fichier.
-import type { GameScreen } from '~~/utils/phase'
+import type { GameScreen, PlayAction } from '~~/utils/phase'
 import { RECOVERY_FAILURE_MESSAGE, RECOVERY_SUCCESS_MESSAGE } from '~~/utils/phase'
 
 const props = defineProps<{
   screen: GameScreen
+  /** Le libellé du bouton qui avance, null pendant une question. Voir utils/phase.ts (playView). */
+  action: PlayAction | null
   modelValue: string
   secondsLeft: number | null
   submitting: boolean

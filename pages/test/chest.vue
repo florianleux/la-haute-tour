@@ -3,7 +3,7 @@
     :state="state"
     :effects="[]"
     :chest="chest"
-    :action="chest.opened ? 'Rejouer' : null"
+    :action="view.action"
     :opening="false"
     :advancing="false"
     @open="openChest"
@@ -15,41 +15,47 @@
 // Banc de design de l'écran de coffre : même composant qu'en jeu
 // (ChestCard), mais un tirage local plutôt qu'une vraie ouverture — pour
 // régler le visuel sans dépendre d'une question loot réellement jouée.
-// Le coffre arrive toujours fermé, ne s'ouvre qu'au clic, puis « Rejouer »
-// en remet un fermé. Modifier ChestCard modifie donc aussi bien cette page
+// Le coffre arrive toujours fermé, ne s'ouvre qu'au clic, puis le bouton du
+// jeu (« Suivant ») en remet un fermé. Modifier ChestCard modifie donc aussi bien cette page
 // que la vraie. Admin seulement. Voir pages/test/verdict.vue pour le même
 // principe.
 import { SPELL_IDS } from '~~/shared/utils/spells'
-import type { ChestView, GameState } from '~~/server/utils/game'
+import type { ChestView } from '~~/server/utils/game'
+import { playView } from '~~/utils/phase'
 
 definePageMeta({ admin: true })
 
-// De quoi remplir les rubans, rien de plus : ce banc règle le coffre.
-const state: GameState = {
-  phase: 'ascent',
-  floor: 1,
-  lives: 2,
-  maxLives: 3,
-  started: true,
-  question: null,
-  verdict: null,
-  cooldownUntil: null,
-  recovery: null,
-  recoveryResult: null,
-  floorSeen: 49,
-  floorTotal: 166,
-  attemptSeen: 12,
-  chest: null,
-  maintenance: false,
-  effects: [],
-  unlocked: [],
-}
-
-provideGameState(state)
+// La question loot dont le verdict a gagné le coffre, et dont la page a ouvert
+// l'écran.
+const QUESTION_ID = 'test-chest'
 
 const CLOSED: ChestView = { opened: false, mimic: false, spell: null }
 
 const chest = ref<ChestView>(CLOSED)
+
+// De quoi remplir les rubans, et le verdict juste d'une question loot qui a
+// gagné le coffre : le bouton une fois ouvert est celui du jeu, et ramène ici
+// un coffre fermé.
+const state = computed(() => demoState({
+  lives: 2,
+  started: true,
+  floorSeen: 49,
+  floorTotal: 166,
+  attemptSeen: 12,
+  verdict: {
+    questionId: QUESTION_ID,
+    statement: 'Quel est le point culminant d\'Afrique ?',
+    correct: true,
+    answerLabel: 'Le Kilimandjaro',
+    submittedAnswer: 'Le Kilimandjaro',
+    lifeLost: false,
+  },
+  chest: chest.value,
+}))
+
+const view = computed(() => playView(state.value, { chestOf: QUESTION_ID, fallenOn: null }))
+
+provideGameState(state)
 
 function openChest(): void {
   // Le mimic pèse 5% en vrai (specs/bonus.md#coffre-et-mimic) — trop rare

@@ -1,29 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { blockedByMaintenance, gameScreen, isAnswering, nextActionLabel } from '../../utils/phase'
-import type { GameState } from '../../server/utils/game'
-
-function state(overrides: Partial<GameState>): GameState {
-  return {
-    phase: 'ascent',
-    floor: 1,
-    lives: 3,
-    maxLives: 3,
-    started: false,
-    question: null,
-    verdict: null,
-    cooldownUntil: null,
-    recovery: null,
-    recoveryResult: null,
-    floorSeen: 0,
-    floorTotal: 0,
-    attemptSeen: 0,
-    chest: null,
-  maintenance: false,
-  effects: [],
-  unlocked: [],
-    ...overrides,
-  }
-}
+import { blockedByMaintenance, fallQuestionId, gameScreen, isAnswering, nextActionLabel, playView } from '../../utils/phase'
+import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
   it('propose de commencer tant que rien n a été joué', () => {
@@ -51,8 +28,6 @@ describe('écran de jeu', () => {
       question,
       verdict: null,
       phase: 'ascent',
-      // Pendant une question, aucune action à part répondre.
-      action: null,
     })
   })
 
@@ -61,7 +36,6 @@ describe('écran de jeu', () => {
       question: null,
       verdict,
       phase: 'ascent',
-      action: 'Suivant',
     })
   })
 
@@ -69,15 +43,13 @@ describe('écran de jeu', () => {
     expect(gameScreen(state({ phase: 'floorEnd', verdict }))).toMatchObject({
       verdict,
       phase: 'floorEnd',
-      action: 'Continuer vers l\'étage suivant',
     })
   })
 
-  it('affiche la fin de partie par-dessus le verdict, sans plus rien à faire', () => {
+  it('affiche la fin de partie par-dessus le verdict', () => {
     expect(gameScreen(state({ phase: 'gameOver', verdict }))).toMatchObject({
       verdict,
       phase: 'gameOver',
-      action: null,
     })
   })
 
@@ -113,7 +85,7 @@ describe('action de la page de jeu', () => {
   it('démarre, poursuit puis termine un rattrapage', () => {
     const ongoing = { total: 3, played: 0, successes: 0, resumes: false, sealed: false, required: 1 }
 
-    expect(nextActionLabel(state({ phase: 'recovery' }))).toBe('Commencer le rattrapage')
+    expect(nextActionLabel(state({ phase: 'recovery' }))).toBe('Commencer')
     expect(nextActionLabel(state({ phase: 'recovery', recovery: ongoing, verdict })))
       .toBe('Suivant')
 
@@ -128,41 +100,10 @@ describe('action de la page de jeu', () => {
 })
 
 describe('coffre sur l écran de verdict', () => {
-  const closed = { opened: false, mimic: false, spell: null }
-
-  it('retient le joueur tant que le coffre est fermé', () => {
-    expect(gameScreen(state({ verdict, chest: closed }))).toMatchObject({
-      verdict,
-      chest: closed,
-      // Ouvrir est un clic distinct de « suivant » : rien d'autre n'avance.
-      action: null,
-    })
-  })
-
-  it('rend la suite une fois le coffre ouvert', () => {
-    const opened = { opened: true, mimic: false, spell: 'VITALITY' as const }
-
-    expect(gameScreen(state({ verdict, chest: opened }))).toMatchObject({
-      chest: opened,
-      action: 'Suivant',
-    })
-  })
-
   it('cache le coffre tant qu une question est servie', () => {
-    expect(gameScreen(state({ question, verdict, chest: closed }))).toMatchObject({
-      chest: null,
-      action: null,
-    })
-  })
-})
+    const closed = { opened: false, mimic: false, spell: null }
 
-describe('phases qui portent leurs propres actions', () => {
-  it('ne propose rien en attente : l écran a ses boutons, et rien n avance', () => {
-    expect(gameScreen(state({ phase: 'cooldown', started: true })).action).toBeNull()
-  })
-
-  it('ne propose rien à la fin de partie', () => {
-    expect(gameScreen(state({ phase: 'gameOver', verdict })).action).toBeNull()
+    expect(gameScreen(state({ question, verdict, chest: closed })).chest).toBeNull()
   })
 })
 
@@ -201,5 +142,97 @@ describe('barrage de maintenance', () => {
 
   it('est faux quand l état n est pas encore lu', () => {
     expect(blockedByMaintenance(null, '/')).toBe(false)
+  })
+})
+
+describe('carte de jeu', () => {
+  const closed = { opened: false, mimic: false, spell: null }
+  const opened = { opened: true, mimic: false, spell: 'RESPITE' as const }
+  const right = { ...verdict, correct: true, lifeLost: false }
+  const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, required: 1 }
+
+  function card(overrides: Parameters<typeof state>[0], client?: Parameters<typeof playView>[1]) {
+    const { card, action } = playView(state(overrides), client)
+    return { card, action }
+  }
+
+  it('pose la question en ascension, sans autre bouton que répondre', () => {
+    expect(card({ question })).toEqual({ card: 'question', action: null })
+  })
+
+  it('propose de commencer une ascension au repos', () => {
+    expect(card({})).toEqual({ card: 'start', action: { label: 'Commencer l\'ascension', move: 'advance' } })
+  })
+
+  it('enchaîne sur la suite après un verdict', () => {
+    expect(card({ verdict: right })).toEqual({ card: 'result', action: { label: 'Suivant', move: 'advance' } })
+  })
+
+  it('mène du verdict à l écran du coffre tant qu il est fermé', () => {
+    expect(card({ verdict: right, chest: closed }))
+      .toEqual({ card: 'result', action: { label: 'Suivant', move: 'enterChest', chestOf: verdict.questionId } })
+    // Fermé, le coffre a son propre bouton : rien n'avance d'ici.
+    expect(card({ verdict: right, chest: closed }, { chestOf: verdict.questionId, fallenOn: null }))
+      .toEqual({ card: 'chest', action: null })
+    expect(card({ verdict: right, chest: opened }, { chestOf: verdict.questionId, fallenOn: null }))
+      .toEqual({ card: 'chest', action: { label: 'Suivant', move: 'advance' } })
+  })
+
+  it('oublie l écran du coffre dès que le verdict change', () => {
+    // Le coffre d'une autre question : il repasse par son verdict.
+    expect(card({ verdict: { ...right, questionId: 'q2' }, chest: closed }, { chestOf: verdict.questionId, fallenOn: null }))
+      .toEqual({ card: 'result', action: { label: 'Suivant', move: 'enterChest', chestOf: 'q2' } })
+    // Un Mimic bascule en attente : le poster passe devant l'écran du coffre.
+    expect(card({ phase: 'cooldown', lives: 0, verdict: right, chest: { opened: true, mimic: true, spell: null } }, { chestOf: verdict.questionId, fallenOn: null }))
+      .toEqual({ card: 'wait', action: null })
+  })
+
+  it('fait lire le verdict de la dernière vie avant le poster', () => {
+    const fallen = { phase: 'cooldown' as const, lives: 0, verdict }
+
+    expect(card(fallen, { chestOf: null, fallenOn: verdict.questionId }))
+      .toEqual({ card: 'result', action: { label: 'Redescendre', move: 'leaveFall' } })
+    // Rechargée en pleine attente, la page va droit au poster.
+    expect(card(fallen)).toEqual({ card: 'wait', action: null })
+  })
+
+  it('montre le poster, pas un verdict périmé, quand l attente s achève', () => {
+    expect(card({ phase: 'recovery', lives: 0, verdict }))
+      .toEqual({ card: 'wait', action: { label: 'Commencer', move: 'advance' } })
+  })
+
+  it('porte question et verdict du rattrapage sur la même carte', () => {
+    expect(card({ phase: 'recovery', lives: 0, recovery: ongoing, question }))
+      .toEqual({ card: 'recovery', action: null })
+    expect(card({ phase: 'recovery', lives: 0, recovery: ongoing, verdict: { ...verdict, lifeLost: false } }))
+      .toEqual({ card: 'recovery', action: { label: 'Suivant', move: 'advance' } })
+  })
+
+  it('annonce le palier et la fin de partie sur le verdict', () => {
+    expect(card({ phase: 'floorEnd', verdict: right }))
+      .toEqual({ card: 'result', action: { label: 'Continuer vers l\'étage suivant', move: 'advance' } })
+    expect(card({ phase: 'gameOver', verdict: right })).toEqual({ card: 'result', action: null })
+  })
+})
+
+describe('verdict de la dernière vie', () => {
+  it('retient le verdict qui ouvre l attente', () => {
+    expect(fallQuestionId(state({ phase: 'cooldown', lives: 0, verdict }))).toBe(verdict.questionId)
+  })
+
+  it('laisse passer une vie perdue qui en laisse d autres', () => {
+    expect(fallQuestionId(state({ lives: 2, verdict }))).toBeNull()
+  })
+
+  it('laisse passer le Mimic, dont le verdict était juste', () => {
+    expect(fallQuestionId(state({ phase: 'cooldown', lives: 0, verdict: { ...verdict, correct: true, lifeLost: false } })))
+      .toBeNull()
+  })
+
+  it('laisse passer le verdict de rattrapage, qui ne coûte pas de vie', () => {
+    // L'attente échue, le rattrapage pas encore commencé : le verdict qui a
+    // scellé le précédent reste dans l'état.
+    expect(fallQuestionId(state({ phase: 'recovery', lives: 0, verdict: { ...verdict, lifeLost: false } })))
+      .toBeNull()
   })
 })

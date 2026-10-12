@@ -2,9 +2,10 @@ import { SPELL_FACES, SPELL_IDS, isWaitBound } from '~~/shared/utils/spells'
 import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 import type { EffectStake, EffectView } from '~~/server/utils/effects'
 import type { SpellLifetime } from '~~/server/utils/spellbook'
-import type { ChestView } from '~~/server/utils/game'
+import type { ChestView, GameState } from '~~/server/utils/game'
 
-// Les faux états des pages de test (pages/test/*), écrits une fois.
+// Les faux états des pages de test (pages/test/*), écrits une fois. `demoState`
+// sert aussi de partie de base aux tests de l'écran (tests/app/phase.test.ts).
 
 const CASTER_NAMES = ['Gandalf', 'Bilbo', 'Frodo', 'Aragorn', 'Éowyn', 'Legolas']
 
@@ -73,4 +74,29 @@ export function randomChest(): ChestView | null {
   const mimic = opened && Math.random() < 0.2
 
   return { opened, mimic, spell: opened && !mimic ? pick(SPELL_IDS) : null }
+}
+
+/** Une partie au repos — étage 1, vies pleines, rien en cours — que chaque page
+ *  de test complète de ce qu'elle veut montrer. */
+export function demoState(overrides: Partial<GameState> = {}): GameState {
+  return {
+    phase: 'ascent',
+    floor: 1,
+    lives: 3,
+    maxLives: 3,
+    started: false,
+    question: null,
+    verdict: null,
+    cooldownUntil: null,
+    recovery: null,
+    recoveryResult: null,
+    floorSeen: 0,
+    floorTotal: 0,
+    attemptSeen: 0,
+    chest: null,
+    maintenance: false,
+    effects: [],
+    unlocked: [],
+    ...overrides,
+  }
 }

@@ -1,6 +1,7 @@
 <template>
   <RecoveryCard
-    :screen="screen"
+    :screen="view.screen"
+    :action="view.action"
     :model-value="typed"
     :seconds-left="secondsLeft"
     :submitting="false"
@@ -20,8 +21,7 @@
 // vrai rattrapage — pour régler le visuel sans avoir à perdre trois vies puis
 // attendre. Modifier RecoveryCard modifie donc aussi bien cette page que la
 // vraie. Admin seulement. Voir pages/test/play.vue pour le même principe.
-import type { GameState } from '~~/server/utils/game'
-import { gameScreen } from '~~/utils/phase'
+import { playView } from '~~/utils/phase'
 
 definePageMeta({ admin: true })
 
@@ -50,12 +50,10 @@ const sealed = !answering && Math.random() < 0.5
 
 const STATEMENT = 'Quel est le point culminant d\'Afrique ?'
 
-const state = ref<GameState>({
+const state = ref(demoState({
   phase: 'recovery',
-  floor: 1,
   // Le rattrapage ne se joue qu'à zéro vie : c'est sa définition même.
   lives: 0,
-  maxLives: 3,
   started: true,
   question: answering
     ? {
@@ -79,7 +77,6 @@ const state = ref<GameState>({
         // Le rattrapage ne coûte aucune vie. Voir server/utils/game.ts.
         lifeLost: false,
       },
-  cooldownUntil: null,
   // `resumes` suit le quota atteint, pas la dernière réponse : un tirage scellé
   // sur trop peu de succès ne reprend jamais. Le banc fait donc varier les
   // succès avec le sort, sinon il montrerait un état que resumesRecovery ne
@@ -92,20 +89,16 @@ const state = ref<GameState>({
     resumes: sealed && correct,
     required: 3,
   },
-  recoveryResult: null,
   floorSeen: 544,
   floorTotal: 1000,
   attemptSeen: 995,
-  chest: null,
-  maintenance: false,
   effects: Array.from({ length: Math.floor(Math.random() * 3) }, () => randomEffect('active')),
-  unlocked: [],
-})
+}))
 
 provideGameState(state)
 
 // Le lien de contestation ne se propose que sur un verdict faux, comme en jeu.
 const contestable = !answering && !correct
 
-const screen = computed(() => gameScreen(state.value))
+const view = computed(() => playView(state.value))
 </script>

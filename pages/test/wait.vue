@@ -1,12 +1,14 @@
 <template>
   <WaitCard
     :state="state"
-    :screen="screen"
+    :screen="view.screen"
+    :action="view.action"
     wait-remaining="4m 12s"
     :loading="false"
     :is-admin="true"
     :skipping="false"
     :advancing="false"
+    :team="team"
     @skip-cooldown="() => {}"
     @advance="() => {}"
   />
@@ -18,20 +20,23 @@
 // qu'une vraie partie — pour régler le visuel sans dépendre d'une attente
 // réelle. Modifier WaitCard modifie donc aussi bien cette page que la
 // vraie. Admin seulement. Voir pages/test/play.vue pour le même principe.
-import type { GameState } from '~~/server/utils/game'
-import { gameScreen } from '~~/utils/phase'
+import { playView } from '~~/utils/phase'
+import { TEAM_IDS } from '~~/shared/utils/teams'
 
 definePageMeta({ admin: true })
 
-const phase = Math.random() < 0.5 ? 'cooldown' : 'recovery'
+// Tirés une fois côté serveur et transmis au client par useState : tirés de
+// chaque côté, ils divergeraient, et l'hydratation garderait l'image du client
+// avec la position du serveur (la corde déroulée posée au sol).
+const phase = useState('test-wait-phase', () => Math.random() < 0.5 ? 'cooldown' : 'recovery').value
+const team = useState('test-wait-team', () => TEAM_IDS[Math.floor(Math.random() * TEAM_IDS.length)]).value
 
-const state = ref<GameState>({
+const state = ref(demoState({
   phase,
-  floor: 1,
   lives: 0,
-  maxLives: 3,
   started: true,
-  question: null,
+  // Le verdict de la dernière vie, une fois sur deux : resté dans l'état, il
+  // ne doit pas détourner du poster.
   verdict: Math.random() < 0.5
     ? null
     : {
@@ -43,18 +48,13 @@ const state = ref<GameState>({
         lifeLost: true,
       },
   cooldownUntil: new Date(Date.now() + 252_000).toISOString(),
-  recovery: null,
-  recoveryResult: null,
   floorSeen: 544,
   floorTotal: 1000,
   attemptSeen: 995,
-  chest: randomChest(),
-  maintenance: false,
   effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('pending')),
-  unlocked: [],
-})
+}))
 
 provideGameState(state)
 
-const screen = computed(() => gameScreen(state.value))
+const view = computed(() => playView(state.value))
 </script>

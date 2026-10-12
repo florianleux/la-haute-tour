@@ -1,4 +1,4 @@
-import type { GameState } from "~~/server/utils/game";
+import type { ChestView, GameState, ServedQuestion } from "~~/server/utils/game";
 import type { Phase } from "~~/server/utils/mechanics";
 
 /**
@@ -21,6 +21,9 @@ export function phaseLabel(phase: Phase): string {
   }
 }
 
+/** Le libellé qui passe à la suite, du verdict comme du coffre ouvert. */
+const NEXT = "Suivant";
+
 /**
  * Ce que propose le bouton qui fait avancer la partie : lire la suite d'un
  * rattrapage, franchir un palier, ou reprendre l'ascension. Le libellé suit la
@@ -32,7 +35,9 @@ export function phaseLabel(phase: Phase): string {
 export function nextActionLabel(state: GameState): string {
   if (state.phase === "recovery") {
     if (!state.recovery) {
-      return "Commencer le rattrapage";
+      // Le mot court du glossaire (Rattrapage) : les boutons des écrans
+      // illustrés tiennent en un mot.
+      return "Commencer";
     }
 
     const result = recoveryLine(state.recovery).result;
@@ -45,7 +50,7 @@ export function nextActionLabel(state: GameState): string {
       return "Terminer";
     }
 
-    return "Suivant";
+    return NEXT;
   }
 
   if (state.phase === "floorEnd") {
@@ -54,7 +59,7 @@ export function nextActionLabel(state: GameState): string {
 
   // Un verdict lu en pleine ascension : la suite est la question d'après.
   if (state.verdict) {
-    return "Suivant";
+    return NEXT;
   }
 
   return state.started ? "Reprendre l'ascension" : "Commencer l'ascension";
@@ -75,8 +80,6 @@ export interface GameScreen {
   recovery: RecoveryLine | null;
   /** La phase que le serveur a rendue — l'écran l'annonce, il n'en déduit rien. */
   phase: GameState["phase"];
-  /** Le libellé du bouton qui fait avancer, null quand rien n'avance ici. */
-  action: string | null;
   /** Le coffre à ouvrir, null quand il n'y en a pas à cet endroit. */
   chest: GameState["chest"];
   /** Les sorts qui attendent la prochaine tentative : l'attente les récapitule. */
@@ -123,17 +126,12 @@ export function isCooldown(state: GameState | null): boolean {
 
 export function gameScreen(state: GameState): GameScreen {
   const answering = isAnswering(state);
-  const chest = answering ? null : state.chest;
-  // Un coffre fermé retient le joueur : l'ouvrir est un clic distinct de
-  // « suivant », sinon l'objet se perdrait. Voir specs/bonus.md#coffre-et-mimic.
-  const holdsChest = chest !== null && !chest.opened;
-
   return {
     question: state.question,
     verdict: answering ? null : state.verdict,
     recovery: state.recovery && recoveryLine(state.recovery),
     phase: state.phase,
-    chest,
+    chest: answering ? null : state.chest,
     // Deux lectures du même champ. « pending » veut dire non ancré : un effet qui
     // attend la tentative suivante, ou un sort lié à l'attente qui agit déjà sur
     // celle-ci — les deux se lisent pendant l'attente. Ce qui court sur la
@@ -142,17 +140,153 @@ export function gameScreen(state: GameState): GameScreen {
       (effect) => effect.state === "pending",
     ),
     activeEffects: state.effects.filter((effect) => effect.state === "active"),
-    // Pendant une question, aucune action à part répondre. L'attente porte les
-    // siennes — passer l'attente, lancer le rattrapage — et la fin de partie n'en
-    // a plus aucune. Voir specs/ecrans.md#principes.
-    action:
-      answering ||
-      holdsChest ||
-      state.phase === "cooldown" ||
-      state.phase === "gameOver"
-        ? null
-        : nextActionLabel(state),
   };
+}
+
+/**
+ * Le bouton qui avance et ce qu'il fait : demander la suite au serveur, quitter
+ * la chute pour le poster, ou entrer dans l'écran du coffre de telle question.
+ * Les deux derniers sont des allers purement client.
+ */
+export type PlayAction =
+  | { label: string; move: "advance" | "leaveFall" }
+  | { label: string; move: "enterChest"; chestOf: string };
+
+/**
+ * Ce que la page retient seule, que le serveur ne sait pas. Chacun désigne la
+ * question du verdict qu'il concerne : un verdict neuf les rend caducs d'eux-mêmes,
+ * sans que personne ait à les remettre à zéro.
+ */
+export interface PlayClientState {
+  /** La question dont le joueur a quitté le verdict pour l'écran du coffre. */
+  chestOf: string | null;
+  /** La question de la chute que le joueur lit encore. */
+  fallenOn: string | null;
+}
+
+const AT_REST: PlayClientState = { chestOf: null, fallenOn: null };
+
+/**
+ * La carte que l'écran de jeu monte — une seule — avec ce qu'elle seule porte :
+ * la question pour l'ascension, le coffre pour son écran.
+ */
+export type PlayView = {
+  screen: GameScreen;
+  /** Le bouton qui avance, null quand la carte n'en a pas. */
+  action: PlayAction | null;
+} & (
+  | { card: "question"; question: ServedQuestion }
+  | { card: "chest"; chest: ChestView }
+  | { card: "recovery" | "wait" | "result" | "start" }
+);
+
+/**
+ * L'écran d'attente sert aussi au rattrapage prêt à démarrer : l'attente échue,
+ * le rattrapage n'a encore ni question ni tirage. Voir specs/ecrans.md#cooldown--attente.
+ */
+function isWaiting(state: GameState): boolean {
+  return (
+    isCooldown(state) ||
+    (state.phase === "recovery" && !state.question && !state.recovery)
+  );
+}
+
+/**
+ * La question de la chute, si ce verdict en est une : celle qui vient de prendre
+ * la dernière vie. Le serveur est déjà en attente, la page retient le verdict le
+ * temps d'un clic sur « Redescendre ». `lifeLost` écarte le Mimic et les verdicts
+ * de rattrapage. Voir specs/spec.md#glossaire (Chute).
+ */
+export function fallQuestionId(state: GameState): string | null {
+  return state.verdict?.lifeLost && isWaiting(state)
+    ? state.verdict.questionId
+    : null;
+}
+
+/**
+ * Quelle carte l'écran de jeu monte, et ce que fait son bouton. L'ordre des
+ * tests compte : chacun écarte un état que les suivants prendraient à tort.
+ */
+export function playView(
+  state: GameState,
+  client: PlayClientState = AT_REST,
+): PlayView {
+  const screen = gameScreen(state);
+  const waiting = isWaiting(state);
+  const verdictId = state.verdict?.questionId;
+  const readingFall = waiting && client.fallenOn !== null && client.fallenOn === verdictId;
+  const viewingChest = client.chestOf !== null && client.chestOf === verdictId;
+  const next: PlayAction = { label: nextActionLabel(state), move: "advance" };
+
+  // Avant l'attente : le rattrapage en cours porte sa question et son verdict.
+  // Pendant une question, aucune action à part répondre.
+  if (
+    state.phase === "recovery" &&
+    !waiting &&
+    (screen.question || screen.verdict)
+  ) {
+    return { screen, card: "recovery", action: screen.question ? null : next };
+  }
+
+  if (state.phase === "ascent" && screen.question) {
+    return { screen, card: "question", question: screen.question, action: null };
+  }
+
+  // Avant le verdict : celui de la question qui a pris la dernière vie reste
+  // dans l'état, et le ferait relire au lieu du poster — sauf le temps de la
+  // chute, que le joueur lit avant de redescendre. L'attente porte ses propres
+  // boutons ; seul le rattrapage prêt à démarrer avance d'ici.
+  if (waiting && !readingFall) {
+    return {
+      screen,
+      card: "wait",
+      action: state.phase === "recovery" ? next : null,
+    };
+  }
+
+  if (viewingChest && screen.chest) {
+    // Fermé, le coffre porte son propre bouton : l'ouvrir n'avance rien.
+    return {
+      screen,
+      card: "chest",
+      chest: screen.chest,
+      action: screen.chest.opened ? next : null,
+    };
+  }
+
+  if (
+    screen.verdict ||
+    state.phase === "floorEnd" ||
+    state.phase === "gameOver"
+  ) {
+    // Le coffre fermé retient le joueur : « Suivant » mène à son écran, qui
+    // a son propre bouton pour l'ouvrir — sinon l'objet se perdrait.
+    // Voir specs/bonus.md#coffre-et-mimic.
+    if (screen.verdict && screen.chest && !screen.chest.opened) {
+      return {
+        screen,
+        card: "result",
+        action: { label: NEXT, move: "enterChest", chestOf: screen.verdict.questionId },
+      };
+    }
+
+    if (readingFall) {
+      return {
+        screen,
+        card: "result",
+        action: { label: "Redescendre", move: "leaveFall" },
+      };
+    }
+
+    // La fin de partie n'a plus aucune action. Voir specs/ecrans.md#principes.
+    return {
+      screen,
+      card: "result",
+      action: state.phase === "gameOver" ? null : next,
+    };
+  }
+
+  return { screen, card: "start", action: next };
 }
 
 /**
