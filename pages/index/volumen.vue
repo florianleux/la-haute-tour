@@ -1,25 +1,21 @@
 <template>
-  <BaseDialog
-    ref="dialog"
+  <CampOverlay
+    v-slot="{ closing, close }"
     label="Volumen"
-    class="question-log-scroll-metrics items-start justify-center overflow-clip bg-slate-950/40 backdrop-blur-xs"
-    :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0.25s]' : 'motion-safe:animate-fade-in'"
-    @close="close"
+    :game="game"
+    class="question-log-scroll-metrics"
   >
-    <!-- Par-dessus le camp, flouté dessous : la page de jeu n'est jamais
-         démontée, le Volumen est sa route enfant. Clic à côté du papier =
-         fermer, y compris dans les vides de l'image autour des rouleaux : les
-         deux couches du parchemin laissent passer le clic jusqu'à cette boîte,
-         que le papier, lui, arrête.
+    <!-- Par-dessus le camp (CampOverlay). Clic à côté du papier = fermer, y
+         compris dans les vides de l'image autour des rouleaux : les deux
+         couches du parchemin laissent passer le clic jusqu'à cette boîte, que
+         le papier, lui, arrête.
 
          Le bas du parchemin — bord du papier et rouleaux — tombe sous l'écran :
          seules les poignées du haut se voient, et le papier descend jusqu'en bas
          pour laisser plus de place à la lecture. En largeur, le calque est
          rogné au ras des rouleaux : ils se posent à 4 % des bords de l'écran,
          quelle que soit la largeur. Repères du calque :
-         `question-log-scroll-metrics`, dans main.css. `overflow-clip` et non `hidden` : une
-         boîte `hidden` se fait défiler par le navigateur pour montrer ce qui
-         prend le focus, et décalait tout le parchemin vers le haut. -->
+         `question-log-scroll-metrics`, dans main.css. -->
     <div
       class="relative mt-[6dvh] h-[round(calc(94dvh+var(--k)*var(--cut-b)),1px)] w-[round(92vw,1px)] shrink-0 origin-bottom"
       :class="closing ? 'motion-safe:animate-sink [--enter-delay:0.12s]' : 'motion-safe:animate-rise'"
@@ -49,14 +45,9 @@
            l'éclat des noms du camp. Il jaillit pendant le déroulé, quand le
            bord du papier passe sous lui, au milieu, avec le même rebond que le
            verdict juste (animate-cheer). -->
-      <h1
-        class="absolute left-1/2 top-[calc(var(--k)*var(--paper-y))] -translate-x-1/2 -translate-y-full origin-bottom pb-[0.2em] text-[max(3rem,8dvh)]"
-        :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0s]' : 'motion-safe:animate-cheer [--enter-delay:0.3s]'"
-      >
-        <BaseGlowLabel soft>
-          Volumen
-        </BaseGlowLabel>
-      </h1>
+      <CampOverlayTitle :closing="closing" delay="0.3s" class="top-[calc(var(--k)*var(--paper-y))]">
+        Volumen
+      </CampOverlayTitle>
 
       <!-- Le papier : de quoi lire, une fois déroulé, et ré-enroulé avec lui
            à la fermeture. -->
@@ -66,9 +57,7 @@
       >
         <!-- La croix, dans le coin du papier : elle ne prend pas de ligne à la
              lecture. -->
-        <BaseIconButton label="Fermer le Volumen" class="absolute right-2 top-2 z-10" @click="close">
-          <path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z" />
-        </BaseIconButton>
+        <BaseCloseButton label="Fermer le Volumen" class="absolute right-2 top-2 z-10" @click="close" />
 
         <!-- Chaque onglet garde sa page et sa question choisie quand on passe
              à un autre et qu'on revient. Les onglets se posent au-dessus de la
@@ -82,14 +71,13 @@
         </KeepAlive>
       </div>
     </div>
-  </BaseDialog>
+  </CampOverlay>
 </template>
 
 <script setup lang="ts">
 // Le journal des questions vues, au camp et là seulement : le rattrapage tire
 // dans le Pool Échecs, en lire les réponses pendant qu'il tourne serait tricher.
 // Voir specs/ecrans.md#volumen.
-import { isNavigationFailure, NavigationFailureType } from 'vue-router'
 import type { QuestionLogTab } from '~/composables/useQuestionLog'
 
 definePageMeta({
@@ -111,78 +99,5 @@ const tab = ref<QuestionLogTab>('missed')
 const { refresh } = useDisputes()
 onMounted(refresh)
 
-const closing = ref(false)
-
-// Fermer, c'est revenir au camp : un détour, pas une étape — croix, Échap, clic
-// à côté. Pendant la sortie, un second geste — ou le retour du navigateur —
-// lance une autre navigation : elle attend la même sortie au lieu de la couper.
-function close(): void {
-  if (!closing.value) {
-    void navigateTo('/')
-  }
-}
-
-// Le middleware ne garde que l'entrée : la partie peut quitter le camp pendant
-// la lecture — attente échue, rattrapage tiré dans un autre onglet. Le Volumen
-// se ferme alors de lui-même. Un changement fait ailleurs ne se voit qu'en
-// relisant : on relit au retour sur l'onglet. Voir specs/ecrans.md#volumen.
-const { state, refresh: refreshGame } = await useGameState()
-watch(state, (now) => {
-  if (!isAtCamp(now)) {
-    close()
-  }
-})
-
-function onVisible(): void {
-  if (document.visibilityState === 'visible') {
-    void refreshGame()
-  }
-}
-
-onMounted(() => document.addEventListener('visibilitychange', onVisible))
-onUnmounted(() => document.removeEventListener('visibilitychange', onVisible))
-
-// Quelle que soit la sortie, le parchemin se ré-enroule et redescend avant que
-// la route change. La route attend la fin des animations elles-mêmes, pas une
-// durée recopiée de main.css ; sans animation (mouvement réduit), elle part
-// tout de suite. Les étincelles du titre tournent en boucle : elles ne comptent
-// pas. Une seule sortie à la fois : toute navigation qui part pendant ce temps
-// attend la même.
-const dialog = useTemplateRef<{ element: HTMLDialogElement | null }>('dialog')
-const EXIT_CEILING_MS = 1000
-let exit: Promise<unknown> | null = null
-
-async function playExit(): Promise<void> {
-  closing.value = true
-  await nextTick()
-
-  const exits = (dialog.value?.element?.getAnimations({ subtree: true }) ?? [])
-    .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
-
-  // allSettled : une animation remplacée en route rejette sa promesse. Le
-  // plafond : dans un onglet masqué, le navigateur ne fait pas avancer les
-  // animations — une fermeture lancée par la partie (attente échue) y
-  // bloquerait la navigation jusqu'au retour du joueur.
-  await Promise.race([
-    Promise.allSettled(exits.map(animation => animation.finished)),
-    new Promise(resolve => setTimeout(resolve, EXIT_CEILING_MS)),
-  ])
-}
-
-onBeforeRouteLeave(async () => {
-  exit ??= playExit()
-  await exit
-})
-
-// Une sortie refusée en route (une garde qui dit non, une erreur) laisserait
-// une boîte invisible, mais modale : toute la page inerte. Le Volumen se rouvre
-// alors. Une navigation seulement remplacée par une autre, elle, continue la
-// même sortie.
-const stopWatchingFailures = useRouter().afterEach((_to, _from, failure) => {
-  if (isNavigationFailure(failure, NavigationFailureType.aborted)) {
-    exit = null
-    closing.value = false
-  }
-})
-onUnmounted(stopWatchingFailures)
+const game = await useGameState()
 </script>

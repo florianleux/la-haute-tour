@@ -121,13 +121,13 @@ Message de félicitations, précédé du verdict de la dernière question. Phase
 
 ## Sorts
 
-Nommé **Grimoire** côté joueur. Atteignable **au camp seulement** (l'attente, puis le rattrapage tant qu'il n'a pas commencé), par l'icône baguette ou le grimoire du camp. Trois choses :
+Nommé **Grimoire** côté joueur. Atteignable **au camp seulement** (l'attente, puis le rattrapage tant qu'il n'a pas commencé), par l'icône baguette ou le grimoire du camp. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : un livre ouvert qui jaillit du bas, grossit et rebondit en se posant, couvert d'étincelles, son titre « Grimoire » au-dessus. Échap, la croix ou un clic à côté le referment. Pas de version mobile pour l'instant. Trois choses :
 
 - L'**inventaire** — ce que le joueur possède, avec les doublons.
 - Le **lancer** — un sort, une catégorie de cible (soi, allié, ennemi), un bouton par catégorie. La cible réelle n'est pas annoncée avant : le tirage est pondéré mais imprévisible. Elle l'est après, au retour du lancer. Deux lancers par attente, quels qu'ils soient, et le décompte se lit avant le clic.
 - Le **journal** — deux listes : les sorts lancés et les sorts reçus, horodatés, nominatifs des deux côtés. C'est là que le lanceur apprend qui il a touché, et la cible de qui elle le tient.
 
-Hors du camp, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
+Hors du camp, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Si la partie quitte le camp pendant qu'il est ouvert, le Grimoire se ferme de lui-même. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
 
 ## Volumen
 

@@ -122,9 +122,9 @@
       </template>
     </BaseCard>
 
-    <!-- Le Volumen (pages/index/volumen.vue) s'ouvre par-dessus le camp : une
-         route enfant, pour que le camp reste affiché dessous et que son attente
-         continue de tourner. -->
+    <!-- Le Volumen et le Grimoire (pages/index/volumen.vue et sorts.vue)
+         s'ouvrent par-dessus le camp : des routes enfants, pour que le camp
+         reste affiché dessous et que son attente continue de tourner. -->
     <NuxtPage />
   </div>
 </template>

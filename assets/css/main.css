@@ -649,6 +649,38 @@
     100% { transform: none; }
   }
 
+  /* Le Grimoire qui s'ouvre sur le camp : il jaillit du bas tout petit, monte
+     en grossissant, dépasse sa taille et sa place, s'écrase en s'y posant et
+     rebondit comme de la gélatine, de moins en moins. Pivot en bas (l'appelant
+     pose origin-bottom) : il s'écrase sur sa base. La fermeture reprend sink. */
+  --animate-book-rise: book-rise 0.8s linear both;
+
+  @keyframes book-rise {
+    0% {
+      opacity: 0;
+      transform: translateY(70dvh) scale(0.35);
+      animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+    }
+    12% { opacity: 1; }
+    45% {
+      transform: translateY(-4dvh) scale(1.1, 1.06);
+      animation-timing-function: ease-in-out;
+    }
+    62% {
+      transform: translateY(1dvh) scale(0.95, 1.04);
+      animation-timing-function: ease-in-out;
+    }
+    78% {
+      transform: scale(1.03, 0.98);
+      animation-timing-function: ease-in-out;
+    }
+    90% {
+      transform: scale(0.99, 1.01);
+      animation-timing-function: ease-in-out;
+    }
+    100% { opacity: 1; transform: none; }
+  }
+
   --animate-unroll: unroll 0.9s linear var(--enter-delay, 0s) both;
 
   @keyframes unroll {
