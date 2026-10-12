@@ -29,7 +29,8 @@ definePageMeta({ admin: true })
 // chaque côté, ils divergeraient, et l'hydratation garderait l'image du client
 // avec la position du serveur (la corde déroulée posée au sol).
 const phase = useState('test-wait-phase', () => Math.random() < 0.5 ? 'cooldown' : 'recovery').value
-const team = useState('test-wait-team', () => TEAM_IDS[Math.floor(Math.random() * TEAM_IDS.length)]).value
+// Sans équipe aussi : le cas « pas de bannière » doit se voir sur le banc.
+const team = useState('test-wait-team', () => [...TEAM_IDS, null][Math.floor(Math.random() * (TEAM_IDS.length + 1))] ?? null).value
 
 const state = ref(demoState({
   phase,

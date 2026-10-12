@@ -68,7 +68,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Catégorie** | `category` | Thème d'une question (Histoire, Musique, Sport…). Une question en porte zéro, une ou plusieurs. |
 | **Profil** | `profile` | Page d'identité du joueur : pseudo, ancienneté, déconnexion. Ne porte ni état de jeu ni donnée de triche. |
 | **Parcours** | `journey` | Ce que le profil montre du chemin déjà fait : étage atteint, questions vues, meilleure série, tentatives achevées. Jamais l'état de l'instant. |
-| **Succès** | `achievement` | Une distinction débloquée en jouant, acquise à vie, sans aucun effet sur la partie. Le catalogue est fixe, écrit dans le code, jamais administrable. À ne pas confondre avec les **Réussites** (`poolSuccesses`) du rattrapage, qui portent le même mot français sans rien partager d'autre. Voir [`succes.md`](./succes.md). |
+| **Succès** | `achievement` | Une distinction débloquée en jouant, acquise à vie, sans aucun effet sur la partie. Côté joueur, leur écran s'appelle **Haut-faits**. Le catalogue est fixe, écrit dans le code, jamais administrable. À ne pas confondre avec les **Réussites** (`poolSuccesses`) du rattrapage, qui portent le même mot français sans rien partager d'autre. Voir [`succes.md`](./succes.md). |
 | **Palmarès** | `achievementsHeld` | Les succès qu'un joueur a déjà acquis, portés par sa ligne comme il porte ses compteurs. La table des succès reste la source — elle seule les date, et c'est elle que la page Succès lit ; le palmarès n'existe que pour ne pas la relire à chaque requête. |
 | **Série** | `streak` | Bonnes réponses d'affilée dans la tentative en cours, sans qu'aucune vie ait été perdue. Toute erreur la casse, toute nouvelle tentative la remet à zéro — c'est ce qui fait qu'atteindre la taille d'un étage prouve qu'on l'a passé sans faute. |
 | **Vues totales** | `seenTotal` | Questions vues depuis toujours, tous étages et toutes tentatives confondus. Ne redescend jamais, pas même à la remise à zéro d'un joueur. |
@@ -103,7 +103,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Face** | `face` | Laquelle des deux magies un effet porte : blanche (`boon`) sur soi ou un allié, noire (`curse`) sur un ennemi. Gravée au lancer, jamais redéduite de la cible. |
 | **Ancrage** | `anchor` | Le moment où un effet en attente se fixe sur une tentative — celle qui s'ouvre. Il vaut alors le début de cette tentative, et meurt quand elle finit. |
 | **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable en attente seulement. |
-| **Grimoire** | `spellbook` | Le module qui possède ce que fait chaque sort : sa modulation des règles, son action instantanée, sa durée de vie et la règle qu'il chiffre. Un sort = une entrée. Voir [`server/utils/spellbook.ts`](../server/utils/spellbook.ts). |
+| **Grimoire** | `spellbook` | Côté joueur, le nom de l'écran des Sorts (`/sorts`). Côté code, le module qui possède ce que fait chaque sort : sa modulation des règles, son action instantanée, sa durée de vie et la règle qu'il chiffre. Un sort = une entrée. Voir [`server/utils/spellbook.ts`](../server/utils/spellbook.ts). |
 | **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 50e question résolue de l'étage ouvre un coffre si elle est juste. |
 | **Coffre** | `chest` | Ce qui s'ouvre au verdict d'une question loot réussie. Donne un sort, ou un Mimic. |
 | **Mimic** | `mimic` | Le coffre piégé : aucun objet, et toutes les vies de la tentative retirées d'un coup. |

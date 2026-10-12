@@ -105,7 +105,7 @@ import { RECOVERY_FAILURE_MESSAGE, RECOVERY_SUCCESS_MESSAGE } from '~~/utils/pha
 
 const props = defineProps<{
   screen: GameScreen
-  /** Le libellé du bouton qui avance, null pendant une question. Voir utils/phase.ts (playView). */
+  /** Le bouton qui avance — libellé et geste —, null pendant une question. Voir utils/phase.ts (playView). */
   action: PlayAction | null
   modelValue: string
   secondsLeft: number | null

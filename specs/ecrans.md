@@ -21,8 +21,8 @@
 | Accès refusé | `/refus` | oui |
 | Jeu | `/` — 7 phases, page d'accueil | non |
 | Profil | `/profil` | non |
-| Sorts | `/sorts` — en attente seulement | non |
-| Succès | `/succes` — par la barre | non |
+| Grimoire (les Sorts) | `/sorts` — en attente seulement | non |
+| Haut-faits (les Succès) | `/succes` — par la barre | non |
 | Dashboard admin | `/admin` | non, réservé admin |
 | File de contestation | `/admin` | non, réservé admin |
 | Questions | `/admin` | non, réservé admin |
@@ -123,7 +123,7 @@ Message de félicitations, précédé du verdict de la dernière question. Phase
 
 ## Sorts
 
-Atteignable **en attente seulement**, par l'icône baguette. Trois choses :
+Nommé **Grimoire** côté joueur. Atteignable **en attente seulement**, par l'icône baguette. Trois choses :
 
 - L'**inventaire** — ce que le joueur possède, avec les doublons.
 - Le **lancer** — un sort, une catégorie de cible (soi, allié, ennemi), un bouton par catégorie. La cible réelle n'est pas annoncée avant : le tirage est pondéré mais imprévisible. Elle l'est après, au retour du lancer. Deux lancers par attente, quels qu'ils soient, et le décompte se lit avant le clic.

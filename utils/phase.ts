@@ -214,8 +214,10 @@ export function playView(
   const screen = gameScreen(state);
   const waiting = isWaiting(state);
   const verdictId = state.verdict?.questionId;
-  const readingFall = waiting && client.fallenOn !== null && client.fallenOn === verdictId;
-  const viewingChest = client.chestOf !== null && client.chestOf === verdictId;
+  // Un aller client ne vaut que pour le verdict qu'il désigne.
+  const onVerdict = (id: string | null): boolean => id !== null && id === verdictId;
+  const readingFall = waiting && onVerdict(client.fallenOn);
+  const viewingChest = onVerdict(client.chestOf);
   const next: PlayAction = { label: nextActionLabel(state), move: "advance" };
 
   // Avant l'attente : le rattrapage en cours porte sa question et son verdict.

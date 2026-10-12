@@ -106,7 +106,7 @@ const props = defineProps<{
   state: GameState
   screen: GameScreen
   effects: EffectView[]
-  /** Le libellé du bouton du bas, null quand rien n'avance d'ici. */
+  /** Le bouton du bas — libellé et geste —, null quand rien n'avance d'ici. Voir utils/phase.ts (playView). */
   action: PlayAction | null
   contestable: boolean
   contesting: boolean
