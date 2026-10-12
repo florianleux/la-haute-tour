@@ -23,6 +23,7 @@
 | Profil | `/profil` | non |
 | Grimoire (les Sorts) | `/sorts` — au camp seulement | non |
 | Haut-faits (les Succès) | `/succes` — par la barre | non |
+| Volumen (les questions vues) | `/volumen` — au camp seulement | non |
 | Dashboard admin | `/admin` | non, réservé admin |
 | File de contestation | `/admin` | non, réservé admin |
 | Questions | `/admin` | non, réservé admin |
@@ -83,12 +84,9 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 ### `cooldown` — attente
 
 - Le **temps restant** avant reprise ou rattrapage.
-- Le **Pool Échecs de l'étage**, avec les réponses : c'est une fiche de révision, pas une punition. Il n'y a ni classement ni score à défendre ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable.
-  - Affichage par pages de dix, chargées à la demande en faisant défiler.
-  - Trié par **dernier échec**, du plus récent au plus ancien par défaut, inversable. Une question ratée à nouveau en rattrapage remonte en tête : ce qui résiste est ce qu'on veut relire.
-- Dans ce même Pool, un bouton de contestation sur chaque erreur contestable. Voir [`validation.md`](./validation.md#quand).
+- L'accès au **Volumen**, par le parchemin du camp : c'est là que se relisent les erreurs de l'étage, et que se contestent celles qui peuvent l'être. Voir [Volumen](#volumen).
 - Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur au survol — et ceux qui frappent l'attente elle-même (Répit, Indulgence et Purge agissent dès le lancer). Le joueur a tout lu avant de reprendre. Chaque sort s'écrit en toutes lettres et ouvre son infobulle, voir [`bonus.md`](./bonus.md#linfobulle-dun-sort).
-- L'accès à la page **Sorts**, par l'icône baguette.
+- L'accès à la page **Sorts**, par l'icône baguette ou le grimoire du camp.
 
 ### `recovery` — rattrapage
 
@@ -131,6 +129,26 @@ Nommé **Grimoire** côté joueur. Atteignable **au camp seulement** (l'attente,
 
 Hors du camp, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
 
+## Volumen
+
+Le journal des questions vues. Atteignable **au camp seulement**, par le parchemin du camp ; il n'a pas d'icône dans la barre. Deux usages à la fois : **réviser** avant le rattrapage, et **garder trace** de la culture récoltée.
+
+Trois onglets :
+
+- **À revoir** — le **Pool Échecs de l'étage**, avec les réponses : c'est une fiche de révision, pas une punition. Il n'y a ni classement ni score à défendre ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable. Trié par **dernier échec**, du plus récent au plus ancien : une question ratée à nouveau en rattrapage remonte en tête, ce qui résiste est ce qu'on veut relire. C'est l'onglet ouvert à l'arrivée.
+- **Sues** — les questions vues justes, **tous étages confondus**, depuis la dernière remise à zéro. Une contestation acceptée y fait entrer la question.
+- **Toutes** — toutes les questions vues, justes et fausses, tous étages confondus, depuis la dernière remise à zéro.
+
+Dans **Sues** et **Toutes**, la vue la plus récente en tête.
+
+Chaque entrée montre l'**énoncé**, la **réponse affichée**, la **saisie du joueur** et le **verdict**. Une question encore au Pool Échecs montre en plus ses **Réussites** sur le seuil de sortie — ce qui reste à faire pour qu'elle quitte le pool.
+
+**Un bouton de contestation** sur chaque erreur contestable, quel que soit l'onglet où elle se lit. La règle de ce qui est contestable ne change pas : voir [`validation.md`](./validation.md#quand). Une contestation en cours, ou refusée, se lit à la place du bouton.
+
+**Vingt questions par page**, et une pagination — précédent, numéros, suivant. Chaque onglet a la sienne.
+
+**Hors du camp, le Volumen n'est pas atteignable**, URL comprise, et le serveur refuse de le lire. Ce n'est pas qu'une question de moment, comme pour les Sorts : le rattrapage tire ses questions dans le Pool Échecs, et lire leurs réponses pendant qu'il tourne serait tricher. Dès que le rattrapage est tiré, le Volumen se ferme ; il rouvre à l'attente suivante.
+
 ## Maintenance
 
 Quand l'administration ferme le jeu, un joueur non-admin voit un écran qui le dit et
@@ -153,6 +171,7 @@ Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
 
 - **Aucun classement**, nulle part. Le serveur classe bien les joueurs par progression pour pondérer le tirage des Sorts, mais ce classement ne sort jamais du serveur et n'est montré à personne.
 - **Aucun inventaire hors attente** : la page Sorts n'existe que pendant l'attente.
+- **Aucune réponse hors camp** : le Volumen, seul écran qui relit les réponses des questions vues, ne s'ouvre qu'au camp — le rattrapage tire dans ce qu'il montre.
 - **Aucune cible avant le lancer** : le joueur choisit une catégorie, jamais une personne.
 - **Aucun compteur de triche** : les flags existent, ils sont réservés à l'administration.
 - **Aucun état de jeu sur le profil** : il y montre son parcours, pas sa phase, ses vies ni son attente — celles-là vivent dans le jeu.

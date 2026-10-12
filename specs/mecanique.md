@@ -77,7 +77,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
   - seuil atteint → la question **sort** du pool.
 - Une contestation acceptée fait aussi sortir la question, immédiatement : l'admin vient d'établir que la réponse était bonne. Voir [`validation.md`](./validation.md).
 - Le sort **Purge** en fait sortir une au hasard, sans qu'elle ait jamais été rejouée. C'est le seul moyen de quitter le pool sans y répondre, et il peut faire passer le pool sous le seuil de déclenchement du rattrapage. Voir [`bonus.md`](./bonus.md#catalogue).
-- Conséquence assumée du retour à zéro : le pool dégonfle lentement, donc le rattrapage devient la norme passé les premières attentes. C'est pourquoi l'écran d'attente sert de fiche de révision (voir [`ecrans.md`](./ecrans.md)).
+- Conséquence assumée du retour à zéro : le pool dégonfle lentement, donc le rattrapage devient la norme passé les premières attentes. C'est pourquoi le Volumen, ouvert au camp, sert de fiche de révision (voir [`ecrans.md`](./ecrans.md#volumen)).
 - Les Pools Échecs des étages précédents sont **abandonnés** quand le joueur monte.
 
 ## Fin d'étage

@@ -38,7 +38,7 @@ Tout l'état vit en base, jamais côté client :
 - **Vies** et **étage courant** du joueur.
 - **Questions vues** — une entrée par question résolue en ascension, avec son verdict. C'est la progression.
 - **Réservation** — la question servie et non encore résolue, avec son échéance. Au plus une par joueur.
-- **Pool Échecs** — une entrée par question ratée, portant l'étage, un **compteur de réussites consécutives** et la **date du dernier échec**. Ce n'est pas une simple appartenance : c'est ce compteur qui décide de la sortie, et cette date qui ordonne l'écran d'attente.
+- **Pool Échecs** — une entrée par question ratée, portant l'étage, un **compteur de réussites consécutives** et la **date du dernier échec**. Ce n'est pas une simple appartenance : c'est ce compteur qui décide de la sortie, et cette date qui ordonne l'onglet À revoir du Volumen.
 - **Attente en cours** — l'échéance à partir de laquelle le joueur peut reprendre ou rattraper.
 - **Contestations** — la question, la réponse du joueur, le statut d'arbitrage.
 - **Flags de triche** — les soumissions déclenchées par une perte de focus.

@@ -108,6 +108,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Ancrage** | `anchor` | Le moment où un effet en attente se fixe sur une tentative — celle qui s'ouvre. Il vaut alors le début de cette tentative, et meurt quand elle finit. |
 | **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable au camp seulement. |
 | **Grimoire** | `spellbook` | Côté joueur, le nom de l'écran des Sorts (`/sorts`). Côté code, le module qui possède ce que fait chaque sort : sa modulation des règles, son action instantanée, sa durée de vie et la règle qu'il chiffre. Un sort = une entrée. Voir [`server/utils/spellbook.ts`](../server/utils/spellbook.ts). |
+| **Volumen** | `questionLog` | Côté joueur, le nom de l'écran des questions vues (`/volumen`), ouvert par le parchemin du camp. Trois onglets : le Pool Échecs de l'étage à revoir, les questions sues, et toutes les vues depuis la dernière remise à zéro. Consultable au camp seulement. Voir [`ecrans.md`](./ecrans.md#volumen). |
 | **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 50e question résolue de l'étage ouvre un coffre si elle est juste. |
 | **Coffre** | `chest` | Ce qui s'ouvre au verdict d'une question loot réussie. Donne un sort, ou un Mimic. |
 | **Mimic** | `mimic` | Le coffre piégé : aucun objet, et toutes les vies de la tentative retirées d'un coup. |
