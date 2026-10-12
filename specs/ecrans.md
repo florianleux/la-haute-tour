@@ -131,7 +131,7 @@ Hors du camp, la baguette est désactivée et la page n'est pas atteignable, URL
 
 ## Volumen
 
-Le journal des questions vues. Atteignable **au camp seulement**, par le parchemin du camp ; il n'a pas d'icône dans la barre. Deux usages à la fois : **réviser** avant le rattrapage, et **garder trace** de la culture récoltée.
+Le journal des questions vues. Atteignable **au camp seulement**, par le parchemin du camp ; il n'a pas d'icône dans la barre. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : un parchemin qui se déroule de gauche à droite. Échap, la croix ou un clic à côté le referment. Deux usages à la fois : **réviser** avant le rattrapage, et **garder trace** de la culture récoltée.
 
 Trois onglets :
 

@@ -611,4 +611,191 @@
     70% { opacity: 1; transform: translateY(-60%) scale(1); }
     100% { opacity: 0; transform: translateY(-140%) scale(0.9); }
   }
+
+  /* Le Volumen qui s'ouvre sur le camp, en dessin animé : il monte roulé du
+     bas de l'écran, dépasse sa place, s'écrase en s'y posant et rebondit
+     (rise) ; puis le rouleau droit part du gauche, file trop loin, revient,
+     et vibre avant de s'arrêter (unroll-rod), le papier dévoilé derrière lui
+     (unroll). Les repères (--k, --rod-*) viennent de `question-log-scroll-metrics`, en
+     bas de ce fichier. Le déroulé part pendant la montée, au
+     délai que lui donne --enter-delay.
+
+     Roulé, le Volumen montre ses deux poignées côte à côte, comme un vrai
+     volumen fermé : le rouleau droit démarre contre le gauche, une largeur de
+     rouleau plus loin, pas par-dessus — sinon on n'en verrait qu'une.
+
+     unroll et unroll-rod ont les mêmes étapes, la même durée et les mêmes
+     courbes : le bord dévoilé reste au centre du rouleau, rebonds compris
+     (décalage du rouleau = --rod-r - retrait de droite du dévoilé). */
+  --animate-rise: rise 0.65s linear both;
+
+  @keyframes rise {
+    0% {
+      transform: translateY(100dvh) scale(0.97, 1.05);
+      animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+    }
+    55% {
+      transform: translateY(-2dvh) scale(0.99, 1.02);
+      animation-timing-function: ease-in-out;
+    }
+    72% {
+      transform: translateY(0.5dvh) scale(1.015, 0.985);
+      animation-timing-function: ease-in-out;
+    }
+    86% {
+      transform: translateY(-0.2dvh) scale(1, 1.005);
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: none; }
+  }
+
+  --animate-unroll: unroll 0.9s linear var(--enter-delay, 0s) both;
+
+  @keyframes unroll {
+    0% {
+      clip-path: inset(0 var(--rolled-inset) 0 0);
+      animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1);
+    }
+    55% {
+      clip-path: inset(0 calc(var(--k) * (var(--rod-r) - 35)) 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    72% {
+      clip-path: inset(0 calc(var(--k) * (var(--rod-r) + 10)) 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    86% {
+      clip-path: inset(0 calc(var(--k) * (var(--rod-r) - 3)) 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    100% { clip-path: inset(0 calc(var(--k) * var(--rod-r)) 0 0); }
+  }
+
+  --animate-unroll-rod: unroll-rod 0.9s linear var(--enter-delay, 0s) both;
+
+  @keyframes unroll-rod {
+    0% {
+      transform: translateX(var(--rolled-x));
+      animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1);
+    }
+    55% {
+      transform: translateX(calc(var(--k) * 35)) rotate(0.6deg);
+      animation-timing-function: ease-in-out;
+    }
+    72% {
+      transform: translateX(calc(var(--k) * -10)) rotate(-0.3deg);
+      animation-timing-function: ease-in-out;
+    }
+    86% {
+      transform: translateX(calc(var(--k) * 3));
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: none; }
+  }
+
+  /* La fermeture : l'ouverture à l'envers — le rouleau droit repart contre le
+     gauche en ré-enroulant le papier, en accélérant, pendant que le Volumen
+     redescend sous l'écran (sink, parti en cours de route via --enter-delay). Ses propres keyframes,
+     pas `unroll` en `reverse` : à nom d'animation inchangé, le navigateur ne la
+     rejoue pas, il saute à sa fin inversée et le parchemin disparaît d'un coup.
+     La page attend la fin de ces animations avant de changer de route : leurs
+     durées ne sont recopiées nulle part. */
+  --animate-roll-up: roll-up 0.35s ease-in both;
+
+  @keyframes roll-up {
+    from { clip-path: inset(0 calc(var(--k) * var(--rod-r)) 0 0); }
+    to { clip-path: inset(0 var(--rolled-inset) 0 0); }
+  }
+
+  --animate-roll-up-rod: roll-up-rod 0.35s ease-in both;
+
+  @keyframes roll-up-rod {
+    to { transform: translateX(var(--rolled-x)); }
+  }
+
+  /* Le texte du papier, ré-enroulé avec lui : sans ça, il restait affiché
+     au-delà du bord qui se referme. Même course que roll-up, mesurée depuis la
+     boîte du texte, en retrait de --text-x de chaque côté : il finit au même
+     endroit, contre le rouleau gauche. */
+  --animate-roll-up-text: roll-up-text 0.35s ease-in both;
+
+  @keyframes roll-up-text {
+    from { clip-path: inset(0 0 0 0); }
+    to { clip-path: inset(0 calc(var(--rolled-inset) + var(--k) * var(--text-x)) 0 0); }
+  }
+
+  --animate-sink: sink 0.3s ease-in var(--enter-delay, 0s) both;
+
+  @keyframes sink {
+    to { transform: translateY(100dvh); }
+  }
+
+  /* Un fondu d'entrée, retardable par --enter-delay ; et sa sortie. */
+  --animate-fade-in: fade-in 0.3s ease-out var(--enter-delay, 0s) both;
+  --animate-fade-out: fade-out 0.2s ease-in var(--enter-delay, 0s) both;
+
+  @keyframes fade-out {
+    to { opacity: 0; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+}
+
+/* Le calque du Volumen (public/images/volumen-scroll.webp, 1920×1080) : ses
+   repères, relevés à la main, en pixels du calque. Une nouvelle image, de
+   nouvelles mesures — ici seulement : pages/index/volumen.vue et les keyframes
+   unroll / roll-up les lisent. Posé sur la boîte de dialogue, hérité par tout
+   ce qu'elle contient. */
+@utility question-log-scroll-metrics {
+  /* Pixels affichés par pixel du calque : la taille des rouleaux. */
+  --k: calc(min(100vw / 1920, 100dvh / 1080) * 0.9);
+  /* Le vide transparent à gauche et à droite des rouleaux. */
+  --margin: 163;
+  /* Un rouleau : sa largeur, le centre du gauche, celui du droit depuis le
+     bord droit, et la hauteur de leurs poignées du haut. */
+  --rod-w: 221;
+  --rod-l: 273;
+  --rod-r: 274;
+  --cap-y: 190;
+  /* Le haut du papier, sous les poignées ; le retrait du texte des bords. */
+  --paper-y: 215;
+  --text-x: 240;
+  /* Les coupes du 9-slice : les coins gardent les rouleaux intacts, le
+     papier s'étire entre eux. */
+  --cut-t: 250;
+  --cut-r: 390;
+  --cut-b: 245;
+  --cut-l: 410;
+  /* Le fond uni posé sous le papier, un peu en retrait de ses bords. */
+  --fill-x: 215;
+  --fill-y: 232;
+  /* Roulé : le papier dévoilé jusqu'au rouleau droit, posé contre le gauche,
+     et le décalage de ce rouleau depuis sa place déroulée. Lus par les
+     keyframes, mesurés sur la boîte de qui les lit (les 100 %). */
+  --rolled-inset: calc(100% - var(--k) * (var(--rod-l) + var(--rod-w)));
+  --rolled-x: calc(-100% + var(--k) * (var(--rod-l) + var(--rod-w) + var(--rod-r)));
+}
+
+/* Le parchemin lui-même, en 9 morceaux sur les coupes de question-log-scroll-metrics.
+   Posés sur des fractions de pixel — et le parchemin bouge, se centre, se
+   met à l'échelle —, les morceaux laissent un jour d'un pixel à leurs
+   jointures, où le camp transparaissait : des traits verticaux et
+   horizontaux. Arrondir ne suffit pas pendant les animations ; un fond
+   couleur papier, peint sous les morceaux, bouche ces jours quelle que soit
+   la position. Sa teinte est relevée sur le calque, aux jointures. */
+@utility question-log-scroll {
+  background: linear-gradient(#f2ead5, #f2ead5) no-repeat border-box;
+  background-position: calc(var(--k) * var(--fill-x)) calc(var(--k) * var(--fill-y));
+  background-size:
+    calc(100% - var(--k) * var(--fill-x) * 2)
+    calc(100% - var(--k) * var(--fill-y) * 2);
+  border-style: solid;
+  border-image: url(/images/volumen-scroll.webp) var(--cut-t) var(--cut-r) var(--cut-b) var(--cut-l) fill;
+  border-width:
+    round(calc(var(--k) * var(--cut-t)), 1px)
+    round(calc(var(--k) * var(--cut-r)), 1px)
+    round(calc(var(--k) * var(--cut-b)), 1px)
+    round(calc(var(--k) * var(--cut-l)), 1px);
 }

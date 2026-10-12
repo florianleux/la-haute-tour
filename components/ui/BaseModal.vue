@@ -1,10 +1,8 @@
 <template>
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-6 backdrop-blur-sm"
-    role="dialog"
-    aria-modal="true"
-    :aria-label="title"
-    @click.self="$emit('close')"
+  <BaseDialog
+    :label="title"
+    class="items-center justify-center bg-slate-950/80 p-6 text-slate-100 backdrop-blur-sm"
+    @close="$emit('close')"
   >
     <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
       <div class="flex items-start justify-between gap-4">
@@ -24,24 +22,14 @@
         <slot />
       </div>
     </div>
-  </div>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
-// Pas de Teleport : la page n'a aucun conteneur qui rogne, et `fixed inset-0`
-// suffit à couvrir l'écran depuis n'importe où — c'est déjà ce que fait
-// ChestCard.vue. Un Teleport n'ajouterait qu'un point de montage à gérer.
+// Une carte posée sur un fond sombre. Échap ferme, comme partout : la modale
+// est un détour, pas une étape. Focus, inertie du reste de la page et Échap
+// viennent de BaseDialog.
 defineProps<{ title: string }>()
 
-const emit = defineEmits<{ close: [] }>()
-
-// Échap ferme, comme partout : la modale est un détour, pas une étape.
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape') {
-    emit('close')
-  }
-}
-
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+defineEmits<{ close: [] }>()
 </script>

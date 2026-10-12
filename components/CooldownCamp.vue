@@ -44,13 +44,11 @@
             :sparks="CAMP_SPARKS"
             class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
           />
-          <!-- Le nom de l'objet, blanc et lumineux, ses propres étincelles
-               au-dessus. En cqh : il suit la hauteur de la fenêtre, comme les
-               objets du sol. Au focus clavier aussi, pas seulement au survol.
-               L'ombre sombre au plus près détache le blanc du décor clair ; le
-               halo bleuté, plus large, garde l'éclat. -->
-          <span
-            class="pointer-events-none absolute -translate-x-1/2 whitespace-nowrap text-center text-[3cqh] font-semibold tracking-wide text-white opacity-0 transition-opacity duration-200 [text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6),0_0_14px_rgb(191_219_254/0.7)] group-focus-within:opacity-100 group-hover:opacity-100"
+          <!-- Le nom de l'objet, blanc et lumineux. En cqh : il suit la
+               hauteur de la fenêtre, comme les objets du sol. Au focus clavier
+               aussi, pas seulement au survol. -->
+          <BaseGlowLabel
+            class="pointer-events-none absolute -translate-x-1/2 text-[3cqh] opacity-0 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
             :class="item.labelAt ?? 'bottom-full left-1/2 mb-[0.5cqh]'"
           >
             {{ item.title }}
@@ -58,11 +56,7 @@
               v-if="item.note"
               class="block text-[0.6em] font-normal"
             >{{ item.note }}</span>
-            <SparkleField
-              :sparks="LABEL_SPARKS"
-              class="drop-shadow-[0_0_3px_#fff]"
-            />
-          </span>
+          </BaseGlowLabel>
           <BaseSurfaceButton
             v-if="item.click"
             :label="item.title"
@@ -152,18 +146,6 @@ const COVER = 'top-1/2 w-[max(100cqw,100cqh*16/9)] -translate-y-1/2'
 // donc calé sur la hauteur et posé au bas de la fenêtre : mêmes taille et
 // place par rapport au poster qu'en 16:9, quelle que soit la largeur.
 const GROUND = 'bottom-0 w-[calc(100cqh*16/9)]'
-
-/**
- * Les étincelles du nom, en % de sa boîte : surtout au-dessus du mot, quelques
- * unes débordant sur ses côtés.
- */
-const LABEL_SPARKS = [
-  { left: '-8%', top: '-30%', size: '11%', delay: '0s' },
-  { left: '30%', top: '-55%', size: '8%', delay: '0.7s' },
-  { left: '62%', top: '-40%', size: '10%', delay: '0.3s' },
-  { left: '96%', top: '-25%', size: '9%', delay: '1.1s' },
-  { left: '104%', top: '55%', size: '6%', delay: '0.5s' },
-]
 
 // Ce qui pend grandit depuis son point d'attache, ce qui est posé depuis le
 // sol : centré, le scale ferait décoller les objets ou glisser la corde.

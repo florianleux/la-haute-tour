@@ -121,6 +121,11 @@
         </BaseButton>
       </template>
     </BaseCard>
+
+    <!-- Le Volumen (pages/index/volumen.vue) s'ouvre par-dessus le camp : une
+         route enfant, pour que le camp reste affiché dessous et que son attente
+         continue de tourner. -->
+    <NuxtPage />
   </div>
 </template>
 
@@ -211,9 +216,22 @@ const view = computed(() =>
 // Armé sur l'id, pas l'objet : une relecture rend le même verdict dans un nouvel
 // objet et le rouvrirait. Sans `immediate` : une page rechargée en pleine
 // attente va droit au poster.
-watch(() => state.value?.verdict?.questionId, () => {
+//
+// Une seule fois par chute : la page reste montée sous le Volumen, et la relecture
+// faite en l'ouvrant (middleware/camp.ts) a déjà fait repasser l'état par un
+// verdict plus ancien — l'id changeait deux fois et rouvrait une chute déjà lue.
+// La chute lue s'oublie dès qu'il n'y a plus de verdict (une question est
+// servie) : une nouvelle chute sur la même question se lirait à nouveau.
+// Une chute déjà là au chargement compte comme lue : c'est le poster qui s'affiche.
+let lastFallId = state.value && fallQuestionId(state.value)
+watch(() => state.value?.verdict?.questionId, (questionId) => {
+  if (!questionId) {
+    lastFallId = null
+  }
+
   const held = state.value && fallQuestionId(state.value)
-  if (held) {
+  if (held && held !== lastFallId) {
+    lastFallId = held
     fallenOn.value = held
   }
 })
@@ -221,7 +239,9 @@ watch(() => state.value?.verdict?.questionId, () => {
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, la carte n'a pas d'action
 // et Entrée répond.
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action))
+// Ni quand le Volumen est ouvert par-dessus : Entrée y lirait, pas remonter.
+const route = useRoute()
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && route.name === 'index')
 
 // Le seul point d'entrée pour « avancer », bouton comme Entrée : le geste vient
 // de playView, la page l'exécute.

@@ -1,7 +1,9 @@
 <template>
   <!-- La bande (BaseToastStack) laisse passer les clics : un succès ne se ferme
-       plus à la main, il n'a rien de cliquable. -->
-  <BaseToastStack>
+       plus à la main, il n'a rien de cliquable. Montée seulement quand un succès
+       arrive : c'est à son montage qu'elle passe par-dessus une boîte de
+       dialogue déjà ouverte. -->
+  <BaseToastStack v-if="toasts.length">
     <BaseToast v-for="toast in toasts" :key="toast.key">
       <AchievementImage :id="toast.id" class="size-10 shrink-0 rounded-lg" />
       <span class="min-w-0 flex-1">
