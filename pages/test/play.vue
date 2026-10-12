@@ -88,6 +88,7 @@ const state = ref(demoState({
   floorTotal: 1000,
   // Série : question 995.
   attemptSeen: 995,
+  seenTotal: 1_204,
 }))
 
 provideGameState(state)

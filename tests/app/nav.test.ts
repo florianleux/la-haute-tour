@@ -18,6 +18,7 @@ function state(overrides: Partial<GameState>): GameState {
     floorSeen: 0,
     floorTotal: 0,
     attemptSeen: 0,
+    seenTotal: 0,
     chest: null,
     maintenance: false,
     effects: [],

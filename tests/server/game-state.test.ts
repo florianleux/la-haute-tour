@@ -61,6 +61,7 @@ describe('endpoints de jeu', () => {
       floor: 1,
       lives: 3,
       started: false,
+      seenTotal: 0,
       question: null,
       verdict: null,
     })
@@ -74,6 +75,8 @@ describe('endpoints de jeu', () => {
 
     expect(verdict.verdict).toMatchObject({ correct: true, lifeLost: false })
     expect(verdict.question).toBeNull()
+    // Une question vue : le Volumen a de quoi se lire, le camp pose son parchemin.
+    expect(verdict.seenTotal).toBe(1)
   })
 
   it('tient une réponse faite d espaces pour une réponse vide', async () => {

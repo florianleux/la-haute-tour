@@ -142,6 +142,11 @@ export interface GameState {
   /** Questions vues depuis le début de la tentative en cours. */
   attemptSeen: number
   /**
+   * Questions vues depuis la dernière remise à zéro : ce que relit l'onglet
+   * Toutes du Volumen. À zéro, le camp ne montre pas son parchemin.
+   */
+  seenTotal: number
+  /**
    * Le coffre de la question loot qui vient d'être réussie, null partout
    * ailleurs. Tant qu'il est fermé, rien ne sert la question suivante.
    */
@@ -667,6 +672,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
     attemptSeen: user.attemptSeen,
+    seenTotal: user.seenTotal,
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
     // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une

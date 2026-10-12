@@ -42,6 +42,7 @@ const state = computed(() => demoState({
   floorSeen: 49,
   floorTotal: 166,
   attemptSeen: 12,
+  seenTotal: 1_204,
   verdict: {
     questionId: QUESTION_ID,
     statement: 'Quel est le point culminant d\'Afrique ?',

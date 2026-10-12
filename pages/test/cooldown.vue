@@ -52,6 +52,7 @@ const state = ref(demoState({
   floorSeen: 544,
   floorTotal: 1000,
   attemptSeen: 995,
+  seenTotal: 1_204,
   effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('pending')),
 }))
 

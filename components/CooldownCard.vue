@@ -6,6 +6,7 @@
     :ready="action !== null"
     :advancing="advancing"
     :team="team"
+    :volumen="state.seenTotal > 0"
     @advance="$emit('advance')"
   />
 
