@@ -1,7 +1,7 @@
 <template>
   <!-- La silhouette d'une fiche joueur : mêmes bordures, mêmes hauteurs, pour que
        rien ne saute quand la vraie arrive. -->
-  <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+  <BaseTile>
     <div class="flex items-center gap-3">
       <BaseSkeleton height="h-10" width="w-10 shrink-0 rounded-full" />
       <div class="min-w-0 flex-1 space-y-2">
@@ -20,5 +20,5 @@
       <BaseSkeleton height="h-10" width="w-32" />
       <BaseSkeleton height="h-10" width="w-32" />
     </div>
-  </div>
+  </BaseTile>
 </template>

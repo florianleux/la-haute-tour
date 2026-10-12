@@ -175,21 +175,21 @@ describe('Répit, sur l attente en cours', () => {
   // Voir specs/mecanique.md#règles-chiffrées.
   describe('sur une attente qui ne dure pas douze heures', () => {
     it('raccourcit l attente d après rattrapage manqué, sans jamais l allonger', async () => {
-      const shortWait = rules.cooldownAfterFailedRecoveryMs
+      const shortCooldown = rules.cooldownAfterFailedRecoveryMs
       await db
         .update(users)
         .set({
           cooldownStartedAt: STARTED_AT,
-          cooldownUntil: new Date(STARTED_AT.getTime() + shortWait),
-          cooldownBaseMs: shortWait,
+          cooldownUntil: new Date(STARTED_AT.getTime() + shortCooldown),
+          cooldownBaseMs: shortCooldown,
         })
         .where(eq(users.id, player.id))
 
       await castRespite()
 
       const after = (await reload()).cooldownUntil!.getTime()
-      expect(after).toBe(STARTED_AT.getTime() + shortWait / rules.respiteFactor)
-      expect(after).toBeLessThan(STARTED_AT.getTime() + shortWait)
+      expect(after).toBe(STARTED_AT.getTime() + shortCooldown / rules.respiteFactor)
+      expect(after).toBeLessThan(STARTED_AT.getTime() + shortCooldown)
     })
   })
 

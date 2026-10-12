@@ -11,6 +11,7 @@ const { default: nextHandler } = await import('../../server/api/game/next.post')
 const { default: answerHandler } = await import('../../server/api/game/answer.post')
 const { default: poolHandler } = await import('../../server/api/game/pool.get')
 const { default: chestHandler } = await import('../../server/api/game/chest.post')
+const { default: disputableHandler } = await import('../../server/api/game/disputable-errors.get')
 const { default: unknownHandler } = await import('../../server/api/[...]')
 
 const state = mountHandler('/state', stateHandler)
@@ -18,6 +19,7 @@ const next = mountHandler('/next', nextHandler)
 const answer = mountHandler('/answer', answerHandler)
 const pool = mountHandler('/pool', poolHandler)
 const chest = mountHandler('/chest', chestHandler)
+const disputable = mountHandler('/disputable-errors', disputableHandler)
 const unknown = mountHandler('/api/nimportequoi', unknownHandler)
 
 function post(path: string, body: unknown, cookie?: string): Request {
@@ -72,6 +74,21 @@ describe('endpoints de jeu', () => {
 
     expect(verdict.verdict).toMatchObject({ correct: true, lifeLost: false })
     expect(verdict.question).toBeNull()
+  })
+
+  it('tient une réponse faite d espaces pour une réponse vide', async () => {
+    await next(post('/next', {}, cookie))
+
+    const verdict = await (await answer(post('/answer', { answer: '   ' }, cookie))).json()
+
+    expect(verdict.verdict).toMatchObject({ correct: false })
+    expect(verdict.unlocked).toContain('EMPTY_ANSWER')
+
+    // Ratée, donc au Pool Échecs — mais pas contestable, comme le vide.
+    const missed = await (await pool(apiRequest('http://test/pool?offset=0&order=asc', cookie))).json()
+    expect(missed.total).toBe(1)
+    const open = await (await disputable(apiRequest('http://test/disputable-errors', cookie))).json()
+    expect(open.errors).toEqual([])
   })
 
   it('rejette un corps de réponse sans champ answer', async () => {

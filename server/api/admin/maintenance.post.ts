@@ -16,7 +16,7 @@ export interface MaintenanceResponse {
 export default defineEventHandler(async (event): Promise<MaintenanceResponse> => {
   await requireAdmin(event)
 
-  const { closed } = bodySchema.parse(await readBody(event))
+  const { closed } = await readValidatedBody(event, bodySchema.parse)
   const db = useDatabase()
 
   await setMaintenance(db, closed, new Date())

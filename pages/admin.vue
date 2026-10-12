@@ -4,20 +4,7 @@
       Administration
     </h1>
 
-    <div class="mt-6 flex gap-2 border-b border-slate-800">
-      <button
-        v-for="item in tabs"
-        :key="item.id"
-        type="button"
-        class="-mb-px cursor-pointer border-b-2 px-4 py-2 text-sm font-medium transition-colors"
-        :class="tab === item.id
-          ? 'border-indigo-400 text-slate-100'
-          : 'border-transparent text-slate-400 hover:text-slate-100'"
-        @click="tab = item.id"
-      >
-        {{ item.label }}
-      </button>
-    </div>
+    <BaseTabs v-model="tab" :tabs="tabs" class="mt-6" />
 
     <div class="mt-8">
       <AdminDisputes v-if="tab === 'disputes'" />

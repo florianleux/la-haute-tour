@@ -35,7 +35,7 @@ function splitSeconds(totalSeconds: number): { hours: number, minutes: number, s
 }
 
 /**
- * How long is left, as a player reads a wait — détaillé à la seconde, parce que
+ * How long is left, as a player reads a cooldown — détaillé à la seconde, parce que
  * l'attente se compte à la seconde près. "11 h 58 min 12 s", "4 min 32 s", "32 s".
  * Past the deadline it is over, not negative.
  */
@@ -102,7 +102,7 @@ export function formatCountdown(iso: string, now: number): string {
  * Arrondie au-dessus : trente secondes restantes se lisent « 1 min », parce
  * qu'une attente qui reste est une attente.
  */
-export function formatWait(iso: string, now: number): string {
+export function formatCooldownMinutes(iso: string, now: number): string {
   const minutes = Math.ceil((new Date(iso).getTime() - now) / 60_000)
 
   if (!Number.isFinite(minutes) || minutes <= 0) {

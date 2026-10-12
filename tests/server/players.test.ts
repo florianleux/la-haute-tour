@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { disputes, missedPool } from '../../server/db/schema'
-import { playerRoster } from '../../server/utils/players'
-import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
+import { eq } from 'drizzle-orm'
+import { disputes, missedPool, users } from '../../server/db/schema'
+import { disputableErrors } from '../../server/utils/disputes'
+import { playerRoster, resetPlayer } from '../../server/utils/players'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 
@@ -102,5 +104,82 @@ describe('fiches joueurs', () => {
 
     expect((await playerRoster(db, NOW)).map(card => card.username))
       .toEqual(['aragorn', 'saruman'])
+  })
+})
+
+// Voir specs/admin.md#gestion-des-joueurs : la partie effacée emporte ses
+// contestations, en cours comme tranchées.
+describe('repartir de zéro', () => {
+  let db: Database
+  let userId: number
+  let questionId: string
+
+  beforeEach(async () => {
+    db = await createTestDatabase()
+    ;[questionId] = await seedFloor(db, 1, 1)
+    userId = await createPlayer(db)
+  })
+
+  /** La question ratée sur une vraie réponse, donc contestable. */
+  async function miss(): Promise<void> {
+    await markSeen(db, userId, questionId, { floor: 1, correct: false, submittedAnswer: 'nawak' })
+    await db.insert(missedPool).values({ userId, questionId, floor: 1, lastFailedAt: NOW })
+  }
+
+  it('ne laisse aucune contestation à arbitrer sur la fiche', async () => {
+    await db.insert(disputes).values({ userId, questionId, status: 'pending', createdAt: NOW })
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    const card = (await playerRoster(db, NOW)).find(player => player.userId === userId)
+    expect(card?.pendingDisputes).toBe(0)
+  })
+
+  it('remet les compteurs des succès à zéro, même chez un vrai joueur', async () => {
+    await db
+      .update(users)
+      .set({ seenTotal: 42, lastPlayedDay: '2026-09-03', daysPlayed: 5, playStreak: 2 })
+      .where(eq(users.id, userId))
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    expect(await loadPlayer(db, userId)).toMatchObject({
+      seenTotal: 0,
+      lastPlayedDay: null,
+      daysPlayed: 0,
+      playStreak: 0,
+    })
+  })
+
+  it('ne laisse aucune attente derrière lui, durée comprise', async () => {
+    await db
+      .update(users)
+      .set({ lives: 0, cooldownUntil: NOW, cooldownStartedAt: NOW, cooldownBaseMs: 1_000 })
+      .where(eq(users.id, userId))
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    expect(await loadPlayer(db, userId)).toMatchObject({
+      cooldownUntil: null,
+      cooldownStartedAt: null,
+      cooldownBaseMs: null,
+    })
+  })
+
+  it('rend contestable une question déjà contestée, ratée de nouveau', async () => {
+    await miss()
+    await db.insert(disputes).values({
+      userId,
+      questionId,
+      status: 'rejected',
+      createdAt: NOW,
+      settledAt: NOW,
+    })
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+    await miss()
+
+    expect(await disputableErrors(db, await loadPlayer(db, userId)))
+      .toMatchObject([{ questionId }])
   })
 })

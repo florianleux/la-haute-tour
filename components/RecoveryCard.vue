@@ -41,7 +41,7 @@
         {{ statement }}
       </PlayText>
 
-      <PlayInput
+      <BaseParchmentInput
         :model-value="modelValue"
         @update:model-value="$emit('update:modelValue', $event)"
         @submit="$emit('submit')"
@@ -51,26 +51,26 @@
     <template v-else-if="screen.verdict">
       <VerdictLines
         :verdict="screen.verdict"
-        :contestable="contestable"
-        :contesting="contesting"
+        :disputable="disputable"
+        :disputing="disputing"
         @dispute="$emit('dispute')"
       />
 
       <!-- Le sort du rattrapage s'annonce sur le verdict de la question qui le
            scelle. Voir specs/ecrans.md#recovery--rattrapage. -->
       <PlayText
-        v-if="screen.recovery?.result"
+        v-if="screen.recovery && screen.recovery.resumes !== null"
         role="notice"
-        :class="screen.recovery.result === 'resumed' ? 'text-emerald-700' : 'text-amber-700'"
+        :class="screen.recovery.resumes ? 'text-emerald-700' : 'text-amber-700'"
       >
-        {{ screen.recovery.result === 'resumed'
+        {{ screen.recovery.resumes
           ? RECOVERY_SUCCESS_MESSAGE
           : RECOVERY_FAILURE_MESSAGE }}
       </PlayText>
     </template>
 
     <template #action>
-      <CardButton
+      <BaseCardButton
         v-if="screen.question"
         label="Valider"
         anchor="parchment-bottom"
@@ -78,7 +78,7 @@
         :disabled="submitting"
         @click="$emit('submit')"
       />
-      <CardButton
+      <BaseCardButton
         v-else-if="action"
         :label="action.label"
         anchor="parchment-bottom"
@@ -110,8 +110,8 @@ const props = defineProps<{
   modelValue: string
   secondsLeft: number | null
   submitting: boolean
-  contestable: boolean
-  contesting: boolean
+  disputable: boolean
+  disputing: boolean
   advancing: boolean
 }>()
 

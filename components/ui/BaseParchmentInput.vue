@@ -17,10 +17,12 @@
 // répond de la même façon des deux côtés. Tailles en cqw du panneau, comme
 // PlayText — voir PlayFrame pour le @container.
 //
-// Ce n'est pas un BaseInput : celui-là porte le thème sombre et son propre fond,
-// et le recouvrir en ligne est ce que CLAUDE.md interdit. Même rôle, deux
-// thèmes, donc deux composants — le partage que CardButton fait déjà avec
-// BaseButton et ParchmentNote avec BaseHint.
+// Ce n'est pas un BaseInput : celui-là est un champ de formulaire — intitulé,
+// allures sombre ou claire de BaseField, tailles fixes —, et le recouvrir en
+// ligne est ce que CLAUDE.md interdit. Ici, ni intitulé ni formulaire : tailles
+// en cqw, Entrée qui répond. Même rôle, deux natures, donc deux composants — le
+// partage que BaseCardButton fait déjà avec BaseButton et BaseParchmentNote
+// avec BaseHint.
 //
 // L'`id="answer"` est écrit ici parce qu'il ne désigne rien d'autre : c'est lui
 // que PlayFrame guette (`group-has-[#answer:focus]`) pour remonter le panneau

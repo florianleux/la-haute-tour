@@ -1,7 +1,7 @@
 <template>
   <!-- Une surface entière qui fait bouton. Invisible : elle ne dessine rien,
        elle recouvre — d'où l'absence de tout habillage, contrairement à
-       BaseButton et CardButton qui, eux, se voient.
+       BaseButton et BaseCardButton qui, eux, se voient.
 
        Un vrai <button> plutôt qu'un div qui écoute le clic : il apporte le
        focus, Entrée, Espace et l'annonce en synthèse vocale, qu'il faudrait

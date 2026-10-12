@@ -36,7 +36,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 | Phase | Quand | Contenu servi |
 |---|---|---|
 | `ascent` | Vies restantes, questions restantes à l'étage | La réservation en cours (énoncé + échéance), **ou** le verdict de la question qui vient d'être résolue |
-| `cooldown` | Plus de vies, délai d'attente non écoulé | Fin de l'attente, Pool Échecs de l'étage, erreurs contestables de la tentative |
+| `cooldown` | Plus de vies, délai d'attente non écoulé | Fin de l'attente, Pool Échecs de l'étage et ses erreurs contestables |
 | `recovery` | Plus de vies, attente écoulée, Pool Échecs assez fourni | Les questions de rattrapage, une à une, avec le même mécanisme de réservation et de verdict qu'en ascension |
 | `floorEnd` | Toutes les questions de l'étage vues | Le palier atteint — prélude du boss de l'étage, plus la fin elle-même. Voir [`boss.md`](./boss.md) |
 | `bossDoor` | `floorEnd` franchi, boss pas encore battu | La porte du boss — fermée (moins de deux clés posées côté équipe) ou ouverte, sur le même champ. Voir [`boss.md`](./boss.md#porte-à-deux-clés) |

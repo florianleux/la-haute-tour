@@ -1,4 +1,4 @@
-import { and, asc, eq, ne, notInArray } from 'drizzle-orm'
+import { and, asc, eq, ne, notExists, notInArray } from 'drizzle-orm'
 import { unlock } from './achievements'
 import { grantLife } from './lives'
 import {
@@ -20,7 +20,7 @@ import type { User } from '../db/schema'
  * change ; l'arbitrage lui-même est humain. Voir specs/validation.md#contestation.
  */
 
-export interface ContestableError {
+export interface DisputableError {
   questionId: string
   statement: string
   /** La réponse affichée de la question — celle que le joueur a lue sur son échec. */
@@ -29,25 +29,29 @@ export interface ContestableError {
 }
 
 /**
- * Les erreurs que le joueur peut encore contester : toutes celles de son Pool
- * Échecs sur l'étage courant, une seule fois par question.
+ * Les erreurs contestables du joueur. Voir specs/validation.md#quand.
  *
  * Une réponse vide n'en fait jamais partie : l'accepter ajouterait la chaîne
- * vide aux réponses acceptées, et validerait le vide pour tout le monde. Une
- * question résolue par un départ de page non plus.
+ * vide aux réponses acceptées, et validerait le vide pour tout le monde.
  */
-export async function contestableErrors(db: Database, user: User): Promise<ContestableError[]> {
+export async function disputableErrors(db: Database, user: User): Promise<DisputableError[]> {
   const alreadyDisputed = db
     .select({ questionId: disputes.questionId })
     .from(disputes)
     .where(eq(disputes.userId, user.id))
 
   // Quitter la page n'est pas un motif d'arbitrage : le joueur a perdu la main,
-  // pas été mal jugé. Voir specs/anti-triche.md#perte-de-focus.
+  // pas été mal jugé. Ce qui est écarté, c'est la réponse que le départ de page
+  // a soumise — la question vue et la perte de focus portent le même instant,
+  // celui de submitAnswer —, pas la question. Voir specs/validation.md#quand.
   const lostFocus = db
-    .select({ questionId: focusLosses.questionId })
+    .select({ id: focusLosses.id })
     .from(focusLosses)
-    .where(eq(focusLosses.userId, user.id))
+    .where(and(
+      eq(focusLosses.userId, missedPool.userId),
+      eq(focusLosses.questionId, missedPool.questionId),
+      eq(focusLosses.lostAt, seenQuestions.seenAt),
+    ))
 
   const rows = await db
     .select({
@@ -67,18 +71,17 @@ export async function contestableErrors(db: Database, user: User): Promise<Conte
       eq(missedPool.floor, user.currentFloor),
       ne(seenQuestions.submittedAnswer, ''),
       notInArray(missedPool.questionId, alreadyDisputed),
-      notInArray(missedPool.questionId, lostFocus),
+      notExists(lostFocus),
     ))
     .orderBy(asc(missedPool.lastFailedAt))
 
   return rows
-    .filter((row): row is ContestableError => row.submittedAnswer !== null)
+    .filter((row): row is DisputableError => row.submittedAnswer !== null)
 }
 
 /**
- * Ouvre une contestation. Refusée si la question n'est pas contestable — réponse
- * vide, erreur d'une tentative passée, ou question déjà contestée : deux
- * contestations sur la même question n'ajoutent rien à arbitrer.
+ * Ouvre une contestation. Refusée si la question n'est pas parmi les erreurs
+ * contestables (disputableErrors).
  */
 export async function openDispute(
   db: Database,
@@ -86,9 +89,9 @@ export async function openDispute(
   questionId: string,
   now: Date,
 ): Promise<void> {
-  const contestable = await contestableErrors(db, user)
+  const disputable = await disputableErrors(db, user)
 
-  if (!contestable.some(error => error.questionId === questionId)) {
+  if (!disputable.some(error => error.questionId === questionId)) {
     throw createError({ statusCode: 400, statusMessage: 'Question non contestable' })
   }
 

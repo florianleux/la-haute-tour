@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { focusLosses, missedPool, seenQuestions, users } from '../../server/db/schema'
-import { contestableErrors } from '../../server/utils/disputes'
+import { disputableErrors } from '../../server/utils/disputes'
 import { serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { resetPlayer } from '../../server/utils/players'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
@@ -101,8 +102,54 @@ describe('perte de focus', () => {
   })
 
   it('n est pas contestable : ce motif ne s arbitre pas', async () => {
-    await leaveThePage('Bordo')
+    // Une réponse fausse : « Bordo » passerait pour juste, et il n'y aurait
+    // alors rien à contester de toute façon.
+    await leaveThePage('Lyon')
 
-    expect(await contestableErrors(db, await reload())).toEqual([])
+    expect(await disputableErrors(db, await reload())).toEqual([])
+  })
+
+  // Un échec de rattrapage ne change pas la réponse qu'on contesterait : celle
+  // que le départ de page a soumise reste écartée.
+  it('reste non contestable après un échec de rattrapage sur la même question', async () => {
+    const questionId = await leaveThePage('Lyon')
+    await db
+      .update(missedPool)
+      .set({ lastFailedAt: new Date(NOW.getTime() + 60_000) })
+      .where(eq(missedPool.questionId, questionId))
+
+    expect(await disputableErrors(db, await reload())).toEqual([])
+  })
+
+  // L'inverse : un départ de page en rattrapage ne soumet pas la réponse qu'on
+  // conteste, celle tapée en ascension reste contestable.
+  it('laisse contester l échec d ascension malgré un départ de page en rattrapage', async () => {
+    const served = await serveNextQuestion(db, await reload(), NOW)
+    const questionId = served.question!.id
+    await submitAnswer(db, await reload(), 'Lyon', new Date(NOW.getTime() + 2_000))
+    await db.insert(focusLosses).values({
+      userId: player.id,
+      questionId,
+      mode: 'recovery',
+      lostAt: new Date(NOW.getTime() + 60_000),
+    })
+
+    expect(await disputableErrors(db, await reload())).toMatchObject([{ questionId }])
+  })
+
+  // Ce qui ne se conteste pas, c'est la réponse soumise par le départ de page —
+  // pas la question : vue de nouveau après une remise à zéro, qui garde les
+  // pertes de focus, et ratée sur une vraie réponse, elle se conteste comme une
+  // autre. Voir specs/validation.md#quand.
+  it('laisse contester la question ratée sur une vraie réponse après une remise à zéro', async () => {
+    const questionId = await leaveThePage('Lyon')
+    await resetPlayer(db, await reload(), NOW)
+
+    const later = new Date(NOW.getTime() + 60_000)
+    const served = await serveNextQuestion(db, await reload(), later)
+    expect(served.question?.id).toBe(questionId)
+    await submitAnswer(db, await reload(), 'Lyon', new Date(later.getTime() + 2_000))
+
+    expect(await disputableErrors(db, await reload())).toMatchObject([{ questionId }])
   })
 })

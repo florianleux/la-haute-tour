@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 // Le camp de l'écran d'attente : corde, bannière de guilde, parchemin, grimoire
-// et sac, posés sur le décor de WaitCard entre lui et le poster. Certains
+// et sac, posés sur le décor de CooldownCard entre lui et le poster. Certains
 // mènent ailleurs, tous disent leur nom au survol.
 import type { TeamId } from '~~/shared/utils/teams'
 
@@ -195,7 +195,7 @@ const layers = computed((): { depth: string, box: string, origin: string, items:
     ],
   },
   {
-    // Entre l'image du poster (z-10) et son contenu (z-[15]) : voir WaitCard.
+    // Entre l'image du poster (z-10) et son contenu (z-[15]) : voir CooldownCard.
     depth: 'z-[12]',
     box: GROUND,
     origin: 'origin-bottom',

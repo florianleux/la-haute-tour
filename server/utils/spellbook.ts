@@ -19,7 +19,7 @@ export type StakeRule = Extract<keyof FloorRules, 'lives' | 'ascentTimerMs' | 'c
  * où il est parti, le rattrapage qui la clôt, ou l'instant du lancer.
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
-export type SpellLifetime = 'attempt' | 'wait' | 'recovery' | 'instant'
+export type SpellLifetime = 'attempt' | 'cooldown' | 'recovery' | 'instant'
 
 /**
  * Le grimoire : ce que fait chaque sort, en un seul endroit.
@@ -32,7 +32,7 @@ export type SpellLifetime = 'attempt' | 'wait' | 'recovery' | 'instant'
  *
  * Ajouter un sort au catalogue, c'est ajouter une entrée ci-dessous — et rien
  * d'autre. Le déclencheur « attente ou tentative » est déjà un catalogue
- * (`WAIT_BOUND_SPELL_IDS` dans `shared/utils/spells.ts`) ; la modulation,
+ * (`COOLDOWN_BOUND_SPELL_IDS` dans `shared/utils/spells.ts`) ; la modulation,
  * l'action instantanée, la durée de vie et la règle que l'infobulle chiffre le
  * sont ici. Voir ADR 0004 et `specs/bonus.md#catalogue`.
  */
@@ -79,7 +79,7 @@ export const SPELLS: Record<SpellId, SpellEntry> = {
   },
 
   RESPITE: {
-    lifetime: 'wait',
+    lifetime: 'cooldown',
     stakes: { boon: 'cooldownMs', curse: 'cooldownMs' },
     // Multiplicatif : diviser plutôt que soustraire est ce qui empêche une
     // attente d'atteindre zéro, quel que soit l'empilement. Le blanc raccourcit
@@ -242,7 +242,7 @@ async function reshapeCooldown(db: Database, target: User, startedAt: Date): Pro
     return
   }
 
-  const onThisWait = await db
+  const onThisCooldown = await db
     .select({ spell: activeEffects.spell, face: activeEffects.face })
     .from(activeEffects)
     .where(and(
@@ -252,7 +252,7 @@ async function reshapeCooldown(db: Database, target: User, startedAt: Date): Pro
 
   // Le jeu de règles module la durée, on lui donne celle de cette attente-là.
   const rules = { ...rulesForFloor(target.currentFloor), cooldownMs: baseMs }
-  const { cooldownMs } = rulesWithEffects(rules, onThisWait)
+  const { cooldownMs } = rulesWithEffects(rules, onThisCooldown)
 
   await db
     .update(users)

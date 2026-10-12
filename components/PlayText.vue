@@ -10,7 +10,7 @@
 <script setup lang="ts">
 // Une ligne du panneau de jeu. Le rôle dit la taille, jamais l'écran : la même
 // question se lit à la même échelle en ascension et en rattrapage, et régler
-// l'une règle l'autre. C'est le partage que CardButton fait déjà pour les
+// l'une règle l'autre. C'est le partage que BaseCardButton fait déjà pour les
 // boutons illustrés.
 //
 // Tout est en cqw du **panneau**, qui est lui-même un @container (voir

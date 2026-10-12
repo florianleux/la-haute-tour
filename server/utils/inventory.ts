@@ -3,7 +3,7 @@ import { readPhase } from './game'
 import {
   castLogQuery,
   castSpell,
-  castsLeftThisWait,
+  castsLeftThisCooldown,
   receivedLogQuery,
   toCastViews,
   toReceivedViews,
@@ -153,7 +153,7 @@ async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
     total: stacks.reduce((sum, stack) => sum + stack.owned, 0),
     log: toCastViews(log),
     received: toReceivedViews(received),
-    castsLeft: await castsLeftThisWait(db, user),
+    castsLeft: await castsLeftThisCooldown(db, user),
     castsPerCooldown: rulesForFloor(user.currentFloor).castsPerCooldown,
     canTargetOthers: user.team !== null,
   }

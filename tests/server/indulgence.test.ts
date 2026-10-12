@@ -15,7 +15,7 @@ const NOW = new Date('2026-09-06T12:00:00.000Z')
 const rules = rulesForFloor(1)
 
 /** L'attente vient de s'ouvrir ; elle s'achèvera juste après. */
-const WAIT_OVER = new Date(NOW.getTime() + rules.cooldownMs + 1_000)
+const COOLDOWN_OVER = new Date(NOW.getTime() + rules.cooldownMs + 1_000)
 
 describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
   let db: Database
@@ -61,7 +61,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
 
   /** L'attente s'achève et le joueur lance son rattrapage. */
   async function startRecovery(): Promise<void> {
-    await serveNextQuestion(db, await reload(), WAIT_OVER)
+    await serveNextQuestion(db, await reload(), COOLDOWN_OVER)
   }
 
   it('tire le nombre ordinaire quand rien n est posé', async () => {
@@ -113,7 +113,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     await startRecovery()
 
     expect(await drawn()).toHaveLength(rules.poolSizeForRecovery)
-    expect((await readGameState(db, await reload(), WAIT_OVER)).phase).toBe('recovery')
+    expect((await readGameState(db, await reload(), COOLDOWN_OVER)).phase).toBe('recovery')
   })
 
   // La face noire, jouée jusqu'au bout : elle n'allonge pas le tirage, elle
@@ -144,13 +144,13 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
           .from(acceptedAnswers)
           .where(eq(acceptedAnswers.questionId, questionId))
 
-        await submitAnswer(db, await reload(), accepted.text, WAIT_OVER)
-        await serveNextQuestion(db, await reload(), WAIT_OVER)
+        await submitAnswer(db, await reload(), accepted.text, COOLDOWN_OVER)
+        await serveNextQuestion(db, await reload(), COOLDOWN_OVER)
       }
 
       for (let i = 0; i < wrong; i++) {
-        await submitAnswer(db, await reload(), 'faux', WAIT_OVER)
-        await serveNextQuestion(db, await reload(), WAIT_OVER)
+        await submitAnswer(db, await reload(), 'faux', COOLDOWN_OVER)
+        await serveNextQuestion(db, await reload(), COOLDOWN_OVER)
       }
     }
 
@@ -159,7 +159,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
       await curse()
       await startRecovery()
 
-      expect((await readGameState(db, await reload(), WAIT_OVER)).recovery)
+      expect((await readGameState(db, await reload(), COOLDOWN_OVER)).recovery)
         .toMatchObject({ total: rules.recoveryQuestions, required: rules.recoveryQuestions })
     })
 
@@ -170,7 +170,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
 
       await play(1, 0)
 
-      expect((await readGameState(db, await reload(), WAIT_OVER)).recovery)
+      expect((await readGameState(db, await reload(), COOLDOWN_OVER)).recovery)
         .toMatchObject({ successes: 1, resumes: false })
     })
 
@@ -200,7 +200,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     await castIndulgence()
     await startRecovery()
 
-    const state = await readGameState(db, await reload(), WAIT_OVER)
+    const state = await readGameState(db, await reload(), COOLDOWN_OVER)
     expect(state.recovery).toMatchObject({
       total: rules.recoveryQuestions * rules.indulgenceFactor,
       resumes: false,
@@ -217,16 +217,16 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
 
     // Toutes les questions jouées, toutes fausses : une nouvelle attente s'ouvre.
     for (let i = 0; i < rules.recoveryQuestions * rules.indulgenceFactor; i++) {
-      await submitAnswer(db, await reload(), 'faux', WAIT_OVER)
-      await serveNextQuestion(db, await reload(), WAIT_OVER)
+      await submitAnswer(db, await reload(), 'faux', COOLDOWN_OVER)
+      await serveNextQuestion(db, await reload(), COOLDOWN_OVER)
     }
 
     const afterFailure = await reload()
     expect(afterFailure.cooldownUntil).not.toBeNull()
 
-    const nextWaitOver = new Date(afterFailure.cooldownUntil!.getTime() + 1_000)
+    const nextCooldownOver = new Date(afterFailure.cooldownUntil!.getTime() + 1_000)
     await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id))
-    await serveNextQuestion(db, await reload(), nextWaitOver)
+    await serveNextQuestion(db, await reload(), nextCooldownOver)
 
     expect(await drawn()).toHaveLength(rules.recoveryQuestions)
   })
@@ -244,7 +244,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     await fillPool(rules.recoveryQuestions * 3)
     await startRecovery()
 
-    expect((await readGameState(db, await reload(), WAIT_OVER)).recovery)
+    expect((await readGameState(db, await reload(), COOLDOWN_OVER)).recovery)
       .toMatchObject({ required: rules.recoverySuccessesToResume })
   })
 })

@@ -34,16 +34,16 @@
       {{ statement }}
     </PlayText>
 
-    <!-- L'input garde ses classes en propre : c'est le seul champ de saisie du
-         thème parchemin, il n'y a rien à partager avec une deuxième carte. -->
-    <PlayInput
+    <!-- Le même champ qu'en rattrapage (RecoveryCard) : on répond pareil des
+         deux côtés. -->
+    <BaseParchmentInput
       :model-value="modelValue"
       @update:model-value="$emit('update:modelValue', $event)"
       @submit="$emit('submit')"
     />
 
     <template #action>
-      <CardButton
+      <BaseCardButton
         label="Valider"
         anchor="card-bottom"
         :disabled="submitting"

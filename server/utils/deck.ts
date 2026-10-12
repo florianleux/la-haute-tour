@@ -20,17 +20,29 @@ export async function floorSize(db: Database, floor: number): Promise<number> {
 }
 
 /**
- * La même lecture, rendue plutôt qu'exécutée : l'instantané du joueur la fait
- * voyager dans le même lot que sa réservation, pour que la taille de l'étage ne
- * coûte pas un aller-retour réseau de plus par question.
- * Voir tests/server/query-budget.test.ts.
+ * Le type exact d'une requête Drizzle ne s'écrit pas à la main : nommé depuis la
+ * requête elle-même, comme dans effects.ts, pour que les fonctions exportées
+ * l'annoncent comme le veut CLAUDE.md.
  */
-export function floorSizeQuery(db: Database, floor: number) {
+type FloorSizeQuery = ReturnType<typeof buildFloorSizeQuery>
+type FloorSizeShift = ReturnType<typeof buildFloorSizeShift>
+
+function buildFloorSizeQuery(db: Database, floor: number) {
   return db
     .select({ total: deckFloors.total })
     .from(deckFloors)
     .where(eq(deckFloors.floor, floor))
     .limit(1)
+}
+
+/**
+ * La même lecture, rendue plutôt qu'exécutée : l'instantané du joueur la fait
+ * voyager dans le même lot que sa réservation, pour que la taille de l'étage ne
+ * coûte pas un aller-retour réseau de plus par question.
+ * Voir tests/server/query-budget.test.ts.
+ */
+export function floorSizeQuery(db: Database, floor: number): FloorSizeQuery {
+  return buildFloorSizeQuery(db, floor)
 }
 
 /** Ce que ces lignes valent : le compte de l'étage, ou zéro s'il n'en a aucune. */
@@ -81,6 +93,16 @@ export async function wholeDeckSize(db: Database): Promise<number> {
   return rows.reduce((sum, row) => sum + row.total, 0)
 }
 
+function buildFloorSizeShift(db: Database, floor: number, delta: number) {
+  return db
+    .insert(deckFloors)
+    .values({ floor, total: delta })
+    .onConflictDoUpdate({
+      target: deckFloors.floor,
+      set: { total: sql`${deckFloors.total} + ${delta}` },
+    })
+}
+
 /**
  * Le compte d'un étage bouge d'autant. Rendu comme requête plutôt qu'exécuté :
  * l'édition du deck l'écrit dans le même lot que la question elle-même, sinon
@@ -89,14 +111,8 @@ export async function wholeDeckSize(db: Database): Promise<number> {
  *
  * `delta` vaut +1 quand une question entre, -1 quand elle sort.
  */
-export function shiftFloorSize(db: Database, floor: number, delta: number) {
-  return db
-    .insert(deckFloors)
-    .values({ floor, total: delta })
-    .onConflictDoUpdate({
-      target: deckFloors.floor,
-      set: { total: sql`${deckFloors.total} + ${delta}` },
-    })
+export function shiftFloorSize(db: Database, floor: number, delta: number): FloorSizeShift {
+  return buildFloorSizeShift(db, floor, delta)
 }
 
 /**

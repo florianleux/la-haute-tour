@@ -142,17 +142,17 @@ describe('maintenance', () => {
 
   describe('les attentes', () => {
     it('ne sont pas suspendues : l échéance ne bouge pas', async () => {
-      const waiting = await createPlayer(db, {
+      const playerInCooldown = await createPlayer(db, {
         discordId: 'en-attente',
         lives: 0,
         cooldownUntil: new Date(NOW.getTime() + 3_600_000),
       })
 
       await setMaintenance(db, true, NOW)
-      const during = await readGameState(db, await reload(waiting), NOW)
+      const during = await readGameState(db, await reload(playerInCooldown), NOW)
 
       await setMaintenance(db, false, new Date(NOW.getTime() + 60_000))
-      const after = await readGameState(db, await reload(waiting), new Date(NOW.getTime() + 60_000))
+      const after = await readGameState(db, await reload(playerInCooldown), new Date(NOW.getTime() + 60_000))
 
       expect(during.cooldownUntil).toBe(after.cooldownUntil)
     })

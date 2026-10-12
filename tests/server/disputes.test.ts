@@ -9,7 +9,7 @@ import {
   users,
 } from '../../server/db/schema'
 import {
-  contestableErrors,
+  disputableErrors,
   openDispute,
   pendingDisputes,
   settleDispute,
@@ -58,7 +58,7 @@ describe('contestation', () => {
     it('rend les erreurs de la tentative, avec ce que le joueur avait répondu', async () => {
       const questionId = await play('Toulouse')
 
-      const errors = await contestableErrors(db, await reload())
+      const errors = await disputableErrors(db, await reload())
 
       expect(errors).toMatchObject([{ questionId, submittedAnswer: 'Toulouse' }])
     })
@@ -66,20 +66,20 @@ describe('contestation', () => {
     it('ne rend jamais une bonne réponse', async () => {
       await play('Bordeaux')
 
-      expect(await contestableErrors(db, await reload())).toEqual([])
+      expect(await disputableErrors(db, await reload())).toEqual([])
     })
 
     it('ne rend jamais une réponse vide : l accepter validerait le vide pour tous', async () => {
       await play('')
 
-      expect(await contestableErrors(db, await reload())).toEqual([])
+      expect(await disputableErrors(db, await reload())).toEqual([])
     })
 
     it('ne rend plus une question déjà contestée', async () => {
       const questionId = await play('Toulouse')
       await openDispute(db, await reload(), questionId, NOW)
 
-      expect(await contestableErrors(db, await reload())).toEqual([])
+      expect(await disputableErrors(db, await reload())).toEqual([])
     })
 
     it('garde les erreurs des tentatives précédentes tant qu elles sont au pool', async () => {
@@ -91,7 +91,7 @@ describe('contestation', () => {
         .set({ attemptStartedAt: new Date(NOW.getTime() + 60_000) })
         .where(eq(users.id, player.id))
 
-      expect(await contestableErrors(db, await reload())).toMatchObject([{ questionId }])
+      expect(await disputableErrors(db, await reload())).toMatchObject([{ questionId }])
     })
   })
 

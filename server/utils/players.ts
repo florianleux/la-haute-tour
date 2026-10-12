@@ -13,9 +13,8 @@ import {
   seenQuestions,
   users,
 } from '../db/schema'
-import { phaseOf } from './mechanics'
+import { phaseOf, startOfGame } from './mechanics'
 import { numericRouteId } from './routes'
-import { rulesForFloor } from './rules'
 import type { H3Event } from 'h3'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -145,14 +144,9 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
  * mondes. Voir specs/admin.md#gestion-des-joueurs.
  */
 export async function resetPlayer(db: Database, player: User, now: Date): Promise<void> {
-  // Le palmarès n'est pas la partie : remettre un joueur à zéro remet sa partie à
-  // zéro, pas ce qu'il a accompli. Les joueurs test font exception — ils existent
-  // pour rejouer des situations, et une « première fois » ne se testerait qu'une
-  // seule fois si leurs succès survivaient. Voir specs/succes.md#remise-à-zéro.
-  //
-  // Les vues de toujours suivent la même règle, parce qu'elles nourrissent les
-  // mêmes succès : les garder chez un joueur test rendrait « Question n°67 »
-  // intestable après le premier essai.
+  // La partie et ses compteurs repartent de zéro, le palmarès d'un vrai joueur
+  // reste ; celui d'un joueur test tombe avec le reste.
+  // Voir specs/succes.md#remise-à-zéro.
   await db.batch([
     db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
@@ -162,27 +156,29 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
     db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),
     db.delete(reservations).where(eq(reservations.userId, player.id)),
     db.delete(attempts).where(eq(attempts.userId, player.id)),
+    // Tranchées comprises. Voir specs/admin.md#gestion-des-joueurs.
+    db.delete(disputes).where(eq(disputes.userId, player.id)),
     db
       .update(users)
       .set({
-        currentFloor: 1,
-        lives: rulesForFloor(1).lives,
+        ...startOfGame(),
         cooldownUntil: null,
         cooldownStartedAt: null,
+        cooldownBaseMs: null,
         floorCursor: 0,
         floorSeen: 0,
         attemptSeen: 0,
         attemptStartedAt: now,
-        // La série repart avec la partie : elle décrit la tentative en cours, qui
-        // n'existe plus. Les vues de toujours et les jours joués, non — les
-        // premières ne redescendent jamais, les seconds disent une assiduité et
-        // personne n'a « désassisté » en étant remis à zéro.
         streak: 0,
+        seenTotal: 0,
+        lastPlayedDay: null,
+        daysPlayed: 0,
+        playStreak: 0,
         // Le palmarès porté tombe avec les lignes qu'il double : le laisser
         // plein ferait croire au jeu que le joueur test possède encore ce qu'on
         // vient d'effacer, et aucune « première fois » ne se réécrirait.
         // Voir server/db/schema.ts.
-        ...player.isTest ? { seenTotal: 0, achievementsHeld: [] } : {},
+        ...player.isTest ? { achievementsHeld: [] } : {},
       })
       .where(eq(users.id, player.id)),
     // Dans le même lot que le palmarès qui les double, et non à part : une

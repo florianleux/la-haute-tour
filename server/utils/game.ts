@@ -25,7 +25,7 @@ import {
 import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
-import { isWaitBound } from '../../shared/utils/spells'
+import { isCooldownBound } from '../../shared/utils/spells'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import {
@@ -123,7 +123,7 @@ export interface GameState {
   started: boolean
   question: ServedQuestion | null
   verdict: Verdict | null
-  /** ISO 8601 end of the wait, null outside a wait. */
+  /** ISO 8601 end of the cooldown, null outside a cooldown. */
   cooldownUntil: string | null
   /** Tally of the recovery under way, null outside one. */
   recovery: RecoveryProgress | null
@@ -218,7 +218,7 @@ function playedRules(snapshot: PlayerSnapshot, floor = snapshot.user.currentFloo
     rulesForFloor(floor),
     // Les sorts liés à l'attente sont déjà bornés à celle du joueur : ce module
     // ne sert que ceux-là. Voir server/utils/mechanics.ts#isBorneBy.
-    snapshot.effects.filter(effect => effect.state === 'active' || isWaitBound(effect.spell)),
+    snapshot.effects.filter(effect => effect.state === 'active' || isCooldownBound(effect.spell)),
   )
 }
 
@@ -423,7 +423,7 @@ interface Resolution {
 
 /**
  * Records the outcome of a reservation: the question becomes seen, a failure costs
- * a life and joins the missed pool, and losing the last life starts the wait.
+ * a life and joins the missed pool, and losing the last life starts the cooldown.
  *
  * Returns the rows as it left them: the caller rebuilds the state from those rather
  * than paying a round trip to read back what it just wrote.
@@ -728,7 +728,7 @@ function stakeOf(effect: PlacedEffect, user: User, played: FloorRules): EffectSt
   const rule = SPELLS[effect.spell].stakes?.[effect.face]
 
   // Même tri que les règles jouées : un sort lié à l'attente agit dès le lancer.
-  if (!rule || (effect.state === 'pending' && !isWaitBound(effect.spell))) {
+  if (!rule || (effect.state === 'pending' && !isCooldownBound(effect.spell))) {
     return null
   }
 
@@ -815,9 +815,9 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
   // Une attente qui vient de s'achever est le seul cas où une lecture a quelque
   // chose à écrire. Un palier ou une fin de partie n'en font pas partie : il n'y
   // a plus de vies à y rendre.
-  const waitOver = phaseOfSnapshot(snapshot, false, now) === 'recovery'
+  const cooldownOver = phaseOfSnapshot(snapshot, false, now) === 'recovery'
 
-  if (!waitOver) {
+  if (!cooldownOver) {
     return stateFrom(db, snapshot, now)
   }
 
@@ -827,7 +827,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
 }
 
 /**
- * A wait that ends on a pool too small to draw a recovery from simply gives the
+ * A cooldown that ends on a pool too small to draw a recovery from simply gives the
  * lives back. Nothing is reserved and no clock starts — the phase follows from the
  * time having passed. See specs/mecanique.md#tentative-attente-et-rattrapage.
  */
@@ -1004,8 +1004,8 @@ export async function openPlayerChest(
   // vie ordinaire : l'attente démarre, et le verdict de la question — juste, elle
   // l'était — reste lisible par-dessus. La série tombe avec les vies : « toute vie
   // perdue casse la série » ne souffre pas d'exception, pas même celle-ci.
-  const wait = cooldownFields(cooldownFrom(rules, now), now)
-  const killed = { lives: 0, streak: 0, ...wait }
+  const cooldown = cooldownFields(cooldownFrom(rules, now), now)
+  const killed = { lives: 0, streak: 0, ...cooldown }
 
   await db.update(users).set(killed).where(eq(users.id, user.id))
 
@@ -1131,7 +1131,7 @@ async function reserve(
 }
 
 /**
- * The player has no lives left. Either the wait is still running — nothing to do —
+ * The player has no lives left. Either the cooldown is still running — nothing to do —
  * or a recovery starts, continues, or ends here. The recovery stops as soon as
  * the verdict is sealed: quota reached (success) or mathematically impossible
  * (failure). See specs/mecanique.md#déroulement-du-rattrapage.
@@ -1143,8 +1143,8 @@ async function advanceRecovery(
   rules: FloorRules,
   now: Date,
 ): Promise<GameState> {
-  const waiting = user.cooldownUntil !== null && now < user.cooldownUntil
-  if (waiting) {
+  const inCooldown = user.cooldownUntil !== null && now < user.cooldownUntil
+  if (inCooldown) {
     return buildState(db, user.id, now)
   }
 
@@ -1211,7 +1211,7 @@ async function advanceRecovery(
 }
 
 /**
- * Settles the recovery verdict — lives back on success, a shorter wait on failure
+ * Settles the recovery verdict — lives back on success, a shorter cooldown on failure
  * — and, on success, chains directly to ascent by drawing the next question.
  * No intermediate screen: the verdict of the sealing question carries the
  * message, and the button « Reprendre » leads straight to the next question.
@@ -1221,11 +1221,11 @@ async function finishRecovery(
   db: Database,
   snapshot: PlayerSnapshot,
   user: User,
-  rules: FloorRules,
+  recoveryRules: FloorRules,
   now: Date,
 ): Promise<GameState> {
-  const progress = await recoveryProgress(db, user, rules)
-  const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, rules, now)
+  const progress = await recoveryProgress(db, user, recoveryRules)
+  const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, recoveryRules, now)
 
   // Le tirage joué en entier, et juste de bout en bout. Depuis que le rattrapage
   // s'arrête au verdict scellé, cela n'arrive que lorsque le quota exige tout le
@@ -1248,12 +1248,14 @@ async function finishRecovery(
     // tentative qui s'ouvre, effets compris — d'où openAttempt plutôt que le
     // décompte du verdict, qui ne connaît que les règles de l'étage.
     await closeAttempt(db, user, now)
-    await openAttempt(db, user, now)
+    const attemptRules = await openAttempt(db, user, now)
 
     // Le rattrapage réussi enchaîne directement sur l'ascension : plus d'écran
     // intermédiaire. drawAndReserve ne lit que currentFloor et floorCursor,
-    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit.
-    await drawAndReserve(db, user, rules, now)
+    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit. La
+    // question est celle de la tentative qui s'ouvre : ses effets fraîchement
+    // ancrés jouent dès elle.
+    await drawAndReserve(db, user, attemptRules, now)
 
     return withUnlocked(await buildState(db, user.id, now), unlocked)
   }
@@ -1274,9 +1276,9 @@ async function finishRecovery(
 export interface MissedPoolEntryView {
   questionId: string
   statement: string
-  /** Shown here on purpose: the wait screen is a revision sheet, not a punishment. */
+  /** Shown here on purpose: the cooldown screen is a revision sheet, not a punishment. */
   answerLabel: string
-  /** What the player answered — justifies contesting. Null on timeout. */
+  /** What the player answered — justifies disputing. Null on timeout. */
   submittedAnswer: string | null
   poolSuccesses: number
   lastFailedAt: string

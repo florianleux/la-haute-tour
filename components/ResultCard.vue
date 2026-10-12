@@ -27,8 +27,8 @@
     <template v-if="screen.verdict">
       <VerdictLines
         :verdict="screen.verdict"
-        :contestable="contestable"
-        :contesting="contesting"
+        :disputable="disputable"
+        :disputing="disputing"
         :last-life="state.lives <= 0"
         @dispute="$emit('dispute')"
       />
@@ -79,7 +79,7 @@
     <template #action>
       <!-- Le libellé et le geste se décident dans utils/phase.ts (playView) :
            entrer dans le coffre, redescendre au poster, ou la suite. -->
-      <CardButton
+      <BaseCardButton
         v-if="action"
         :label="action.label"
         anchor="card-bottom"
@@ -108,8 +108,8 @@ const props = defineProps<{
   effects: EffectView[]
   /** Le bouton du bas — libellé et geste —, null quand rien n'avance d'ici. Voir utils/phase.ts (playView). */
   action: PlayAction | null
-  contestable: boolean
-  contesting: boolean
+  disputable: boolean
+  disputing: boolean
   advancing: boolean
 }>()
 

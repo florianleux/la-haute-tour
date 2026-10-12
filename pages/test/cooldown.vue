@@ -1,9 +1,9 @@
 <template>
-  <WaitCard
+  <CooldownCard
     :state="state"
     :screen="view.screen"
     :action="view.action"
-    wait-remaining="4m 12s"
+    cooldown-remaining="4m 12s"
     :loading="false"
     :is-admin="true"
     :skipping="false"
@@ -16,9 +16,9 @@
 
 <script setup lang="ts">
 // Banc de design de l'écran d'attente : même composant qu'en jeu
-// (WaitCard), mais un état tiré au hasard à chaque chargement plutôt
+// (CooldownCard), mais un état tiré au hasard à chaque chargement plutôt
 // qu'une vraie partie — pour régler le visuel sans dépendre d'une attente
-// réelle. Modifier WaitCard modifie donc aussi bien cette page que la
+// réelle. Modifier CooldownCard modifie donc aussi bien cette page que la
 // vraie. Admin seulement. Voir pages/test/play.vue pour le même principe.
 import { playView } from '~~/utils/phase'
 import { TEAM_IDS } from '~~/shared/utils/teams'
@@ -28,9 +28,9 @@ definePageMeta({ admin: true })
 // Tirés une fois côté serveur et transmis au client par useState : tirés de
 // chaque côté, ils divergeraient, et l'hydratation garderait l'image du client
 // avec la position du serveur (la corde déroulée posée au sol).
-const phase = useState('test-wait-phase', () => Math.random() < 0.5 ? 'cooldown' : 'recovery').value
+const phase = useState('test-cooldown-phase', () => Math.random() < 0.5 ? 'cooldown' : 'recovery').value
 // Sans équipe aussi : le cas « pas de bannière » doit se voir sur le banc.
-const team = useState('test-wait-team', () => [...TEAM_IDS, null][Math.floor(Math.random() * (TEAM_IDS.length + 1))] ?? null).value
+const team = useState('test-cooldown-team', () => [...TEAM_IDS, null][Math.floor(Math.random() * (TEAM_IDS.length + 1))] ?? null).value
 
 const state = ref(demoState({
   phase,

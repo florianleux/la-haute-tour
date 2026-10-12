@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, inventory, missedPool, users } from '../../server/db/schema'
 import {
   castSpell,
-  castsLeftThisWait,
+  castsLeftThisCooldown,
   effectsQuery,
   readCastLog,
   readReceivedLog,
@@ -85,7 +85,7 @@ describe('lancer sur un allié', () => {
     await cast('VITALITY')
 
     expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(0)
-    expect(await castsLeftThisWait(db, await loadPlayer(db, caster.id)))
+    expect(await castsLeftThisCooldown(db, await loadPlayer(db, caster.id)))
       .toBe(rules.castsPerCooldown - 1)
 
     const [posed] = await db.select().from(activeEffects)
@@ -95,11 +95,11 @@ describe('lancer sur un allié', () => {
   // La cible lit sur son propre écran d'attente ce qu'elle a reçu, et de qui.
   // Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
   it('se lit sur l écran d attente de la cible, nom du lanceur compris', async () => {
-    const waiting = await ally('samsagace', { lives: 0, cooldownUntil: FULL_DEADLINE })
+    const allyInCooldown = await ally('samsagace', { lives: 0, cooldownUntil: FULL_DEADLINE })
 
     await cast('VITALITY')
 
-    const state = await readGameState(db, await loadPlayer(db, waiting.id), NOW)
+    const state = await readGameState(db, await loadPlayer(db, allyInCooldown.id), NOW)
     expect(state.effects).toMatchObject([
       { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'pending', lifetime: 'attempt' },
     ])
@@ -146,13 +146,13 @@ describe('lancer sur un allié', () => {
   // Le déclencheur en cours est celui de la cible : c'est son attente à elle que
   // le Répit raccourcit. Voir specs/bonus.md#ancrage-et-durée-de-vie.
   it('raccourcit l attente de l allié, pas celle du lanceur', async () => {
-    const waiting = await ally('samsagace', { lives: 0, cooldownUntil: FULL_DEADLINE })
+    const allyInCooldown = await ally('samsagace', { lives: 0, cooldownUntil: FULL_DEADLINE })
 
     await cast('RESPITE')
 
-    const target = await loadPlayer(db, waiting.id)
+    const target = await loadPlayer(db, allyInCooldown.id)
     expect(target.cooldownUntil?.getTime())
-      .toBe(waiting.cooldownStartedAt!.getTime() + rules.cooldownMs / rules.respiteFactor)
+      .toBe(allyInCooldown.cooldownStartedAt!.getTime() + rules.cooldownMs / rules.respiteFactor)
     expect((await loadPlayer(db, caster.id)).cooldownUntil?.getTime())
       .toBe(FULL_DEADLINE.getTime())
   })

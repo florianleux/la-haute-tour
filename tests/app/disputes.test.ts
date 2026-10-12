@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testAdmin, testUser } from '../helpers/app'
-import type { ContestableError, PendingDispute } from '../../server/utils/disputes'
+import type { DisputableError, PendingDispute } from '../../server/utils/disputes'
 
 const { serve, answerWith, breakNetwork, signIn, calls, refresh, reset } = installAppGlobals()
 
 const { useDisputes } = await import('../../composables/useDisputes')
 const { ADMIN_DISPUTES_KEY, useAdminDisputes } = await import('../../composables/useAdminDisputes')
 
-const ERROR: ContestableError = {
+const ERROR: DisputableError = {
   questionId: 'q1',
   statement: 'Capitale de la Gironde ?',
   answerLabel: 'BORDEAUX',
@@ -32,38 +32,38 @@ describe('contestation côté joueur', () => {
 
   it('ne propose de contester que ce que le serveur dit contestable', async () => {
     answerWith({ errors: [ERROR] })
-    const { errors, isContestable, refresh } = useDisputes()
+    const { errors, isDisputable, refresh } = useDisputes()
     await refresh()
 
     expect(errors.value).toEqual([ERROR])
-    expect(isContestable('q1')).toBe(true)
-    expect(isContestable('q2')).toBe(false)
+    expect(isDisputable('q1')).toBe(true)
+    expect(isDisputable('q2')).toBe(false)
   })
 
   it('conteste puis relit la liste : le bouton disparaît de lui-même', async () => {
-    const { contest } = useDisputes()
+    const { sendDispute } = useDisputes()
 
-    const sent = await contest('q1')
+    const sent = await sendDispute('q1')
 
     expect(sent).toBe(true)
-    expect(calls()).toEqual(['fetch POST /api/game/disputes', 'fetch GET /api/game/contestable'])
+    expect(calls()).toEqual(['fetch POST /api/game/disputes', 'fetch GET /api/game/disputable-errors'])
   })
 
-  it('pose contestingId pendant l envoi puis le relâche', async () => {
-    const { contest, contestingId } = useDisputes()
+  it('pose disputingId pendant l envoi puis le relâche', async () => {
+    const { sendDispute, disputingId } = useDisputes()
 
-    const inFlight = contest('q1')
-    expect(contestingId.value).toBe('q1')
+    const inFlight = sendDispute('q1')
+    expect(disputingId.value).toBe('q1')
     await inFlight
 
-    expect(contestingId.value).toBeNull()
+    expect(disputingId.value).toBeNull()
   })
 
   it('signale une contestation refusée sans se dire illisible', async () => {
     breakNetwork()
-    const { contest, failed } = useDisputes()
+    const { sendDispute, failed } = useDisputes()
 
-    expect(await contest('q1')).toBe(false)
+    expect(await sendDispute('q1')).toBe(false)
     expect(failed.value).toBe(false)
   })
 

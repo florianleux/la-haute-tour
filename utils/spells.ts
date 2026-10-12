@@ -1,4 +1,5 @@
 import { formatDuration, formatTime } from './date'
+import { isCooldown } from './phase'
 import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 import type { EffectStake, EffectView } from '~~/server/utils/effects'
 import type { StakeRule } from '~~/server/utils/spellbook'
@@ -163,13 +164,13 @@ export function spellLifetime(effect: EffectView, state: GameState): string {
       return state.lives > 0
         ? `Jusqu'à ta dernière vie perdue (encore ${state.lives} ♥)`
         : 'Jusqu\'à la fin de ton rattrapage'
-    case 'wait':
+    case 'cooldown':
       // Porté jusqu'au bout du rattrapage qui suit, alors que l'attente est
       // échue : une heure de fin au futur serait déjà passée.
       if (!state.cooldownUntil) {
         return 'Jusqu\'à la fin de ton attente'
       }
-      return state.phase === 'cooldown'
+      return isCooldown(state)
         ? `Jusqu'à la fin de ton attente (${formatTime(state.cooldownUntil)})`
         : `Sur ton attente, terminée à ${formatTime(state.cooldownUntil)}`
     case 'recovery':

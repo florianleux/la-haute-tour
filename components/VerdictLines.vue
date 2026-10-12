@@ -49,11 +49,11 @@
   <!-- Voir specs/validation.md : la contestation se propose là où le désaccord
        naît, en ascension comme en rattrapage. -->
   <PlayText
-    v-if="contestable"
+    v-if="disputable"
     role="link"
     as="button"
     type="button"
-    :disabled="contesting"
+    :disabled="disputing"
     class="cursor-pointer text-amber-700 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
     @click="$emit('dispute')"
   >
@@ -74,8 +74,8 @@ import type { Verdict } from '~~/server/utils/game'
 
 defineProps<{
   verdict: Verdict
-  contestable: boolean
-  contesting: boolean
+  disputable: boolean
+  disputing: boolean
   /** La vie perdue était la dernière : la tentative s'arrête sur ce verdict. */
   lastLife?: boolean
 }>()

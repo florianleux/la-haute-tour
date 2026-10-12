@@ -4,8 +4,8 @@
     :screen="view.screen"
     :effects="view.screen.activeEffects"
     :action="view.action"
-    :contestable="contestable"
-    :contesting="false"
+    :disputable="disputable"
+    :disputing="false"
     :advancing="false"
     @dispute="() => {}"
     @advance="() => {}"
@@ -18,7 +18,7 @@
 // plutôt qu'une vraie partie — pour régler le visuel sans dépendre d'une
 // question réellement jouée. Modifier ResultCard modifie donc aussi bien
 // cette page que la vraie. Admin seulement. Voir pages/test/play.vue et
-// pages/test/wait.vue pour le même principe.
+// pages/test/cooldown.vue pour le même principe.
 import type { GameState } from '~~/server/utils/game'
 import { playView } from '~~/utils/phase'
 
@@ -61,7 +61,7 @@ const state = useState<GameState>('test-verdict-state', () => {
   })
 })
 
-const contestable = useState('test-verdict-contestable', () => !state.value.verdict?.correct && Math.random() < 0.5)
+const disputable = useState('test-verdict-disputable', () => !state.value.verdict?.correct && Math.random() < 0.5)
 
 provideGameState(state)
 

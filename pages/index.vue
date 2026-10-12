@@ -4,8 +4,8 @@
          page — les cartes restent les enfants directs du <main> du gabarit. -->
     <!-- Au-dessus de toute carte, dans la bande des succès : une action refusée
          doit se lire quel que soit l'écran en cours. -->
-    <BaseToastStack v-if="contestFailed || actionFailed">
-      <BaseToast v-if="contestFailed">
+    <BaseToastStack v-if="disputeFailed || actionFailed">
+      <BaseToast v-if="disputeFailed">
         La contestation n'est pas partie. Réessaie.
       </BaseToast>
       <BaseToast v-if="actionFailed">
@@ -20,8 +20,8 @@
       :model-value="typed"
       :seconds-left="secondsLeft"
       :submitting="isRunning('submit')"
-      :contestable="contestable"
-      :contesting="contesting"
+      :disputable="disputable"
+      :disputing="disputing"
       :advancing="isRunning('advance')"
       @update:model-value="typed = $event"
       @submit="run('submit', submit)"
@@ -41,12 +41,12 @@
       @submit="run('submit', submit)"
     />
 
-    <WaitCard
-      v-else-if="view?.card === 'wait' && state"
+    <CooldownCard
+      v-else-if="view?.card === 'cooldown' && state"
       :state="state"
       :screen="view.screen"
       :action="view.action"
-      :wait-remaining="waitRemaining"
+      :cooldown-remaining="cooldownRemaining"
       :loading="loading"
       :is-admin="isAdmin"
       :skipping="isRunning('skipCooldown')"
@@ -74,8 +74,8 @@
       :screen="view.screen"
       :effects="view.screen.activeEffects"
       :action="view.action"
-      :contestable="contestable"
-      :contesting="contesting"
+      :disputable="disputable"
+      :disputing="disputing"
       :advancing="isRunning('advance')"
       @dispute="disputeVerdict"
       @advance="goNext"
@@ -132,7 +132,7 @@ const {
   state,
   typed,
   secondsLeft,
-  waitRemaining,
+  cooldownRemaining,
   submit,
   advance,
   skipCooldown,
@@ -168,16 +168,16 @@ async function run(action: PendingButton, move: () => Promise<void>): Promise<vo
 
 // La contestation se propose à deux endroits : sur le verdict, au moment où le
 // désaccord naît, et sur la fiche de révision du pool. Voir specs/validation.md.
-const { isContestable, contest, contestingId, refresh: refreshDisputes } = useDisputes()
-const contestFailed = ref(false)
+const { isDisputable, sendDispute, disputingId, refresh: refreshDisputes } = useDisputes()
+const disputeFailed = ref(false)
 
 const verdictId = computed(() => view.value?.screen.verdict?.questionId ?? null)
-const contestable = computed(() => verdictId.value !== null && isContestable(verdictId.value))
-const contesting = computed(() => verdictId.value !== null && contestingId.value === verdictId.value)
+const disputable = computed(() => verdictId.value !== null && isDisputable(verdictId.value))
+const disputing = computed(() => verdictId.value !== null && disputingId.value === verdictId.value)
 
 async function disputeVerdict(): Promise<void> {
   if (verdictId.value !== null) {
-    contestFailed.value = !(await contest(verdictId.value))
+    disputeFailed.value = !(await sendDispute(verdictId.value))
   }
 }
 

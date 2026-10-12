@@ -40,13 +40,13 @@ export function nextActionLabel(state: GameState): string {
       return "Commencer";
     }
 
-    const result = recoveryLine(state.recovery).result;
+    const { resumes } = recoveryLine(state.recovery);
 
-    if (result === "resumed") {
+    if (resumes === true) {
       return "Reprendre";
     }
 
-    if (result === "waiting") {
+    if (resumes === false) {
       return "Terminer";
     }
 
@@ -101,8 +101,9 @@ export interface RecoveryLine {
   /** Les bonnes réponses exigées, bornées aux questions tirées. */
   required: number;
   /** Le sort du rattrapage, annoncé dès que le verdict est scellé — quota
-   *  atteint (succès) ou mathématiquement impossible (échec). */
-  result: "resumed" | "waiting" | null;
+   *  atteint (true : le joueur reprend) ou mathématiquement impossible (false).
+   *  Null tant qu'il ne l'est pas. */
+  resumes: boolean | null;
 }
 
 /**
@@ -115,6 +116,14 @@ export function isAnswering(state: GameState | null): boolean {
 }
 
 /**
+ * L'attente court. Dit ici, comme isAnswering, plutôt qu'à chaque endroit qui
+ * en dépend.
+ */
+export function isCooldown(state: GameState | null): boolean {
+  return state?.phase === "cooldown";
+}
+
+/**
  * Le camp : l'attente, puis le rattrapage tant qu'il n'a ni question ni tirage.
  * C'est l'écran d'attente, et le seul moment où les Sorts existent, donc le seul
  * d'où la page qui les porte est atteignable. Dit ici, comme isAnswering, plutôt
@@ -124,7 +133,7 @@ export function isAnswering(state: GameState | null): boolean {
  */
 export function isAtCamp(state: GameState | null): boolean {
   return (
-    state?.phase === "cooldown" ||
+    isCooldown(state) ||
     (state?.phase === "recovery" && !state.question && !state.recovery)
   );
 }
@@ -182,7 +191,7 @@ export type PlayView = {
 } & (
   | { card: "question"; question: ServedQuestion }
   | { card: "chest"; chest: ChestView }
-  | { card: "recovery" | "wait" | "result" | "start" }
+  | { card: "recovery" | "cooldown" | "result" | "start" }
 );
 
 /**
@@ -206,11 +215,11 @@ export function playView(
   client: PlayClientState = AT_REST,
 ): PlayView {
   const screen = gameScreen(state);
-  const waiting = isAtCamp(state);
+  const atCamp = isAtCamp(state);
   const verdictId = state.verdict?.questionId;
   // Un aller client ne vaut que pour le verdict qu'il désigne.
   const onVerdict = (id: string | null): boolean => id !== null && id === verdictId;
-  const readingFall = waiting && onVerdict(client.fallenOn);
+  const readingFall = atCamp && onVerdict(client.fallenOn);
   const viewingChest = onVerdict(client.chestOf);
   const next: PlayAction = { label: nextActionLabel(state), move: "advance" };
 
@@ -218,7 +227,7 @@ export function playView(
   // Pendant une question, aucune action à part répondre.
   if (
     state.phase === "recovery" &&
-    !waiting &&
+    !atCamp &&
     (screen.question || screen.verdict)
   ) {
     return { screen, card: "recovery", action: screen.question ? null : next };
@@ -232,10 +241,10 @@ export function playView(
   // dans l'état, et le ferait relire au lieu du poster — sauf le temps de la
   // chute, que le joueur lit avant de redescendre. L'attente porte ses propres
   // boutons ; seul le rattrapage prêt à démarrer avance d'ici.
-  if (waiting && !readingFall) {
+  if (atCamp && !readingFall) {
     return {
       screen,
-      card: "wait",
+      card: "cooldown",
       action: state.phase === "recovery" ? next : null,
     };
   }
@@ -314,6 +323,6 @@ function recoveryLine(
     total: recovery.total,
     successes: recovery.successes,
     required: recovery.required,
-    result: over ? (recovery.resumes ? "resumed" : "waiting") : null,
+    resumes: over ? recovery.resumes : null,
   };
 }

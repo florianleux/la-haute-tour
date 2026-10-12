@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockedByMaintenance, fallQuestionId, gameScreen, isAnswering, nextActionLabel, playView } from '../../utils/phase'
+import { blockedByMaintenance, fallQuestionId, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView } from '../../utils/phase'
 import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
@@ -57,17 +57,42 @@ describe('écran de jeu', () => {
     const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, required: 1 }
 
     expect(gameScreen(state({ phase: 'recovery', recovery: ongoing, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 0, required: 1, result: null })
+      .toEqual({ position: 2, total: 3, successes: 0, required: 1, resumes: null })
 
     const resumed = { total: 3, played: 1, successes: 1, resumes: true, sealed: true, required: 1 }
 
     expect(gameScreen(state({ phase: 'recovery', recovery: resumed, verdict })).recovery)
-      .toEqual({ position: 2, total: 3, successes: 1, required: 1, result: 'resumed' })
+      .toEqual({ position: 2, total: 3, successes: 1, required: 1, resumes: true })
 
     const failed = { total: 3, played: 3, successes: 0, resumes: false, sealed: true, required: 1 }
 
-    expect(gameScreen(state({ phase: 'recovery', recovery: failed, verdict })).recovery?.result)
-      .toBe('waiting')
+    expect(gameScreen(state({ phase: 'recovery', recovery: failed, verdict })).recovery?.resumes)
+      .toBe(false)
+  })
+})
+
+describe('camp (écran d attente)', () => {
+  it('sert l attente elle-même', () => {
+    expect(isAtCamp(state({ phase: 'cooldown', verdict }))).toBe(true)
+  })
+
+  it('sert le rattrapage prêt à démarrer', () => {
+    expect(isAtCamp(state({ phase: 'recovery' }))).toBe(true)
+  })
+
+  // Le verdict de la question qui a pris la dernière vie reste dans l'état : il
+  // ne doit pas faire relire le rattrapage au lieu du poster.
+  it('sert le rattrapage prêt à démarrer malgré le verdict de la dernière vie', () => {
+    expect(isAtCamp(state({ phase: 'recovery', verdict }))).toBe(true)
+  })
+
+  it('cède la place au rattrapage en cours, question servie comme verdict à lire', () => {
+    const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, required: 1 }
+
+    expect(isAtCamp(state({ phase: 'recovery', recovery: ongoing, question })))
+      .toBe(false)
+    expect(isAtCamp(state({ phase: 'recovery', recovery: ongoing, verdict })))
+      .toBe(false)
   })
 })
 
@@ -184,7 +209,7 @@ describe('carte de jeu', () => {
       .toEqual({ card: 'result', action: { label: 'Suivant', move: 'enterChest', chestOf: 'q2' } })
     // Un Mimic bascule en attente : le poster passe devant l'écran du coffre.
     expect(card({ phase: 'cooldown', lives: 0, verdict: right, chest: { opened: true, mimic: true, spell: null } }, { chestOf: verdict.questionId, fallenOn: null }))
-      .toEqual({ card: 'wait', action: null })
+      .toEqual({ card: 'cooldown', action: null })
   })
 
   it('fait lire le verdict de la dernière vie avant le poster', () => {
@@ -193,12 +218,12 @@ describe('carte de jeu', () => {
     expect(card(fallen, { chestOf: null, fallenOn: verdict.questionId }))
       .toEqual({ card: 'result', action: { label: 'Redescendre', move: 'leaveFall' } })
     // Rechargée en pleine attente, la page va droit au poster.
-    expect(card(fallen)).toEqual({ card: 'wait', action: null })
+    expect(card(fallen)).toEqual({ card: 'cooldown', action: null })
   })
 
   it('montre le poster, pas un verdict périmé, quand l attente s achève', () => {
     expect(card({ phase: 'recovery', lives: 0, verdict }))
-      .toEqual({ card: 'wait', action: { label: 'Commencer', move: 'advance' } })
+      .toEqual({ card: 'cooldown', action: { label: 'Commencer', move: 'advance' } })
   })
 
   it('porte question et verdict du rattrapage sur la même carte', () => {

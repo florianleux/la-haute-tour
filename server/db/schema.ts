@@ -73,7 +73,7 @@ export const users = sqliteTable('users', {
   introDoneAt: integer('intro_done_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
-  /** When the wait ends. Null outside a wait. The phase derives from it. */
+  /** When the cooldown ends. Null outside a cooldown. The phase derives from it. */
   cooldownUntil: integer('cooldown_until', { mode: 'timestamp' }),
   /**
    * Quand l'attente a commencé. Null hors attente.
@@ -147,12 +147,12 @@ export const users = sqliteTable('users', {
    */
   streak: integer('streak').notNull().default(0),
   /**
-   * Questions vues depuis toujours, tous étages et toutes tentatives confondus.
-   * Ne redescend jamais, pas même à la remise à zéro d'un joueur.
+   * Questions vues depuis la dernière remise à zéro du joueur, tous étages et
+   * toutes tentatives confondus. Ne redescend jamais d'ici là.
    *
    * Porté plutôt que compté, pour la raison qui vaut à `floorSeen`. Et il ne se
    * déduit pas des questions vues : celles-ci ne gardent qu'une ligne par
-   * question, à vie.
+   * question, jusqu'à la remise à zéro.
    */
   seenTotal: integer('seen_total').notNull().default(0),
   /**
@@ -350,7 +350,7 @@ export const missedPool = sqliteTable('missed_pool', {
 /**
  * The questions drawn for one recovery, in the order they are played. Rows exist
  * only while a recovery is under way: every question is played, and the run's
- * outcome — lives back, or a shorter wait — is settled when the last one is.
+ * outcome — lives back, or a shorter cooldown — is settled when the last one is.
  * See specs/mecanique.md#déroulement-du-rattrapage.
  */
 export const recoveryQuestions = sqliteTable('recovery_questions', {

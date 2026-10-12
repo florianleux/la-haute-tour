@@ -62,7 +62,7 @@ type PlayerState = Partial<typeof schema.users.$inferInsert>
  * d'une dernière vie perdue — pas la plus courte d'un rattrapage manqué, qu'il
  * lui faut alors épeler. Voir server/utils/mechanics.ts, cooldownFields().
  */
-function waitAround(state: PlayerState): Pick<PlayerState, 'cooldownStartedAt' | 'cooldownBaseMs'> {
+function cooldownAround(state: PlayerState): Pick<PlayerState, 'cooldownStartedAt' | 'cooldownBaseMs'> {
   const until = state.cooldownUntil
 
   if (!(until instanceof Date)) {
@@ -87,7 +87,7 @@ export async function createPlayer(db: Database, state: PlayerState = {}): Promi
       // Une attente a un début et une durée, toujours : c'est d'eux que Répit
       // la recalcule. Déduits de l'échéance quand le test ne dit que celle-ci,
       // pour qu'aucun test ne monte un joueur que le jeu ne saurait produire.
-      ...waitAround(state),
+      ...cooldownAround(state),
       ...state,
     })
     .returning()

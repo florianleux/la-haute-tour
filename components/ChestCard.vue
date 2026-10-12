@@ -144,7 +144,7 @@
         </div>
       </div>
 
-      <CardButton
+      <BaseCardButton
         v-if="!chest.opened"
         label="OUVRIR"
         anchor="card-bottom"
@@ -152,7 +152,7 @@
         @click="burst"
       />
       <!-- playView en donne toujours un une fois le coffre ouvert. -->
-      <CardButton
+      <BaseCardButton
         v-else-if="action"
         :label="action.label"
         anchor="card-bottom"

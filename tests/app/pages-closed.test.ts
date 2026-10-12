@@ -15,7 +15,7 @@ const OPEN_PAGES = ['login.vue', 'refus.vue']
  */
 const OTHER_ADMIN_PAGES = [
   'test/play.vue',
-  'test/wait.vue',
+  'test/cooldown.vue',
   'test/verdict.vue',
   'test/chest.vue',
   'test/recovery.vue',

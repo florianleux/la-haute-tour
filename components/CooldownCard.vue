@@ -1,8 +1,8 @@
 <template>
   <div class="fixed inset-0 z-0 bg-[url(/images/cooldown-bg.webp)] bg-cover bg-center" />
 
-  <!-- Les objets du camp, entre le décor et le poster. Voir WaitCamp. -->
-  <WaitCamp
+  <!-- Les objets du camp, entre le décor et le poster. Voir CooldownCamp. -->
+  <CooldownCamp
     :ready="action !== null"
     :advancing="advancing"
     :team="team"
@@ -76,9 +76,9 @@
          « 4m 12s » en « 4M 12S ». -->
     <h1
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
-      :class="state.phase === 'cooldown' ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
+      :class="inCooldown ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
     >
-      {{ state.phase === 'cooldown' ? (waitRemaining || 'Attente') : 'Attente terminée' }}
+      {{ inCooldown ? (cooldownRemaining || 'Attente') : 'Attente terminée' }}
     </h1>
 
     <!-- Le panneau de parchemin porte tout ce que l'écran a à dire : décompte,
@@ -103,7 +103,7 @@
            deux fois le même chiffre à dix centimètres d'écart. Une seule phrase
            pour les deux phases : ce que le joueur a à faire, attendre ou jouer. -->
       <p class="text-[4.16cqw]">
-        {{ state.phase === 'cooldown' && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
+        {{ inCooldown && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
       </p>
 
       <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
@@ -129,16 +129,16 @@
         </div>
       </div>
 
-      <ParchmentNote v-if="loading">
+      <BaseParchmentNote v-if="loading">
         Mise à jour de ta partie…
-      </ParchmentNote>
+      </BaseParchmentNote>
     </div>
 
     <!-- Les deux actions ne coexistent jamais : « Passer l'attente » n'existe
          que pour l'admin pendant le cooldown, « Commencer »
          qu'une fois l'attente échue. Un seul emplacement suffit donc, entre le
          bas du panneau et les pierres des piquets. -->
-    <CardButton
+    <BaseCardButton
       v-if="action"
       :label="action.label"
       anchor="poster"
@@ -146,7 +146,7 @@
       :loading="advancing"
       @click="$emit('advance')"
     />
-    <CardButton
+    <BaseCardButton
       v-else-if="isAdmin"
       label="Passer"
       anchor="poster"
@@ -159,7 +159,7 @@
 
 <script setup lang="ts">
 // L'écran d'attente — cooldown comme rattrapage prêt à démarrer. Partagé entre
-// la vraie partie (pages/index.vue) et son banc de design (pages/test/wait.vue) :
+// la vraie partie (pages/index.vue) et son banc de design (pages/test/cooldown.vue) :
 // modifier l'un modifie l'autre, comme QuestionCard pour l'ascension.
 //
 // Reskin parchemin/médiéval au même titre que l'ascension : les deux phases se
@@ -170,12 +170,12 @@ import type { GameState } from '~~/server/utils/game'
 import type { TeamId } from '~~/shared/utils/teams'
 import type { GameScreen, PlayAction } from '~~/utils/phase'
 
-defineProps<{
+const props = defineProps<{
   state: GameState
   screen: GameScreen
   /** « Commencer » une fois l'attente échue, null pendant. Voir utils/phase.ts (playView). */
   action: PlayAction | null
-  waitRemaining: string
+  cooldownRemaining: string
   loading: boolean
   isAdmin: boolean
   skipping: boolean
@@ -185,6 +185,8 @@ defineProps<{
 }>()
 
 defineEmits<{ skipCooldown: [], advance: [] }>()
+
+const inCooldown = computed(() => isCooldown(props.state))
 
 // La place et la taille du poster, partagées par son image et son contenu.
 const POSTER_BOX = 'bottom-[calc(4svh+1.5rem)] left-1/2 aspect-918/980 w-[min(calc(100%-3rem),calc((94svh-3rem)*918/980))] -translate-x-1/2 translate-y-[5svh]'

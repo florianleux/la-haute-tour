@@ -9,4 +9,13 @@ export default withNuxt({
   // parcourir. Le serveur de dev l'ignore déjà pour la même raison, voir
   // `nuxt.config.ts`.
   ignores: ['.claude/**'],
+}, {
+  // Un composant métier compose les primitives Base*, il n'écrit jamais un
+  // contrôle brut : la règle de CLAUDE.md (Composants globaux), tenue ici plutôt
+  // qu'à la relecture.
+  files: ['app.vue', 'components/**/*.vue', 'layouts/**/*.vue', 'pages/**/*.vue'],
+  ignores: ['components/ui/**'],
+  rules: {
+    'vue/no-restricted-html-elements': ['error', 'button', 'input', 'select', 'textarea'],
+  },
 })

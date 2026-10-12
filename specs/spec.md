@@ -18,6 +18,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Ascension** | `ascent` | Progression du joueur à travers les questions de l'étage courant. |
 | **Tentative** | `attempt` | Période de jeu qui va des vies pleines jusqu'à la perte de la dernière vie. S'achève en attente, ou se poursuit si une contestation rend une vie. Sa longueur se compte en questions vues, et n'est inscrite qu'au moment où la suivante s'ouvre. |
 | **Vies** | `lives` | Unités perdues sur erreur. Restaurées au nombre plein à chaque reprise après attente. |
+| **Début de partie** | `startOfGame` | Étage 1, vies pleines selon le jeu de règles : l'état d'un compte neuf — réel, test ou de dev — comme d'un joueur remis à zéro. |
 | **Vue** | `seen` | Question résolue en ascension, juste ou fausse. Seule unité de progression : c'est le nombre de vues qui fait passer d'étage et termine la partie. |
 | **Réservation** | `reservation` | La question servie au joueur, horodatée, en attente de résolution. Une seule à la fois. Se résout par une réponse ou par l'expiration du timer. |
 | **État de jeu** | `gameState` | Ce que le serveur répond à « où en est le joueur » : phase, étage, vies, et ce que la phase contient. Servi par un seul endpoint de lecture, sans effet. |
@@ -59,6 +60,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Introduction** | `intro` | La scène où L'Inconnu accueille le joueur, lui demande son nom et ce qu'il est, puis lui raconte la Tour et comment y monter (`/intro`). Jouée à la première connexion, et à chaque connexion suivante tant qu'elle n'est pas finie : toute autre page y ramène. Finie quand le joueur clique « Commencer l'ascension » (`introDoneAt`), qui l'envoie au jeu. Rejouable ensuite, sans rien changer à sa partie. |
 | **Défilé** | `reveal` | La sortie d'une réplique, caractère par caractère. Son rythme (`revealMs`) est celui du jeu, sauf quand un dialogue en demande un autre. |
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
+| **Erreur contestable** | `disputableError` (`isDisputable`) | Une erreur que le joueur peut encore contester. Les conditions vivent dans [`validation.md`](./validation.md#quand). |
 | **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Visible de l'administration seulement, et non contestable. |
 | **Whitelist** | `whitelist` | Discord IDs autorisés à s'inscrire, alimentée manuellement. |
 | **Énoncé** | `statement` | Le texte de la question posée au joueur. |
@@ -72,7 +74,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Succès** | `achievement` | Une distinction débloquée en jouant, acquise à vie, sans aucun effet sur la partie. Côté joueur, leur écran s'appelle **Haut-faits**. Le catalogue est fixe, écrit dans le code, jamais administrable. À ne pas confondre avec les **Réussites** (`poolSuccesses`) du rattrapage, qui portent le même mot français sans rien partager d'autre. Voir [`succes.md`](./succes.md). |
 | **Palmarès** | `achievementsHeld` | Les succès qu'un joueur a déjà acquis, portés par sa ligne comme il porte ses compteurs. La table des succès reste la source — elle seule les date, et c'est elle que la page Succès lit ; le palmarès n'existe que pour ne pas la relire à chaque requête. |
 | **Série** | `streak` | Bonnes réponses d'affilée dans la tentative en cours, sans qu'aucune vie ait été perdue. Toute erreur la casse, toute nouvelle tentative la remet à zéro — c'est ce qui fait qu'atteindre la taille d'un étage prouve qu'on l'a passé sans faute. |
-| **Vues totales** | `seenTotal` | Questions vues depuis toujours, tous étages et toutes tentatives confondus. Ne redescend jamais, pas même à la remise à zéro d'un joueur. |
+| **Vues totales** | `seenTotal` | Questions vues depuis la dernière remise à zéro du joueur, tous étages et toutes tentatives confondus. Ne redescend jamais d'ici là. |
 | **Jour joué** | `playedDay` | Un jour où le joueur a résolu au moins une question, daté en Europe/Paris. Ouvrir le jeu sans jouer n'en fait pas un : c'est la partie qui compte, pas la visite. Le rattrapage en est une : on y répond à des questions. |
 | **Assiduité** | `playStreak` | Jours joués qui se suivent, le dernier compris. Un jour sauté la ramène à un. À ne pas confondre avec la **Série** (`streak`), qui compte des réponses et non des jours. |
 | **Premier arrivé** | `firstAscension` | Le premier joueur à avoir franchi l'étage 1, pour tout le jeu. Réclamé une seule fois et jamais repris. Ni les joueurs test ni l'admin ne le réclament. Aucun classement n'existe pour le désigner : la place se prend à l'écriture, tant qu'elle est libre. |
@@ -89,6 +91,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Tirage de cible** | `drawTarget` | Le geste serveur qui change une catégorie en quelqu'un : filtrer les éligibles, les classer par progression, puis tirer en pondérant par le rang. Rend personne quand le pool est vide. |
 | **Cible éligible** | `eligible` | Un joueur que le tirage garde : ni en fin de partie, ni jamais commencé, et lié au lanceur. Le filtre passe avant le classement, pour qu'un écarté ne pèse pas dans la distribution. |
 | **Commencé** | `hasStarted` | Le joueur a vu au moins une question. Ce n'est pas une phase : un compte jamais ouvert est en ascension comme un autre, mais aucun effet ne l'atteindrait. |
+| **Sort lié à l'attente** | `cooldownBound` | Un sort qui agit sur l'attente en cours de sa cible plutôt que sur sa prochaine tentative : Répit, Indulgence, Purge. Agit dès le lancer, et meurt avec l'attente visée. Voir [ADR 0004](../docs/adr/0004-les-sorts-lies-a-l-attente.md). |
 | **Attente visée** | `targetCooldownStartedAt` | L'attente **de la cible** sur laquelle un sort lié à l'attente agit, par son début. Distincte de celle du lancer dès qu'on vise quelqu'un d'autre ; nulle quand la cible n'attend pas. |
 | **Équipe** | `team` | L'une des deux appartenances, assignée par l'admin : les guildes, Méridiens (`MIDI`) ou Fauteuillistes (`TLM`). Elle ne sert qu'à dériver allié ou ennemi au moment d'un lancer. Facultative : l'admin n'en a pas. Voir [`equipes.md`](./equipes.md). |
 | **Magie blanche** | `boon` | La face positive d'un sort, appliquée sur soi ou un allié. |

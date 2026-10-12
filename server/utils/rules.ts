@@ -18,9 +18,9 @@ export interface FloorRules {
   poolSizeForRecovery: number
   /** Consecutive recovery successes that take a question out of the pool. */
   poolSuccessesToLeave: number
-  /** Wait after the last life is lost. */
+  /** Cooldown after the last life is lost. */
   cooldownMs: number
-  /** Shorter wait after a recovery where nothing was answered right. */
+  /** Shorter cooldown after a recovery where nothing was answered right. */
   cooldownAfterFailedRecoveryMs: number
   /**
    * How late an answer may arrive and still count. The deadline is the server's,
