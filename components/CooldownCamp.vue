@@ -200,11 +200,11 @@ const layers = computed((): { depth: string, box: string, origin: string, items:
     box: GROUND,
     origin: 'origin-bottom',
     items: [
-      { src: '/images/cooldown-scroll.webp', place: 'left-[32.55%] top-[84.44%] w-[14.95%]', title: 'Volumen', click: { to: '/volumen' } },
+      { src: '/images/cooldown-scroll.webp', place: 'left-[32.55%] top-[85.94%] w-[14.95%]', title: 'Volumen', click: { to: '/volumen' } },
       // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
       // devant eux, comme sur l'illustration.
       { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { to: '/inventaire' } },
-      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[80%] w-[16.61%]', title: 'Grimoire', click: { to: '/sorts' } },
+      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { to: '/sorts' } },
     ],
   },
 ])

@@ -45,9 +45,14 @@
        La hauteur disponible retranche cet ancrage et le `p-6` du gabarit, contre le
        bord intérieur duquel le poster se mesure.
 
-       Puis le poster descend de 5svh, sans changer de taille : la taille garde
-       le calcul ci-dessus, le décalage vient après, en translate. Plus bas, il
-       dégage le ciel et laisse le décor respirer au-dessus de sa bannière.
+       Puis le poster se décale, sans changer de taille : la taille garde le
+       calcul ci-dessus, le décalage vient après, en translate. En 16:9 et plus
+       large, il descend de 5svh : il dégage le ciel et laisse le décor respirer
+       au-dessus de sa bannière. Plus étroite, la fenêtre fait grandir les objets
+       du sol (calés sur la hauteur) face au poster (calé sur la largeur) : il
+       remonte alors d'un sixième de ce qui manque à la largeur pour faire du
+       16:9, plafonné à 8svh, et laisse le sol aux objets — sans que sa
+       bannière ne vienne buter contre le haut de l'écran.
 
        Transparent aux clics, sauf ce qu'il porte : sa boîte rectangulaire
        déborde de l'image détourée et recouvrait la corde du camp, qui ne se
@@ -189,6 +194,6 @@ defineEmits<{ skipCooldown: [], advance: [] }>()
 const inCooldown = computed(() => isCooldown(props.state))
 
 // La place et la taille du poster, partagées par son image et son contenu.
-const POSTER_BOX = 'bottom-[calc(4svh+1.5rem)] left-1/2 aspect-918/980 w-[min(calc(100%-3rem),calc((94svh-3rem)*918/980))] -translate-x-1/2 translate-y-[5svh]'
+const POSTER_BOX = 'bottom-[calc(4svh+1.5rem)] left-1/2 aspect-918/980 w-[min(calc(100%-3rem),calc((94svh-3rem)*918/980))] -translate-x-1/2 translate-y-[calc(5svh_-_min(8svh,max(0px,(100svh*16/9_-_100vw)/6)))]'
 
 </script>
