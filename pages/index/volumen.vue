@@ -61,29 +61,25 @@
       <!-- Le papier : de quoi lire, une fois déroulé, et ré-enroulé avec lui
            à la fermeture. -->
       <div
-        class="absolute inset-x-[calc(var(--k)*var(--text-x))] top-[calc(var(--k)*var(--cut-t))] bottom-[calc(var(--k)*var(--cut-b)+1.5rem)] flex flex-col"
+        class="absolute inset-x-[calc(var(--k)*var(--text-x))] top-[calc(var(--k)*var(--cut-t))] bottom-[calc(var(--k)*var(--cut-b)+1.5rem)] flex flex-col p-4 sm:p-8"
         :class="closing ? 'motion-safe:animate-roll-up-text' : 'motion-safe:animate-fade-in [--enter-delay:0.95s]'"
       >
-        <div class="flex items-start justify-between gap-4">
-          <p class="text-sm text-amber-900/70">
-            Les questions que tu as croisées dans la Tour, avec leurs réponses.
-            Relis celles qui t'ont échappé : le rattrapage les tire dans ce que tu as à revoir.
-          </p>
-          <BaseIconButton label="Fermer le Volumen" @click="close">
-            <path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z" />
-          </BaseIconButton>
-        </div>
+        <!-- La croix, dans le coin du papier : elle ne prend pas de ligne à la
+             lecture. -->
+        <BaseIconButton label="Fermer le Volumen" class="absolute right-2 top-2 z-10" @click="close">
+          <path d="M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z" />
+        </BaseIconButton>
 
-        <!-- Les listes portent encore le thème sombre : elles se lisent sur une
-             ardoise posée sur le papier, en attendant leur version parchemin. -->
-        <div class="mt-4 min-h-0 flex-1 overflow-y-auto rounded-xl bg-slate-950/85 p-4 text-slate-100">
-          <BaseTabs v-model="tab" :tabs="tabs" />
-
-          <!-- Chaque onglet garde sa page quand on passe à un autre et qu'on revient. -->
-          <KeepAlive>
-            <QuestionLogList :key="tab" :tab="tab" class="mt-6" />
-          </KeepAlive>
-        </div>
+        <!-- Chaque onglet garde sa page et sa question choisie quand on passe
+             à un autre et qu'on revient. Les onglets se posent au-dessus de la
+             liste, pas de la question relue. -->
+        <KeepAlive>
+          <QuestionLogList :key="tab" :tab="tab" class="flex-1">
+            <template #tabs>
+              <BaseTabs v-model="tab" :tabs="tabs" parchment />
+            </template>
+          </QuestionLogList>
+        </KeepAlive>
       </div>
     </div>
   </BaseDialog>

@@ -1,13 +1,17 @@
 <template>
   <!-- Le juste jaillit, juste après le tampon du médaillon, et lâche une
-       gerbe d'étincelles à son plus gros. Le faux, lui, secoue la tête. -->
+       gerbe d'étincelles à son plus gros. Le faux, lui, secoue la tête. Relu
+       au Volumen, rien ne bouge : la question est jugée depuis longtemps. -->
   <PlayText
     role="headline"
-    :class="verdict.correct ? 'relative text-emerald-700 motion-safe:animate-cheer [--enter-delay:0.1s]' : 'text-rose-700 motion-safe:animate-shake [--enter-delay:0.1s]'"
+    :class="[
+      verdict.correct ? 'relative text-emerald-700' : 'text-rose-700',
+      review ? '' : verdict.correct ? 'motion-safe:animate-cheer [--enter-delay:0.1s]' : 'motion-safe:animate-shake [--enter-delay:0.1s]',
+    ]"
   >
-    {{ verdict.correct ? 'Correct !' : 'Incorrect...' }}
+    {{ headline }}
     <SparkleSpray
-      v-if="verdict.correct"
+      v-if="verdict.correct && !review"
       :sparks="CHEER_SPRAY"
       class="drop-shadow-[0_0_4px_#6ee7b7]"
     />
@@ -27,7 +31,9 @@
     {{ verdict.answerLabel }}
   </PlayText>
 
+  <!-- Au Volumen, une question sue n'a rien à corriger : sa saisie se tait. -->
   <PlayText
+    v-if="!(review && verdict.correct)"
     role="aside"
     class="text-amber-800/80"
   >
@@ -72,13 +78,25 @@
 // sort du rattrapage de l'autre — et reste donc chez l'appelant.
 import type { Verdict } from '~~/server/utils/game'
 
-defineProps<{
+const props = defineProps<{
   verdict: Verdict
   disputable: boolean
   disputing: boolean
   /** La vie perdue était la dernière : la tentative s'arrête sur ce verdict. */
   lastLife?: boolean
+  /**
+   * Relu au Volumen plutôt que rendu en jeu : « Sue » ou « Non sue », sans
+   * animation, et la saisie d'une question sue tue. Voir specs/ecrans.md#volumen.
+   */
+  review?: boolean
 }>()
+
+const headline = computed(() => {
+  if (props.review) {
+    return props.verdict.correct ? 'Sue' : 'Non sue'
+  }
+  return props.verdict.correct ? 'Correct !' : 'Incorrect...'
+})
 
 defineEmits<{ dispute: [] }>()
 

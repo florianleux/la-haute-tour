@@ -141,9 +141,9 @@ Trois onglets :
 
 Dans **Sues** et **Toutes**, la vue la plus récente en tête.
 
-Chaque entrée montre l'**énoncé**, la **réponse affichée**, la **saisie du joueur** et le **verdict**. Une question encore au Pool Échecs montre en plus ses **Réussites** sur le seuil de sortie — ce qui reste à faire pour qu'elle quitte le pool.
+La liste occupe la **gauche** du parchemin, sous les onglets, et défile : chaque ligne montre l'**énoncé** et le **verdict** (✓ ou ✗). Un clic sur une ligne l'ouvre à **droite**, dans les lignes du verdict de la Tour, en plus petit et sans animation : **Sue** ou **Non sue** (vert ou rouge), l'**énoncé**, la **réponse affichée**, et la **saisie du joueur** sur une question non sue — une question sue n'a rien à corriger. Une question encore au Pool Échecs montre en plus ses **Réussites** sur le seuil de sortie — ce qui reste à faire pour qu'elle quitte le pool. Sur un écran étroit, la question ouverte passe au-dessus de la liste. Chaque onglet garde sa question ouverte.
 
-**Un bouton de contestation** sur chaque erreur contestable, quel que soit l'onglet où elle se lit. La règle de ce qui est contestable ne change pas : voir [`validation.md`](./validation.md#quand). Une contestation en cours, ou refusée, se lit à la place du bouton.
+**Un lien de contestation**, sous la question ouverte, sur chaque erreur contestable, quel que soit l'onglet où elle se lit. La règle de ce qui est contestable ne change pas : voir [`validation.md`](./validation.md#quand). Une contestation en cours, ou refusée, se lit à la place du bouton.
 
 **Vingt questions par page**, et une pagination — précédent, numéros, suivant. Chaque onglet a la sienne.
 
