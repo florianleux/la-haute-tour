@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
 import { inventory } from '../../server/db/schema'
-import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { readGameState, readMissedPool, readQuestionLog, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { castFromInventory, readInventory } from '../../server/utils/inventory'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
@@ -134,6 +134,34 @@ describe('budget de requêtes des chemins chauds', () => {
    * Le lancer, lui, tire une cible : ce tirage doit rester une requête, jamais
    * une par joueur de l'équipe. Voir specs/bonus.md#tirage-de-la-cible.
    */
+  // Une page du Volumen se lit à chaque clic de pagination : la page et son
+  // total partent dans le même lot. Voir specs/ecrans.md#volumen.
+  it('lit une page du Volumen en un aller-retour, total compris', async () => {
+    await readMissedPool(db, player, { limit: 20, offset: 0 })
+    expect(queries()).toBe(1)
+
+    await readQuestionLog(db, player, { limit: 20, offset: 0, filter: 'all' })
+    expect(queries()).toBe(1)
+  })
+
+  // Le total d'un onglet ne bouge pas d'une page à l'autre : il se compte en
+  // page 1, l'écran le garde ensuite. Compter, c'est lire chaque ligne comptée —
+  // tout ce que le joueur a vu, à chaque clic. Voir specs/ecrans.md#volumen.
+  it('ne recompte pas le Volumen au-delà de la première page', async () => {
+    const counting = /count\(\*\)/
+    const sql = captureSql(db)
+
+    sql()
+    await readQuestionLog(db, player, { limit: 20, offset: 0, filter: 'all' })
+    expect(sql()).toMatch(counting)
+
+    const later = await readQuestionLog(db, player, { limit: 20, offset: 20, filter: 'all' })
+    const missed = await readMissedPool(db, player, { limit: 20, offset: 20 })
+    expect(sql()).not.toMatch(counting)
+    expect(later.total).toBeNull()
+    expect(missed.total).toBeNull()
+  })
+
   describe('la page Sorts et le lancer', () => {
     const IN_COOLDOWN = { lives: 0, cooldownUntil: new Date(NOW.getTime() + 60_000) }
 

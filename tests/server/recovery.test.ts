@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { attempts, missedPool, recoveryQuestions, seenQuestions } from '../../server/db/schema'
-import { readGameState, readMissedPool, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import type { Database } from '../../server/db/client'
@@ -82,38 +82,6 @@ describe('attente et rattrapage', () => {
 
       expect(state.phase).toBe('recovery')
       expect(state.lives).toBe(0)
-    })
-  })
-
-  describe('Pool Échecs affiché', () => {
-    it('sert le pool avec les réponses, du dernier échec au plus ancien', async () => {
-      await fillPool(3)
-
-      const page = await readMissedPool(db, player, { limit: 10, offset: 0, order: 'desc' })
-
-      expect(page.entries).toHaveLength(3)
-      expect(page.entries[0]).toMatchObject({ statement: 'Question 2 ?', answerLabel: 'RÉPONSE 2' })
-      expect(page.entries.at(-1)).toMatchObject({ statement: 'Question 0 ?' })
-      expect(page.total).toBe(3)
-    })
-
-    it('inverse le tri à la demande', async () => {
-      await fillPool(3)
-
-      const page = await readMissedPool(db, player, { limit: 10, offset: 0, order: 'asc' })
-
-      expect(page.entries[0]).toMatchObject({ statement: 'Question 0 ?' })
-    })
-
-    it('pagine par dix', async () => {
-      await fillPool(12)
-
-      const first = await readMissedPool(db, player, { limit: 10, offset: 0, order: 'desc' })
-      const second = await readMissedPool(db, player, { limit: 10, offset: 10, order: 'desc' })
-
-      expect(first.entries).toHaveLength(10)
-      expect(second.entries).toHaveLength(2)
-      expect(first.total).toBe(12)
     })
   })
 

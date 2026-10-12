@@ -1,5 +1,5 @@
 import { count, eq, min } from 'drizzle-orm'
-import { readPhase } from './game'
+import { requireCamp } from './camp'
 import {
   castLogQuery,
   castSpell,
@@ -9,7 +9,7 @@ import {
   toReceivedViews,
 } from './effects'
 import { rulesForFloor } from './rules'
-import { inventory, recoveryQuestions } from '../db/schema'
+import { inventory } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { CastView, ReceivedView } from './effects'
@@ -60,7 +60,9 @@ export interface InventoryView {
  *
  * Refusé hors du camp : le lancer n'existe que là, donc la page qui montre
  * l'inventaire n'est pas atteignable ailleurs — URL comprise, d'où le refus ici
- * et pas seulement dans la navigation.
+ * et pas seulement dans la navigation. Le lancer après l'attente reste compté
+ * sur elle : son début (`cooldownStartedAt`) ne s'efface qu'avec le rattrapage
+ * réussi.
  * Voir specs/bonus.md#sorts et specs/ecrans.md#sorts.
  */
 export async function readInventory(db: Database, user: User, now: Date): Promise<InventoryView> {
@@ -87,41 +89,6 @@ export async function castFromInventory(
   await castSpell(db, user, spell, kind, now)
 
   return readSpellPage(db, user)
-}
-
-/**
- * Les Sorts n'existent qu'au camp : l'attente, puis le rattrapage tant qu'il
- * n'est pas tiré. Ni la page qui les montre, ni le lancer qui les consomme n'ont
- * de sens ailleurs — URL comprise, d'où le refus ici et pas seulement dans la
- * navigation. Même règle que isAtCamp() côté écran.
- * Voir specs/spec.md#glossaire (Camp) et specs/ecrans.md#sorts.
- *
- * La phase se lit par `readPhase`, et non par l'état complet : une garde ne doit
- * pas faire avancer la partie qu'elle protège. Le rattrapage tiré se lit à ses
- * questions, qui n'existent que tant qu'il est en cours. Le lancer après
- * l'attente reste compté sur elle : son début (`cooldownStartedAt`) ne s'efface
- * qu'avec le rattrapage réussi.
- */
-async function requireCamp(db: Database, user: User, now: Date): Promise<void> {
-  const phase = await readPhase(db, user, now)
-
-  if (phase === 'cooldown') {
-    return
-  }
-
-  if (phase === 'recovery') {
-    const [drawn] = await db
-      .select({ userId: recoveryQuestions.userId })
-      .from(recoveryQuestions)
-      .where(eq(recoveryQuestions.userId, user.id))
-      .limit(1)
-
-    if (!drawn) {
-      return
-    }
-  }
-
-  throw createError({ statusCode: 403, statusMessage: 'Les Sorts ne se lancent qu\'au camp' })
 }
 
 /**

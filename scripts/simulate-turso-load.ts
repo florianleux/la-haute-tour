@@ -340,7 +340,7 @@ async function playerLoop(
 
       // L'attente : le joueur ouvre sa fiche de révision, puis ses Sorts.
       op = 'GET /api/game/pool'
-      await readMissedPool(db, await authenticated(db, id), { limit: 20, offset: 0, order: 'desc' })
+      await readMissedPool(db, await authenticated(db, id), { limit: 20, offset: 0 })
 
       if (SPELLS) {
         try {

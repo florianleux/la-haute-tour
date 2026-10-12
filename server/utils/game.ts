@@ -1,4 +1,5 @@
 import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm'
+import type { RunnableQuery } from 'drizzle-orm/runnable-query'
 import {
   canDrawRecovery,
   cooldownFields,
@@ -303,7 +304,8 @@ async function poolSize(db: Database, user: User): Promise<number> {
   return row.value
 }
 
-async function hasRecoveryRun(db: Database, userId: number): Promise<boolean> {
+/** Un rattrapage est tiré : ses questions n'existent que tant qu'il est en cours. */
+export async function hasRecoveryRun(db: Database, userId: number): Promise<boolean> {
   const [row] = await db
     .select({ value: count() })
     .from(recoveryQuestions)
@@ -1273,94 +1275,174 @@ async function finishRecovery(
   )
 }
 
-export interface MissedPoolEntryView {
+/**
+ * Une question vue, telle que le Volumen la relit : l'énoncé avec sa réponse —
+ * c'est une fiche de révision, pas une punition — ce que le joueur avait saisi,
+ * et ce qu'il en reste à faire si elle est encore au Pool Échecs.
+ * Voir specs/ecrans.md#volumen.
+ */
+export interface QuestionLogEntryView {
   questionId: string
   statement: string
-  /** Shown here on purpose: the cooldown screen is a revision sheet, not a punishment. */
   answerLabel: string
   /** What the player answered — justifies disputing. Null on timeout. */
   submittedAnswer: string | null
-  poolSuccesses: number
-  lastFailedAt: string
+  correct: boolean
+  /** Ses Réussites, tant qu'elle est au Pool Échecs ; null ailleurs. */
+  poolSuccesses: number | null
   /** Statut de la contestation : none si pas disputée, pending en attente d'arbitrage, rejected si refusée. */
   disputeStatus: 'none' | 'pending' | 'rejected'
 }
 
-export interface MissedPoolPage {
-  entries: MissedPoolEntryView[]
-  total: number
+export interface QuestionLogPage {
+  entries: QuestionLogEntryView[]
+  /**
+   * Compté en page 1 seulement, null au-delà : le total ne bouge pas d'une page
+   * à l'autre, et compter lit chaque ligne comptée — Turso facture chacune.
+   * L'écran garde celui de la page 1.
+   */
+  total: number | null
+  /** Le seuil de sortie du pool, pour lire les Réussites sur ce qu'il exige. */
+  poolSuccessesToLeave: number
 }
 
-export interface MissedPoolQuery {
+export interface QuestionLogQuery {
   limit: number
   offset: number
-  /** By last failure: newest first by default, reversible. */
-  order: 'asc' | 'desc'
 }
 
 /**
- * The missed pool of the player's floor, answers included. Read on its own rather
- * than carried by the game state: it is paged, and the phase doesn't change while
- * the player scrolls it. See specs/ecrans.md.
+ * Ce que les deux lectures du Volumen sélectionnent, joint de la même façon. Une
+ * contestation acceptée a rendu la question juste : il n'y a plus rien à en
+ * dire, elle se lit comme une question jamais contestée.
+ */
+const QUESTION_LOG_COLUMNS = {
+  questionId: seenQuestions.questionId,
+  statement: questions.statement,
+  answerLabel: questions.answerLabel,
+  submittedAnswer: seenQuestions.submittedAnswer,
+  correct: seenQuestions.correct,
+  poolSuccesses: missedPool.poolSuccesses,
+  disputeStatus: sql<QuestionLogEntryView['disputeStatus']>`case when ${disputes.status} in ('pending', 'rejected') then ${disputes.status} else 'none' end`,
+}
+
+/**
+ * Une page du Volumen, et son total quand c'est la première : la page et le
+ * compte partent dans le même lot, un clic de pagination fait un aller-retour.
+ */
+async function questionLogPage(
+  db: Database,
+  user: User,
+  offset: number,
+  rows: RunnableQuery<QuestionLogEntryView[], 'sqlite'> & PromiseLike<QuestionLogEntryView[]>,
+  total: RunnableQuery<{ value: number }[], 'sqlite'>,
+): Promise<QuestionLogPage> {
+  const poolSuccessesToLeave = rulesForFloor(user.currentFloor).poolSuccessesToLeave
+
+  if (offset > 0) {
+    return { entries: await rows, total: null, poolSuccessesToLeave }
+  }
+
+  const [entries, [{ value }]] = await db.batch([rows, total])
+
+  return { entries, total: value, poolSuccessesToLeave }
+}
+
+/**
+ * The missed pool of the player's floor, answers included — the Volumen's first
+ * tab. By last failure, newest first: what resists is what one wants to reread.
+ * See specs/ecrans.md#volumen.
  */
 export async function readMissedPool(
   db: Database,
   user: User,
-  query: MissedPoolQuery,
-): Promise<MissedPoolPage> {
+  query: QuestionLogQuery,
+): Promise<QuestionLogPage> {
   const onThisFloor = and(
     eq(missedPool.userId, user.id),
     eq(missedPool.floor, user.currentFloor),
   )
 
-  const rows = await db
-    .select({
-      questionId: missedPool.questionId,
-      statement: questions.statement,
-      answerLabel: questions.answerLabel,
-      submittedAnswer: seenQuestions.submittedAnswer,
-      poolSuccesses: missedPool.poolSuccesses,
-      lastFailedAt: missedPool.lastFailedAt,
-      disputeStatus: disputes.status,
-    })
-    .from(missedPool)
-    .innerJoin(questions, eq(questions.id, missedPool.questionId))
-    .leftJoin(seenQuestions, and(
-      eq(seenQuestions.userId, missedPool.userId),
-      eq(seenQuestions.questionId, missedPool.questionId),
-    ))
-    .leftJoin(disputes, and(
-      eq(disputes.userId, missedPool.userId),
-      eq(disputes.questionId, missedPool.questionId),
-    ))
-    .where(onThisFloor)
-    .orderBy(query.order === 'asc' ? asc(missedPool.lastFailedAt) : desc(missedPool.lastFailedAt))
+  return questionLogPage(
+    db,
+    user,
+    query.offset,
+    db
+      .select(QUESTION_LOG_COLUMNS)
+      .from(missedPool)
+      .innerJoin(questions, eq(questions.id, missedPool.questionId))
+      .innerJoin(seenQuestions, and(
+        eq(seenQuestions.userId, missedPool.userId),
+        eq(seenQuestions.questionId, missedPool.questionId),
+      ))
+      .leftJoin(disputes, and(
+        eq(disputes.userId, missedPool.userId),
+        eq(disputes.questionId, missedPool.questionId),
+      ))
+      .where(onThisFloor)
+      // L'identifiant départage deux échecs de la même seconde : une page ne
+      // doit pas en reprendre une de la précédente.
+      .orderBy(desc(missedPool.lastFailedAt), asc(missedPool.questionId))
+      .limit(query.limit)
+      .offset(query.offset),
+    db.select({ value: count() }).from(missedPool).where(onThisFloor),
+  )
+}
+
+/**
+ * Les questions vues depuis la dernière remise à zéro, tous étages confondus —
+ * toutes, ou les justes seulement. La plus récente en tête. Les onglets Sues et
+ * Toutes du Volumen. See specs/ecrans.md#volumen.
+ *
+ * Les vingt de la page se choisissent d'abord, dans l'index couvrant des vues
+ * (`seen_questions_user_log_idx`), et seules elles sont jointes : une page
+ * sautée ne coûte qu'une entrée d'index, pas quatre lignes jointes.
+ */
+export async function readQuestionLog(
+  db: Database,
+  user: User,
+  query: QuestionLogQuery & { filter: 'correct' | 'all' },
+): Promise<QuestionLogPage> {
+  const filter = and(
+    eq(seenQuestions.userId, user.id),
+    query.filter === 'correct' ? eq(seenQuestions.correct, true) : undefined,
+  )
+  // L'identifiant départage deux vues de la même seconde, dans le sens de
+  // l'index : il se lit à rebours d'un bout à l'autre, sans rien trier.
+  const newestFirst = [desc(seenQuestions.seenAt), desc(seenQuestions.questionId)]
+
+  const onThisPage = db
+    .select({ questionId: seenQuestions.questionId })
+    .from(seenQuestions)
+    .where(filter)
+    .orderBy(...newestFirst)
     .limit(query.limit)
     .offset(query.offset)
+    .as('on_this_page')
 
-  const [{ value: total }] = await db
-    .select({ value: count() })
-    .from(missedPool)
-    .where(onThisFloor)
-
-  return {
-    total,
-    entries: rows.map((row) => {
-      const disputeStatus: MissedPoolEntryView['disputeStatus']
-        = row.disputeStatus === 'pending' ? 'pending'
-          : row.disputeStatus === 'rejected' ? 'rejected' : 'none'
-
-      return {
-        questionId: row.questionId,
-        statement: row.statement,
-        answerLabel: row.answerLabel,
-        submittedAnswer: row.submittedAnswer,
-        poolSuccesses: row.poolSuccesses,
-        lastFailedAt: row.lastFailedAt.toISOString(),
-        disputeStatus,
-      }
-    }),
-  }
+  return questionLogPage(
+    db,
+    user,
+    query.offset,
+    db
+      .select(QUESTION_LOG_COLUMNS)
+      .from(onThisPage)
+      .innerJoin(seenQuestions, and(
+        eq(seenQuestions.userId, user.id),
+        eq(seenQuestions.questionId, onThisPage.questionId),
+      ))
+      .innerJoin(questions, eq(questions.id, seenQuestions.questionId))
+      .leftJoin(missedPool, and(
+        eq(missedPool.userId, seenQuestions.userId),
+        eq(missedPool.questionId, seenQuestions.questionId),
+      ))
+      .leftJoin(disputes, and(
+        eq(disputes.userId, seenQuestions.userId),
+        eq(disputes.questionId, seenQuestions.questionId),
+      ))
+      .orderBy(...newestFirst),
+    db.select({ value: count() }).from(seenQuestions).where(filter),
+  )
 }
 
 /**

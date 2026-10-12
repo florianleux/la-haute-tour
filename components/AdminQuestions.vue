@@ -89,17 +89,7 @@
       </li>
     </BaseList>
 
-    <div class="mt-4 flex items-center justify-between text-sm">
-      <BaseButton variant="ghost" :disabled="!canPrev" @click="goToPrev">
-        Précédent
-      </BaseButton>
-      <BaseHint>
-        Page {{ page }} sur {{ totalPages }}
-      </BaseHint>
-      <BaseButton variant="ghost" :disabled="!canNext" @click="goToNext">
-        Suivant
-      </BaseButton>
-    </div>
+    <BasePagination v-model="page" :page-count="totalPages" class="mt-4" />
   </BaseSection>
 </template>
 
@@ -149,20 +139,6 @@ watch(selected, (value) => {
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
-const canPrev = computed(() => page.value > 1)
-const canNext = computed(() => page.value < totalPages.value)
-
-function goToPrev(): void {
-  if (canPrev.value) {
-    page.value -= 1
-  }
-}
-
-function goToNext(): void {
-  if (canNext.value) {
-    page.value += 1
-  }
-}
 
 // La première lecture n'a encore aucune question à montrer : on montre leur
 // forme. Une relecture garde la liste — le bouton cliqué porte déjà son loader.

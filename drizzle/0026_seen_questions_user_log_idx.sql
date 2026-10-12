@@ -1,0 +1,1 @@
+CREATE INDEX `seen_questions_user_log_idx` ON `seen_questions` (`user_id`,`seen_at`,`question_id`,`correct`);

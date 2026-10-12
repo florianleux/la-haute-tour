@@ -161,7 +161,7 @@ describe('Purge, sur le Pool Échecs', () => {
 
     await castPurge()
 
-    const page = await readMissedPool(db, await reload(), { limit: 10, offset: 0, order: 'desc' })
+    const page = await readMissedPool(db, await reload(), { limit: 10, offset: 0 })
     expect(page.total).toBe(3)
     expect(page.entries).toHaveLength(3)
   })

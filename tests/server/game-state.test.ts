@@ -9,7 +9,7 @@ installNitroGlobals()
 const { default: stateHandler } = await import('../../server/api/game/state.get')
 const { default: nextHandler } = await import('../../server/api/game/next.post')
 const { default: answerHandler } = await import('../../server/api/game/answer.post')
-const { default: poolHandler } = await import('../../server/api/game/pool.get')
+const { default: logHandler } = await import('../../server/api/game/question-log.get')
 const { default: chestHandler } = await import('../../server/api/game/chest.post')
 const { default: disputableHandler } = await import('../../server/api/game/disputable-errors.get')
 const { default: unknownHandler } = await import('../../server/api/[...]')
@@ -17,7 +17,7 @@ const { default: unknownHandler } = await import('../../server/api/[...]')
 const state = mountHandler('/state', stateHandler)
 const next = mountHandler('/next', nextHandler)
 const answer = mountHandler('/answer', answerHandler)
-const pool = mountHandler('/pool', poolHandler)
+const log = mountHandler('/question-log', logHandler)
 const chest = mountHandler('/chest', chestHandler)
 const disputable = mountHandler('/disputable-errors', disputableHandler)
 const unknown = mountHandler('/api/nimportequoi', unknownHandler)
@@ -48,7 +48,7 @@ describe('endpoints de jeu', () => {
     expect((await state(apiRequest('http://test/state'))).status).toBe(401)
     expect((await next(post('/next', {}))).status).toBe(401)
     expect((await answer(post('/answer', { answer: 'Bordeaux' }))).status).toBe(401)
-    expect((await pool(apiRequest('http://test/pool'))).status).toBe(401)
+    expect((await log(apiRequest('http://test/question-log'))).status).toBe(401)
     expect((await chest(post('/chest', {}))).status).toBe(401)
   })
 
@@ -77,6 +77,10 @@ describe('endpoints de jeu', () => {
   })
 
   it('tient une réponse faite d espaces pour une réponse vide', async () => {
+    // Une seule vie : la réponse ratée mène au camp, seul endroit d'où le pool
+    // se relit. Une deuxième question garde l'étage ouvert.
+    await createQuestion(db, { statement: 'Capitale de la Corse ?', accepted: ['Ajaccio'] })
+    cookie = await sessionCookieFor(await createPlayer(db, { discordId: '987654321', lives: 1 }))
     await next(post('/next', {}, cookie))
 
     const verdict = await (await answer(post('/answer', { answer: '   ' }, cookie))).json()
@@ -85,7 +89,7 @@ describe('endpoints de jeu', () => {
     expect(verdict.unlocked).toContain('EMPTY_ANSWER')
 
     // Ratée, donc au Pool Échecs — mais pas contestable, comme le vide.
-    const missed = await (await pool(apiRequest('http://test/pool?offset=0&order=asc', cookie))).json()
+    const missed = await (await log(apiRequest('http://test/question-log?filter=missed', cookie))).json()
     expect(missed.total).toBe(1)
     const open = await (await disputable(apiRequest('http://test/disputable-errors', cookie))).json()
     expect(open.errors).toEqual([])
@@ -95,19 +99,6 @@ describe('endpoints de jeu', () => {
     await next(post('/next', {}, cookie))
 
     const response = await answer(post('/answer', {}, cookie))
-
-    expect(response.status).toBe(400)
-  })
-
-  it('sert le Pool Échecs, page par page et trié', async () => {
-    const response = await pool(apiRequest('http://test/pool?offset=0&order=asc', cookie))
-
-    expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ entries: [], total: 0 })
-  })
-
-  it('rejette un tri inconnu plutôt que d en inventer un', async () => {
-    const response = await pool(apiRequest('http://test/pool?order=aleatoire', cookie))
 
     expect(response.status).toBe(400)
   })

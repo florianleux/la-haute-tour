@@ -183,6 +183,13 @@
       "when": 1791794608839,
       "tag": "0025_rename_team_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1791803952391,
+      "tag": "0026_seen_questions_user_log_idx",
+      "breakpoints": true
     }
   ]
 }
