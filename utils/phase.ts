@@ -115,13 +115,18 @@ export function isAnswering(state: GameState | null): boolean {
 }
 
 /**
- * L'attente : la seule phase où les Sorts existent, donc la seule d'où la page
- * qui les porte est atteignable. Dit ici, comme isAnswering, plutôt qu'à chaque
- * endroit qui en dépend — la baguette de la barre et la garde de la page.
- * Voir specs/ecrans.md#sorts.
+ * Le camp : l'attente, puis le rattrapage tant qu'il n'a ni question ni tirage.
+ * C'est l'écran d'attente, et le seul moment où les Sorts existent, donc le seul
+ * d'où la page qui les porte est atteignable. Dit ici, comme isAnswering, plutôt
+ * qu'à chaque endroit qui en dépend — la carte de jeu, la baguette de la barre
+ * et la garde de la page. Le serveur tient la même règle (requireCamp).
+ * Voir specs/spec.md#glossaire (Camp) et specs/ecrans.md#sorts.
  */
-export function isCooldown(state: GameState | null): boolean {
-  return state?.phase === "cooldown";
+export function isAtCamp(state: GameState | null): boolean {
+  return (
+    state?.phase === "cooldown" ||
+    (state?.phase === "recovery" && !state.question && !state.recovery)
+  );
 }
 
 export function gameScreen(state: GameState): GameScreen {
@@ -181,24 +186,13 @@ export type PlayView = {
 );
 
 /**
- * L'écran d'attente sert aussi au rattrapage prêt à démarrer : l'attente échue,
- * le rattrapage n'a encore ni question ni tirage. Voir specs/ecrans.md#cooldown--attente.
- */
-function isWaiting(state: GameState): boolean {
-  return (
-    isCooldown(state) ||
-    (state.phase === "recovery" && !state.question && !state.recovery)
-  );
-}
-
-/**
  * La question de la chute, si ce verdict en est une : celle qui vient de prendre
  * la dernière vie. Le serveur est déjà en attente, la page retient le verdict le
  * temps d'un clic sur « Redescendre ». `lifeLost` écarte le Mimic et les verdicts
  * de rattrapage. Voir specs/spec.md#glossaire (Chute).
  */
 export function fallQuestionId(state: GameState): string | null {
-  return state.verdict?.lifeLost && isWaiting(state)
+  return state.verdict?.lifeLost && isAtCamp(state)
     ? state.verdict.questionId
     : null;
 }
@@ -212,7 +206,7 @@ export function playView(
   client: PlayClientState = AT_REST,
 ): PlayView {
   const screen = gameScreen(state);
-  const waiting = isWaiting(state);
+  const waiting = isAtCamp(state);
   const verdictId = state.verdict?.questionId;
   // Un aller client ne vaut que pour le verdict qu'il désigne.
   const onVerdict = (id: string | null): boolean => id !== null && id === verdictId;

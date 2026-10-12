@@ -27,9 +27,16 @@ la magie noire et la porte du boss dépendent, et rien de plus.
   fois**, par migration : ils n'avaient jamais été invités avec une équipe, et
   rien ne permettait de deviner laquelle. Les admins sont restés hors équipe.
 
-Les noms des deux équipes sont **provisoires** et ne vivent que dans
-l'affichage : les identifiants de code sont figés, comme pour les Sorts, pour
-qu'un renommage ne coûte ni migration ni refactor.
+Les deux équipes sont les deux guildes de [`lore.md`](./lore.md) :
+
+| Guilde | Identifiant | Bannière |
+|---|---|---|
+| Les **Méridiens** | `MIDI` | bleue, aux étoiles |
+| Les **Fauteuillistes** | `TLM` | rouge, aux fauteuils |
+
+Les noms affichés ne vivent que dans l'affichage, comme pour les Sorts, et se
+renomment sans migration. Les identifiants, eux, sont gravés en base : les
+premiers (`CRIMSON`, `AZURE`) ont été renommés une fois, par migration.
 
 ## Allié, ennemi : une dérivation, pas un stockage
 
@@ -127,8 +134,7 @@ gagner.
 
 ## Ce qui reste à spécifier
 
-- Les **libellés** des deux équipes. Les identifiants étant figés, ça ne bloque
-  rien.
+- ~~Les **libellés** des deux équipes~~ : Méridiens et Fauteuillistes, voir plus haut.
 
 ---
 

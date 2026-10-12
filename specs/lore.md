@@ -17,7 +17,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 
 - Le joueur incarne un **aventurier**, membre d'une des deux guildes.
 - Les deux guildes = les deux équipes (`team`) d'`equipes.md`.
-- Noms : les **Méridiens** et les **Fauteuilliens**.
+- Noms : les **Méridiens** (`MIDI`) et les **Fauteuillistes** (`TLM`).
 - Elles sont **rivales** : chacune veut gravir la Tour en premier. (Raison de la rivalité hors-scope — pas à développer.)
 
 ## Étages

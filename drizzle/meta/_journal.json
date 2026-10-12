@@ -176,6 +176,13 @@
       "when": 1791303562558,
       "tag": "0024_quiet_tusk",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1791794608839,
+      "tag": "0025_rename_team_ids",
+      "breakpoints": true
     }
   ]
 }

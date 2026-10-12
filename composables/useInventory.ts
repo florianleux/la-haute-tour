@@ -37,7 +37,7 @@ export interface InventoryRead {
 
 /**
  * Les sorts que le joueur possède, tels que la page Sorts les montre. Refusé par
- * le serveur hors attente — la page n'existe que là. Voir specs/ecrans.md#sorts.
+ * le serveur hors du camp — la page n'existe que là. Voir specs/ecrans.md#sorts.
  */
 export async function useInventory(): Promise<InventoryRead> {
   const { data, error } = await useAsyncData<InventoryView>(

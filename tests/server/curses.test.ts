@@ -29,7 +29,7 @@ describe('magie noire, sur un ennemi', () => {
     const id = await createPlayer(db, {
       discordId: 'caster',
       username: 'gandalf',
-      team: 'CRIMSON',
+      team: 'TLM',
       floorSeen: 1,
       lives: 0,
       cooldownUntil: FULL_DEADLINE,
@@ -42,7 +42,7 @@ describe('magie noire, sur un ennemi', () => {
     const id = await createPlayer(db, {
       discordId: 'enemy',
       username: 'saroumane',
-      team: 'AZURE',
+      team: 'MIDI',
       floorSeen: 1,
       ...state,
     })
@@ -148,7 +148,7 @@ describe('magie noire, sur un ennemi', () => {
     const target = await enemy()
     // Frappé par quelqu'un d'autre : le budget de lancers de gandalf, lui, doit
     // rester entier — c'est le tirage qu'on éprouve ici, pas le plafond.
-    const other = await createPlayer(db, { discordId: 'other', username: 'radagast', team: 'CRIMSON' })
+    const other = await createPlayer(db, { discordId: 'other', username: 'radagast', team: 'TLM' })
     await db.insert(activeEffects).values(Array.from({ length: rules.maxCurses }, () => ({
       userId: target.id,
       casterId: other,

@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-// L'inventaire, le lancer et les deux journaux — pendant l'attente et là
+// L'inventaire, le lancer et les deux journaux — au camp et là
 // seulement. Le lancer vise une catégorie, jamais une personne : soi, ou un
 // allié ou un ennemi que le serveur tire et ne nomme qu'après.
 // Voir specs/ecrans.md#sorts et specs/bonus.md#tirage-de-la-cible.
@@ -144,10 +144,10 @@ import type { TargetKind } from '~~/shared/utils/teams'
 import type { CastView } from '~~/server/utils/effects'
 
 definePageMeta({
-  // Hors attente, la page n'est pas atteignable — URL comprise. Le serveur
+  // Hors du camp, la page n'est pas atteignable — URL comprise. Le serveur
   // refuse déjà la lecture ; la garde épargne au joueur un écran qu'il ne
-  // pourrait pas remplir. Voir middleware/cooldown.ts.
-  middleware: 'cooldown',
+  // pourrait pas remplir. Voir middleware/camp.ts.
+  middleware: 'camp',
 })
 
 const {

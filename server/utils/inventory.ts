@@ -9,7 +9,7 @@ import {
   toReceivedViews,
 } from './effects'
 import { rulesForFloor } from './rules'
-import { inventory } from '../db/schema'
+import { inventory, recoveryQuestions } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { CastView, ReceivedView } from './effects'
@@ -58,13 +58,13 @@ export interface InventoryView {
  * nombre qui se lit. Trié par premier exemplaire obtenu, pour qu'un coffre qui
  * ajoute un doublon ne déplace pas la liste sous les yeux du joueur.
  *
- * Refusé hors attente : le lancer n'existe que là, donc la page qui montre
+ * Refusé hors du camp : le lancer n'existe que là, donc la page qui montre
  * l'inventaire n'est pas atteignable ailleurs — URL comprise, d'où le refus ici
  * et pas seulement dans la navigation.
  * Voir specs/bonus.md#sorts et specs/ecrans.md#sorts.
  */
 export async function readInventory(db: Database, user: User, now: Date): Promise<InventoryView> {
-  await requireCooldown(db, user, now)
+  await requireCamp(db, user, now)
 
   return readSpellPage(db, user)
 }
@@ -83,26 +83,45 @@ export async function castFromInventory(
   kind: TargetKind,
   now: Date,
 ): Promise<InventoryView> {
-  await requireCooldown(db, user, now)
+  await requireCamp(db, user, now)
   await castSpell(db, user, spell, kind, now)
 
   return readSpellPage(db, user)
 }
 
 /**
- * Les Sorts n'existent que pendant l'attente : ni la page qui les montre, ni le
- * lancer qui les consomme n'ont de sens ailleurs — URL comprise, d'où le refus
- * ici et pas seulement dans la navigation. Voir specs/ecrans.md#sorts.
+ * Les Sorts n'existent qu'au camp : l'attente, puis le rattrapage tant qu'il
+ * n'est pas tiré. Ni la page qui les montre, ni le lancer qui les consomme n'ont
+ * de sens ailleurs — URL comprise, d'où le refus ici et pas seulement dans la
+ * navigation. Même règle que isAtCamp() côté écran.
+ * Voir specs/spec.md#glossaire (Camp) et specs/ecrans.md#sorts.
  *
  * La phase se lit par `readPhase`, et non par l'état complet : une garde ne doit
- * pas faire avancer la partie qu'elle protège, et il n'y a qu'un fait à lire.
+ * pas faire avancer la partie qu'elle protège. Le rattrapage tiré se lit à ses
+ * questions, qui n'existent que tant qu'il est en cours. Le lancer après
+ * l'attente reste compté sur elle : son début (`cooldownStartedAt`) ne s'efface
+ * qu'avec le rattrapage réussi.
  */
-async function requireCooldown(db: Database, user: User, now: Date): Promise<void> {
+async function requireCamp(db: Database, user: User, now: Date): Promise<void> {
   const phase = await readPhase(db, user, now)
 
-  if (phase !== 'cooldown') {
-    throw createError({ statusCode: 403, statusMessage: 'Les Sorts ne se lancent qu\'en attente' })
+  if (phase === 'cooldown') {
+    return
   }
+
+  if (phase === 'recovery') {
+    const [drawn] = await db
+      .select({ userId: recoveryQuestions.userId })
+      .from(recoveryQuestions)
+      .where(eq(recoveryQuestions.userId, user.id))
+      .limit(1)
+
+    if (!drawn) {
+      return
+    }
+  }
+
+  throw createError({ statusCode: 403, statusMessage: 'Les Sorts ne se lancent qu\'au camp' })
 }
 
 /**

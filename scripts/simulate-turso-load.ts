@@ -225,7 +225,7 @@ async function build(): Promise<Database> {
     Array.from({ length: FLOOR_COUNT }, (_, index) => ({ floor: index + 1, total: DECK_PER_FLOOR })),
   )
 
-  const teams = ['CRIMSON', 'AZURE'] as const
+  const teams = ['TLM', 'MIDI'] as const
   for (let index = 0; index < PLAYERS; index += 1) {
     const discordId = `discord-${index}`
     await db.insert(schema.whitelist).values({ discordId })

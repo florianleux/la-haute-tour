@@ -143,13 +143,13 @@ describe('budget de requêtes des chemins chauds', () => {
 
     /** Un joueur en attente, avec des coéquipiers et des adversaires à toucher. */
     async function caster(): Promise<User> {
-      const id = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'CRIMSON', floorSeen: 1 })
+      const id = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM', floorSeen: 1 })
 
       for (let i = 0; i < 6; i++) {
         await createPlayer(db, {
           discordId: `mate-${i}`,
           username: `mate-${i}`,
-          team: i % 2 === 0 ? 'CRIMSON' : 'AZURE',
+          team: i % 2 === 0 ? 'TLM' : 'MIDI',
           floorSeen: 1,
         })
       }

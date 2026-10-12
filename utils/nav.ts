@@ -1,4 +1,4 @@
-import { isAnswering, isCooldown } from './phase'
+import { isAnswering, isAtCamp } from './phase'
 import type { GameState } from '~~/server/utils/game'
 
 /**
@@ -59,7 +59,7 @@ const ENTRIES: NavEntry[] = [
  */
 export function navIcons({ path, isAdmin, game }: NavContext): NavIcon[] {
   const answering = path === '/' && isAnswering(game)
-  const spellsOpen = isCooldown(game)
+  const spellsOpen = isAtCamp(game)
 
   return ENTRIES
     .filter(entry => !entry.adminOnly || isAdmin)

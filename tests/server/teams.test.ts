@@ -14,11 +14,11 @@ const { default: setTeamHandler } = await import('../../server/api/admin/players
 
 const setTeam = mountRoute('put', '/players/:id/team', setTeamHandler)
 
-const crimson = (id: number) => ({ id, team: 'CRIMSON' as const, isTest: false })
-const azure = (id: number) => ({ id, team: 'AZURE' as const, isTest: false })
+const crimson = (id: number) => ({ id, team: 'TLM' as const, isTest: false })
+const azure = (id: number) => ({ id, team: 'MIDI' as const, isTest: false })
 const loner = (id: number) => ({ id, team: null, isTest: false })
 /** Un joueur test, dans la couleur qu'on veut : il ne se lie qu'aux siens. */
-const tester = (id: number, team: 'CRIMSON' | 'AZURE') => ({ id, team, isTest: true })
+const tester = (id: number, team: 'TLM' | 'MIDI') => ({ id, team, isTest: true })
 
 describe('relation entre deux joueurs', () => {
   it('reconnaît le lanceur qui se vise lui-même, quelle que soit son équipe', () => {
@@ -37,15 +37,15 @@ describe('relation entre deux joueurs', () => {
   it('ne relie jamais un joueur test à un vrai joueur, même sous la même couleur', () => {
     // C'est là que le monde scellé se joue : l'équipe dit de quel côté on est,
     // pas dans quel monde on joue. Voir specs/admin.md#joueurs-test.
-    expect(bondBetween(tester(1, 'CRIMSON'), crimson(2))).toBe('none')
-    expect(bondBetween(crimson(1), tester(2, 'CRIMSON'))).toBe('none')
-    expect(bondBetween(tester(1, 'CRIMSON'), azure(2))).toBe('none')
-    expect(bondBetween(azure(1), tester(2, 'AZURE'))).toBe('none')
+    expect(bondBetween(tester(1, 'TLM'), crimson(2))).toBe('none')
+    expect(bondBetween(crimson(1), tester(2, 'TLM'))).toBe('none')
+    expect(bondBetween(tester(1, 'TLM'), azure(2))).toBe('none')
+    expect(bondBetween(azure(1), tester(2, 'MIDI'))).toBe('none')
   })
 
   it('lie les joueurs test entre eux, ce que le PvP demande d éprouver', () => {
-    expect(bondBetween(tester(1, 'CRIMSON'), tester(2, 'CRIMSON'))).toBe('ally')
-    expect(bondBetween(tester(1, 'CRIMSON'), tester(2, 'AZURE'))).toBe('foe')
+    expect(bondBetween(tester(1, 'TLM'), tester(2, 'TLM'))).toBe('ally')
+    expect(bondBetween(tester(1, 'TLM'), tester(2, 'MIDI'))).toBe('foe')
   })
 
   it('ne relie personne à un joueur sans équipe, dans les deux sens', () => {
@@ -75,7 +75,7 @@ describe('assignation d une équipe par l admin', () => {
 
   it('refuse tout sans session', async () => {
     const response = await setTeam(
-      jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'CRIMSON' }),
+      jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'TLM' }),
     )
 
     expect(response.status).toBe(401)
@@ -85,7 +85,7 @@ describe('assignation d une équipe par l admin', () => {
     const cookie = await sessionCookieFor(playerId)
 
     const response = await setTeam(
-      jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'CRIMSON' }, cookie),
+      jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'TLM' }, cookie),
     )
 
     expect(response.status).toBe(403)
@@ -93,23 +93,23 @@ describe('assignation d une équipe par l admin', () => {
 
   it('met un joueur dans une équipe', async () => {
     const response = await setTeam(
-      jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'CRIMSON' }, adminCookie),
+      jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'TLM' }, adminCookie),
     )
 
     expect(response.status).toBe(200)
-    expect(await teamOf(playerId)).toBe('CRIMSON')
+    expect(await teamOf(playerId)).toBe('TLM')
   })
 
   it('déplace un joueur d une équipe à l autre', async () => {
-    await setTeam(jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'CRIMSON' }, adminCookie))
+    await setTeam(jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'TLM' }, adminCookie))
 
-    await setTeam(jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'AZURE' }, adminCookie))
+    await setTeam(jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'MIDI' }, adminCookie))
 
-    expect(await teamOf(playerId)).toBe('AZURE')
+    expect(await teamOf(playerId)).toBe('MIDI')
   })
 
   it('retire l équipe avec null : l appartenance est facultative', async () => {
-    await setTeam(jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'CRIMSON' }, adminCookie))
+    await setTeam(jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: 'TLM' }, adminCookie))
 
     await setTeam(jsonRequest(`http://test/players/${playerId}/team`, 'PUT', { team: null }, adminCookie))
 
@@ -135,12 +135,12 @@ describe('assignation d une équipe par l admin', () => {
     expect(badBody.status).toBe(400)
 
     const noSuchPlayer = await setTeam(
-      jsonRequest('http://test/players/4242/team', 'PUT', { team: 'CRIMSON' }, adminCookie),
+      jsonRequest('http://test/players/4242/team', 'PUT', { team: 'TLM' }, adminCookie),
     )
     expect(noSuchPlayer.status).toBe(404)
 
     const impossibleId = await setTeam(
-      jsonRequest('http://test/players/0/team', 'PUT', { team: 'CRIMSON' }, adminCookie),
+      jsonRequest('http://test/players/0/team', 'PUT', { team: 'TLM' }, adminCookie),
     )
     expect(impossibleId.status).toBe(400)
   })
@@ -157,15 +157,15 @@ describe('assignation d une équipe par l admin', () => {
     })
 
     const response = await setTeam(
-      jsonRequest(`http://test/players/${testPlayerId}/team`, 'PUT', { team: 'AZURE' }, adminCookie),
+      jsonRequest(`http://test/players/${testPlayerId}/team`, 'PUT', { team: 'MIDI' }, adminCookie),
     )
 
     expect(response.status).toBe(200)
-    expect(await teamOf(testPlayerId)).toBe('AZURE')
+    expect(await teamOf(testPlayerId)).toBe('MIDI')
   })
 
   it('oppose deux joueurs test une fois placés', async () => {
-    expect(bondBetween(tester(1, 'CRIMSON'), tester(2, 'AZURE'))).toBe('foe')
+    expect(bondBetween(tester(1, 'TLM'), tester(2, 'MIDI'))).toBe('foe')
   })
 })
 
@@ -184,17 +184,17 @@ describe('l équipe décidée à l invitation', () => {
     setDatabase(db)
   })
 
-  const invite = async (team: 'CRIMSON' | 'AZURE' | null): Promise<void> => {
+  const invite = async (team: 'TLM' | 'MIDI' | null): Promise<void> => {
     await db.insert(whitelist).values({ discordId: profile.discordId, team })
   }
 
   it('donne au joueur l équipe choisie en l autorisant', async () => {
-    await invite('AZURE')
+    await invite('MIDI')
 
     const result = await loginWithDiscord(db, profile)
 
     expect(result.status).toBe('ok')
-    expect(result.status === 'ok' && result.user.team).toBe('AZURE')
+    expect(result.status === 'ok' && result.user.team).toBe('MIDI')
   })
 
   it('laisse sans équipe qui a été autorisé sans en choisir', async () => {
@@ -206,17 +206,17 @@ describe('l équipe décidée à l invitation', () => {
   })
 
   it('ne déplace personne à la reconnexion : la fiche joueur fait foi ensuite', async () => {
-    await invite('AZURE')
+    await invite('MIDI')
     const first = await loginWithDiscord(db, profile)
-    expect(first.status === 'ok' && first.user.team).toBe('AZURE')
+    expect(first.status === 'ok' && first.user.team).toBe('MIDI')
 
     // L'admin déplace le joueur, puis quelqu'un réédite la whitelist.
-    await db.update(users).set({ team: 'CRIMSON' }).where(eq(users.discordId, profile.discordId))
-    await db.update(whitelist).set({ team: 'AZURE' }).where(eq(whitelist.discordId, profile.discordId))
+    await db.update(users).set({ team: 'TLM' }).where(eq(users.discordId, profile.discordId))
+    await db.update(whitelist).set({ team: 'MIDI' }).where(eq(whitelist.discordId, profile.discordId))
 
     const again = await loginWithDiscord(db, profile)
 
-    expect(again.status === 'ok' && again.user.team).toBe('CRIMSON')
+    expect(again.status === 'ok' && again.user.team).toBe('TLM')
   })
 
   it('ne crée toujours aucun compte hors whitelist', async () => {

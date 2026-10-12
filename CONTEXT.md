@@ -48,9 +48,9 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 
 ## L'identifiant est figé, le libellé ne l'est pas
 
-Un terme du domaine a deux noms. L'**identifiant** — `RESPITE`, `CRIMSON`,
+Un terme du domaine a deux noms. L'**identifiant** — `RESPITE`, `TLM`,
 `cooldown` — est celui du glossaire : le schéma le grave, le serveur le sert, il
-traverse la frontière réseau. Le **libellé** — « Répit », « Cramoisi », « En
+traverse la frontière réseau. Le **libellé** — « Répit », « Fauteuillistes », « En
 attente » — n'est qu'un mot d'écran : il vit dans `utils/`, côté client, et
 renommer ne coûte alors ni migration ni refactor.
 

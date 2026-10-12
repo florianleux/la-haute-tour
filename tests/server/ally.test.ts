@@ -36,7 +36,7 @@ describe('lancer sur un allié', () => {
     const id = await createPlayer(db, {
       discordId: 'caster',
       username: 'gandalf',
-      team: 'CRIMSON',
+      team: 'TLM',
       floorSeen: 1,
       lives: 0,
       cooldownUntil: FULL_DEADLINE,
@@ -49,7 +49,7 @@ describe('lancer sur un allié', () => {
     const id = await createPlayer(db, {
       discordId: `ally-${name}`,
       username: name,
-      team: 'CRIMSON',
+      team: 'TLM',
       floorSeen: 1,
       ...state,
     })

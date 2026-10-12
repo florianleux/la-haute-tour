@@ -28,6 +28,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Rattrapage** | `recovery` | Retest de quelques questions du Pool Échecs, à l'issue de l'attente, pour retrouver ses vies. Le bouton qui l'ouvre porte « Commencer » — les boutons des écrans illustrés tiennent en un mot, et « Reprendre » est déjà pris par la sortie du rattrapage réussi. |
 | **Scellé** | `sealed` | Le verdict du rattrapage est scellé : le quota de bonnes réponses est atteint (succès) ou mathématiquement impossible à atteindre avec les questions restantes (échec). Le rattrapage s'arrête — les questions non jouées restent dans le Pool Échecs sans progression de leur compteur. |
 | **Attente** | `cooldown` | Délai forcé après la perte de la dernière vie, avant de pouvoir reprendre ou rattraper. |
+| **Camp** | `camp` | L'attente, prolongée jusqu'au tirage du rattrapage : tant que le joueur n'a pas cliqué « Commencer », il reste au camp. C'est là, et là seulement, que les Sorts se consultent et se lancent. |
 | **Chute** | `fall` | Le verdict de la question qui vient de prendre la dernière vie, lu avant le poster d'attente. Le serveur est déjà en attente : l'écran le retient le temps d'un clic sur « Redescendre ». Un rechargement va droit au poster. Vit côté client seulement. |
 | **Début d'attente** | `cooldownStartedAt` | L'instant où l'attente en cours a commencé. C'est de lui que Répit la recalcule, et c'est lui qui l'identifie auprès des effets — son échéance, elle, se déplace. |
 | **Durée d'attente** | `cooldownBaseMs` | Ce que l'attente en cours dure avant qu'aucun sort ne la touche. Portée par le joueur : elles ne durent pas toutes pareil, celle d'un rattrapage manqué étant plus courte. |
@@ -81,7 +82,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Fiche joueur** | `playerCard` | Ce que l'admin voit d'un joueur d'un seul coup d'œil : identité, étage, progression, phase, vies, attente en cours et contestations en attente. Lecture pure, sans effet sur la partie. |
 | **Joueur test** | `testPlayer` | Un joueur créé par l'admin pour éprouver le jeu, sans compte Discord derrière. Il joue une vraie partie, mais dans un monde scellé : jamais de contact avec un vrai joueur. |
 | **Incarnation** | `impersonation` | L'admin joue à la place d'un joueur test. Le jeu le prend pour lui ; les pouvoirs d'admin, eux, restent attachés au vrai compte. Réservée aux joueurs test. |
-| **Sort** | `spell` | Le seul objet qu'on obtient en jouant. Se lance pendant l'attente, sur soi, un allié ou un ennemi. Voir [`bonus.md`](./bonus.md). |
+| **Sort** | `spell` | Le seul objet qu'on obtient en jouant. Se lance au **camp**, sur soi, un allié ou un ennemi. Voir [`bonus.md`](./bonus.md). |
 | **Lancer** | `cast` | L'action de consommer un sort de son inventaire vers une catégorie de cible. |
 | **Cible** | `target` | Le joueur que le tirage désigne. Jamais choisi nominativement. |
 | **Catégorie de cible** | `targetKind` | Ce que le lanceur choisit, faute de choisir une personne : `self`, `ally` ou `foe`. |
@@ -89,7 +90,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Cible éligible** | `eligible` | Un joueur que le tirage garde : ni en fin de partie, ni jamais commencé, et lié au lanceur. Le filtre passe avant le classement, pour qu'un écarté ne pèse pas dans la distribution. |
 | **Commencé** | `hasStarted` | Le joueur a vu au moins une question. Ce n'est pas une phase : un compte jamais ouvert est en ascension comme un autre, mais aucun effet ne l'atteindrait. |
 | **Attente visée** | `targetCooldownStartedAt` | L'attente **de la cible** sur laquelle un sort lié à l'attente agit, par son début. Distincte de celle du lancer dès qu'on vise quelqu'un d'autre ; nulle quand la cible n'attend pas. |
-| **Équipe** | `team` | L'une des deux appartenances, assignée par l'admin. Elle ne sert qu'à dériver allié ou ennemi au moment d'un lancer. Facultative : l'admin n'en a pas. Voir [`equipes.md`](./equipes.md). |
+| **Équipe** | `team` | L'une des deux appartenances, assignée par l'admin : les guildes, Méridiens (`MIDI`) ou Fauteuillistes (`TLM`). Elle ne sert qu'à dériver allié ou ennemi au moment d'un lancer. Facultative : l'admin n'en a pas. Voir [`equipes.md`](./equipes.md). |
 | **Magie blanche** | `boon` | La face positive d'un sort, appliquée sur soi ou un allié. |
 | **Magie noire** | `curse` | La face négative, appliquée sur un ennemi. Miroir systématique de la face blanche. |
 | **Effet actif** | `activeEffect` | Un effet posé sur un joueur, en attente de son déclencheur. Ancré sur la prochaine tentative de la cible, il meurt avec elle, consommé ou non — sauf un sort lié à l'attente (Répit, Indulgence, Purge), qui agit dès le lancer et meurt avec l'attente visée. |
@@ -102,7 +103,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Viser autrui** | `canTargetOthers` | Le joueur a une équipe, donc les catégories Allié et Ennemi lui sont proposées. Une seule et même condition pour les deux : sans équipe, aucune ne désigne de pool. |
 | **Face** | `face` | Laquelle des deux magies un effet porte : blanche (`boon`) sur soi ou un allié, noire (`curse`) sur un ennemi. Gravée au lancer, jamais redéduite de la cible. |
 | **Ancrage** | `anchor` | Le moment où un effet en attente se fixe sur une tentative — celle qui s'ouvre. Il vaut alors le début de cette tentative, et meurt quand elle finit. |
-| **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable en attente seulement. |
+| **Inventaire** | `inventory` | Les sorts que le joueur possède et n'a pas encore lancés. Consultable au camp seulement. |
 | **Grimoire** | `spellbook` | Côté joueur, le nom de l'écran des Sorts (`/sorts`). Côté code, le module qui possède ce que fait chaque sort : sa modulation des règles, son action instantanée, sa durée de vie et la règle qu'il chiffre. Un sort = une entrée. Voir [`server/utils/spellbook.ts`](../server/utils/spellbook.ts). |
 | **Question loot** | `lootQuestion` | Statut d'un passage, non d'une question : la 50e question résolue de l'étage ouvre un coffre si elle est juste. |
 | **Coffre** | `chest` | Ce qui s'ouvre au verdict d'une question loot réussie. Donne un sort, ou un Mimic. |

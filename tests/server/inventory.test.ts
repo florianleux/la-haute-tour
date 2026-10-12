@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { inventory, reservations } from '../../server/db/schema'
+import { inventory, recoveryQuestions, reservations } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
@@ -66,7 +66,7 @@ describe('inventaire des sorts', () => {
   // elle ne désignerait aucun pool. Voir specs/equipes.md#le-joueur-sans-équipe.
   it('dit si le joueur peut viser un allié, sans jamais dire qui', async () => {
     const alone = await createPlayer(db, IN_COOLDOWN)
-    const teamed = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'teamed', team: 'AZURE' })
+    const teamed = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'teamed', team: 'MIDI' })
 
     const withoutTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(alone)))
     const withTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(teamed)))
@@ -126,8 +126,20 @@ describe('inventaire des sorts', () => {
     expect(response.status).toBe(403)
   })
 
-  it('la ferme aussi dès que l attente est finie', async () => {
+  // Le camp dure jusqu'au tirage du rattrapage : l'attente échue, le joueur
+  // y est encore. Voir specs/spec.md#glossaire (Camp).
+  it('la laisse ouverte après l attente, tant que le rattrapage n est pas tiré', async () => {
     const userId = await createPlayer(db, { lives: 0, cooldownUntil: new Date(Date.now() - 60_000) })
+
+    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+
+    expect(response.status).toBe(200)
+  })
+
+  it('la ferme une fois le rattrapage tiré', async () => {
+    const userId = await createPlayer(db, { lives: 0, cooldownUntil: new Date(Date.now() - 60_000) })
+    const questionId = await createQuestion(db)
+    await db.insert(recoveryQuestions).values({ userId, questionId, position: 0 })
 
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
@@ -234,11 +246,11 @@ describe('inventaire des sorts', () => {
     it('applique la face noire sur un ennemi', async () => {
       await createQuestion(db)
       await createQuestion(db)
-      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'CRIMSON', floorSeen: 1 })
+      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'TLM', floorSeen: 1 })
       await createPlayer(db, {
         discordId: 'foe',
         username: 'saroumane',
-        team: 'AZURE',
+        team: 'MIDI',
         floorSeen: 1,
       })
       const cookie = await sessionCookieFor(userId)
@@ -256,11 +268,11 @@ describe('inventaire des sorts', () => {
       // l'attente, et la page des Sorts se fermerait.
       await createQuestion(db)
       await createQuestion(db)
-      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'CRIMSON', floorSeen: 1 })
+      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'TLM', floorSeen: 1 })
       const allyId = await createPlayer(db, {
         discordId: 'ally',
         username: 'samsagace',
-        team: 'CRIMSON',
+        team: 'TLM',
         floorSeen: 1,
         ...IN_COOLDOWN,
       })

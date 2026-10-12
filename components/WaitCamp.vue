@@ -109,8 +109,8 @@ interface CampItem {
 }
 
 const BANNERS: Record<TeamId, string> = {
-  AZURE: '/images/cooldown-banner-azure.webp',
-  CRIMSON: '/images/cooldown-banner-crimson.webp',
+  MIDI: '/images/cooldown-banner-midi.webp',
+  TLM: '/images/cooldown-banner-tlm.webp',
 }
 
 // La corde déroulée dit que l'on peut remonter : elle n'apparaît qu'avec
@@ -118,9 +118,8 @@ const BANNERS: Record<TeamId, string> = {
 // propose — et la déclenche. Pendant l'attente, roulée au sol, elle n'est que
 // décor.
 //
-// Le grimoire ouvre les Sorts pendant
-// l'attente seulement, comme la barre du haut : après, /sorts renvoie au jeu.
-// Voir specs/ecrans.md.
+// Le grimoire ouvre les Sorts tant que le camp est affiché : c'est le moment
+// même où ils existent. Voir specs/spec.md#glossaire (Camp).
 
 // Au survol, un objet cliquable se soulève et luit d'un halo argenté. Deux
 // drop-shadow superposés plutôt qu'une box-shadow : ils suivent le contour
@@ -205,7 +204,7 @@ const layers = computed((): { depth: string, box: string, origin: string, items:
       // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
       // devant eux, comme sur l'illustration.
       { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { to: '/inventaire' } },
-      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[80%] w-[16.61%]', title: 'Grimoire', ...(props.ready ? {} : { click: { to: '/sorts' } }) },
+      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[80%] w-[16.61%]', title: 'Grimoire', click: { to: '/sorts' } },
     ],
   },
 ])

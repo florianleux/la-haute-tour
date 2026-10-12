@@ -16,7 +16,7 @@ const bodySchema = z.object({
 /**
  * Lancer un sort de son inventaire vers une catégorie de cible — soi, ou un
  * allié ou un ennemi que le serveur tire. Jamais une personne : le client ne
- * nomme personne, il ne pourrait pas. Refusé hors attente, la seule phase où le
+ * nomme personne, il ne pourrait pas. Refusé hors du camp, le seul moment où le
  * lancer existe.
  * Voir specs/bonus.md#où-et-quand et specs/bonus.md#tirage-de-la-cible.
  */

@@ -5,15 +5,18 @@ import type { GameState } from '../../server/utils/game'
 
 const { serve, navigations, refresh, reset } = installAppGlobals()
 
-const { default: cooldownMiddleware } = await import('../../middleware/cooldown')
+const { default: campMiddleware } = await import('../../middleware/camp')
 
-const middleware = cooldownMiddleware as unknown as () => Promise<unknown>
+const middleware = campMiddleware as unknown as () => Promise<unknown>
 
 function state(phase: GameState['phase']): Partial<GameState> {
   return { phase }
 }
 
-describe('garde de l attente', () => {
+/** Le rattrapage tiré : il a ses questions, le joueur a quitté le camp. */
+const DRAWN = { total: 3, played: 0, successes: 0, sealed: false, resumes: false, required: 2 }
+
+describe('garde du camp', () => {
   beforeEach(reset)
 
   it('laisse entrer un joueur en attente', async () => {
@@ -24,8 +27,24 @@ describe('garde de l attente', () => {
     expect(navigations()).toEqual([])
   })
 
+  it('laisse entrer après l attente, tant que le rattrapage n est pas tiré', async () => {
+    serve(GAME_STATE_KEY, state('recovery'))
+
+    await middleware()
+
+    expect(navigations()).toEqual([])
+  })
+
+  it('renvoie au jeu une fois le rattrapage tiré', async () => {
+    serve(GAME_STATE_KEY, { ...state('recovery'), recovery: DRAWN })
+
+    await middleware()
+
+    expect(navigations()).toEqual(['/'])
+  })
+
   it('renvoie au jeu depuis toute autre phase', async () => {
-    for (const phase of ['ascent', 'recovery', 'floorEnd', 'gameOver'] as const) {
+    for (const phase of ['ascent', 'floorEnd', 'gameOver'] as const) {
       reset()
       serve(GAME_STATE_KEY, state(phase))
 

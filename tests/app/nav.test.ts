@@ -135,8 +135,21 @@ describe('baguette', () => {
     expect(stateOf(icons, 'wand')).toBe('link')
   })
 
+  it('reste allumée après l attente, tant que le rattrapage n est pas tiré', () => {
+    const icons = navIcons({ path: '/profil', isAdmin: false, game: state({ phase: 'recovery' }) })
+
+    expect(stateOf(icons, 'wand')).toBe('link')
+  })
+
+  it('s éteint une fois le rattrapage tiré', () => {
+    const recovery = { total: 3, played: 0, successes: 0, sealed: false, resumes: false, required: 2 }
+    const icons = navIcons({ path: '/profil', isAdmin: false, game: state({ phase: 'recovery', recovery }) })
+
+    expect(stateOf(icons, 'wand')).toBe('disabled')
+  })
+
   it('est éteinte partout ailleurs', () => {
-    for (const phase of ['ascent', 'recovery', 'floorEnd', 'gameOver'] as const) {
+    for (const phase of ['ascent', 'floorEnd', 'gameOver'] as const) {
       const icons = navIcons({ path: '/profil', isAdmin: false, game: state({ phase }) })
 
       expect(stateOf(icons, 'wand')).toBe('disabled')

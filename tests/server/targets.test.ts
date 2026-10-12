@@ -41,7 +41,7 @@ describe('tirage de la cible', () => {
     caster = await createPlayer(db, {
       discordId: 'caster',
       username: 'gandalf',
-      team: 'CRIMSON',
+      team: 'TLM',
       floorSeen: 1,
       lives: 0,
       cooldownUntil: COOLDOWN_UNTIL,
@@ -55,7 +55,7 @@ describe('tirage de la cible', () => {
     return createPlayer(db, {
       discordId: `player-${nextId}`,
       username: name,
-      team: 'CRIMSON',
+      team: 'TLM',
       currentFloor: 1,
       floorSeen: 1,
       ...seed,
@@ -71,7 +71,7 @@ describe('tirage de la cible', () => {
 
   it('ne tire que dans l équipe du lanceur', async () => {
     await player('samsagace')
-    await player('saroumane', { team: 'AZURE' })
+    await player('saroumane', { team: 'MIDI' })
 
     expect(await draw(0)).toBe('samsagace')
     expect(await draw(0.999)).toBe('samsagace')
@@ -135,7 +135,7 @@ describe('tirage de la cible', () => {
   describe('sur un ennemi', () => {
     /** Un joueur de l'équipe adverse. */
     async function enemy(name: string, seed: AllySeed = {}): Promise<number> {
-      return player(name, { team: 'AZURE', ...seed })
+      return player(name, { team: 'MIDI', ...seed })
     }
 
     /** Ce que le tirage désigne dans l'équipe adverse pour ce dé-là. */

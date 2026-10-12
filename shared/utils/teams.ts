@@ -7,7 +7,8 @@
  * comme pour les Sorts — un renommage ne doit coûter ni migration ni refactor.
  * Voir specs/equipes.md.
  */
-export const TEAM_IDS = ['CRIMSON', 'AZURE'] as const
+/** `TLM` les Fauteuillistes, `MIDI` les Méridiens. */
+export const TEAM_IDS = ['TLM', 'MIDI'] as const
 
 export type TeamId = typeof TEAM_IDS[number]
 

@@ -15,8 +15,9 @@ Les équipes sont traitées à part, dans [`equipes.md`](./equipes.md).
 
 ### Où et quand
 
-Un Sort **se lance uniquement pendant l'attente** — jamais en ascension, ni en
-rattrapage, ni sur le profil. L'écran d'attente porte un accès vers
+Un Sort **se lance uniquement au camp** — l'attente, puis le rattrapage tant
+qu'il n'a pas commencé ; jamais en ascension, ni en rattrapage en cours, ni sur
+le profil. L'écran d'attente porte un accès vers
 une **page Sorts** dédiée, où le lancer se fait réellement.
 
 **Deux lancers par attente**, par lanceur, quels qu'ils soient. Deux sorts
@@ -357,10 +358,10 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 ## Écrans
 
 - **Icône baguette magique**, quatrième de la barre permanente. Visible partout,
-  **cliquable en attente seulement** — la seule phase où le lancer existe. Ailleurs
+  **cliquable au camp seulement** — le seul moment où le lancer existe. Ailleurs
   elle est désactivée, comme toute la barre l'est tant qu'un chrono tourne.
-- **Page Sorts** : inventaire, lancer, journaux. Accessible en attente uniquement.
-  L'inventaire n'est donc pas consultable hors attente — le joueur voit passer son
+- **Page Sorts** : inventaire, lancer, journaux. Accessible au camp uniquement.
+  L'inventaire n'est donc pas consultable hors du camp — le joueur voit passer son
   objet sur l'écran de coffre, puis le retrouve à sa prochaine mort.
   Chaque sort porte un bouton **par catégorie de cible** — jamais un nom, et jamais
   une liste de joueurs. La catégorie Allié n'apparaît qu'à qui a une équipe : sans

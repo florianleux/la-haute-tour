@@ -7,8 +7,8 @@ import type { TargetKind, TeamId } from '~~/shared/utils/teams'
  * Voir specs/equipes.md.
  */
 const TEAM_LABELS: Record<TeamId, string> = {
-  CRIMSON: 'Cramoisi',
-  AZURE: 'Azur',
+  TLM: 'Fauteuillistes',
+  MIDI: 'Méridiens',
 }
 
 export function teamLabel(team: TeamId | null): string {
