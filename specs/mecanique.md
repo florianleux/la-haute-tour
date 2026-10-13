@@ -31,12 +31,14 @@ Jouer sur deux écrans **en même temps** n'est pas supporté : la perte de focu
 
 ## Machine à états
 
+> **Pas encore implémenté (#34 à #44)** : `bossDoor` et `bossFight`. Aujourd'hui le serveur connaît cinq phases ; `floorEnd` franchit le palier au clic (`crossFloor`), et le dernier palier mène directement à `gameOver`.
+
 Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son écran : il affiche celui que la phase désigne. C'est la seule définition de « où en est le joueur » dans tout le projet — aucun autre document ne la reformule.
 
 | Phase | Quand | Contenu servi |
 |---|---|---|
 | `ascent` | Vies restantes, questions restantes à l'étage | La réservation en cours (énoncé + échéance), **ou** le verdict de la question qui vient d'être résolue |
-| `cooldown` | Plus de vies, délai d'attente non écoulé | Fin de l'attente, Pool Échecs de l'étage et ses erreurs contestables |
+| `cooldown` | Plus de vies, délai d'attente non écoulé | Fin de l'attente et effets en cours. Le Pool Échecs et ses erreurs contestables se lisent à part, par le Volumen (voir [`ecrans.md`](./ecrans.md#volumen)) |
 | `recovery` | Plus de vies, attente écoulée, Pool Échecs assez fourni | Les questions de rattrapage, une à une, avec le même mécanisme de réservation et de verdict qu'en ascension |
 | `floorEnd` | Toutes les questions de l'étage vues | Le palier atteint — prélude du boss de l'étage, plus la fin elle-même. Voir [`boss.md`](./boss.md) |
 | `bossDoor` | `floorEnd` franchi, boss pas encore battu | La porte du boss — fermée (moins de deux clés posées côté équipe) ou ouverte, sur le même champ. Voir [`boss.md`](./boss.md#porte-à-deux-clés) |
@@ -89,6 +91,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 ## Fin de partie
 
 - Toutes les questions du dernier étage vues → même système que les autres étages : porte, combat de boss. Battre le boss du dernier étage (ou le passer automatiquement) mène à `gameOver`, au lieu de `crossFloor`. Voir [`boss.md`](./boss.md#franchissement-détage).
+- **À venir** : le lore prévoit un 7e boss, Le Présentateur, entre le boss de l'étage 6 et `gameOver` (voir [`lore.md`](./lore.md#boss)). Ni son combat ni sa place dans la machine à états ne sont spécifiés ; d'ici là, `gameOver` suit le boss de l'étage 6.
 - Message de félicitations, phase terminale, pas de classement.
 - Le Pool Échecs du dernier étage peut rester non vide sans empêcher la fin.
 
@@ -108,7 +111,7 @@ Valeurs par défaut, identiques aux 6 étages :
 | Taille minimale du pool pour déclencher un rattrapage | 3 |
 | Réussites consécutives pour sortir du pool | 2 |
 | Attente après la dernière vie perdue | 12 h |
-| Attente après un rattrapage entièrement manqué | 4 h |
+| Attente après un rattrapage manqué | 4 h |
 | Tolérance de perte de focus | 1 s |
 | Lancers de sorts par attente | 2 |
 | Questions résolues entre deux coffres | 50 |

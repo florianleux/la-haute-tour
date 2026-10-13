@@ -1,5 +1,7 @@
 # Boss
 
+> **Pas encore implémenté.** Tout ce document décrit la cible, découpée en tickets #34 à #44. Aujourd'hui, le palier franchit l'étage au clic et le dernier palier mène directement à `gameOver`.
+
 Chaque étage se termine par un boss. Battu, il ouvre le suivant. Contrairement
 aux questions du deck, chaque boss est un mini-jeu propre — le cadre ci-dessous
 (PV, vies, tentatives) est commun à tous ; le contenu d'une épreuve ne l'est
@@ -11,8 +13,8 @@ pas.
 - Le boss a **7 PV** (`bossHp`). Une épreuve juste lui retire 1 PV, une
   épreuve fausse retire 1 vie au joueur. **C'est le modèle par défaut** : un
   boss peut le remplacer entièrement par sa propre logique de victoire/défaite
-  (voir [`boss-etage2-tacautac.md`](./boss-etage2-tacautac.md) pour un exemple
-  sans PV ni vies).
+  (par exemple sans PV ni vies ; aucun boss de ce genre n'est encore
+  spécifié — `boss-etage2-tacautac.md`, cité ici, n'existe pas).
 - **12 épreuves maximum** par combat sous le modèle par défaut — ce plafond
   découle du calcul PV/vies et ne s'applique pas aux boss qui s'en écartent.
   Le combat s'arrête dès que le boss est à 0 PV (victoire) ou le joueur à 0
@@ -173,7 +175,11 @@ l'a été.
 
 ## Points encore à spécifier
 
-Tous réglés par le grillage — voir les sections ci-dessus. Reste, propre à
+- **Le 7e boss**, Le Présentateur, que le lore place entre le boss de l'étage 6
+  et `gameOver` (voir [`lore.md`](./lore.md#boss)). À venir : d'ici là,
+  `gameOver` suit le boss de l'étage 6.
+
+Le reste est réglé par le grillage — voir les sections ci-dessus. Reste aussi, propre à
 chaque boss et hors périmètre de ce document : le contenu exact d'une épreuve
 (saisie, timer, anti-triche) et celui des 72 par boss (quelles épreuves dans
 quelle tranche de difficulté).

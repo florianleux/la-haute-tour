@@ -297,8 +297,10 @@ d'échec de 30 % en annonçait un pour cinq attentes.
 
 Deux conséquences à garder en tête, et la seconde est la plus importante :
 
-- La règle « un exemplaire d'un même sort par attente » ne mordra jamais. Elle reste
-  utile pour l'idempotence du lancer, mais son rôle d'équilibrage est mort.
+- Le plafond de lancers par attente (deux, quels qu'ils soient — voir
+  [Où et quand](#où-et-quand)) mordra rarement : son rôle d'équilibrage est faible.
+  Il a remplacé l'ancienne règle « un exemplaire d'un même sort par attente »
+  (ADR 0005).
 - **Les chiffres du jeu ont été posés en imaginant un joueur qui se trompe souvent.**
   Le vrai se trompe rarement. Tout ce qui se déclenche à la mort — l'attente, le
   Pool Échecs, le rattrapage, et l'ancrage des Sorts sur la tentative suivante — se
@@ -357,10 +359,12 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 
 ## Écrans
 
-- **Icône baguette magique**, quatrième de la barre permanente. Visible partout,
+- **Icône baguette magique**, deuxième de la barre permanente. Visible partout,
   **cliquable au camp seulement** — le seul moment où le lancer existe. Ailleurs
   elle est désactivée, comme toute la barre l'est tant qu'un chrono tourne.
-- **Page Sorts** : inventaire, lancer, journaux. Accessible au camp uniquement.
+- **Page Sorts**, le **Grimoire** côté joueur : pentacle, lancer, journaux — voir
+  [`ecrans.md`](./ecrans.md#sorts). Le lancer et le nombre d'exemplaires sont
+  absents tant que #76 n'est pas livré. Accessible au camp uniquement.
   L'inventaire n'est donc pas consultable hors du camp — le joueur voit passer son
   objet sur l'écran de coffre, puis le retrouve à sa prochaine mort.
   Chaque sort porte un bouton **par catégorie de cible** — jamais un nom, et jamais
@@ -413,7 +417,8 @@ côtés. Voir [`equipes.md`](./equipes.md).
 - Le multiplicateur noir de Répit est posé à ×2 par symétrie avec Chronomancie ;
   le catalogue d'origine disait +50 %. À confirmer.
 - Les libellés des cinq sorts. Les identifiants étant figés, ça ne bloque rien.
-- UI précise de la page Sorts et du journal.
+- UI précise de la page droite du Grimoire (#76) et de l'historique par sort
+  (#77, qui supprimera le journal des sorts reçus).
 
 ---
 

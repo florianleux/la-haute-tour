@@ -37,8 +37,8 @@ interface NavEntry {
 
 const ENTRIES: NavEntry[] = [
   { key: 'tower', to: '/', label: 'Le jeu' },
-  { key: 'wand', to: '/sorts', label: 'Mes sorts' },
-  { key: 'trophy', to: '/succes', label: 'Mes succès' },
+  { key: 'wand', to: '/sorts', label: 'Grimoire' },
+  { key: 'trophy', to: '/succes', label: 'Haut-faits' },
   { key: 'profile', to: '/profil', label: 'Mon profil' },
   { key: 'admin', to: '/admin', label: 'Administration', adminOnly: true },
 ]
@@ -50,7 +50,7 @@ const ENTRIES: NavEntry[] = [
  * Deux extinctions, et deux seulement. Tant qu'un chrono tourne, tout s'éteint —
  * en ascension comme en rattrapage, suivre un lien soumettrait la réponse en
  * l'état, donc le lien éteint retire un piège plutôt qu'il n'enferme. Et la
- * baguette s'éteint hors attente, la seule phase où le lancer existe.
+ * baguette s'éteint hors du camp, le seul moment où le lancer existe.
  *
  * La question ne compte que sur la page de jeu : l'état reste en cache après
  * qu'on l'a quittée, et une question laissée en cours éteindrait sinon la barre

@@ -23,8 +23,8 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 ## Étages
 
 - Chaque étage (1 à 6) porte un **nom d'objet céleste**, en gradation d'échelle.
-- Sa **porte** porte le nom de l'étage suivant (ex. la porte de l'étage 1 s'appelle la Porte de la Lune, et mène à l'étage 2, Lune).
-- La porte du dernier étage (6), la **Porte de l'Univers**, ne mène pas à un étage 7 (le jeu a 6 étages fixes, voir `spec.md`) : elle mène directement au **super boss final** (un 7ème boss, sans porte ni étage propre), puis à la sortie de la Tour — fin du jeu.
+- Sa **porte** porte le nom de l'étage suivant (ex. la porte de l'étage 1 s'appelle la Porte de la Lune). C'est la porte du boss de [`boss.md`](./boss.md#porte-à-deux-clés) (`bossDoor`, à deux clés) : le boss de l'étage se tient derrière, et le battre ouvre l'étage suivant (l'étage 2, Lune).
+- La porte du dernier étage (6), la **Porte de l'Univers**, ne mène pas à un étage 7 (le jeu a 6 étages fixes, voir `spec.md`) : derrière elle, le boss de l'étage 6, puis le **super boss final** (un 7ème boss, sans porte ni étage propre), puis la sortie de la Tour — fin du jeu.
 
 | Étage | Nom | Type d'objet | Porte |
 |---|---|---|---|
@@ -39,7 +39,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 
 ### L'Inconnu
 
-- Personnage mystérieux, encapuchonné, que le joueur rencontre **avant même l'introduction du jeu** (l'intro elle-même reste à développer séparément).
+- Personnage mystérieux, encapuchonné. C'est lui qui accueille le joueur à sa première connexion : l'introduction (`/intro`) est sa rencontre.
 - Donne au joueur des informations sur la prophétie, la Tour, etc.
 - À l'introduction, il révèle, à la demande du joueur : le Grand Événement, le déclin de la culture, la Tour et ses six étages (sans leurs noms), la prophétie — et les règles de base (questions, temps, vies, attente, rattrapage). La magie n'y est qu'évoquée. Texte : `pages/intro.vue`.
 - Aide le joueur par condescendance, pas par bonté : il pense, comme pour tous les aventuriers avant lui, qu'il échouera — donc lui donner des infos ne représente aucun risque à ses yeux.
@@ -48,9 +48,9 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 
 ## Boss
 
-- `boss-1.md` prévoit déjà un boss par étage (6 au total), avec un modèle PV/vies par défaut et 3 paliers de difficulté par boss. Le boss d'un étage se combat **avant** la porte de cet étage — modèle inchangé, y compris pour l'étage 6.
+- [`boss.md`](./boss.md) prévoit déjà un boss par étage (6 au total), avec un modèle PV/vies par défaut et 3 paliers de difficulté par boss. Le boss d'un étage se tient **derrière** la porte de cet étage — modèle inchangé, y compris pour l'étage 6.
 - Un **7ème boss**, le **super boss final**, vient s'ajouter **après** la Porte de l'Univers (étage 6). C'est **Le Présentateur** — voir section Personnages. Il n'a pas de porte ni d'étage propre.
-- Séquence complète de fin de jeu : étage 6 (Amas de la Vierge) → boss de l'étage 6 (`floorEnd`) → Porte de l'Univers → super boss final → sortie de la Tour (`gameOver`).
+- Séquence complète de fin de jeu : étage 6 (Amas de la Vierge), toutes ses questions vues (`floorEnd`) → Porte de l'Univers (`bossDoor`) → boss de l'étage 6 → super boss final → sortie de la Tour (`gameOver`). Le super boss est **à venir** : d'ici là, `gameOver` suit le boss de l'étage 6 (voir [`mecanique.md`](./mecanique.md#fin-de-partie)).
 - Design du super boss final non fait — pas le même combat que les 6 boss d'étage, à spécifier séparément.
 
 ## Points encore à spécifier
@@ -58,11 +58,10 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 - Détails du déclin de la culture (volontairement laissé flou).
 - Raison de la rivalité entre les deux guildes (volontairement laissé flou).
 - Le super boss final (Le Présentateur) : lieu narratif propre pour le combat, ou "hors lieu" (après l'Univers, sans étage associé) ? Design du combat non fait.
-- À quel moment/comment le joueur rencontre L'Inconnu avant l'intro (écran dédié, dialogue, autre) ?
 - Comment et quand le twist (L'Inconnu = Samuel Étienne) se révèle en jeu.
 - Tout flavor text par écran (intro, palier, gameOver, etc.).
-- Impact mécanique du 7ème boss sur `boss-1.md` (actuellement "un boss par étage, 6 au total") et sur la machine à états (`gameOver` après ce boss, pas après celui de l'étage 6).
+- Impact mécanique du 7ème boss sur [`boss.md`](./boss.md) (actuellement "un boss par étage, 6 au total") et sur la machine à états (`gameOver` après ce boss, pas après celui de l'étage 6).
 
 ---
 
-*Document de travail. Amende potentiellement `equipes.md` (noms des guildes), `spec.md` (glossaire — Grand Événement, prophétie, guildes), `boss-1.md` / `boss-etage6-facettes.md` (statut de boss final), et les futurs textes d'écran.*
+*Document de travail. Amende potentiellement `equipes.md` (noms des guildes), `spec.md` (glossaire — Grand Événement, prophétie, guildes), `boss.md` (statut de boss final), et les futurs textes d'écran.*

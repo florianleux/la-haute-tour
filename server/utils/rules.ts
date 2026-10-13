@@ -20,7 +20,7 @@ export interface FloorRules {
   poolSuccessesToLeave: number
   /** Cooldown after the last life is lost. */
   cooldownMs: number
-  /** Shorter cooldown after a recovery where nothing was answered right. */
+  /** Shorter cooldown after a failed recovery — quota out of reach, whatever was answered right. */
   cooldownAfterFailedRecoveryMs: number
   /**
    * How late an answer may arrive and still count. The deadline is the server's,

@@ -1,5 +1,5 @@
 <template>
-  <BaseCard wide :title="`Tes succès (${unlockedCount} / ${catalogue.length})`">
+  <BaseCard wide :title="`Haut-faits (${unlockedCount} / ${catalogue.length})`">
     <template #lead>
       Tout ce qu'il y a à accomplir est là, y compris ce que tu n'as pas encore.
       Un succès débloqué l'est à vie, et ne change rien à ta partie.

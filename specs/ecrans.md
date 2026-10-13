@@ -2,7 +2,7 @@
 
 ## Principes
 
-- **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers les Sorts, une coupe vers les Succès, un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
+- **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers le Grimoire (les Sorts), une coupe vers les Haut-faits (les Succès), un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
 - **Chaque icône a trois états.** **Lien** quand la page est atteignable d'ici. **Actif** quand c'est la page qu'on regarde : elle est mise en avant et ne mène nulle part, comme dans un en-tête ordinaire — on ne clique pas vers là où on est déjà. **Désactivé** quand on ne peut pas y aller maintenant : éteinte et inerte. La barre ne disparaît jamais ; ce sont ses liens qui s'éteignent.
 - **Le jeu est la page d'accueil.** `/` est la partie : c'est là qu'on atterrit en se connectant, là qu'on retombe en rechargeant, et il n'existe pas de vestibule devant. Un joueur qui n'a jamais commencé y trouve l'invitation à le faire ; les autres, leur phase. Rien à traverser pour jouer.
 - **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, porte de boss, combat de boss, fin — vit sur cette page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
@@ -10,20 +10,22 @@
 - **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension, en rattrapage, comme pendant une épreuve de combat de boss — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente, le palier ou la porte du boss (en attente de clés comme ouverte), rien ne tourne et la barre redevient vivante.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
 - **Un déblocage de Succès s'annonce par un toast**, et c'est la seule chose du jeu qui flotte par-dessus un écran. Il passe seul, sans rien demander : un succès n'appelle aucune décision, donc il ne doit rien interrompre. Il s'efface **de lui-même** au bout de quelques secondes et ne se ferme pas à la main : un bouton pour le congédier serait exactement la décision qu'un succès n'appelle pas. Il se pose sous la barre d'icônes et ne la recouvre jamais — ni au regard, ni au clic. Il n'apparaît que sur les déblocages qui arrivent pendant la partie — ceux que le joueur n'était pas là pour voir se découvrent sur leur page. Voir [`succes.md`](./succes.md#affichage).
-- **Les Succès ont leur icône dans la barre**, une coupe, entre la baguette et le buste. Elle ne s'éteint que pendant une question, comme le reste : la page se consulte à tout moment, contrairement aux Sorts qui n'existent qu'en attente. Un lien posé sur un écran de jeu aurait été introuvable — un joueur actif n'en voit aucun, sa page étant toujours prise par sa question, son verdict ou son attente.
-- **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'en attente, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette est donc **désactivée hors attente** — visible partout, cliquable là seulement. Elle annonce ainsi une page qui existe, à un moment qui viendra.
+- **Les Succès ont leur icône dans la barre**, une coupe, entre la baguette et le buste. Elle ne s'éteint que pendant une question, comme le reste : la page se consulte à tout moment, contrairement aux Sorts qui n'existent qu'au camp. Un lien posé sur un écran de jeu aurait été introuvable — un joueur actif n'en voit aucun, sa page étant toujours prise par sa question, son verdict ou son attente.
+- **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'au camp, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette est donc **désactivée hors du camp** — visible partout, cliquable là seulement. Elle annonce ainsi une page qui existe, à un moment qui viendra.
 
-## Inventaire
+## Liste des écrans
 
 | Écran | Accès | Ouvert sans compte |
 |---|---|---|
 | Connexion | `/login` | oui |
 | Accès refusé | `/refus` | oui |
-| Jeu | `/` — 7 phases, page d'accueil | non |
+| Introduction | `/intro` — imposée tant qu'elle n'est pas finie, rejouable par l'URL ensuite | non |
+| Jeu | `/` — 7 phases, page d'accueil (5 aujourd'hui : les phases de boss ne sont pas encore implémentées) | non |
 | Profil | `/profil` | non |
 | Grimoire (les Sorts) | `/sorts` — au camp seulement | non |
-| Haut-faits (les Succès) | `/succes` — par la barre | non |
+| Haut-faits (les Succès) | `/succes` — par la barre, ou la bannière du camp | non |
 | Volumen (les questions vues) | `/volumen` — au camp seulement | non |
+| Inventaire (les sorts en poche) | `/inventaire` — au camp seulement, par le sac. Page vide en attendant son contenu | non |
 | Dashboard admin | `/admin` | non, réservé admin |
 | File de contestation | `/admin` | non, réservé admin |
 | Questions | `/admin` | non, réservé admin |
@@ -75,7 +77,7 @@ Aucune autre action que répondre.
 
 Après résolution, l'écran montre le résultat : juste ou faux, la **réponse affichée** de la question, la réponse saisie par le joueur, et la vie perdue le cas échéant.
 
-Sur une question loot réussie, un **coffre** — que le joueur doit ouvrir par un clic distinct de « suivant » avant de pouvoir continuer. Son résultat, sort obtenu ou Mimic, s'affiche en bas de l'écran. Rien ne force l'ouverture : le joueur qui ne clique jamais reste là, et ne joue plus.
+Sur une question loot réussie, un **coffre** est annoncé. « Suivant » mène à l'écran du coffre, que le joueur doit ouvrir par un clic distinct avant de pouvoir continuer. Son résultat, sort obtenu ou Mimic, s'affiche sur cet écran. Rien ne force l'ouverture : le joueur qui ne clique jamais reste là, et ne joue plus.
 
 Deux actions : **contester** cette question, et passer à la suivante. Cet écran n'est pas chronométré.
 
@@ -86,7 +88,8 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 - Le **temps restant** avant reprise ou rattrapage.
 - L'accès au **Volumen**, par le parchemin du camp : c'est là que se relisent les erreurs de l'étage, et que se contestent celles qui peuvent l'être. Voir [Volumen](#volumen).
 - Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur au survol — et ceux qui frappent l'attente elle-même (Répit, Indulgence et Purge agissent dès le lancer). Le joueur a tout lu avant de reprendre. Chaque sort s'écrit en toutes lettres et ouvre son infobulle, voir [`bonus.md`](./bonus.md#linfobulle-dun-sort).
-- L'accès à la page **Sorts**, par l'icône baguette ou le grimoire du camp.
+- L'accès au **Grimoire**, par l'icône baguette ou le grimoire du camp.
+- Le **camp** lui-même, posé sur le décor : la corde (« Ascension »), roulée pendant l'attente, déroulée quand elle est échue — un clic lance alors la suite, comme le bouton « Commencer » ; la bannière de la guilde du joueur, qui mène aux Haut-faits (pas de bannière sans équipe, voir [`equipes.md`](./equipes.md)) ; le parchemin du Volumen ; le grimoire ; le sac de l'Inventaire. Chaque objet dit son nom au survol.
 
 ### `recovery` — rattrapage
 
@@ -99,6 +102,8 @@ Deux écarts assumés avec l'ascension, que l'illustration du camp impose. Le pa
 ### `floorEnd` — palier
 
 L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet écran qui suit la question, l'étage n'ayant plus rien à servir — puis une action pour continuer vers la porte du boss. Version sobre ; le reste du contenu est encore à spécifier.
+
+> **Pas encore implémenté (#34 à #44)** : en attendant le boss, l'action franchit le palier et sert la première question de l'étage suivant, et `gameOver` suit directement le palier du dernier étage. Les deux sections suivantes décrivent la cible.
 
 ### `bossDoor` — porte du boss
 
@@ -170,7 +175,7 @@ Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
 ## Ce qu'aucun écran joueur ne montre
 
 - **Aucun classement**, nulle part. Le serveur classe bien les joueurs par progression pour pondérer le tirage des Sorts, mais ce classement ne sort jamais du serveur et n'est montré à personne.
-- **Aucun inventaire hors attente** : la page Sorts n'existe que pendant l'attente.
+- **Aucun inventaire hors du camp** : le Grimoire et l'Inventaire n'existent qu'au camp.
 - **Aucune réponse hors camp** : le Volumen, seul écran qui relit les réponses des questions vues, ne s'ouvre qu'au camp — le rattrapage tire dans ce qu'il montre.
 - **Aucune cible avant le lancer** : le joueur choisit une catégorie, jamais une personne.
 - **Aucun compteur de triche** : les flags existent, ils sont réservés à l'administration.

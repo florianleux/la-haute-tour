@@ -1,6 +1,6 @@
 # La Haute Tour — conventions de code
 
-Projet greenfield, aucun code encore écrit. Specs fonctionnelles dans [`specs/`](specs/spec.md).
+Specs fonctionnelles dans [`specs/`](specs/spec.md), carte du code dans [`CONTEXT.md`](CONTEXT.md), décisions dans [`docs/adr/`](docs/adr/).
 
 ## Stack
 
@@ -16,6 +16,8 @@ Voir [`specs/architecture.md`](specs/architecture.md) pour le détail.
 ```
 la-haute-tour/
 ├── app.vue
+├── layouts/            # layouts Nuxt (défaut, admin)
+├── middleware/         # gardes de route (auth, camp)
 ├── pages/              # routes Nuxt (file-based routing)
 ├── components/         # composants Vue, PascalCase
 ├── composables/        # logique réutilisable côté client (useXxx.ts)
@@ -29,6 +31,8 @@ la-haute-tour/
 │   └── utils/          # helpers serveur (auth, validation)
 ├── drizzle/            # migrations générées par drizzle-kit
 ├── scripts/            # scripts CLI (import questions, etc.)
+├── tests/              # Vitest : tests/server (handlers, utils), tests/app (client)
+├── docs/adr/           # décisions d'architecture
 └── specs/              # specs fonctionnelles, source de vérité du domaine
 ```
 
