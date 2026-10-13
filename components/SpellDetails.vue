@@ -1,16 +1,16 @@
 <template>
   <div>
-    <div class="flex items-center" :class="large ? 'gap-4' : 'gap-3'">
+    <div class="flex items-center gap-3">
       <SpellMedallion
         :spell="spell"
         :face="effect?.face ?? 'mixed'"
-        class="shrink-0 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.4))]"
-        :class="large ? 'w-24' : 'w-[3.75rem]'"
+        class="w-[3.75rem] shrink-0 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.4))]"
+        :class="inked ? 'motion-safe:animate-ink-in [--enter-delay:0s]' : ''"
         fallback-class="border-2 border-amber-900/40 text-xl text-amber-900"
       />
 
-      <div class="min-w-0">
-        <p class="font-bold" :class="large ? 'text-2xl' : 'text-base'">
+      <div class="min-w-0" :class="inked ? 'motion-safe:animate-ink-in [--enter-delay:0.06s]' : ''">
+        <p class="text-base font-bold">
           {{ spellLabel(spell) }}
         </p>
         <p
@@ -25,45 +25,47 @@
       </div>
     </div>
 
-    <p
-      v-if="effect"
-      class="mt-3"
-    >
-      {{ spellEffects(spell)[effect.face] }}
-    </p>
-    <!-- Un sort en poche n'a pas encore de face : les deux se lisent, celle
-         qu'il prendra dépend de la cible. Voir specs/bonus.md#catégories-de-cible. -->
-    <dl
-      v-else
-      class="mt-3 space-y-2"
-    >
-      <div
-        v-for="face in SPELL_FACES"
-        :key="face"
+    <div :class="inked ? 'motion-safe:animate-ink-in [--enter-delay:0.12s]' : ''">
+      <p
+        v-if="effect"
+        class="mt-3"
       >
-        <dt>
-          <span :class="[FACE_TAG_CLASS, 'text-xs', FACE_TONES[face]]">{{ spellFaceLabel(face) }}</span>
-        </dt>
-        <dd class="mt-1">
-          {{ spellEffects(spell)[face] }}
-        </dd>
-      </div>
-    </dl>
+        {{ spellEffects(spell)[effect.face] }}
+      </p>
+      <!-- Un sort en poche n'a pas encore de face : les deux se lisent, celle
+           qu'il prendra dépend de la cible. Voir specs/bonus.md#catégories-de-cible. -->
+      <dl
+        v-else
+        class="mt-3 space-y-2"
+      >
+        <div
+          v-for="face in SPELL_FACES"
+          :key="face"
+        >
+          <dt>
+            <span :class="[FACE_TAG_CLASS, 'text-xs', FACE_TONES[face]]">{{ spellFaceLabel(face) }}</span>
+          </dt>
+          <dd class="mt-1">
+            {{ spellEffects(spell)[face] }}
+          </dd>
+        </div>
+      </dl>
 
-    <!-- La valeur réelle, tous effets cumulés. -->
-    <p
-      v-if="stake"
-      class="mt-2 border-t border-amber-900/20 pt-2"
-    >
-      {{ stake.label }} : <span class="text-amber-900/60">{{ stake.before }}</span> → <strong>{{ stake.after }}</strong>
-    </p>
+      <!-- La valeur réelle, tous effets cumulés. -->
+      <p
+        v-if="stake"
+        class="mt-2 border-t border-amber-900/20 pt-2"
+      >
+        {{ stake.label }} : <span class="text-amber-900/60">{{ stake.before }}</span> → <strong>{{ stake.after }}</strong>
+      </p>
 
-    <p
-      v-if="effect && state"
-      class="mt-2 italic text-amber-900/70"
-    >
-      {{ spellLifetime(effect, state) }}
-    </p>
+      <p
+        v-if="effect && state"
+        class="mt-2 italic text-amber-900/70"
+      >
+        {{ spellLifetime(effect, state) }}
+      </p>
+    </div>
   </div>
 </template>
 
@@ -79,8 +81,11 @@ import type { SpellSubject } from '~~/utils/spells'
 
 const props = defineProps<{
   subject: SpellSubject
-  /** En tête de page (le Grimoire) plutôt que dans une infobulle : médaillon et nom plus grands. */
-  large?: boolean
+  /**
+   * Apparaît à l'encre, en cascade : médaillon, nom, puis définition. Rejoué
+   * à chaque montage — le Grimoire remonte le détail à chaque sort choisi.
+   */
+  inked?: boolean
 }>()
 
 const spell = computed(() => splitSubject(props.subject).spell)

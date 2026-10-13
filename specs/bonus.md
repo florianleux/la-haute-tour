@@ -212,8 +212,8 @@ Trois lieux d'affichage :
   lanceur au survol — ainsi que ce qui frappe l'attente elle-même : Répit,
   Indulgence et Purge agissent dès le lancer, les autres attendent la tentative
   suivante. Le joueur a tout lu avant de reprendre.
-- **Le Grimoire** porte le journal de ce que le joueur a lancé : quel sort, sur
-  qui — ou sur personne quand le pool était vide — et quel jour. C'est là que le
+- **Le Grimoire** porte l'historique du sort choisi : ses cinq derniers
+  lancers, sur qui — ou sur personne quand le pool était vide — et quel jour. C'est là que le
   lanceur lit que son sort a touché quelqu'un. La cible, elle, lit qui l'a
   soutenue sur l'effet actif (« Lancé par »), pas dans un journal.
 - **L'ascension** affiche une **icône par effet actif**, pendant les questions

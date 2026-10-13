@@ -48,8 +48,8 @@
       </CampOverlayTitle>
 
       <!-- La page droite : le cadre rouge dessiné sur l'image montre le sort
-           choisi et de quoi le lancer ; dessous, le journal de ce que le
-           joueur a lancé, en attendant l'historique par sort (#77). Positions relevées sur l'image,
+           choisi et de quoi le lancer ; dessous, l'historique de ses derniers
+           lancers. Positions relevées sur l'image,
            en % du livre. -->
       <div class="pointer-events-none absolute inset-0" v-bind="fadeLayer(closing, '0.7s')">
         <BaseCloseButton
@@ -69,31 +69,36 @@
           </p>
 
           <template v-else>
-            <SpellDetails :subject="selected" large />
+            <!-- Changer de sort remonte le détail, le reste du cadre et
+                 l'historique (`:key`) : ils réapparaissent à l'encre, en
+                 cascade, du médaillon à la dernière ligne. -->
+            <SpellDetails :key="`details-${selected}`" :subject="selected" inked />
 
-            <p class="mt-3 font-medium">
-              {{ count ? `${count} exemplaire${count > 1 ? 's' : ''} en poche` : 'Plus aucun exemplaire en poche' }}
-            </p>
+            <div :key="`actions-${selected}`" class="motion-safe:animate-ink-in [--enter-delay:0.18s]">
+              <p class="mt-3 font-medium">
+                {{ count ? `${count} exemplaire${count > 1 ? 's' : ''} en poche` : 'Plus aucun exemplaire en poche' }}
+              </p>
 
-            <!-- Une catégorie par bouton, jamais une personne : le joueur ne
-                 choisit pas qui il touche, seulement de quel côté il frappe.
-                 Voir specs/bonus.md#tirage-de-la-cible. -->
-            <div class="mt-3 flex flex-wrap gap-2">
-              <BaseButton
-                v-for="kind in offeredTargets(canTargetOthers)"
-                :key="kind"
-                variant="parchment"
-                :disabled="!count || !castsLeft || casting !== null"
-                :loading="casting === selected && castingOn === kind"
-                @click="castOn(selected, kind)"
-              >
-                {{ targetKindLabel(kind) }}
-              </BaseButton>
+              <!-- Une catégorie par bouton, jamais une personne : le joueur ne
+                   choisit pas qui il touche, seulement de quel côté il frappe.
+                   Voir specs/bonus.md#tirage-de-la-cible. -->
+              <div class="mt-3 flex flex-wrap gap-2">
+                <BaseButton
+                  v-for="kind in offeredTargets(canTargetOthers)"
+                  :key="kind"
+                  variant="parchment"
+                  :disabled="!count || !castsLeft || casting !== null"
+                  :loading="casting === selected && castingOn === kind"
+                  @click="castOn(selected, kind)"
+                >
+                  {{ targetKindLabel(kind) }}
+                </BaseButton>
+              </div>
+
+              <BaseParchmentNote v-if="outcome" fixed class="mt-2" :tone="outcome.tone">
+                {{ outcome.text }}
+              </BaseParchmentNote>
             </div>
-
-            <BaseParchmentNote v-if="outcome" fixed class="mt-2" :tone="outcome.tone">
-              {{ outcome.text }}
-            </BaseParchmentNote>
           </template>
         </div>
 
@@ -102,27 +107,33 @@
             Impossible de lire ton inventaire. Recharge la page.
           </BaseNotice>
 
-          <!-- Le journal : c'est là que le lanceur lit ce qu'il a envoyé, et
-               quand. Il survit à l'effet, qui meurt avec la tentative qu'il a
-               ouverte. Des lignes serrées, à l'encre, comme un registre. -->
-          <template v-else>
+          <!-- L'historique du sort choisi : à qui ses derniers lancers sont
+               allés, et quand. Il survit à l'effet, qui meurt avec la
+               tentative qu'il a ouverte. Des lignes serrées, à l'encre, comme
+               un registre ; il réapparaît avec le sort choisi, dernier de la
+               cascade. -->
+          <div
+            v-else-if="selected"
+            :key="selected"
+            class="motion-safe:animate-ink-in [--enter-delay:0.26s]"
+          >
             <p class="font-bold">
-              Ce que tu as lancé
+              Historique
             </p>
-            <p v-if="!log.length" class="mt-1 italic text-amber-900/60">
-              Tu n'as encore rien lancé.
+            <p v-if="!history.length" class="mt-1 italic text-amber-900/60">
+              Tu n'as encore jamais lancé ce sort.
             </p>
             <ul v-else class="mt-1 space-y-0.5">
               <li
-                v-for="(entry, index) in log"
+                v-for="(entry, index) in history"
                 :key="index"
                 class="flex items-baseline justify-between gap-4"
               >
-                <span>{{ spellLabel(entry.spell) }} — sur {{ entry.targetName ?? 'personne' }}</span>
+                <span>Sur {{ entry.targetName ?? 'personne' }}</span>
                 <span class="shrink-0 text-amber-900/60">{{ formatPastDay(entry.castAt, now) }}</span>
               </li>
             </ul>
-          </template>
+          </div>
         </div>
       </div>
     </div>
@@ -130,8 +141,8 @@
 </template>
 
 <script setup lang="ts">
-// Le Grimoire : le pentacle des sorts, le lancer du sort choisi et le journal
-// des lancers — au camp et là seulement, ouvert par-dessus lui. Le lancer vise une
+// Le Grimoire : le pentacle des sorts, le lancer du sort choisi et son
+// historique — au camp et là seulement, ouvert par-dessus lui. Le lancer vise une
 // catégorie, jamais une personne : soi, ou un allié ou un ennemi que le serveur
 // tire et ne nomme qu'après. Voir specs/ecrans.md#sorts.
 import type { SpellId } from '~~/shared/utils/spells'
@@ -160,9 +171,17 @@ const {
 /** Le sort choisi au pentacle : rien à l'ouverture. */
 const selected = ref<SpellId | null>(null)
 
-// Le jour des lancers du journal se relit à la minute : un lancer d'hier
+// Le jour des lancers de l'historique se relit à la minute : un lancer d'hier
 // devient « Hier » au passage de minuit sans recharger.
 const now = useClockTick()
+
+/**
+ * Les cinq derniers lancers du sort choisi, du plus récent au plus ancien.
+ */
+// ponytail: filtré dans le journal global (20 derniers lancers, tous sorts
+// confondus) ; un sort peu lancé peut n'y plus figurer. #77 le lira par sort
+// côté serveur.
+const history = computed(() => log.value.filter(entry => entry.spell === selected.value).slice(0, 5))
 
 /** Les exemplaires du sort choisi encore en poche. */
 const count = computed(() => entries.value.find(entry => entry.spell === selected.value)?.count ?? 0)
