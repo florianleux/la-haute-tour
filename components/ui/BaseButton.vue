@@ -33,9 +33,10 @@ const props = withDefaults(defineProps<{
    * `text` : le libellé seul, sans fond, pour une surface claire. `option` :
    * pareil, en italique et resserré, pour une réponse parmi d'autres empilées —
    * à la taille et à la couleur du texte qui l'entoure, qu'elle reprend plutôt
-   * que d'imposer les siennes.
+   * que d'imposer les siennes. `parchment` : un bouton tracé à l'encre, pour
+   * une action posée sur du papier (le Grimoire), où les fonds sombres jurent.
    */
-  variant?: 'primary' | 'ghost' | 'text' | 'option'
+  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -59,6 +60,7 @@ const VARIANTS = {
   ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
   option: 'py-1 italic bg-transparent text-inherit hover:underline',
+  parchment: `${PADDED} border-2 border-amber-900/40 bg-transparent text-amber-950 enabled:hover:bg-amber-900/10`,
 }
 
 const classes = computed(() => [

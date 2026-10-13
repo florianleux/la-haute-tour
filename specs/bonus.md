@@ -25,9 +25,9 @@ différents ou deux fois le même : le plafond porte sur le nombre, jamais sur
 l'identité. Un joueur peut donc empiler deux Répit sur sa propre attente et la
 diviser par quatre, sans attendre les équipes.
 
-Le nombre restant se lit sur la page Sorts, et les boutons s'éteignent une fois
-les deux dépensés : la règle se voit avant le clic, elle ne se découvre pas
-après.
+Les boutons du Grimoire s'éteignent une fois les deux dépensés : le refus se
+voit avant le clic, il ne se découvre pas après. Le nombre restant, lui, n'est
+pas affiché.
 
 Le plafond est tenu **côté serveur, en condition d'écriture** — sur la
 consommation de l'exemplaire, jamais sur une lecture préalable qui laisserait
@@ -212,11 +212,10 @@ Trois lieux d'affichage :
   lanceur au survol — ainsi que ce qui frappe l'attente elle-même : Répit,
   Indulgence et Purge agissent dès le lancer, les autres attendent la tentative
   suivante. Le joueur a tout lu avant de reprendre.
-- **La page Sorts** porte le journal complet, en **deux listes horodatées** : ce que
-  le joueur a lancé, sur qui — ou sur personne quand le pool était vide — et ce
-  qu'il a reçu, de qui. C'est là que le lanceur lit que son sort a touché
-  quelqu'un, et que la cible lit qui l'a soutenue. Ce qu'un joueur s'est lancé à
-  lui-même ne figure que d'un côté, celui des lancers.
+- **Le Grimoire** porte le journal de ce que le joueur a lancé : quel sort, sur
+  qui — ou sur personne quand le pool était vide — et quel jour. C'est là que le
+  lanceur lit que son sort a touché quelqu'un. La cible, elle, lit qui l'a
+  soutenue sur l'effet actif (« Lancé par »), pas dans un journal.
 - **L'ascension** affiche une **icône par effet actif**, pendant les questions
   concernées. Un joueur dont le timer démarre à 30 s trois jours après avoir lu
   l'avertissement doit pouvoir comprendre pourquoi plutôt que de croire à un bug.
@@ -417,8 +416,8 @@ côtés. Voir [`equipes.md`](./equipes.md).
 - Le multiplicateur noir de Répit est posé à ×2 par symétrie avec Chronomancie ;
   le catalogue d'origine disait +50 %. À confirmer.
 - Les libellés des cinq sorts. Les identifiants étant figés, ça ne bloque rien.
-- UI précise de la page droite du Grimoire (#76) et de l'historique par sort
-  (#77, qui supprimera le journal des sorts reçus).
+- UI précise de l'historique par sort (#77, qui supprimera le journal des
+  sorts reçus côté serveur).
 
 ---
 

@@ -1,7 +1,7 @@
 <template>
   <p
-    class="text-[2.2cqw] italic"
-    :class="TONE_INK[tone]"
+    class="italic"
+    :class="[TONE_INK[tone], fixed ? 'text-xs' : 'text-[2.2cqw]']"
   >
     <slot />
   </p>
@@ -28,5 +28,13 @@ const TONE_INK: Record<Tone, string> = {
   warning: 'text-amber-900/80',
 }
 
-withDefaults(defineProps<{ tone?: Tone }>(), { tone: 'neutral' })
+withDefaults(defineProps<{
+  tone?: Tone
+  /**
+   * Hors d'une carte qui se mesure (`@container`), comme la page droite du
+   * Grimoire : à taille fixe, celle du texte voisin, plutôt qu'en part de la
+   * carte.
+   */
+  fixed?: boolean
+}>(), { tone: 'neutral', fixed: false })
 </script>

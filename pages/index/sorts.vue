@@ -47,72 +47,81 @@
         Grimoire
       </CampOverlayTitle>
 
-      <!-- La page droite. Le contenu y est posé tel quel en attendant le
-           cadre rouge et l'historique du sort choisi (#76, #77) : il défile.
-           Le lancer revient avec le cadre rouge. -->
-      <div
-        class="absolute bottom-[9%] left-[54%] right-[10%] top-[15%] flex flex-col"
-        v-bind="fadeLayer(closing, '0.7s')"
-      >
-        <BaseCloseButton label="Fermer le Grimoire" class="absolute -right-2 -top-2 z-10" @click="close" />
+      <!-- La page droite : le cadre rouge dessiné sur l'image montre le sort
+           choisi et de quoi le lancer ; dessous, le journal de ce que le
+           joueur a lancé, en attendant l'historique par sort (#77). Positions relevées sur l'image,
+           en % du livre. -->
+      <div class="pointer-events-none absolute inset-0" v-bind="fadeLayer(closing, '0.7s')">
+        <BaseCloseButton
+          label="Fermer le Grimoire"
+          class="pointer-events-auto absolute right-[9%] top-[12%] z-10"
+          @click="close"
+        />
 
-        <div class="min-h-0 flex-1 overflow-y-auto pr-8 text-slate-900">
-          <!-- Le budget de lancers de l'attente. Ses boutons reviennent avec le
-               cadre rouge (#76), qui le posera sous eux. Voir
-               specs/bonus.md#où-et-quand. -->
-          <BaseHint :tone="castsLeft ? 'neutral' : 'warning'">
-            <template v-if="castsLeft">
-              Il te reste {{ castsLeft }} lancer{{ castsLeft > 1 ? 's' : '' }} pour
-              cette attente.
-            </template>
-            <template v-else>
-              Tu as dépensé tes {{ castsPerCooldown }} lancers : la prochaine attente
-              t'en rendra autant.
-            </template>
-          </BaseHint>
+        <!-- Dans le cadre rouge, un peu en retrait de son trait. Il défile si
+             la description déborde, sur un petit écran. -->
+        <div class="pointer-events-auto absolute bottom-[37%] left-[56.5%] right-[13.5%] top-[18%] overflow-y-auto text-sm leading-snug text-amber-950">
+          <p
+            v-if="!selected"
+            class="flex size-full items-center justify-center text-center italic text-amber-900/60"
+          >
+            Choisis un sort dans le pentacle.
+          </p>
 
-          <!-- L'échéance de l'attente, qu'un Répit fait reculer. Voir
-               specs/bonus.md#catalogue. -->
-          <BaseHint v-if="cooldownRemaining" class="mt-4">
-            Reprise dans {{ cooldownRemaining }}.
-          </BaseHint>
+          <template v-else>
+            <SpellDetails :subject="selected" large />
 
+            <p class="mt-3 font-medium">
+              {{ count ? `${count} exemplaire${count > 1 ? 's' : ''} en poche` : 'Plus aucun exemplaire en poche' }}
+            </p>
+
+            <!-- Une catégorie par bouton, jamais une personne : le joueur ne
+                 choisit pas qui il touche, seulement de quel côté il frappe.
+                 Voir specs/bonus.md#tirage-de-la-cible. -->
+            <div class="mt-3 flex flex-wrap gap-2">
+              <BaseButton
+                v-for="kind in offeredTargets(canTargetOthers)"
+                :key="kind"
+                variant="parchment"
+                :disabled="!count || !castsLeft || casting !== null"
+                :loading="casting === selected && castingOn === kind"
+                @click="castOn(selected, kind)"
+              >
+                {{ targetKindLabel(kind) }}
+              </BaseButton>
+            </div>
+
+            <BaseParchmentNote v-if="outcome" fixed class="mt-2" :tone="outcome.tone">
+              {{ outcome.text }}
+            </BaseParchmentNote>
+          </template>
+        </div>
+
+        <div class="pointer-events-auto absolute bottom-[9%] left-[56%] right-[12%] top-[67%] overflow-y-auto pr-4 text-sm leading-snug text-amber-950">
           <BaseNotice v-if="failed">
             Impossible de lire ton inventaire. Recharge la page.
           </BaseNotice>
 
+          <!-- Le journal : c'est là que le lanceur lit ce qu'il a envoyé, et
+               quand. Il survit à l'effet, qui meurt avec la tentative qu'il a
+               ouverte. Des lignes serrées, à l'encre, comme un registre. -->
           <template v-else>
-            <!-- Le journal : c'est là que le lanceur lit ce qu'il a envoyé, et quand.
-                 Il survit à l'effet, qui meurt avec la tentative qu'il a ouverte. -->
-            <BaseSection title="Ce que tu as lancé" class="mt-8">
-              <BaseList class="mt-4" :empty="log.length ? null : 'Tu n\'as encore rien lancé.'">
-                <li
-                  v-for="(entry, index) in log"
-                  :key="index"
-                  class="flex items-baseline justify-between gap-4 px-4 py-3"
-                >
-                  <span class="font-medium">
-                    {{ spellLabel(entry.spell) }} — sur {{ entry.targetName ?? 'personne' }}
-                  </span>
-                  <span class="text-sm text-slate-400">{{ formatDayTime(entry.castAt) }}</span>
-                </li>
-              </BaseList>
-            </BaseSection>
-
-            <!-- L'autre côté du même système : sans lui, personne ne saurait jamais
-                 qu'un allié l'a soutenu. Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur. -->
-            <BaseSection title="Ce que tu as reçu" class="mt-8">
-              <BaseList class="mt-4" :empty="received.length ? null : 'Personne ne t\'a encore rien lancé.'">
-                <li
-                  v-for="(entry, index) in received"
-                  :key="index"
-                  class="flex items-baseline justify-between gap-4 px-4 py-3"
-                >
-                  <span class="font-medium">{{ spellLabel(entry.spell) }} — de {{ entry.casterName }}</span>
-                  <span class="text-sm text-slate-400">{{ formatDayTime(entry.castAt) }}</span>
-                </li>
-              </BaseList>
-            </BaseSection>
+            <p class="font-bold">
+              Ce que tu as lancé
+            </p>
+            <p v-if="!log.length" class="mt-1 italic text-amber-900/60">
+              Tu n'as encore rien lancé.
+            </p>
+            <ul v-else class="mt-1 space-y-0.5">
+              <li
+                v-for="(entry, index) in log"
+                :key="index"
+                class="flex items-baseline justify-between gap-4"
+              >
+                <span>{{ spellLabel(entry.spell) }} — sur {{ entry.targetName ?? 'personne' }}</span>
+                <span class="shrink-0 text-amber-900/60">{{ formatPastDay(entry.castAt, now) }}</span>
+              </li>
+            </ul>
           </template>
         </div>
       </div>
@@ -121,9 +130,13 @@
 </template>
 
 <script setup lang="ts">
-// Le Grimoire : le pentacle des sorts et les deux journaux — au camp et là
-// seulement, ouvert par-dessus lui. Voir specs/ecrans.md#sorts.
+// Le Grimoire : le pentacle des sorts, le lancer du sort choisi et le journal
+// des lancers — au camp et là seulement, ouvert par-dessus lui. Le lancer vise une
+// catégorie, jamais une personne : soi, ou un allié ou un ennemi que le serveur
+// tire et ne nomme qu'après. Voir specs/ecrans.md#sorts.
 import type { SpellId } from '~~/shared/utils/spells'
+import type { TargetKind } from '~~/shared/utils/teams'
+import type { Tone } from '~~/utils/tone'
 
 definePageMeta({
   // Hors du camp, la page n'est pas atteignable — URL comprise. Le serveur
@@ -133,21 +146,58 @@ definePageMeta({
 })
 
 const {
+  entries,
   discovered,
   log,
-  received,
   failed,
+  canTargetOthers,
   castsLeft,
-  castsPerCooldown,
+  casting,
+  castFailed,
+  cast,
 } = await useInventory()
 
 /** Le sort choisi au pentacle : rien à l'ouverture. */
 const selected = ref<SpellId | null>(null)
 
-// L'état de jeu : l'échéance de l'attente, et la fermeture si la partie quitte
-// le camp (CampOverlay).
+// Le jour des lancers du journal se relit à la minute : un lancer d'hier
+// devient « Hier » au passage de minuit sans recharger.
+const now = useClockTick()
+
+/** Les exemplaires du sort choisi encore en poche. */
+const count = computed(() => entries.value.find(entry => entry.spell === selected.value)?.count ?? 0)
+
+// L'état de jeu : la fermeture si la partie quitte le camp (CampOverlay), et le
+// minuteur du camp, dessous, qu'un Répit fait reculer au retour du lancer.
 const game = await useGameState()
-const { state } = game
+
+// Quelle catégorie est en vol : un bouton par catégorie, et seul celui qu'on a
+// pressé tourne.
+const castingOn = ref<TargetKind | null>(null)
+
+/** Ce que le dernier lancer a donné, pour le sort choisi seulement. */
+const outcome = ref<{ text: string, tone: Tone } | null>(null)
+
+watch(selected, () => {
+  outcome.value = null
+})
+
+async function castOn(spell: SpellId, kind: TargetKind): Promise<void> {
+  castingOn.value = kind
+  outcome.value = null
+
+  await cast(spell, kind)
+
+  // La première ligne du journal est celle qui vient de partir : il revient trié
+  // du plus récent au plus ancien. Voir server/utils/effects.ts.
+  const targetName = log.value[0]?.targetName ?? null
+  outcome.value = castFailed.value
+    ? { text: 'Le sort n\'est pas parti. Réessaie.', tone: 'danger' }
+    : { text: castOutcome(spell, kind, targetName), tone: kind === 'self' || targetName ? 'success' : 'warning' }
+  castingOn.value = null
+
+  await game.refresh()
+}
 
 /**
  * La magie du livre : des étincelles semées sur toute sa surface, en % de sa
@@ -173,12 +223,4 @@ const SPARKS = [
   { left: '96%', top: '12%', size: '3.1%', delay: '1.6s' },
   { left: '14%', top: '88%', size: '4.2%', delay: '1.05s' },
 ]
-
-// L'échéance se relit à la minute, comme les fiches de l'administration : c'est
-// assez fin pour qu'aucun chiffre affiché ne soit faux, et le Répit la fait
-// reculer d'un coup au retour du lancer.
-const now = useClockTick()
-const cooldownRemaining = computed(() =>
-  (state.value?.cooldownUntil ? formatRemaining(state.value.cooldownUntil, now.value) : ''),
-)
 </script>

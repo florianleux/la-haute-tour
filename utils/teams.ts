@@ -1,3 +1,4 @@
+import { TARGET_KINDS } from '~~/shared/utils/teams'
 import type { TargetKind, TeamId } from '~~/shared/utils/teams'
 
 /**
@@ -28,4 +29,13 @@ const TARGET_KIND_LABELS: Record<TargetKind, string> = {
 
 export function targetKindLabel(kind: TargetKind): string {
   return TARGET_KIND_LABELS[kind]
+}
+
+/**
+ * Les catégories qu'un bouton de lancer propose : Soi toujours, Allié et Ennemi
+ * seulement à qui a une équipe — sans elle, elles ne désigneraient aucun pool.
+ * Voir specs/equipes.md#le-joueur-sans-équipe.
+ */
+export function offeredTargets(canTargetOthers: boolean): TargetKind[] {
+  return TARGET_KINDS.filter(kind => kind === 'self' || canTargetOthers)
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCountdown, formatDay, formatDuration, formatReturnAt, formatRemaining, formatTime, formatCooldownMinutes } from '../../utils/date'
+import { formatCountdown, formatDay, formatDuration, formatPastDay, formatReturnAt, formatRemaining, formatTime, formatCooldownMinutes } from '../../utils/date'
 
 describe('date lisible', () => {
   it('rend le jour en français', () => {
@@ -135,5 +135,27 @@ describe('heure de retour', () => {
 
   it('donne la date au-delà de demain', () => {
     expect(formatReturnAt('2026-09-05T08:00:00.000Z', now)).toBe('le 5 septembre à 10h00')
+  })
+})
+
+describe('jour passé', () => {
+  // 10h00 à Paris.
+  const now = new Date('2026-09-10T08:00:00.000Z').getTime()
+
+  it('dit aujourd hui le jour même à Paris', () => {
+    expect(formatPastDay('2026-09-09T22:30:00.000Z', now)).toBe('Aujourd\'hui')
+  })
+
+  it('dit hier la veille', () => {
+    expect(formatPastDay('2026-09-09T08:00:00.000Z', now)).toBe('Hier')
+  })
+
+  it('compte les jours jusqu à une semaine', () => {
+    expect(formatPastDay('2026-09-08T08:00:00.000Z', now)).toBe('Il y a 2 jours')
+    expect(formatPastDay('2026-09-04T08:00:00.000Z', now)).toBe('Il y a 6 jours')
+  })
+
+  it('donne la date à partir d une semaine', () => {
+    expect(formatPastDay('2026-09-03T08:00:00.000Z', now)).toBe('3 septembre 2026')
   })
 })

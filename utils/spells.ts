@@ -4,6 +4,7 @@ import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 import type { EffectStake, EffectView } from '~~/server/utils/effects'
 import type { StakeRule } from '~~/server/utils/spellbook'
 import type { GameState } from '~~/server/utils/game'
+import type { TargetKind } from '~~/shared/utils/teams'
 
 /**
  * Le nom d'un sort, montré au joueur. Provisoire, contrairement à l'identifiant
@@ -20,6 +21,21 @@ const SPELL_LABELS: Record<SpellId, string> = {
 
 export function spellLabel(spell: SpellId): string {
   return SPELL_LABELS[spell]
+}
+
+/**
+ * Ce qu'un lancer a touché, dit au lanceur au retour : la cible n'était pas
+ * annoncée avant. La catégorie visée voyage avec, pour qu'il ne lise pas son
+ * propre nom quand il s'est visé lui-même. Voir specs/bonus.md#tirage-de-la-cible.
+ */
+export function castOutcome(spell: SpellId, kind: TargetKind, targetName: string | null): string {
+  if (kind === 'self') {
+    return `${spellLabel(spell)} est posé sur toi.`
+  }
+
+  return targetName
+    ? `${spellLabel(spell)} est parti sur ${targetName}.`
+    : `${spellLabel(spell)} n'a trouvé personne à toucher : l'exemplaire est dépensé quand même.`
 }
 
 /**

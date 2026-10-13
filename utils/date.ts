@@ -161,3 +161,24 @@ export function formatDuration(ms: number): string {
     .map(([value, unit]) => `${value} ${unit}`)
     .join(' ') || '0 s'
 }
+
+/**
+ * Un jour passé, comme on le dit d'un journal : « Aujourd'hui », « Hier »,
+ * « Il y a 3 jours », puis la date dès qu'il a une semaine. Le jour se compte
+ * à Paris, comme pour `formatReturnAt`.
+ */
+export function formatPastDay(iso: string, now: number): string {
+  const days = Math.round(
+    (Date.parse(calendarDayFormat.format(now)) - Date.parse(calendarDayFormat.format(new Date(iso)))) / 86_400_000,
+  )
+
+  if (days <= 0) {
+    return 'Aujourd\'hui'
+  }
+
+  if (days === 1) {
+    return 'Hier'
+  }
+
+  return days < 7 ? `Il y a ${days} jours` : formatDay(iso)
+}

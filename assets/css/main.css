@@ -201,6 +201,22 @@
     100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(180deg); }
   }
 
+  /* Le médaillon choisi au pentacle du Grimoire, en dessin animé : il se
+     ramasse (anticipation), jaillit étiré en tournant, retombe trop large et
+     tremble avant de se poser. Une lueur dorée le traverse au sommet, quand la
+     gerbe part. Voir components/SpellPentacle.vue. */
+  --animate-spell-pick: spell-pick 0.8s ease-out;
+
+  @keyframes spell-pick {
+    0% { transform: scale(1); }
+    15% { transform: translateY(10%) scale(1.25, 0.75); }
+    35% { transform: translateY(-25%) scale(0.8, 1.3) rotate(-12deg); filter: drop-shadow(0 0 6px #fde68a) drop-shadow(0 0 18px #f59e0b); }
+    55% { transform: translateY(0) scale(1.2, 0.9) rotate(8deg); filter: drop-shadow(0 0 4px #fde68a) drop-shadow(0 0 12px #f59e0b); }
+    70% { transform: scale(0.92, 1.08) rotate(-4deg); }
+    85% { transform: scale(1.04, 0.97) rotate(1deg); }
+    100% { transform: scale(1); }
+  }
+
   /* Le climax du sort qui jaillit, calé sur `animate-emerge` (même durée,
      même départ) : tout se passe pendant la pause, entre 20 et 60 %, quand il tient à quatre
      fois sa taille. Voir components/ChestCard.vue. */
