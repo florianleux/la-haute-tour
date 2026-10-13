@@ -10,8 +10,8 @@ export const INVENTORY_KEY = 'inventory'
 
 export interface InventoryRead {
   entries: Ref<InventoryEntryView[]>
-  /** Le nombre d'exemplaires possédés, doublons compris. */
-  total: Ref<number>
+  /** Les sorts obtenus au moins une fois, dans l'ordre du catalogue. */
+  discovered: Ref<SpellId[]>
   /** Ce que le joueur a lancé, du plus récent au plus ancien. */
   log: Ref<CastView[]>
   /** Ce qu'il a reçu des autres, du plus récent au plus ancien. */
@@ -70,7 +70,7 @@ export async function useInventory(): Promise<InventoryRead> {
 
   return {
     entries: computed<InventoryEntryView[]>(() => data.value?.entries ?? []),
-    total: computed<number>(() => data.value?.total ?? 0),
+    discovered: computed<SpellId[]>(() => data.value?.discovered ?? []),
     log: computed<CastView[]>(() => data.value?.log ?? []),
     received: computed<ReceivedView[]>(() => data.value?.received ?? []),
     canTargetOthers: computed<boolean>(() => data.value?.canTargetOthers ?? false),

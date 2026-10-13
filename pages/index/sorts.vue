@@ -23,6 +23,14 @@
            d'une couverture à l'autre, sous les onglets du haut. -->
       <div class="absolute inset-x-[1.5%] bottom-0 top-[10%]" />
 
+      <!-- La page gauche : un rond par sort, médaillon une fois découvert. Le
+           rond choisi dit quel sort la page droite montre. -->
+      <SpellPentacle
+        v-model="selected"
+        :discovered="discovered"
+        v-bind="fadeLayer(closing, '0.5s')"
+      />
+
       <!-- La magie du livre : des étincelles partout dessus, qui s'allument
            une fois le livre posé. Un halo ambré au plus près les détache du
            papier clair. Elles tournent en boucle : la sortie ne les attend
@@ -30,7 +38,7 @@
       <SparkleField
         :sparks="SPARKS"
         class="pointer-events-none [filter:drop-shadow(0_0_2px_#d97706)_drop-shadow(0_0_8px_#fde68a)]"
-        :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0s]' : 'motion-safe:animate-fade-in [--enter-delay:0.6s]'"
+        v-bind="fadeLayer(closing, '0.6s')"
       />
 
       <!-- Le titre, au-dessus du livre, dans l'éclat des noms du camp : il
@@ -40,24 +48,19 @@
       </CampOverlayTitle>
 
       <!-- La page droite. Le contenu y est posé tel quel en attendant le
-           pentacle et le cadre rouge (tickets à part) : il défile. -->
+           cadre rouge et l'historique du sort choisi (#76, #77) : il défile.
+           Le lancer revient avec le cadre rouge. -->
       <div
         class="absolute bottom-[9%] left-[54%] right-[10%] top-[15%] flex flex-col"
-        :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0s]' : 'motion-safe:animate-fade-in [--enter-delay:0.7s]'"
+        v-bind="fadeLayer(closing, '0.7s')"
       >
         <BaseCloseButton label="Fermer le Grimoire" class="absolute -right-2 -top-2 z-10" @click="close" />
 
         <div class="min-h-0 flex-1 overflow-y-auto pr-8 text-slate-900">
-          <p class="text-sm">
-            Ce que tes coffres t'ont donné. Tu peux lancer {{ castsPerCooldown }} sorts
-            par attente, quels qu'ils soient — deux fois le même si tu veux. La plupart
-            attendent ta prochaine tentative ; le Répit, lui, raccourcit l'attente que
-            tu es en train de vivre.
-          </p>
-
-          <!-- Le budget se lit avant le clic : un bouton qu'on presse en vain est une
-               règle qu'on découvre trop tard. Voir specs/bonus.md#où-et-quand. -->
-          <BaseHint class="mt-4" :tone="castsLeft ? 'neutral' : 'warning'">
+          <!-- Le budget de lancers de l'attente. Ses boutons reviennent avec le
+               cadre rouge (#76), qui le posera sous eux. Voir
+               specs/bonus.md#où-et-quand. -->
+          <BaseHint :tone="castsLeft ? 'neutral' : 'warning'">
             <template v-if="castsLeft">
               Il te reste {{ castsLeft }} lancer{{ castsLeft > 1 ? 's' : '' }} pour
               cette attente.
@@ -68,9 +71,8 @@
             </template>
           </BaseHint>
 
-          <!-- Le seul retour instantané du système : l'échéance recule sous les yeux
-               du joueur, sur l'écran d'où il vient de lancer.
-               Voir specs/bonus.md#catalogue. -->
+          <!-- L'échéance de l'attente, qu'un Répit fait reculer. Voir
+               specs/bonus.md#catalogue. -->
           <BaseHint v-if="cooldownRemaining" class="mt-4">
             Reprise dans {{ cooldownRemaining }}.
           </BaseHint>
@@ -80,71 +82,6 @@
           </BaseNotice>
 
           <template v-else>
-            <BaseSection :title="`Inventaire (${total})`" class="mt-8">
-              <BaseList
-                class="mt-4"
-                :empty="entries.length ? null : 'Aucun sort pour l\'instant : les coffres des questions loot en donnent.'"
-              >
-                <li
-                  v-for="entry in entries"
-                  :key="entry.spell"
-                  class="px-4 py-3"
-                >
-                  <div class="flex items-center justify-between gap-4">
-                    <span class="font-medium">
-                      {{ spellLabel(entry.spell) }}
-                      <!-- Les doublons se comptent plutôt qu'ils ne s'alignent : un
-                           exemplaire ne se distingue d'un autre par rien. -->
-                      <span class="ml-1 text-sm font-normal text-slate-400">×{{ entry.count }}</span>
-                    </span>
-                    <!-- Un sort dont l'effet n'existe pas encore attend son tour dans
-                         l'inventaire : le lancer coûterait un exemplaire pour rien. -->
-                    <BaseHint v-if="!isCastable(entry.spell)">
-                      Bientôt lançable
-                    </BaseHint>
-                    <!-- Une catégorie par bouton, jamais une personne : le joueur ne
-                         choisit pas qui il touche, seulement de quel côté il frappe.
-                         Voir specs/bonus.md#tirage-de-la-cible. -->
-                    <div v-else class="flex shrink-0 gap-2">
-                      <BaseButton
-                        v-for="kind in offeredTargets"
-                        :key="kind"
-                        variant="ghost"
-                        :disabled="!castsLeft || casting !== null"
-                        :loading="casting === entry.spell && castingOn === kind"
-                        @click="castOn(entry.spell, kind)"
-                      >
-                        {{ targetKindLabel(kind) }}
-                      </BaseButton>
-                    </div>
-                  </div>
-
-                  <!-- Ce que le sort fait, avant de le dépenser : un exemplaire lancé
-                       ne revient pas. -->
-                  <SpellEffects :spell="entry.spell" class="mt-0.5" />
-                </li>
-              </BaseList>
-            </BaseSection>
-
-            <BaseNotice v-if="castFailed" class="mt-4">
-              Le sort n'est pas parti. Réessaie.
-            </BaseNotice>
-
-            <!-- La cible n'est pas annoncée avant le lancer ; elle l'est après, ici,
-                 sur l'écran d'où le sort est parti. Voir specs/bonus.md#tirage-de-la-cible. -->
-            <BaseHint v-else-if="lastCast" class="mt-4" :tone="lastCast.view.targetName ? 'success' : 'warning'">
-              <template v-if="lastCast.kind === 'self'">
-                {{ spellLabel(lastCast.view.spell) }} est posé sur toi.
-              </template>
-              <template v-else-if="lastCast.view.targetName">
-                {{ spellLabel(lastCast.view.spell) }} est parti sur {{ lastCast.view.targetName }}.
-              </template>
-              <template v-else>
-                {{ spellLabel(lastCast.view.spell) }} n'a trouvé personne à toucher :
-                l'exemplaire est dépensé quand même.
-              </template>
-            </BaseHint>
-
             <!-- Le journal : c'est là que le lanceur lit ce qu'il a envoyé, et quand.
                  Il survit à l'effet, qui meurt avec la tentative qu'il a ouverte. -->
             <BaseSection title="Ce que tu as lancé" class="mt-8">
@@ -184,15 +121,9 @@
 </template>
 
 <script setup lang="ts">
-// Le Grimoire : l'inventaire, le lancer et les deux journaux — au camp et là
-// seulement, ouvert par-dessus lui. Le lancer vise une catégorie, jamais une personne : soi, ou un
-// allié ou un ennemi que le serveur tire et ne nomme qu'après.
-// Voir specs/ecrans.md#sorts et specs/bonus.md#tirage-de-la-cible.
-import { isCastable } from '~~/shared/utils/spells'
+// Le Grimoire : le pentacle des sorts et les deux journaux — au camp et là
+// seulement, ouvert par-dessus lui. Voir specs/ecrans.md#sorts.
 import type { SpellId } from '~~/shared/utils/spells'
-import { TARGET_KINDS } from '~~/shared/utils/teams'
-import type { TargetKind } from '~~/shared/utils/teams'
-import type { CastView } from '~~/server/utils/effects'
 
 definePageMeta({
   // Hors du camp, la page n'est pas atteignable — URL comprise. Le serveur
@@ -202,24 +133,21 @@ definePageMeta({
 })
 
 const {
-  entries,
-  total,
+  discovered,
   log,
   received,
   failed,
-  casting,
-  castFailed,
   castsLeft,
   castsPerCooldown,
-  canTargetOthers,
-  cast,
 } = await useInventory()
 
-// Le récapitulatif de ce qui attend la prochaine tentative vit sur l'écran de
-// jeu : un sort lancé d'ici doit s'y voir au retour, pas au rechargement
-// suivant.
+/** Le sort choisi au pentacle : rien à l'ouverture. */
+const selected = ref<SpellId | null>(null)
+
+// L'état de jeu : l'échéance de l'attente, et la fermeture si la partie quitte
+// le camp (CampOverlay).
 const game = await useGameState()
-const { state, refresh: refreshGame } = game
+const { state } = game
 
 /**
  * La magie du livre : des étincelles semées sur toute sa surface, en % de sa
@@ -253,37 +181,4 @@ const now = useClockTick()
 const cooldownRemaining = computed(() =>
   (state.value?.cooldownUntil ? formatRemaining(state.value.cooldownUntil, now.value) : ''),
 )
-
-// Les catégories proposées : Soi toujours, Allié et Ennemi seulement à qui a une
-// équipe — sans elle, elles ne désigneraient aucun pool.
-// Voir specs/equipes.md#le-joueur-sans-équipe.
-const offeredTargets = computed<TargetKind[]>(
-  () => TARGET_KINDS.filter(kind => kind === 'self' || canTargetOthers.value),
-)
-
-// Quelle catégorie est en vol : un bouton par catégorie, et seul celui qu'on a
-// pressé tourne.
-const castingOn = ref<TargetKind | null>(null)
-
-// Ce que le dernier lancer a touché, et la catégorie visée. Le journal le porte
-// aussi, mais c'est ici que le joueur le lit sans chercher : la cible n'était
-// pas annoncée avant, elle l'est maintenant. La catégorie voyage avec, pour que
-// le joueur ne lise pas son propre nom quand il s'est visé lui-même.
-const lastCast = ref<{ view: CastView, kind: TargetKind } | null>(null)
-
-async function castOn(spell: SpellId, kind: TargetKind): Promise<void> {
-  castingOn.value = kind
-  lastCast.value = null
-
-  await cast(spell, kind)
-
-  // La première ligne du journal est celle qui vient de partir : il revient trié
-  // du plus récent au plus ancien, et deux lancers de la même seconde se
-  // départagent par leur ordre d'écriture. Voir server/utils/effects.ts.
-  const view = log.value[0]
-  lastCast.value = castFailed.value || !view ? null : { view, kind }
-  castingOn.value = null
-
-  await refreshGame()
-}
 </script>

@@ -49,7 +49,6 @@ describe('inventaire des sorts', () => {
 
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({
-      total: 3,
       entries: [
         { spell: 'VITALITY', count: 2 },
         { spell: 'RESPITE', count: 1 },
@@ -79,10 +78,10 @@ describe('inventaire des sorts', () => {
       'canTargetOthers',
       'castsLeft',
       'castsPerCooldown',
+      'discovered',
       'entries',
       'log',
       'received',
-      'total',
     ])
   })
 
@@ -104,7 +103,7 @@ describe('inventaire des sorts', () => {
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toMatchObject({ total: 0, entries: [], log: [] })
+    expect(await response.json()).toMatchObject({ entries: [], log: [] })
   })
 
   it('ne montre rien à un autre joueur', async () => {
@@ -114,7 +113,7 @@ describe('inventaire des sorts', () => {
 
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(other)))
 
-    expect(await response.json()).toMatchObject({ total: 0, entries: [], log: [] })
+    expect(await response.json()).toMatchObject({ entries: [], log: [] })
   })
 
   it('ferme la page hors attente, URL comprise', async () => {
@@ -165,6 +164,70 @@ describe('inventaire des sorts', () => {
     const [held] = await db.select().from(reservations).where(eq(reservations.userId, userId))
     expect(held.resolvedAt).toBeNull()
     expect((await loadPlayer(db, userId)).lives).toBe(rulesForFloor(1).lives)
+  })
+
+  // Le pentacle montre le médaillon d'un sort déjà obtenu, même sans exemplaire
+  // en poche : un sort lancé quitte l'inventaire, pas la mémoire du joueur.
+  // Voir specs/ecrans.md#sorts.
+  describe('sorts découverts', () => {
+    async function discovered(userId: number): Promise<SpellId[]> {
+      return (await (await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))).json()).discovered
+    }
+
+    it('compte un sort en poche, dans l ordre du catalogue', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+      await loot(userId, 'PURGE', 'VITALITY', 'PURGE')
+
+      expect(await discovered(userId)).toEqual(['VITALITY', 'PURGE'])
+    })
+
+    it('garde un sort lancé, même sans exemplaire en poche', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+      await loot(userId, 'RESPITE')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'RESPITE', target: 'self' }, await sessionCookieFor(userId)))
+
+      expect((await response.json()).discovered).toEqual(['RESPITE'])
+    })
+
+    // Le lancer compte par son lanceur, quelle que soit la cible : un autre
+    // joueur, ou personne quand le tirage n'a trouvé aucun allié.
+    it('garde un sort lancé sur un ennemi', async () => {
+      await createQuestion(db)
+      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'TLM', floorSeen: 1 })
+      await createPlayer(db, { discordId: 'foe', username: 'saroumane', team: 'MIDI', floorSeen: 1 })
+      await loot(userId, 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'foe' }, await sessionCookieFor(userId)))
+
+      expect((await response.json()).discovered).toEqual(['VITALITY'])
+    })
+
+    it('garde un sort parti sans trouver personne', async () => {
+      const userId = await createPlayer(db, { ...IN_COOLDOWN, team: 'TLM' })
+      await loot(userId, 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'ally' }, await sessionCookieFor(userId)))
+      const page = await response.json()
+
+      expect(page.log).toMatchObject([{ spell: 'VITALITY', targetName: null }])
+      expect(page.discovered).toEqual(['VITALITY'])
+    })
+
+    it('ne compte pas un sort jamais obtenu', async () => {
+      const userId = await createPlayer(db, IN_COOLDOWN)
+
+      expect(await discovered(userId)).toEqual([])
+    })
+
+    it('ne compte pas le lancer d un autre joueur', async () => {
+      const caster = await createPlayer(db, IN_COOLDOWN)
+      const other = await createPlayer(db, { ...IN_COOLDOWN, discordId: '987654321' })
+      await loot(caster, 'VITALITY')
+      await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, await sessionCookieFor(caster)))
+
+      expect(await discovered(other)).toEqual([])
+    })
   })
 
   describe('lancer', () => {

@@ -8,7 +8,7 @@ const { INVENTORY_KEY, useInventory } = await import('../../composables/useInven
 
 const owned: InventoryView = {
   entries: [{ spell: 'VITALITY', count: 2 }],
-  total: 2,
+  discovered: ['VITALITY', 'PURGE'],
   log: [],
   received: [],
   castsLeft: 2,
@@ -19,7 +19,7 @@ const owned: InventoryView = {
 /** Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en plus. */
 const afterCast: InventoryView = {
   entries: [{ spell: 'VITALITY', count: 1 }],
-  total: 1,
+  discovered: ['VITALITY', 'PURGE'],
   log: [{ spell: 'VITALITY', face: 'boon', targetName: 'samsagace', castAt: '2026-09-06T09:00:00.000Z' }],
   received: [],
   castsLeft: 1,
@@ -38,14 +38,28 @@ describe('inventaire du joueur', () => {
   it('remplace l inventaire par celui que le lancer renvoie', async () => {
     serve(INVENTORY_KEY, owned)
     answerWith(afterCast)
-    const { entries, total, log, cast } = await useInventory()
+    const { entries, log, cast } = await useInventory()
 
     await cast('VITALITY', 'self')
 
     expect(calls()).toEqual(['fetch POST /api/game/cast'])
     expect(entries.value).toEqual([{ spell: 'VITALITY', count: 1 }])
-    expect(total.value).toBe(1)
     expect(log.value).toHaveLength(1)
+  })
+
+  // Le pentacle lit les sorts découverts tels que le serveur les rend, au
+  // lancer comme à la lecture : la Purge lancée hier y reste, sans exemplaire.
+  // Voir specs/ecrans.md#sorts.
+  it('lit les sorts découverts que le serveur renvoie', async () => {
+    serve(INVENTORY_KEY, owned)
+    answerWith(afterCast)
+    const { discovered, cast } = await useInventory()
+
+    expect(discovered.value).toEqual(['VITALITY', 'PURGE'])
+
+    await cast('VITALITY', 'self')
+
+    expect(discovered.value).toEqual(['VITALITY', 'PURGE'])
   })
 
   // Le budget vient du serveur comme le reste : la page l'affiche et éteint ses

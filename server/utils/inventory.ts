@@ -9,7 +9,8 @@ import {
   toReceivedViews,
 } from './effects'
 import { rulesForFloor } from './rules'
-import { inventory } from '../db/schema'
+import { activeEffects, inventory } from '../db/schema'
+import { SPELL_IDS } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { CastView, ReceivedView } from './effects'
@@ -24,8 +25,13 @@ export interface InventoryEntryView {
 
 export interface InventoryView {
   entries: InventoryEntryView[]
-  /** Le nombre d'exemplaires, toutes lignes confondues. */
-  total: number
+  /**
+   * Les sorts obtenus au moins une fois, dans l'ordre du catalogue : encore en
+   * poche, ou déjà lancés. Le pentacle montre leur médaillon, même sans
+   * exemplaire ; les autres y gardent un point d'interrogation.
+   * Voir specs/ecrans.md#sorts.
+   */
+  discovered: SpellId[]
   /** Le journal du lanceur : ce qu'il a envoyé, sur qui, et quand. */
   log: CastView[]
   /**
@@ -92,16 +98,19 @@ export async function castFromInventory(
 }
 
 /**
- * L'inventaire groupé et les deux journaux : ce que la page Sorts montre, après
- * une lecture comme après un lancer.
+ * L'inventaire groupé, les sorts découverts et les deux journaux : ce que la
+ * page Sorts montre, après une lecture comme après un lancer.
  *
- * Les trois listes partent dans le même lot. Elles ne dépendent pas les unes des
+ * Un sort lancé quitte l'inventaire : ce que le joueur a découvert se lit donc
+ * aussi dans ses lancers.
+ *
+ * Les quatre listes partent dans le même lot. Elles ne dépendent pas les unes des
  * autres, et la base est distante : servies l'une après l'autre, elles
- * coûteraient trois allers-retours là où l'écran n'en demande qu'un.
+ * coûteraient quatre allers-retours là où l'écran n'en demande qu'un.
  * Voir tests/server/query-budget.test.ts.
  */
 async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
-  const [stacks, log, received] = await db.batch([
+  const [stacks, castSpells, log, received] = await db.batch([
     db
       .select({
         spell: inventory.spell,
@@ -111,13 +120,19 @@ async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
       .where(eq(inventory.userId, user.id))
       .groupBy(inventory.spell)
       .orderBy(min(inventory.obtainedAt)),
+    db
+      .selectDistinct({ spell: activeEffects.spell })
+      .from(activeEffects)
+      .where(eq(activeEffects.casterId, user.id)),
     castLogQuery(db, user.id),
     receivedLogQuery(db, user.id),
   ])
 
+  const discoveredSpells = new Set([...stacks, ...castSpells].map(({ spell }) => spell))
+
   return {
     entries: stacks.map(({ spell, owned }) => ({ spell, count: owned })),
-    total: stacks.reduce((sum, stack) => sum + stack.owned, 0),
+    discovered: SPELL_IDS.filter(spell => discoveredSpells.has(spell)),
     log: toCastViews(log),
     received: toReceivedViews(received),
     castsLeft: await castsLeftThisCooldown(db, user),
