@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
@@ -24,9 +25,14 @@ export default defineNuxtConfig({
       // dossier et fait tomber le serveur de dev sur `EMFILE: too many open
       // files` — il écoute, mais ne répond plus. On ne surveille que le code
       // du projet, seul à changer sous les doigts.
+      //
+      // `.claude/` est ancré sur la racine du projet, pas en `**/.claude/**` :
+      // le watcher compare des chemins absolus, et quand le projet tourne
+      // lui-même depuis un worktree rangé sous `.claude/worktrees/`, le motif
+      // large ignorait tout le code — plus aucun rechargement.
       watch: {
         followSymlinks: false,
-        ignored: ['**/node_modules/**', '**/.git/**', '**/.output/**', '**/.claude/**', '**/local.db*'],
+        ignored: ['**/node_modules/**', '**/.git/**', '**/.output/**', `${fileURLToPath(new URL('.claude', import.meta.url))}/**`, '**/local.db*'],
       },
     },
   },
