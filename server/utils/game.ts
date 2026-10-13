@@ -128,13 +128,6 @@ export interface GameState {
   cooldownUntil: string | null
   /** Tally of the recovery under way, null outside one. */
   recovery: RecoveryProgress | null
-  /**
-   * Le sort du dernier rattrapage, posé une fois ses questions jouées.
-   * Plus aucun écran ne le lit depuis que l'attente ne rappelle plus l'échec :
-   * le verdict de la question qui scelle le rattrapage l'annonce seul.
-   * Effacé au clic suivant.
-   */
-  recoveryResult: 'failed' | null
   /** Questions vues à l'étage courant. */
   floorSeen: number
   /** Questions que l'étage courant contient. */
@@ -668,7 +661,6 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
     // faut un perfect pour repartir.
     recovery: user.lives <= 0 ? await recoveryProgress(db, user, played) : null,
-    recoveryResult: null as 'failed' | null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
     attemptSeen: user.attemptSeen,
@@ -1274,11 +1266,8 @@ async function finishRecovery(
     .where(eq(users.id, user.id))
 
   // Le verdict du rattrapage se lit sur le verdict de la question qui l'a
-  // scellé ; il voyage avec l'état jusqu'à ce que le joueur reprenne.
-  return withUnlocked(
-    { ...await buildState(db, user.id, now), recoveryResult: 'failed' },
-    unlocked,
-  )
+  // scellé.
+  return withUnlocked(await buildState(db, user.id, now), unlocked)
 }
 
 /**
