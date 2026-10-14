@@ -18,6 +18,7 @@ const OTHER_ADMIN_PAGES = [
   'test/cooldown.vue',
   'test/verdict.vue',
   'test/chest.vue',
+  'test/cast.vue',
   'test/recovery.vue',
   'test/dialogue.vue',
 ]

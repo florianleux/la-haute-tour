@@ -19,20 +19,40 @@
            gauche sa magie blanche, à droite sa magie noire. Chaque médaillon
            tient dans son rond. `@container` : l'étincelle de repli se mesure
            sur la largeur du dessin. -->
-      <div class="@container relative mt-4 aspect-[494/270] motion-safe:animate-ink-in [--enter-delay:0.06s]">
-        <img
-          src="/images/spellbook-right-rounds.webp"
-          alt=""
-          class="pointer-events-none absolute inset-0 size-full select-none"
-        >
-        <SpellMedallion
-          v-for="round in ROUNDS"
-          :key="round.face"
-          :spell="spell"
-          :face="round.face"
-          class="absolute -translate-x-1/2 -translate-y-1/2 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.35))]"
-          :style="{ left: round.left, top: round.top, width: round.width }"
-          fallback-class="border-2 border-pentacle/60 text-[11cqw] text-pentacle"
+      <div class="relative mt-4 aspect-[494/270]">
+        <!-- L'encre dans sa propre boîte, à côté de la pièce du lancer et non
+             autour : son animation en fait un contexte d'empilement, et la
+             vignette du lancer y serait prise, sous le reste de la page. -->
+        <div class="@container absolute inset-0 motion-safe:animate-ink-in [--enter-delay:0.06s]">
+          <img
+            src="/images/spellbook-right-rounds.webp"
+            alt=""
+            class="pointer-events-none absolute inset-0 size-full select-none"
+          >
+          <!-- Pendant un lancer, le médaillon de la face lancée cède la place
+               à la pièce qui se charge ; il revient en fondu une fois qu'elle
+               est partie. -->
+          <template v-for="round in ROUNDS" :key="round.face">
+            <SpellMedallion
+              v-if="round.face !== burst?.face"
+              :spell="spell"
+              :face="round.face"
+              class="absolute -translate-x-1/2 -translate-y-1/2 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.35))]"
+              :class="{ 'motion-safe:animate-fade-in': round.face !== 'mixed' }"
+              :style="{ left: round.left, top: round.top, width: round.width }"
+              fallback-class="border-2 border-pentacle/60 text-[11cqw] text-pentacle"
+            />
+          </template>
+        </div>
+
+        <!-- Au-dessus de tout le livre : sa vignette éteint le reste, et la
+             pièce part de son rond vers le centre de l'écran. Voir
+             components/SpellCastBurst.vue. -->
+        <SpellCastBurst
+          v-if="burst && burstRound"
+          :cast="burst"
+          class="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+          :style="{ left: burstRound.left, top: burstRound.top, width: burstRound.width }"
         />
       </div>
     </div>
@@ -67,12 +87,21 @@
 import { SPELL_FACES } from '~~/shared/utils/spells'
 import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 import type { SpellImageVariant } from '~~/utils/spells'
+import type { SpellCast } from '~~/composables/useSpellCast'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   spell: SpellId
   /** Ses exemplaires en poche. */
   count: number
-}>()
+  /** Le lancer en cours d'animation, null au repos. Voir composables/useSpellCast.ts. */
+  cast?: SpellCast | null
+}>(), { cast: null })
+
+/** Le lancer, s'il est celui de ce sort : un autre choisi entre-temps n'a pas à le jouer. */
+const burst = computed(() => (props.cast?.spell === props.spell ? props.cast : null))
+
+/** Le rond de la face lancée : c'est sa pièce qui se charge. */
+const burstRound = computed(() => ROUNDS.find(round => round.face === burst.value?.face))
 
 /**
  * Un médaillon par rond : son centre et sa largeur, en % de la boîte du

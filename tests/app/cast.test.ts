@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { offeredTargets } from '../../utils/teams'
-import { castOutcome } from '../../utils/spells'
+import { castHeadline, castOutcome } from '../../utils/spells'
 
 // Voir specs/equipes.md#le-joueur-sans-équipe.
 describe('catégories de cible proposées', () => {
@@ -27,5 +27,21 @@ describe('ce que le lancer a touché', () => {
   it('dit l exemplaire dépensé quand personne n était à toucher', () => {
     expect(castOutcome('RESPITE', 'ally', null))
       .toBe('Répit n\'a trouvé personne à toucher : l\'exemplaire est dépensé quand même.')
+  })
+})
+
+// Le titre qui jaillit à la fin de l'animation du lancer : la même règle, en
+// plus court.
+describe('le titre du lancer', () => {
+  it('dit toi au joueur qui s est visé lui-même', () => {
+    expect(castHeadline('self', 'bilbo')).toEqual(['Sort lancé sur', 'toi !'])
+  })
+
+  it('nomme la cible tirée', () => {
+    expect(castHeadline('foe', 'samsagace')).toEqual(['Sort lancé sur', 'samsagace !'])
+  })
+
+  it('dit le sort perdu quand personne n était à toucher', () => {
+    expect(castHeadline('ally', null)).toEqual(['Sort perdu :', 'personne à toucher'])
   })
 })

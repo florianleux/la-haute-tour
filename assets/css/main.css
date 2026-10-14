@@ -271,6 +271,319 @@
     27.2% { opacity: 1; transform: scale(0.9) rotate(90deg); }
     31.3%, 100% { opacity: 0; transform: scale(0) rotate(135deg); }
   }
+
+  /* Le lancer d'un sort, au Grimoire : le médaillon de la face lancée quitte
+     son rond pour le centre de l'écran, s'y charge comme une pièce qu'on fait
+     tourner, éclate sous la foudre, retombe à plat, et s'envole. Même
+     vocabulaire que le sort du coffre. Trois étapes, une classe chacune,
+     posées tour à tour par components/SpellCastBurst.vue ; leurs durées sont
+     recopiées dans composables/useSpellCast.ts.
+
+     Le médaillon vit dans trois boîtes imbriquées — deux animations de
+     `transform` sur le même élément s'écraseraient : l'externe le déplace et
+     le grossit, celle du milieu le fait trembler, l'interne le fait tourner
+     sur lui-même. Les translations sont en % de sa largeur, à sa taille de
+     départ (le translate passe avant le scale). (--to-x, --to-y), mesurés
+     par SpellCastBurst, mènent de son rond au centre de l'écran : le climax
+     se joue là. */
+
+  /* La montée (1,5 s) :
+     - anticipation : il s'écrase dans son rond ;
+     - étirement et arc : il jaillit, allongé, monte au-dessus de la ligne
+       droite et redescend au centre de l'écran en grossissant — il vient
+       vers le joueur ;
+     - il y freine en s'écrasant, rebondit, se cale ;
+     - puis il grossit lentement et s'illumine pendant qu'il tourne et
+       tremble. Il tient sa dernière pose si la requête traîne. */
+  --animate-cast-charge: cast-charge 1.5s linear forwards;
+
+  @keyframes cast-charge {
+    0% {
+      transform: translate(0, 0) scale(1, 1);
+      filter: brightness(1);
+      animation-timing-function: ease-in-out;
+    }
+    8% {
+      transform: translate(0, 10%) scale(1.15, 0.8);
+      animation-timing-function: ease-in;
+    }
+    13% {
+      transform: translate(0, 12%) scale(1.22, 0.74);
+      animation-timing-function: cubic-bezier(0.15, 0.85, 0.35, 1);
+    }
+    22% {
+      transform: translate(calc(var(--to-x) * 0.45), calc(var(--to-y) * 0.45 - 90%)) scale(1.15, 1.75);
+      animation-timing-function: ease-out;
+    }
+    30% {
+      transform: translate(var(--to-x), calc(var(--to-y) + 12%)) scale(2.4, 1.6);
+      animation-timing-function: ease-in-out;
+    }
+    36% {
+      transform: translate(var(--to-x), calc(var(--to-y) - 8%)) scale(1.8, 2.2);
+      animation-timing-function: ease-in-out;
+    }
+    41% {
+      transform: translate(var(--to-x), calc(var(--to-y) + 3%)) scale(2.05, 1.9);
+      animation-timing-function: ease-in-out;
+    }
+    46% {
+      transform: translate(var(--to-x), var(--to-y)) scale(1.95, 1.95);
+      filter: brightness(1);
+      animation-timing-function: ease-in;
+    }
+    100% {
+      transform: translate(var(--to-x), var(--to-y)) scale(2.3, 2.3);
+      filter: brightness(1.5);
+    }
+  }
+
+  /* Le tremblement, qui s'emballe pendant la montée : amplitude et cadence
+     grimpent ensemble, comme l'ouverture du coffre. Puis il continue à la
+     cadence finale tant que la requête traîne. */
+  --animate-cast-quiver: cast-quiver 1.5s linear, cast-quiver-loop 0.12s linear 1.5s infinite;
+
+  @keyframes cast-quiver {
+    0%, 33% { transform: none; }
+    42% { transform: rotate(-1deg) translate(0.5%, 0); }
+    50% { transform: rotate(1.5deg) translate(-0.5%, 0.5%); }
+    57% { transform: rotate(-2deg) translate(1%, 0); }
+    63% { transform: rotate(2.5deg) translate(-1%, -0.5%); }
+    68% { transform: rotate(-3deg) translate(1.5%, 0.5%); }
+    73% { transform: rotate(3.5deg) translate(-1.5%, 0); }
+    77% { transform: rotate(-4deg) translate(2%, -1%); }
+    81% { transform: rotate(4.5deg) translate(-2%, 0.5%); }
+    85% { transform: rotate(-5deg) translate(2.5%, 0); }
+    88% { transform: rotate(5deg) translate(-2.5%, -1%); }
+    91% { transform: rotate(-5.5deg) translate(2.5%, 0.5%); }
+    94% { transform: rotate(5.5deg) translate(-3%, 0); }
+    97% { transform: rotate(-6deg) translate(3%, -1%); }
+    100% { transform: none; }
+  }
+
+  @keyframes cast-quiver-loop {
+    0%, 100% { transform: none; }
+    25% { transform: rotate(-6deg) translate(3%, -1%); }
+    75% { transform: rotate(6deg) translate(-3%, 0.5%); }
+  }
+
+  /* La pièce qui tourne : rien pendant le décollage, puis de plus en plus
+     vite — deux tours, finis de tranche (90°). La boucle reprend à la vitesse
+     d'arrivée tant que la requête traîne : arrêtée de tranche, la pièce
+     disparaîtrait. */
+  --animate-cast-spin: cast-spin 1.5s linear, cast-spin-loop 0.17s linear 1.5s infinite;
+
+  @keyframes cast-spin {
+    0%, 33% {
+      transform: rotateY(0);
+      animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.6);
+    }
+    100% { transform: rotateY(810deg); }
+  }
+
+  @keyframes cast-spin-loop {
+    from { transform: rotateY(90deg); }
+    to { transform: rotateY(450deg); }
+  }
+
+  /* Le halo derrière la pièce : il naît pendant le décollage, puis pulse de
+     plus en plus fort et de plus en plus vite. */
+  --animate-cast-halo: cast-halo 1.5s ease-in-out forwards;
+
+  @keyframes cast-halo {
+    0%, 25% { opacity: 0; transform: scale(0.4); }
+    45% { opacity: 0.55; transform: scale(0.9); }
+    58% { opacity: 0.8; transform: scale(1.15); }
+    68% { opacity: 0.55; transform: scale(1); }
+    77% { opacity: 0.95; transform: scale(1.35); }
+    84% { opacity: 0.65; transform: scale(1.15); }
+    90% { opacity: 1; transform: scale(1.5); }
+    94% { opacity: 0.8; transform: scale(1.3); }
+    97% { opacity: 1; transform: scale(1.65); }
+    100% { opacity: 1; transform: scale(1.6); }
+  }
+
+  /* L'éclat et l'envol (1,4 s), sur la boîte externe, repris là où la montée
+     s'est arrêtée :
+     - dernière anticipation : il se contracte, comme on inspire ;
+     - climax (0,12 s), sous la foudre : il éclate à plus de trois fois sa
+       taille et rebondit comme de la gélatine, de moins en moins ;
+     - pause : on lit la face sur laquelle il est retombé ;
+     - envol : un plongeon pour prendre l'élan, puis il file en arc vers le
+       haut, de plus en plus vite, étiré et penché dans le sens du mouvement. */
+  --animate-cast-release: cast-release 1.4s linear forwards;
+
+  @keyframes cast-release {
+    0% {
+      opacity: 1;
+      transform: translate(var(--to-x), var(--to-y)) scale(2.3, 2.3) rotate(0);
+      filter: brightness(1.5);
+      animation-timing-function: ease-in;
+    }
+    8.5% {
+      transform: translate(var(--to-x), var(--to-y)) scale(1.85, 1.8) rotate(0);
+      filter: brightness(2.2);
+      animation-timing-function: cubic-bezier(0.15, 0.85, 0.35, 1);
+    }
+    14% {
+      transform: translate(var(--to-x), var(--to-y)) scale(3.55, 2.9) rotate(0);
+      animation-timing-function: ease-in-out;
+    }
+    19% {
+      transform: translate(var(--to-x), var(--to-y)) scale(2.9, 3.5) rotate(0);
+      animation-timing-function: ease-in-out;
+    }
+    24% {
+      transform: translate(var(--to-x), var(--to-y)) scale(3.35, 3.0) rotate(0);
+      animation-timing-function: ease-in-out;
+    }
+    29% {
+      transform: translate(var(--to-x), var(--to-y)) scale(3.08, 3.28) rotate(0);
+      animation-timing-function: ease-in-out;
+    }
+    34% {
+      transform: translate(var(--to-x), var(--to-y)) scale(3.22, 3.15) rotate(0);
+      filter: brightness(1.2);
+      animation-timing-function: ease-in-out;
+    }
+    38% {
+      transform: translate(var(--to-x), var(--to-y)) scale(3.2, 3.2) rotate(0);
+      filter: brightness(1);
+      animation-timing-function: ease-in-out;
+    }
+    57% {
+      opacity: 1;
+      transform: translate(var(--to-x), calc(var(--to-y) - 6%)) scale(3.2, 3.2) rotate(0);
+      animation-timing-function: ease-in-out;
+    }
+    64% {
+      transform: translate(var(--to-x), calc(var(--to-y) + 8%)) scale(3.5, 2.85) rotate(-4deg);
+      animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45);
+    }
+    76% {
+      opacity: 1;
+      transform: translate(calc(var(--to-x) + 18%), calc(var(--to-y) - 170%)) scale(2.2, 3.9) rotate(8deg);
+      animation-timing-function: ease-in;
+    }
+    90%, 100% {
+      opacity: 0;
+      transform: translate(calc(var(--to-x) + 75%), calc(var(--to-y) - 720%)) scale(1.3, 3.3) rotate(18deg);
+    }
+  }
+
+  /* La pièce qui retombe à plat, sur la boîte interne. Pendant
+     l'inspiration, elle tourne encore plus vite, et arrive de tranche pile au
+     climax, sous la foudre. Puis elle se pose en dépassant, d'un côté puis de
+     l'autre. */
+  --animate-cast-land: cast-land 1.4s linear forwards;
+
+  @keyframes cast-land {
+    0% { transform: rotateY(0); animation-timing-function: linear; }
+    8.5% { transform: rotateY(450deg); animation-timing-function: ease-out; }
+    16% { transform: rotateY(335deg); animation-timing-function: ease-in-out; }
+    22% { transform: rotateY(370deg); animation-timing-function: ease-in-out; }
+    28%, 100% { transform: rotateY(360deg); }
+  }
+
+  /* L'onde de choc du climax : un anneau qui s'élargit en s'affinant. */
+  --animate-cast-shockwave: cast-shockwave 0.6s ease-out both;
+
+  @keyframes cast-shockwave {
+    0% { opacity: 0; transform: scale(0.3); }
+    10% { opacity: 1; }
+    100% { opacity: 0; transform: scale(3); }
+  }
+
+  /* La foudre, du climax à la pause : chaque éclair jaillit du bord de la
+     pièce en une fraction de seconde (il se trace, `pathLength` à 1), puis
+     claque deux ou trois fois avant de s'éteindre. Voir
+     components/SpellCastBurst.vue, qui dessine les éclairs et décale leurs
+     départs. */
+  --animate-cast-bolt: cast-bolt 0.45s linear both;
+
+  @keyframes cast-bolt {
+    0% { stroke-dashoffset: 1; opacity: 1; }
+    14% { stroke-dashoffset: 0; opacity: 1; }
+    22% { opacity: 0.2; }
+    30% { opacity: 1; }
+    42% { opacity: 0.1; }
+    52% { opacity: 0.9; }
+    100% { stroke-dashoffset: 0; opacity: 0; }
+  }
+
+  /* Les arcs qui crépitent autour de la pièce pendant la montée : rien au
+     décollage, puis des claquements de plus en plus rapprochés. Tout ou rien,
+     d'où `steps` : un arc électrique ne fond pas. Éteints à la fin, pour ne
+     pas rester figés si la requête traîne. */
+  --animate-cast-crackle: cast-crackle 1.5s steps(1, end) both;
+
+  @keyframes cast-crackle {
+    0%, 38% { opacity: 0; }
+    40% { opacity: 1; }
+    43% { opacity: 0; }
+    55% { opacity: 1; }
+    57% { opacity: 0; }
+    66% { opacity: 1; }
+    68% { opacity: 0; }
+    75% { opacity: 1; }
+    77% { opacity: 0; }
+    82% { opacity: 1; }
+    84% { opacity: 0; }
+    88% { opacity: 1; }
+    90% { opacity: 0; }
+    93% { opacity: 1; }
+    94.5% { opacity: 0; }
+    97% { opacity: 1; }
+    99%, 100% { opacity: 0; }
+  }
+
+  /* L'éclair qui illumine le livre au climax : un coup de lumière, un creux,
+     un second coup, puis une dernière lueur qui retombe — le stroboscope
+     d'un orage, pas une bulle qui gonfle. */
+  --animate-cast-strobe: cast-strobe 0.6s linear both;
+
+  @keyframes cast-strobe {
+    0% { opacity: 0; }
+    5% { opacity: 1; }
+    16% { opacity: 0.1; }
+    24% { opacity: 0.9; }
+    40% { opacity: 0.05; }
+    48% { opacity: 0.5; }
+    100% { opacity: 0; }
+  }
+
+  /* Le sort qui n'est pas parti (0,7 s) : il se dégonfle, perd ses couleurs,
+     et retombe du centre de l'écran dans son rond, en tremblotant. */
+  --animate-cast-fizzle: cast-fizzle 0.7s linear forwards;
+
+  @keyframes cast-fizzle {
+    0% {
+      transform: translate(var(--to-x), var(--to-y)) scale(2.3, 2.3);
+      filter: brightness(1.5) grayscale(0);
+      animation-timing-function: ease-out;
+    }
+    18% {
+      transform: translate(var(--to-x), calc(var(--to-y) + 4%)) scale(1.9, 1.9);
+      filter: brightness(1) grayscale(1);
+      animation-timing-function: ease-in;
+    }
+    55% {
+      transform: translate(0, 8%) scale(1.15, 0.85);
+      animation-timing-function: ease-out;
+    }
+    70% {
+      transform: translate(0, -4%) scale(0.95, 1.05);
+      animation-timing-function: ease-in-out;
+    }
+    85% {
+      transform: translate(0, 1%) scale(1.02, 0.98);
+      animation-timing-function: ease-in-out;
+    }
+    100% {
+      transform: translate(0, 0) scale(1, 1);
+      filter: brightness(1) grayscale(1);
+    }
+  }
 }
 
 /* `inline` : Tailwind recopie la valeur dans chaque utilitaire au lieu de

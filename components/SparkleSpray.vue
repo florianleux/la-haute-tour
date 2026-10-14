@@ -4,7 +4,7 @@
       v-for="(spark, index) in sparks"
       :key="index"
       class="left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 motion-safe:animate-spark-out"
-      :style="{ '--dx': spark.dx, '--dy': spark.dy, 'width': spark.size, 'animationDelay': spark.delay }"
+      :style="{ '--dx': spark.dx, '--dy': spark.dy, 'width': spark.size, 'animationDelay': spark.delay, 'animationDirection': inward ? 'reverse' : undefined }"
     />
   </span>
 </template>
@@ -27,5 +27,13 @@ interface Spark {
   delay: string
 }
 
-defineProps<{ sparks: Spark[] }>()
+defineProps<{
+  sparks: Spark[]
+  /**
+   * La gerbe à l'envers : elles partent de leur point et convergent vers le
+   * centre, de plus en plus vite (l'ease-out joué à rebours). En style, pas en
+   * classe : le raccourci `animation` de `animate-spark-out` l'écraserait.
+   */
+  inward?: boolean
+}>()
 </script>

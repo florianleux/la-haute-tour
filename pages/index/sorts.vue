@@ -73,7 +73,7 @@
             <!-- Changer de sort remonte le détail, le reste de la page et
                  l'historique (`:key`) : ils réapparaissent à l'encre, en
                  cascade, du nom du sort à la dernière ligne. -->
-            <SpellbookDetails :key="`details-${selected}`" :spell="selected" :count="count" />
+            <SpellbookDetails :key="`details-${selected}`" :spell="selected" :count="count" :cast="castScene" />
 
             <div :key="`actions-${selected}`" class="motion-safe:animate-ink-in [--enter-delay:0.18s]">
               <!-- Une catégorie par bouton, jamais une personne : le joueur ne
@@ -84,7 +84,7 @@
                   v-for="kind in offeredTargets(canTargetOthers)"
                   :key="kind"
                   variant="parchment"
-                  :disabled="!count || casting !== null || (kind === 'self' && !canTargetSelf)"
+                  :disabled="!count || casting !== null || castScene !== null || (kind === 'self' && !canTargetSelf)"
                   :loading="casting === selected && castingOn === kind"
                   @click="castOn(selected, kind)"
                 >
@@ -150,6 +150,7 @@
 // historique — au camp et là seulement, ouvert par-dessus lui. Le lancer vise une
 // catégorie, jamais une personne : soi, ou un allié ou un ennemi que le serveur
 // tire et ne nomme qu'après. Voir specs/ecrans.md#sorts.
+import { faceFor } from '~~/shared/utils/spells'
 import type { SpellId } from '~~/shared/utils/spells'
 import type { TargetKind } from '~~/shared/utils/teams'
 import type { Tone } from '~~/utils/tone'
@@ -210,18 +211,29 @@ watch(selected, () => {
   outcome.value = null
 })
 
+// L'animation du lancer, sur le médaillon du sort : la requête part pendant
+// qu'il se charge, et le résultat ne s'écrit qu'une fois qu'il s'est envolé.
+// Les boutons restent éteints jusque-là, pas seulement le temps de la requête.
+const { cast: castScene, play: playCast } = useSpellCast()
+
 async function castOn(spell: SpellId, kind: TargetKind): Promise<void> {
   castingOn.value = kind
   outcome.value = null
 
-  await cast(spell, kind)
+  await playCast(spell, faceFor(kind), async () => {
+    await cast(spell, kind)
+    return castFailed.value ? null : castHeadline(kind, log.value[0]?.targetName ?? null)
+  })
 
-  // La première ligne du journal est celle qui vient de partir : il revient trié
-  // du plus récent au plus ancien. Voir server/utils/effects.ts.
-  const targetName = log.value[0]?.targetName ?? null
-  outcome.value = castFailed.value
-    ? { text: 'Le sort n\'est pas parti. Réessaie.', tone: 'danger' }
-    : { text: castOutcome(spell, kind, targetName), tone: kind === 'self' || targetName ? 'success' : 'warning' }
+  // Un autre sort choisi pendant l'animation n'a pas à lire le résultat de
+  // celui-ci. La première ligne du journal est celle qui vient de partir : il
+  // revient trié du plus récent au plus ancien. Voir server/utils/effects.ts.
+  if (selected.value === spell) {
+    const targetName = log.value[0]?.targetName ?? null
+    outcome.value = castFailed.value
+      ? { text: 'Le sort n\'est pas parti. Réessaie.', tone: 'danger' }
+      : { text: castOutcome(spell, kind, targetName), tone: kind === 'self' || targetName ? 'success' : 'warning' }
+  }
   castingOn.value = null
 
   await game.refresh()

@@ -39,6 +39,32 @@ export function castOutcome(spell: SpellId, kind: TargetKind, targetName: string
 }
 
 /**
+ * La lueur de chaque face, dans l'animation d'un lancer : l'or du coffre pour
+ * la magie blanche, un violet pour la noire. La foudre, le halo et le titre la
+ * prennent. Voir components/SpellCastBurst.vue.
+ */
+export const CAST_GLOWS: Record<SpellFace, string> = {
+  boon: '#fde68a',
+  curse: '#a78bfa',
+}
+
+/** Le titre qui clôt l'animation d'un lancer, en deux lignes : la cible, seule, sur la seconde. */
+export type CastHeadline = [string, string]
+
+/**
+ * Le titre que le Grimoire fait jaillir une fois le sort envolé : à qui il
+ * est allé. Même règle que castOutcome : le joueur qui s'est visé ne lit pas
+ * son propre nom. Voir components/SpellbookDetails.vue.
+ */
+export function castHeadline(kind: TargetKind, targetName: string | null): CastHeadline {
+  if (kind === 'self') {
+    return ['Sort lancé sur', 'toi !']
+  }
+
+  return targetName ? ['Sort lancé sur', `${targetName} !`] : ['Sort perdu :', 'personne à toucher']
+}
+
+/**
  * Le médaillon d'un sort, en trois variantes : blanche pour la magie blanche,
  * noire pour son miroir, et mixte — moitié blanche à gauche, moitié noire à
  * droite — pour montrer un sort sans présumer de la face qu'on lui donnera.
