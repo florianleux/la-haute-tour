@@ -3,6 +3,12 @@
 @theme {
   --font-sans: 'Platypi', ui-sans-serif, system-ui, sans-serif;
 
+  /* Le rouge du pentacle du Grimoire, choisi à l'œil pour aller avec le
+     crayon de public/images/spellbook.webp : ce qui s'y ajoute par-dessus le
+     dessin (cercle repassé, point d'interrogation) le reprend. Voir
+     components/SpellPentacle.vue. */
+  --color-pentacle: #dc1f5f;
+
   /* Le coffre fermé qui remue, comme si quelque chose bougeait dedans :
      0,6 s de secousses, puis 0,3 s de repos, pour que ça reste un indice et
      non un tremblement continu. Voir components/ChestCard.vue. */
@@ -201,20 +207,37 @@
     100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(180deg); }
   }
 
-  /* Le médaillon choisi au pentacle du Grimoire, en dessin animé : il se
-     ramasse (anticipation), jaillit étiré en tournant, retombe trop large et
-     tremble avant de se poser. Une lueur dorée le traverse au sommet, quand la
-     gerbe part. Voir components/SpellPentacle.vue. */
-  --animate-spell-pick: spell-pick 0.8s ease-out;
+  /* Le médaillon choisi au pentacle du Grimoire : un petit rebond sur son
+     centre, pendant que le crayon trace son cercle. Il se ramasse sans
+     jamais dépasser sa taille : au-delà de 1, l'image déjà rastérisée
+     s'étirerait et sortirait floue. Voir components/SpellPentacle.vue. */
+  --animate-spell-pick: spell-pick 0.5s ease-out;
 
   @keyframes spell-pick {
     0% { transform: scale(1); }
-    15% { transform: translateY(10%) scale(1.25, 0.75); }
-    35% { transform: translateY(-25%) scale(0.8, 1.3) rotate(-12deg); filter: drop-shadow(0 0 6px #fde68a) drop-shadow(0 0 18px #f59e0b); }
-    55% { transform: translateY(0) scale(1.2, 0.9) rotate(8deg); filter: drop-shadow(0 0 4px #fde68a) drop-shadow(0 0 12px #f59e0b); }
-    70% { transform: scale(0.92, 1.08) rotate(-4deg); }
-    85% { transform: scale(1.04, 0.97) rotate(1deg); }
+    25% { transform: scale(0.86); }
+    55% { transform: scale(1); }
+    75% { transform: scale(0.96); }
     100% { transform: scale(1); }
+  }
+
+  /* Le cercle repassé au crayon du sort choisi : il part du bout d'arc
+     esquissé au survol (`--crayon-hint`) et se referme d'un geste. Voir
+     components/CrayonRing.vue. */
+  --animate-crayon-draw: crayon-draw 0.4s ease-out;
+
+  @keyframes crayon-draw {
+    from { --crayon-sweep: var(--crayon-hint); }
+  }
+
+  /* Un trait qui rayonne autour du cercle tracé : il jaillit du centre et se
+     pose. components/CrayonRing.vue décale chacun d'un délai. */
+  --animate-crayon-ray: crayon-ray 0.3s ease-out both;
+
+  @keyframes crayon-ray {
+    0% { opacity: 0; transform: scale(0.75); }
+    60% { opacity: 1; transform: scale(1.06); }
+    100% { opacity: 1; transform: scale(1); }
   }
 
   /* Le climax du sort qui jaillit, calé sur `animate-emerge` (même durée,
@@ -797,6 +820,31 @@
 
   @keyframes fade-in {
     from { opacity: 0; }
+  }
+}
+
+/* L'angle déjà passé au crayon autour d'un rond du pentacle. Déclaré pour
+   être un angle, pas un texte : il peut alors s'animer. Voir
+   components/CrayonRing.vue. */
+@property --crayon-sweep {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Un rond du pentacle qu'on désigne : survolé, ou son bouton au focus
+   clavier. Le survol se lit sur l'ancêtre `group`, comme `group-hover`, et
+   seulement là où un pointeur survole vraiment. Voir
+   components/SpellPentacle.vue. */
+@custom-variant group-hover-or-focus {
+  @media (hover: hover) {
+    &:is(:where(.group):hover *) {
+      @slot;
+    }
+  }
+
+  &:is(:where(.group):has(:focus-visible) *) {
+    @slot;
   }
 }
 

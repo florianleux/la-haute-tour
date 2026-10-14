@@ -6,39 +6,53 @@
       v-for="spell in SPELL_IDS"
       :key="spell"
       class="@container group pointer-events-auto absolute aspect-square w-[6.6%] -translate-x-1/2 -translate-y-1/2"
-      :style="ROUNDS[spell]"
+      :style="{ left: ROUNDS[spell].left, top: ROUNDS[spell].top }"
     >
-      <!-- Découvert : son médaillon, et tout le rond qui le choisit. Le choisi
-           grossit et brille de l'or des étincelles du livre. Le survol se lit
-           sur le rond (`group`) : le bouton posé par-dessus le médaillon
-           l'empêcherait d'être survolé lui-même.
+      <!-- Découvert : son médaillon, et tout le rond qui le choisit. Le
+           choix se dit au crayon, comme tout le dessin de la page : un bout
+           d'arc esquissé au survol, le cercle repassé en entier et ses rayons
+           sur le choisi. Les autres pâlissent, à leur taille de repos : leur
+           rond reste rempli. Le survol se lit sur le rond (`group`) — le
+           bouton posé par-dessus le médaillon l'empêcherait d'être survolé
+           lui-même — et le focus clavier fait le même effet.
 
-           Au clic, un saut en dessin animé et une gerbe d'étincelles. Changer
-           de clé remonte le médaillon et la gerbe : l'effet se rejoue à chaque
-           clic, même sur le rond déjà choisi. -->
+           Le choisi, à l'échelle 1, recouvre le rond dessiné, trait rouge
+           compris (Ø 110 px sur l'image, la boîte en fait 120). Les autres
+           tiennent dedans (Ø 100 px), réduits, survol compris. Un `scale`
+           au-dessus de 1 étire le rendu déjà rastérisé, et l'image sort floue.
+           `will-change` fige ce rendu à la taille du médaillon, plafond de tous
+           ses états.
+
+           Au clic, un petit rebond, et le cercle se repasse. Seuls le
+           médaillon et le cercle cliqués changent de clé : remontés, ils
+           rejouent l'effet, même déjà choisis. Les autres, gardés, passent
+           d'un état à l'autre en fondu. -->
       <template v-if="discovered.includes(spell)">
+        <CrayonRing
+          :key="replays[spell]"
+          :drawn="selected === spell"
+          :facing="ROUNDS[spell].facing"
+          class="absolute -left-[30%] -top-[30%] size-[160%] text-pentacle"
+        />
         <SpellMedallion
-          :key="`medallion-${picked?.spell === spell ? picked.key : 0}`"
+          :key="replays[spell]"
           :spell="spell"
           face="mixed"
-          class="size-full transition-[scale] duration-200 group-hover:scale-125"
+          class="absolute inset-0 size-full [will-change:transform,scale] transition-[scale,filter,opacity] duration-200 motion-reduce:transition-none"
           :class="[
             selected === spell
-              ? 'scale-110 [filter:drop-shadow(0_0_4px_#fde68a)_drop-shadow(0_0_12px_#f59e0b)]'
-              : '[filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.35))]',
-            picked?.spell === spell ? 'motion-safe:animate-spell-pick' : '',
+              ? 'motion-safe:animate-spell-pick'
+              : 'scale-[0.73] drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)] group-hover-or-focus:scale-[0.78]',
+            selected && selected !== spell
+              ? 'opacity-60 grayscale-70 group-hover-or-focus:opacity-100 group-hover-or-focus:grayscale-0'
+              : '',
           ]"
-          fallback-class="border-2 border-red-500/60 text-[50cqw] text-red-500"
-        />
-        <SparkleSpray
-          v-if="picked?.spell === spell"
-          :key="`spray-${picked.key}`"
-          :sparks="PICK_SPRAY"
-          class="drop-shadow-[0_0_6px_#fde68a]"
+          fallback-class="border-2 border-pentacle/60 text-[50cqw] text-pentacle"
         />
         <BaseSurfaceButton
           :label="spellLabel(spell)"
           :aria-pressed="selected === spell"
+          class="rounded-full"
           @click="pick(spell)"
         />
       </template>
@@ -50,7 +64,7 @@
         v-else
         role="img"
         aria-label="Sort pas encore découvert"
-        class="flex size-full -rotate-6 select-none items-center justify-center text-[70cqw] font-bold leading-none text-red-500/85"
+        class="flex size-full -rotate-6 select-none items-center justify-center text-[70cqw] font-bold leading-none text-pentacle/85"
       >?</span>
     </div>
   </div>
@@ -70,41 +84,37 @@ defineProps<{
 /** Le sort que la page droite montre, null tant que rien n'est choisi. */
 const selected = defineModel<SpellId | null>({ required: true })
 
-/** Le dernier clic sur un rond : quel sort, et une clé neuve qui rejoue l'effet. */
-const picked = ref<{ spell: SpellId, key: number } | null>(null)
+/** Combien de fois chaque rond a été cliqué : sa clé, qui remonte son médaillon et rejoue l'effet. */
+const replays = ref<Partial<Record<SpellId, number>>>({})
 
 function pick(spell: SpellId): void {
   selected.value = spell
-  picked.value = { spell, key: (picked.value?.key ?? 0) + 1 }
+  replays.value[spell] = (replays.value[spell] ?? 0) + 1
 }
 
 /**
- * La gerbe du clic : dix étincelles en couronne, deux longueurs, qui partent
- * au sommet du saut du médaillon (`animate-spell-pick`, 35 %). En cqw, sur la
- * largeur du rond.
- */
-const PICK_SPRAY = Array.from({ length: 10 }, (_, index) => {
-  const angle = ((index * 36 + (index % 2) * 14) * Math.PI) / 180
-  const distance = index % 2 ? 60 : 90
-
-  return {
-    dx: `${Math.round(Math.cos(angle) * distance)}cqw`,
-    dy: `${Math.round(Math.sin(angle) * distance)}cqw`,
-    size: index % 2 ? '14%' : '20%',
-    delay: `${(0.25 + (index % 3) * 0.04).toFixed(2)}s`,
-  }
-})
-
-/**
- * Le centre de chaque rond, en % de la boîte du livre, relevé sur l'image. Ordre
- * du catalogue, en partant du haut, dans le sens des aiguilles d'une montre. Un
+ * Chaque rond, relevé sur l'image. Vitalité au centre, les quatre autres aux
+ * coins du carré, de haut à droite dans le sens des aiguilles d'une montre. Un
  * sort par rond, tous : un sort ajouté au catalogue ne compile pas sans le sien.
  */
-const ROUNDS: Record<SpellId, { left: string, top: string }> = {
-  VITALITY: { left: '29.3%', top: '32.6%' },
-  RESPITE: { left: '41%', top: '46.3%' },
-  CHRONOMANCY: { left: '39.1%', top: '70.1%' },
-  INDULGENCE: { left: '15.3%', top: '69.6%' },
-  PURGE: { left: '14.8%', top: '45.8%' },
+const ROUNDS: Record<SpellId, {
+  /** Le centre, en % de la boîte du livre. */
+  left: string
+  top: string
+  /**
+   * Le côté le plus dégagé, où le crayon esquisse son arc au survol : en
+   * degrés depuis le haut, dans le sens des aiguilles d'une montre, mesuré en
+   * pixels de l'image. Un coin regarde à l'opposé du centre, dans l'axe de sa
+   * diagonale. Le centre regarde vers le plus large des creux que les
+   * diagonales laissent autour de lui, environ 100° : l'esquisse
+   * (`--crayon-hint`, components/CrayonRing.vue) y tient.
+   */
+  facing: number
+}> = {
+  VITALITY: { left: '28.3%', top: '55%', facing: 90 },
+  RESPITE: { left: '41.7%', top: '28.2%', facing: 40 },
+  CHRONOMANCY: { left: '41.5%', top: '83.1%', facing: 141 },
+  INDULGENCE: { left: '14.6%', top: '81.9%', facing: -139 },
+  PURGE: { left: '14.6%', top: '27.1%', facing: -40 },
 }
 </script>

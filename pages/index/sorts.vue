@@ -47,10 +47,9 @@
         Grimoire
       </CampOverlayTitle>
 
-      <!-- La page droite : le cadre rouge dessiné sur l'image montre le sort
-           choisi et de quoi le lancer ; dessous, l'historique de ses derniers
-           lancers. Positions relevées sur l'image,
-           en % du livre. -->
+      <!-- La page droite : en haut, le sort choisi et de quoi le lancer ;
+           dessous, l'historique de ses derniers lancers. Positions relevées sur
+           l'image, en % du livre. -->
       <div class="pointer-events-none absolute inset-0" v-bind="fadeLayer(closing, '0.7s')">
         <BaseCloseButton
           label="Fermer le Grimoire"
@@ -58,8 +57,7 @@
           @click="close"
         />
 
-        <!-- Dans le cadre rouge, un peu en retrait de son trait. Il défile si
-             la description déborde, sur un petit écran. -->
+        <!-- Il défile si la description déborde, sur un petit écran. -->
         <div class="pointer-events-auto absolute bottom-[37%] left-[56.5%] right-[13.5%] top-[18%] overflow-y-auto text-sm leading-snug text-amber-950">
           <p
             v-if="!selected"
