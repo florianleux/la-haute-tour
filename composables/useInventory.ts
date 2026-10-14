@@ -22,6 +22,10 @@ export interface InventoryRead {
   failed: Ref<boolean>
   /** Faux quand le joueur porte déjà son plafond d'effets positifs : plus de sort sur soi. */
   canTargetSelf: Ref<boolean>
+  /** Faux quand aucun allié n'est à portée : personne à toucher de ce côté. */
+  canTargetAlly: Ref<boolean>
+  /** Faux quand aucun ennemi n'est à portée. */
+  canTargetFoe: Ref<boolean>
   /** Le sort dont le lancer est en vol, null au repos. */
   casting: Ref<SpellId | null>
   /** Vrai quand le dernier lancer n'est pas parti. */
@@ -73,6 +77,8 @@ export async function useInventory(): Promise<InventoryRead> {
     received: computed<ReceivedView[]>(() => data.value?.received ?? []),
     canTargetOthers: computed<boolean>(() => data.value?.canTargetOthers ?? false),
     canTargetSelf: computed<boolean>(() => data.value?.canTargetSelf ?? false),
+    canTargetAlly: computed<boolean>(() => data.value?.canTargetAlly ?? false),
+    canTargetFoe: computed<boolean>(() => data.value?.canTargetFoe ?? false),
     failed: computed<boolean>(() => Boolean(error.value)),
     casting,
     castFailed,

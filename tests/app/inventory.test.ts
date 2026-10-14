@@ -13,6 +13,8 @@ const owned: InventoryView = {
   received: [],
   canTargetSelf: true,
   canTargetOthers: true,
+  canTargetAlly: true,
+  canTargetFoe: true,
 }
 
 /**
@@ -26,6 +28,8 @@ const afterCast: InventoryView = {
   received: [],
   canTargetSelf: false,
   canTargetOthers: true,
+  canTargetAlly: true,
+  canTargetFoe: false,
 }
 
 describe('inventaire du joueur', () => {
@@ -76,6 +80,21 @@ describe('inventaire du joueur', () => {
     await cast('VITALITY', 'self')
 
     expect(canTargetSelf.value).toBe(false)
+  })
+
+  // Un pool vide se dit avant le clic, comme le plafond sur soi : la page
+  // éteint la catégorie sur ce que le serveur rend. Voir
+  // specs/bonus.md#tirage-de-la-cible.
+  it('suit ce que le serveur dit des alliés et des ennemis à portée', async () => {
+    serve(INVENTORY_KEY, owned)
+    answerWith(afterCast)
+    const { canTargetAlly, canTargetFoe, cast } = await useInventory()
+
+    expect([canTargetAlly.value, canTargetFoe.value]).toEqual([true, true])
+
+    await cast('VITALITY', 'ally')
+
+    expect([canTargetAlly.value, canTargetFoe.value]).toEqual([true, false])
   })
 
   // Le joueur choisit une catégorie, jamais une personne : c'est elle qui part

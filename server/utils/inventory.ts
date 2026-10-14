@@ -7,7 +7,7 @@ import {
   toCastViews,
   toReceivedViews,
 } from './effects'
-import { canTargetSelf } from './targets'
+import { candidatesQuery, targetableKinds } from './targets'
 import { activeEffects, inventory } from '../db/schema'
 import { SPELL_IDS } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
@@ -54,6 +54,15 @@ export interface InventoryView {
    * Voir specs/bonus.md#limite-deffets-positifs.
    */
   canTargetSelf: boolean
+  /**
+   * Reste-t-il un allié, un ennemi à toucher ? Faux quand le pool éligible de la
+   * catégorie est vide — tous en fin de partie, jamais partis ou saturés :
+   * l'écran éteint le bouton plutôt que de laisser dépenser un exemplaire pour
+   * rien. Jamais qui, ni pourquoi les autres sont écartés.
+   * Voir specs/bonus.md#tirage-de-la-cible.
+   */
+  canTargetAlly: boolean
+  canTargetFoe: boolean
 }
 
 /**
@@ -70,7 +79,7 @@ export interface InventoryView {
 export async function readInventory(db: Database, user: User, now: Date): Promise<InventoryView> {
   await requireCamp(db, user, now)
 
-  return readSpellPage(db, user)
+  return readSpellPage(db, user, now)
 }
 
 /**
@@ -91,7 +100,7 @@ export async function castFromInventory(
   await requireCamp(db, user, now)
   await castSpell(db, user, spell, kind, now)
 
-  return readSpellPage(db, user)
+  return readSpellPage(db, user, now)
 }
 
 /**
@@ -101,15 +110,16 @@ export async function castFromInventory(
  * Un sort lancé quitte l'inventaire : ce que le joueur a découvert se lit donc
  * aussi dans ses lancers.
  *
- * Les quatre listes partent dans le même lot. Elles ne dépendent pas les unes des
- * autres, et la base est distante : servies l'une après l'autre, elles
- * coûteraient quatre allers-retours là où elles n'en demandent qu'un. Ce que le
- * joueur porte de magies blanches se lit ensuite, en un second : il passe par
- * le même filtre que le tirage, qui ne se met pas en lot.
+ * Les quatre listes et les cibles possibles partent dans le même lot. Elles ne
+ * dépendent pas les unes des autres, et la base est distante : servies l'une
+ * après l'autre, elles coûteraient cinq allers-retours là où elles n'en
+ * demandent qu'un. Ce que chacun porte d'effets — le joueur, ses alliés, ses
+ * ennemis — se lit ensuite, en un second : il passe par le même filtre que le
+ * tirage, qui ne se met pas en lot.
  * Voir tests/server/query-budget.test.ts.
  */
-async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
-  const [stacks, castSpells, log, received] = await db.batch([
+async function readSpellPage(db: Database, user: User, now: Date): Promise<InventoryView> {
+  const [stacks, castSpells, log, received, candidates] = await db.batch([
     db
       .select({
         spell: inventory.spell,
@@ -125,8 +135,10 @@ async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
       .where(eq(activeEffects.casterId, user.id)),
     castLogQuery(db, user.id),
     receivedLogQuery(db, user.id),
+    candidatesQuery(db, user),
   ])
 
+  const targetable = await targetableKinds(db, user, candidates, now)
   const discoveredSpells = new Set([...stacks, ...castSpells].map(({ spell }) => spell))
 
   return {
@@ -134,7 +146,9 @@ async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
     discovered: SPELL_IDS.filter(spell => discoveredSpells.has(spell)),
     log: toCastViews(log),
     received: toReceivedViews(received),
-    canTargetSelf: await canTargetSelf(db, user),
+    canTargetSelf: targetable.self,
     canTargetOthers: user.team !== null,
+    canTargetAlly: targetable.ally,
+    canTargetFoe: targetable.foe,
   }
 }

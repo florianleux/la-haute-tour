@@ -84,7 +84,7 @@
                   v-for="kind in offeredTargets(canTargetOthers)"
                   :key="kind"
                   variant="parchment"
-                  :disabled="!count || casting !== null || castScene !== null || (kind === 'self' && !canTargetSelf)"
+                  :disabled="!count || casting !== null || castScene !== null || !targetable[kind]"
                   :loading="casting === selected && castingOn === kind"
                   @click="castOn(selected, kind)"
                 >
@@ -92,10 +92,17 @@
                 </BaseButton>
               </div>
 
-              <!-- Sur soi, la cible est connue d'avance : le refus se dit avant
-                   le clic. Voir specs/bonus.md#limite-deffets-positifs. -->
-              <BaseParchmentNote v-if="!canTargetSelf" fixed class="mt-2">
-                Tu portes déjà ton plein de magies blanches : plus de sort sur toi pour l'instant.
+              <!-- Une catégorie sans personne à toucher se dit avant le clic :
+                   soi au plafond d'effets positifs, un pool d'alliés ou
+                   d'ennemis vide. Sans jamais dire qui, ni pourquoi.
+                   Voir specs/bonus.md#tirage-de-la-cible. -->
+              <BaseParchmentNote
+                v-for="kind in offeredTargets(canTargetOthers).filter(kind => !targetable[kind])"
+                :key="kind"
+                fixed
+                class="mt-2"
+              >
+                {{ UNREACHABLE[kind] }}
               </BaseParchmentNote>
 
               <BaseParchmentNote v-if="outcome" fixed class="mt-2" :tone="outcome.tone">
@@ -169,6 +176,8 @@ const {
   failed,
   canTargetOthers,
   canTargetSelf,
+  canTargetAlly,
+  canTargetFoe,
   casting,
   castFailed,
   cast,
@@ -176,6 +185,20 @@ const {
 
 /** Le sort choisi au pentacle : rien à l'ouverture. */
 const selected = ref<SpellId | null>(null)
+
+/** Les catégories qui ont encore quelqu'un à toucher : le serveur le dit, la page éteint les autres. */
+const targetable = computed<Record<TargetKind, boolean>>(() => ({
+  self: canTargetSelf.value,
+  ally: canTargetAlly.value,
+  foe: canTargetFoe.value,
+}))
+
+/** Pourquoi une catégorie est éteinte, dit au joueur sous les boutons. */
+const UNREACHABLE: Record<TargetKind, string> = {
+  self: 'Tu portes déjà ton plein de magies blanches : plus de sort sur toi pour l\'instant.',
+  ally: 'Aucun allié à portée pour l\'instant.',
+  foe: 'Aucun ennemi à portée pour l\'instant.',
+}
 
 // Le jour des lancers de l'historique se relit à la minute : un lancer d'hier
 // devient « Hier » au passage de minuit sans recharger.

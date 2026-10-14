@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { inventory, recoveryQuestions, reservations } from '../../server/db/schema'
+import { activeEffects, inventory, recoveryQuestions, reservations } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
@@ -74,6 +74,8 @@ describe('inventaire des sorts', () => {
     // Le classement de progression ne sort jamais du serveur : la page ne porte
     // que ce qui la remplit. Voir specs/ecrans.md#ce-quaucun-écran-joueur-ne-montre.
     expect(Object.keys(await withTeam.json()).sort()).toEqual([
+      'canTargetAlly',
+      'canTargetFoe',
       'canTargetOthers',
       'canTargetSelf',
       'discovered',
@@ -81,6 +83,60 @@ describe('inventaire des sorts', () => {
       'log',
       'received',
     ])
+  })
+
+  // Un pool vide se voit avant le clic : la catégorie s'éteint, sans dire qui
+  // ni pourquoi les autres sont écartés. Voir specs/bonus.md#tirage-de-la-cible.
+  describe('les cibles à portée', () => {
+    beforeEach(async () => {
+      // De quoi jouer à l'étage : sans deck, chacun serait au palier.
+      await createQuestion(db)
+      await createQuestion(db)
+    })
+
+    async function page(userId: number): Promise<{ canTargetAlly: boolean, canTargetFoe: boolean }> {
+      return (await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))).json()
+    }
+
+    it('ouvre un côté dès qu il y a quelqu un à toucher, et lui seul', async () => {
+      const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
+      await createPlayer(db, { discordId: 'mate', username: 'samsagace', team: 'TLM', floorSeen: 1 })
+
+      expect(await page(caster)).toMatchObject({ canTargetAlly: true, canTargetFoe: false })
+    })
+
+    it('ferme le côté dont tous les joueurs sont saturés', async () => {
+      const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
+      const foe = await createPlayer(db, { discordId: 'foe', username: 'saroumane', team: 'MIDI', floorSeen: 1 })
+      await db.insert(activeEffects).values(Array.from({ length: rulesForFloor(1).maxCurses }, () => ({
+        userId: foe,
+        casterId: caster,
+        spell: 'VITALITY' as const,
+        face: 'curse' as const,
+        castAt: new Date(),
+        castCooldownStartedAt: new Date(),
+      })))
+
+      expect((await page(caster)).canTargetFoe).toBe(false)
+
+      await createPlayer(db, { discordId: 'foe-2', username: 'gollum', team: 'MIDI', floorSeen: 1 })
+
+      expect((await page(caster)).canTargetFoe).toBe(true)
+    })
+
+    it('ne compte pas le joueur qui n a jamais commencé', async () => {
+      const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
+      await createPlayer(db, { discordId: 'mate', username: 'novice', team: 'TLM', floorSeen: 0 })
+
+      expect((await page(caster)).canTargetAlly).toBe(false)
+    })
+
+    it('n ouvre aucun côté au joueur sans équipe', async () => {
+      const alone = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'alone' })
+      await createPlayer(db, { discordId: 'mate', team: 'TLM', floorSeen: 1 })
+
+      expect(await page(alone)).toMatchObject({ canTargetAlly: false, canTargetFoe: false })
+    })
   })
 
   it('garde l ordre du premier exemplaire obtenu, qu un doublon ne déplace pas', async () => {

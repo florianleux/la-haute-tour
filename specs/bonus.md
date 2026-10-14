@@ -82,10 +82,16 @@ un sens ou dans l'autre.
 Le filtre des saturés s'applique **avant** le classement : un joueur retiré du pool
 ne pèse plus dans la distribution.
 
-Si le pool éligible est **vide**, le sort part quand même et ne fait rien. Gaspillé,
-même logique que Purge sur un Pool Échecs vide. Le lancer est bel et bien dépensé :
-l'exemplaire quitte l'inventaire, et le journal porte la ligne — sans nom en
-face.
+Un pool éligible **vide** se voit avant le clic : le Grimoire éteint la
+catégorie (« Sur un allié », « Sur un ennemi »), comme il éteint « Sur moi » au
+plafond d'effets positifs. Il dit qu'il n'y a personne à toucher, jamais qui il
+toucherait ni pourquoi les autres sont écartés.
+
+Si le pool se vide **entre** la lecture et le lancer — le dernier ennemi
+exposé vient d'être saturé par un autre —, le sort part quand même et ne fait
+rien. Gaspillé, même logique que Purge sur un Pool Échecs vide. Le lancer est
+bel et bien dépensé : l'exemplaire quitte l'inventaire, et le journal porte la
+ligne — sans nom en face.
 
 Le tirage restant imprévisible, la cible n'est **pas affichée avant le lancer**.
 Elle l'est après : le nom revient avec la réponse du lancer, sur l'écran d'où le
