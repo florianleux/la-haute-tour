@@ -1,7 +1,7 @@
 # ADR 0005 — Le budget de lancers d'une attente, tenu en condition d'écriture
 
 **Date** : 2026-09-06
-**Statut** : acceptée
+**Statut** : remplacée par l'[ADR 0011](./0011-plus-de-budget-de-lancers-un-plafond-d-effets-positifs.md)
 
 ## Contexte
 

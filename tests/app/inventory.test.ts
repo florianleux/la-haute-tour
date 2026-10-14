@@ -11,19 +11,20 @@ const owned: InventoryView = {
   discovered: ['VITALITY', 'PURGE'],
   log: [],
   received: [],
-  castsLeft: 2,
-  castsPerCooldown: 2,
+  canTargetSelf: true,
   canTargetOthers: true,
 }
 
-/** Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en plus. */
+/**
+ * Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en
+ * plus — et, ici, le joueur arrivé à son plafond d'effets positifs.
+ */
 const afterCast: InventoryView = {
   entries: [{ spell: 'VITALITY', count: 1 }],
   discovered: ['VITALITY', 'PURGE'],
   log: [{ spell: 'VITALITY', face: 'boon', targetName: 'samsagace', castAt: '2026-09-06T09:00:00.000Z' }],
   received: [],
-  castsLeft: 1,
-  castsPerCooldown: 2,
+  canTargetSelf: false,
   canTargetOthers: true,
 }
 
@@ -62,20 +63,19 @@ describe('inventaire du joueur', () => {
     expect(discovered.value).toEqual(['VITALITY', 'PURGE'])
   })
 
-  // Le budget vient du serveur comme le reste : la page l'affiche et éteint ses
-  // boutons dessus, elle ne le décompte pas d'elle-même.
-  // Voir specs/bonus.md#où-et-quand.
-  it('suit le budget de lancers que le serveur renvoie', async () => {
+  // Le plafond vient du serveur comme le reste : la page éteint « Sur moi »
+  // dessus, elle ne recompte pas ce que le joueur porte.
+  // Voir specs/bonus.md#limite-deffets-positifs.
+  it('suit ce que le serveur dit du sort sur soi', async () => {
     serve(INVENTORY_KEY, owned)
     answerWith(afterCast)
-    const { castsLeft, castsPerCooldown, cast } = await useInventory()
+    const { canTargetSelf, cast } = await useInventory()
 
-    expect(castsLeft.value).toBe(2)
-    expect(castsPerCooldown.value).toBe(2)
+    expect(canTargetSelf.value).toBe(true)
 
     await cast('VITALITY', 'self')
 
-    expect(castsLeft.value).toBe(1)
+    expect(canTargetSelf.value).toBe(false)
   })
 
   // Le joueur choisit une catégorie, jamais une personne : c'est elle qui part

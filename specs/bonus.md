@@ -20,28 +20,18 @@ qu'il n'a pas commencé ; jamais en ascension, ni en rattrapage en cours, ni sur
 le profil. L'écran d'attente porte un accès vers
 une **page Sorts** dédiée, où le lancer se fait réellement.
 
-**Deux lancers par attente**, par lanceur, quels qu'ils soient. Deux sorts
-différents ou deux fois le même : le plafond porte sur le nombre, jamais sur
-l'identité. Un joueur peut donc empiler deux Répit sur sa propre attente et la
-diviser par quatre, sans attendre les équipes.
+**Aucun budget de lancers** : un joueur lance pendant son attente autant de
+sorts qu'il en a en poche, deux fois le même y compris. Ce qui borne
+l'empilement, c'est ce que la cible **porte** — deux effets négatifs au plus,
+deux positifs au plus (voir [Limite d'effets négatifs](#limite-deffets-négatifs)
+et [Limite d'effets positifs](#limite-deffets-positifs)). Un joueur peut donc
+empiler deux Répit sur sa propre attente et la diviser par quatre, sans attendre
+les équipes — pas trois.
 
-Les boutons du Grimoire s'éteignent une fois les deux dépensés : le refus se
-voit avant le clic, il ne se découvre pas après. Le nombre restant, lui, n'est
-pas affiché.
-
-Le plafond est tenu **côté serveur, en condition d'écriture** — sur la
-consommation de l'exemplaire, jamais sur une lecture préalable qui laisserait
-une fenêtre. Deux requêtes visant le même exemplaire ne peuvent donc pas le
-dépenser toutes les deux.
-
-Il ne donne en revanche plus l'idempotence, que l'ancienne règle offrait
-gratuitement : deux clics sur **deux sorts différents**, tirés en même temps,
-dépensent bien deux lancers, et deux lancers partis à la même milliseconde
-peuvent tous deux voir un budget encore libre. C'est le comportement attendu
-quand c'est volontaire ; c'est assumé quand ça ne l'est pas — le compteur
-affiché rend la dépense lisible, le bouton s'éteint pendant l'envoi, et le seul
-cas qui compte, le clic répété sur **le même** bouton, vise le même exemplaire :
-celui-là ne peut pas être dépensé deux fois.
+L'exemplaire se consomme **côté serveur, en condition d'écriture** : deux
+requêtes visant le même exemplaire ne peuvent pas le dépenser toutes les deux.
+C'est le seul cas de double envoi qui compte — le clic répété sur **le même**
+bouton — et le bouton s'éteint de toute façon pendant l'envoi.
 
 Un sort lancé est **consommé**, qu'il produise un effet ou non.
 
@@ -65,8 +55,9 @@ meilleur à coup sûr : il le rend simplement plus probable.
 
 1. **Filtrer les éligibles.** Sont écartés les joueurs en `gameOver` (ils n'auront
    jamais de prochaine tentative, tout effet posé sur eux serait mort-né), ceux qui
-   n'ont jamais commencé, et — pour la magie noire seulement — ceux qui portent déjà
-   deux effets négatifs. Les **joueurs test** forment un monde scellé : un vrai
+   n'ont jamais commencé, et les **saturés** : pour la magie noire, ceux qui portent
+   déjà deux effets négatifs, pour la magie blanche, ceux qui en portent deux
+   positifs. Les **joueurs test** forment un monde scellé : un vrai
    lanceur ne les voit jamais, et eux ne voient que leurs semblables. Voir
    [`admin.md`](./admin.md#joueurs-test).
 2. **Classer les éligibles** par progression croissante : étage, puis nombre de
@@ -93,8 +84,8 @@ ne pèse plus dans la distribution.
 
 Si le pool éligible est **vide**, le sort part quand même et ne fait rien. Gaspillé,
 même logique que Purge sur un Pool Échecs vide. Le lancer est bel et bien dépensé :
-l'exemplaire quitte l'inventaire, le budget de l'attente baisse, et le journal porte
-la ligne — sans nom en face.
+l'exemplaire quitte l'inventaire, et le journal porte la ligne — sans nom en
+face.
 
 Le tirage restant imprévisible, la cible n'est **pas affichée avant le lancer**.
 Elle l'est après : le nom revient avec la réponse du lancer, sur l'écran d'où le
@@ -123,8 +114,44 @@ sort.
   assumé — un timer divisé une fois de plus ne casse rien, et le multiplicatif
   ne descend jamais à zéro. La seule conséquence qui ne se rattrape pas, une
   tentative à zéro vie, est fermée par un plancher à une vie.
-- **Aucune limite sur les effets positifs.** Ils sont bornés de fait par le nombre
-  d'alliés et par la règle des deux lancers par attente.
+
+### Limite d'effets positifs
+
+- Un joueur ne porte jamais **plus de deux effets positifs actifs**, qu'il se les
+  soit lancés ou qu'un allié les lui ait posés.
+- « Actif » se lit **plus étroitement que pour les négatifs** : une magie blanche
+  occupe une place tant qu'elle n'a pas encore agi — elle attend la prochaine
+  tentative — ou qu'elle agit sur l'attente où le joueur se tient (Répit,
+  Indulgence, Purge). Une magie blanche déjà ancrée a donné à sa tentative ce
+  qu'elle avait à donner : elle court encore jusqu'au bout de celle-ci, rattrapage
+  compris, mais rend sa place. Lue comme une malédiction, elle bloquerait toute
+  l'attente d'après ; pour les négatifs, cette lecture large protège la cible,
+  pour les positifs elle la pénaliserait.
+- Répit, Indulgence et Purge occupent donc leur place **pendant toute l'attente**
+  où elles ont été lancées, même Purge, qui agit à l'instant. C'est voulu : c'est
+  ce qui empêche d'effacer son attente ou de vider son Pool Échecs d'un coup.
+- Sans budget de lancers, c'est **la seule borne des magies blanches** : sans elle,
+  un joueur qui a fait des réserves empilerait Répit jusqu'à effacer son attente,
+  Chronomancie jusqu'à laisser le temps de chercher les réponses, ou Vitalité
+  jusqu'à rendre sa tentative imperdable.
+- Un **allié** saturé sort du tirage, silencieusement, comme un ennemi saturé :
+  tous les alliés éligibles saturés, le sort part, l'exemplaire est dépensé, et
+  rien n'est touché.
+- **Sur soi**, la cible est connue d'avance : un joueur saturé ne peut plus se
+  lancer de sort. Le bouton « Sur moi » s'éteint et le Grimoire dit pourquoi ;
+  l'exemplaire reste en poche plutôt que d'être dépensé pour rien.
+- Même conséquence que pour les négatifs : qui ne meurt pas garde ses effets
+  positifs en attente, occupe ses deux places, et ne peut plus en recevoir ni
+  s'en lancer tant que sa prochaine tentative ne les a pas ancrés.
+- La limite se tient **par une lecture**, comme celle des négatifs : des lancers
+  envoyés au même instant — de deux onglets, ou par deux alliés sur la même
+  cible — peuvent tous passer et poser un effet de trop. Assumé : le Grimoire
+  n'envoie qu'un lancer à la fois, et le dépassement reste d'un ou deux effets,
+  pas un empilement sans fin.
+- Reste une porte : une Purge blanche sur un allié **hors attente** mord son Pool
+  Échecs sans qu'il la porte (faute d'attente à laquelle la rattacher, voir
+  [Tirage de la cible](#tirage-de-la-cible)). Elle ne compte donc pas dans son
+  plafond.
 
 ### Ancrage et durée de vie
 
@@ -168,8 +195,8 @@ de questions, toutes à réussir.
 
 Purge blanche peut faire descendre le Pool Échecs sous le seuil de déclenchement du
 rattrapage, et donc **annuler le rattrapage**. C'est assumé : vider son pool est un
-objectif de jeu légitime, et la règle des deux lancers par attente empêche de le
-vider d'un coup.
+objectif de jeu légitime, et le plafond de deux effets positifs portés empêche de
+le vider d'un coup sur soi.
 
 **Les libellés sont provisoires.** Les identifiants de code, eux, sont figés
 (`VITALITY`, `CHRONOMANCY`, `INDULGENCE`, `PURGE`, `RESPITE`) et le libellé affiché
@@ -177,9 +204,9 @@ est une donnée séparée : le passage de naming ne coûtera ni migration ni ref
 
 ### Cumul
 
-Un même sort peut se poser deux fois sur la même cible — par le même lanceur qui
-y dépense ses deux lancers, ou par deux lanceurs, le budget se comptant par
-lanceur. **Le mode de cumul est propre à chaque sort**, il n'y a pas de règle
+Un même sort peut se poser deux fois sur la même cible — par le même lanceur ou
+par deux lanceurs —, jusqu'au plafond de ce qu'elle porte : deux effets négatifs,
+deux positifs. **Le mode de cumul est propre à chaque sort**, il n'y a pas de règle
 globale.
 
 | Sort | Mode | Empilé ×2 |
@@ -296,10 +323,10 @@ d'échec de 30 % en annonçait un pour cinq attentes.
 
 Deux conséquences à garder en tête, et la seconde est la plus importante :
 
-- Le plafond de lancers par attente (deux, quels qu'ils soient — voir
-  [Où et quand](#où-et-quand)) mordra rarement : son rôle d'équilibrage est faible.
-  Il a remplacé l'ancienne règle « un exemplaire d'un même sort par attente »
-  (ADR 0005).
+- Il n'y a plus de plafond de lancers par attente (ADR 0011) : à deux coffres par
+  tentative, il aurait mordu rarement. Ce qui borne l'empilement, ce sont les
+  plafonds d'effets portés par la cible — et ils mordent surtout sur les réserves
+  qu'un joueur accumule entre deux morts.
 - **Les chiffres du jeu ont été posés en imaginant un joueur qui se trompe souvent.**
   Le vrai se trompe rarement. Tout ce qui se déclenche à la mort — l'attente, le
   Pool Échecs, le rattrapage, et l'ancrage des Sorts sur la tentative suivante — se

@@ -96,6 +96,24 @@ export function isBorneBy(effect: BorneEffect, user: User): boolean {
 }
 
 /**
+ * Cette magie blanche retient-elle une place du plafond d'effets positifs ?
+ * Oui tant qu'elle n'a pas encore agi — elle attend la prochaine tentative —
+ * ou qu'elle agit sur l'attente où le joueur se tient : Répit, Indulgence et
+ * Purge l'occupent pour cette attente-là, et c'est ce qui empêche d'effacer
+ * l'attente ou de vider le Pool Échecs d'un coup.
+ *
+ * Plus étroit qu'`isBorneBy` : une magie blanche ancrée a donné à sa tentative
+ * ce qu'elle avait à donner. Elle court encore — une Chronomancie tient sur le
+ * rattrapage —, mais compter sa place jusqu'à la tentative suivante bloquerait
+ * toute l'attente d'après. Pour les négatives, la lecture large protège la
+ * cible ; pour les positives, elle la pénaliserait.
+ * Voir specs/bonus.md#limite-deffets-positifs.
+ */
+export function countsTowardMaxBoons(effect: BorneEffect, user: User): boolean {
+  return effect.anchoredAt === null && actsOnCurrentCooldown(effect, user)
+}
+
+/**
  * Un sort lié à l'attente a agi sur celle pendant laquelle il est parti, et
  * meurt avec elle : il n'attend aucune tentative, contrairement aux autres. Le
  * garder visible ensuite ferait annoncer une attente écourtée qu'il n'a pas

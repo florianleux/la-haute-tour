@@ -466,8 +466,7 @@ export const inventory = sqliteTable('inventory', {
  * est actif tant que la cible joue celle-là, et mort dès qu'elle en ouvre une
  * autre — consommé ou non, sans qu'aucun ménage n'ait à passer.
  *
- * Le lanceur est gardé pour deux raisons : le budget de lancers d'une attente,
- * qui se compte par lanceur, et le journal nominatif des deux côtés.
+ * Le lanceur est gardé pour le journal nominatif, des deux côtés.
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
 export const activeEffects = sqliteTable('active_effects', {
@@ -489,15 +488,12 @@ export const activeEffects = sqliteTable('active_effects', {
   castAt: integer('cast_at', { mode: 'timestamp' }).notNull(),
   /**
    * L'attente pendant laquelle le sort est parti, désignée par son **début** —
-   * un sort ne se lance que là, donc elle existe toujours. C'est elle qui compte
-   * les deux lancers permis, et qui borne la vie des sorts liés à l'attente. Et
-   * non l'attente d'un ancrage : un rattrapage entièrement manqué ouvre une
-   * **seconde** attente sans ouvrir de tentative, et le budget doit s'y remettre
-   * à zéro. Voir specs/bonus.md#où-et-quand.
+   * un sort ne se lance que là, donc elle existe toujours. Elle comptait le
+   * budget de lancers d'une attente, retiré depuis (docs/adr/0011) ; elle reste
+   * pour dire dans quelle attente un sort est parti.
    *
    * Son début et non son échéance : Répit déplace l'échéance, qui ne peut donc
-   * pas servir d'identité — deux lancers y verraient deux attentes différentes.
-   * Le début, lui, ne bouge pas.
+   * pas désigner une attente. Le début, lui, ne bouge pas.
    */
   castCooldownStartedAt: integer('cast_cooldown_started_at', { mode: 'timestamp' })
     .notNull()
@@ -511,8 +507,8 @@ export const activeEffects = sqliteTable('active_effects', {
    *
    * Distincte de `castCooldownStartedAt` depuis qu'on lance sur un allié : le
    * lanceur est toujours en attente, la cible ne l'est pas forcément, et ce ne
-   * sont plus les mêmes. L'une compte le budget du lanceur, l'autre borne la vie
-   * de l'effet chez la cible. Voir specs/bonus.md#ancrage-et-durée-de-vie.
+   * sont plus les mêmes. L'une date le lancer, l'autre borne la vie de l'effet
+   * chez la cible. Voir specs/bonus.md#ancrage-et-durée-de-vie.
    */
   targetCooldownStartedAt: integer('target_cooldown_started_at', { mode: 'timestamp' }),
   /** La tentative sur laquelle l'effet s'est ancré. Null tant qu'il attend. */
@@ -520,9 +516,8 @@ export const activeEffects = sqliteTable('active_effects', {
 }, table => [
   index('active_effects_user_idx').on(table.userId, table.anchoredAt),
   index('active_effects_caster_idx').on(table.casterId, table.castAt),
-  // Le budget de lancers d'une attente se compte sur ces trois colonnes. Aucune
-  // contrainte d'unicité : deux fois le même sort y sont désormais permis, et le
-  // plafond se tient à l'écriture — voir server/utils/effects.ts.
+  // ponytail: index du budget de lancers, retiré (docs/adr/0011) ; plus rien ne
+  // le lit. À supprimer à la prochaine migration, pas de migration pour lui seul.
   index('active_effects_caster_cooldown_idx')
     .on(table.casterId, table.castCooldownStartedAt),
 ])

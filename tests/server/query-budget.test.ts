@@ -205,14 +205,17 @@ describe('budget de requêtes des chemins chauds', () => {
 
       await castFromInventory(db, player, 'VITALITY', 'ally', NOW)
 
-      // Phase, inventaire lu, exemplaire consommé, cible tirée, effet posé, puis
-      // la page rendue. Une cible de plus dans l'équipe n'en ajoute aucun.
-      expect(queries()).toBeLessThanOrEqual(7)
+      // Phase, inventaire lu, exemplaire consommé, cible tirée, saturés écartés,
+      // effet posé, puis la page rendue. Une cible de plus dans l'équipe n'en
+      // ajoute aucun.
+      expect(queries()).toBeLessThanOrEqual(8)
     })
 
-    // La magie noire écarte les saturés : ce filtre est une requête pour tout le
-    // pool, jamais une par ennemi. Voir specs/bonus.md#limite-deffets-négatifs.
-    it('ne paie pas le filtre des saturés à l ennemi', async () => {
+    // Le tirage écarte les saturés, d'effets négatifs chez l'ennemi comme de
+    // positifs chez l'allié : ce filtre est une requête pour tout le pool,
+    // jamais une par cible. Voir specs/bonus.md#limite-deffets-négatifs et
+    // specs/bonus.md#limite-deffets-positifs.
+    it('ne paie pas le filtre des saturés à la cible', async () => {
       const player = await caster()
       queries()
 

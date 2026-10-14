@@ -347,12 +347,14 @@ async function playerLoop(
           op = 'GET /api/game/inventory'
           const view = await readInventory(db, await authenticated(db, id), now)
           const owned = view.entries.filter(entry => entry.count > 0)
-          for (let cast = 0; cast < Math.min(view.castsLeft, owned.length); cast += 1) {
+          // Plus de budget par attente : le joueur lance un exemplaire de chaque
+          // sort qu'il a en poche.
+          for (const { spell } of owned) {
             op = 'POST /api/game/cast'
             await castFromInventory(
               db,
               await authenticated(db, id),
-              owned[cast].spell,
+              spell,
               random(seed) < 0.5 ? 'ally' : 'foe',
               now,
             )

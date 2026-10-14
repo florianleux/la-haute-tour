@@ -146,8 +146,8 @@ describe('magie noire, sur un ennemi', () => {
   // Voir specs/bonus.md#limite-deffets-négatifs.
   it('part sans toucher personne quand tous les ennemis sont saturés', async () => {
     const target = await enemy()
-    // Frappé par quelqu'un d'autre : le budget de lancers de gandalf, lui, doit
-    // rester entier — c'est le tirage qu'on éprouve ici, pas le plafond.
+    // Frappé par quelqu'un d'autre : c'est ce que la cible porte qu'on éprouve
+    // ici, pas ce que gandalf a lancé.
     const other = await createPlayer(db, { discordId: 'other', username: 'radagast', team: 'TLM' })
     await db.insert(activeEffects).values(Array.from({ length: rules.maxCurses }, () => ({
       userId: target.id,
@@ -165,6 +165,22 @@ describe('magie noire, sur un ennemi', () => {
     expect(posed.filter(row => row.userId === null)).toHaveLength(1)
     // Ce qu'il portait n'a pas bougé : il en porte toujours deux, pas trois.
     expect(posed.filter(row => row.userId === target.id)).toHaveLength(rules.maxCurses)
+  })
+
+  // Aucun budget de lancers par attente : seul ce que les cibles portent borne
+  // ce qui part. Deux ennemis, deux malédictions chacun au plus — les trois
+  // lancers touchent. Voir specs/bonus.md#où-et-quand.
+  it('lance autant de sorts qu il en a dans la même attente', async () => {
+    await enemy()
+    await createPlayer(db, { discordId: 'enemy-2', username: 'sauron', team: 'MIDI', floorSeen: 1 })
+
+    await strike('VITALITY')
+    await strike('VITALITY')
+    await strike('CHRONOMANCY')
+
+    expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(0)
+    const posed = await db.select().from(activeEffects).where(eq(activeEffects.casterId, caster.id))
+    expect(posed.filter(row => row.userId !== null)).toHaveLength(3)
   })
 
   // Le lanceur sans équipe n'a pas d'ennemis : rien ne part.

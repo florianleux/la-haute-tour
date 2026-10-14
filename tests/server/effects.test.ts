@@ -53,8 +53,7 @@ describe('lancer et ancrage des effets', () => {
     ])
   })
 
-  // Deux lancers par attente, quels qu'ils soient — deux fois le même y compris.
-  // Le plafond porte sur le nombre, jamais sur l'identité.
+  // Aucun budget de lancers par attente, deux fois le même sort y compris.
   // Voir specs/bonus.md#où-et-quand.
   it('accepte deux fois le même sort dans une attente', async () => {
     await own('VITALITY', 'VITALITY')
@@ -66,7 +65,10 @@ describe('lancer et ancrage des effets', () => {
     expect(await readEffects(userId)).toHaveLength(2)
   })
 
-  it('refuse le troisième lancer d une même attente', async () => {
+  // Sur soi, ce qui borne l'empilement est le plafond d'effets positifs : deux
+  // magies blanches portées, et la troisième ne part pas.
+  // Voir specs/bonus.md#limite-deffets-positifs.
+  it('garde l exemplaire d un troisième sort sur soi, au plafond d effets positifs', async () => {
     await own('VITALITY', 'VITALITY', 'RESPITE')
 
     await cast('VITALITY')
@@ -78,28 +80,53 @@ describe('lancer et ancrage des effets', () => {
     expect(await readEffects(userId)).toHaveLength(2)
   })
 
-  it('rend le lancer à chaque nouvelle attente, tentative ouverte ou non', async () => {
-    await own('VITALITY', 'VITALITY')
+  // Le plafond porte sur ce que le joueur porte, d'où que ça vienne : deux
+  // magies blanches posées par un allié ferment « Sur moi » tout autant.
+  it('compte au plafond les magies blanches qu un allié a posées', async () => {
+    const other = await createPlayer(db, { discordId: '987654321', username: 'radagast' })
+    await db.insert(activeEffects).values(Array.from({ length: rules.maxBoons }, () => ({
+      userId,
+      casterId: other,
+      spell: 'VITALITY' as const,
+      face: 'boon' as const,
+      castAt: NOW,
+      castCooldownStartedAt: NOW,
+    })))
+    await own('CHRONOMANCY')
+
+    await cast('CHRONOMANCY')
+
+    expect(await copies()).toBe(1)
+  })
+
+  // Une magie blanche ancrée a donné à sa tentative ce qu'elle avait à donner :
+  // elle rend sa place, et l'attente d'après n'est pas bloquée par elle.
+  // Voir specs/bonus.md#limite-deffets-positifs.
+  it('rend les places des magies blanches ancrées à l attente suivante', async () => {
+    await own('VITALITY', 'VITALITY', 'VITALITY')
+    await cast('VITALITY')
     await cast('VITALITY')
 
-    // Un rattrapage entièrement manqué ouvre une **seconde** attente sans
-    // ouvrir de tentative : rien ne s'est ancré, et pourtant le lancer revient.
-    // Voir specs/mecanique.md#tentative-attente-et-rattrapage.
-    // Une seconde attente, début compris : c'est lui qui l'identifie, l'échéance
-    // seule ne le peut plus depuis que Répit la déplace.
-    const nextStart = new Date(COOLDOWN_UNTIL.getTime())
+    // La tentative s'ouvre et ancre les deux Vitalité, puis le joueur meurt :
+    // une nouvelle attente commence, la tentative court encore jusqu'à la
+    // suivante.
+    const opened = await anchorEffects(db, await loadPlayer(db, userId), NOW)
+    const nextStart = new Date(COOLDOWN_UNTIL.getTime() + 60_000)
     await db
       .update(users)
       .set({
+        attemptStartedAt: NOW,
+        lives: 0,
         cooldownStartedAt: nextStart,
-        cooldownUntil: new Date(nextStart.getTime() + 4 * 60 * 60 * 1000),
+        cooldownUntil: new Date(nextStart.getTime() + rules.cooldownMs),
       })
       .where(eq(users.id, userId))
+    expect(opened.lives).toBe(rules.lives + 2)
 
-    await cast('VITALITY', new Date(NOW.getTime() + 60_000))
+    await cast('VITALITY', nextStart)
 
     expect(await copies()).toBe(0)
-    expect(await readEffects(userId)).toHaveLength(2)
+    expect(await db.select().from(activeEffects).where(eq(activeEffects.casterId, userId))).toHaveLength(3)
   })
 
   it('laisse lancer un autre sort dans la même attente', async () => {
@@ -132,8 +159,7 @@ describe('lancer et ancrage des effets', () => {
   })
 
   it('additionne deux Vitalité posées avant la même tentative', async () => {
-    // Le budget de lancers se compte par lanceur : deux lanceurs peuvent viser
-    // la même tentative, et leurs effets s'empilent.
+    // Deux lanceurs peuvent viser la même tentative, et leurs effets s'empilent.
     const other = await createPlayer(db, { discordId: '987654321', username: 'radagast' })
     await db.insert(activeEffects).values([
       { userId, casterId: userId, spell: 'VITALITY', face: 'boon', castAt: NOW, castCooldownStartedAt: COOLDOWN_UNTIL },

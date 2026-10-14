@@ -63,9 +63,9 @@ describe('Répit, sur l attente en cours', () => {
     expect((await reload()).cooldownStartedAt?.getTime()).toBe(STARTED_AT.getTime())
   })
 
-  // Deux lancers par attente, deux fois le même sort permis : un joueur peut
-  // donc diviser sa propre attente par quatre, sans attendre les équipes.
-  // Voir specs/bonus.md#cumul.
+  // Deux fois le même sort permis, jusqu'au plafond d'effets positifs : un
+  // joueur peut donc diviser sa propre attente par quatre, sans attendre les
+  // équipes. Voir specs/bonus.md#cumul.
   it('divise par quatre quand le joueur en lance deux', async () => {
     await castRespite()
     await castRespite()
@@ -74,13 +74,15 @@ describe('Répit, sur l attente en cours', () => {
       .toBe(STARTED_AT.getTime() + rules.cooldownMs / (rules.respiteFactor ** 2))
   })
 
-  it('s arrête au budget de l attente : le troisième ne part pas', async () => {
+  // Deux Répit sur soi, et le joueur porte son plafond d'effets positifs : le
+  // troisième ne part pas. Voir specs/bonus.md#limite-deffets-positifs.
+  it('s arrête au plafond d effets positifs : le troisième ne part pas', async () => {
     await castRespite()
     await castRespite()
     await castRespite()
 
     const cast = await db.select().from(activeEffects).where(eq(activeEffects.userId, player.id))
-    expect(cast).toHaveLength(rules.castsPerCooldown)
+    expect(cast).toHaveLength(rules.maxBoons)
     expect((await reload()).cooldownUntil?.getTime())
       .toBe(STARTED_AT.getTime() + rules.cooldownMs / (rules.respiteFactor ** 2))
   })

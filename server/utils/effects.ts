@@ -1,9 +1,9 @@
-import { and, desc, eq, isNull, ne, notExists, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, ne } from 'drizzle-orm'
 import { isBorneBy } from './mechanics'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import type { SpellLifetime, StakeRule } from './spellbook'
-import { drawTarget } from './targets'
+import { canTargetSelf, drawTarget } from './targets'
 import { activeEffects, inventory, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
@@ -91,10 +91,14 @@ export interface ReceivedView {
  * sans que l'effet lui soit montré, faute d'attente à laquelle le rattacher.
  * Voir shared/utils/spells.ts et specs/bonus.md#ancrage-et-durée-de-vie.
  *
- * Un lancer sans exemplaire à consommer, ou une attente dont le budget est
- * épuisé, ne fait rien et ne dit rien : l'appareil qui l'a envoyé est en retard
- * ou en double, pas fautif. L'écran a déjà éteint le bouton.
- * Voir specs/bonus.md#où-et-quand.
+ * Aucun budget de lancers : un joueur lance autant de sorts qu'il en a en
+ * poche. Ce qui borne l'empilement, c'est ce que la cible porte déjà — deux
+ * magies noires, deux blanches. Voir specs/bonus.md#où-et-quand.
+ *
+ * Un lancer sans exemplaire à consommer, ou sur soi quand on porte déjà son
+ * plafond d'effets positifs, ne fait rien et ne dit rien : l'appareil qui l'a
+ * envoyé est en retard ou en double, pas fautif. L'écran a déjà éteint le
+ * bouton.
  */
 export async function castSpell(
   db: Database,
@@ -104,10 +108,9 @@ export async function castSpell(
   now: Date,
   random: () => number = Math.random,
 ): Promise<void> {
-  // Le lancer n'a lieu que pendant une attente, dont le **début** identifie
-  // l'exemplaire déjà parti — l'échéance ne le peut plus, Répit la déplace.
-  // L'appelant l'a vérifié : sans attente, il n'y a rien à identifier, donc
-  // rien à lancer, et le sort est gaspillé.
+  // Le lancer n'a lieu que pendant une attente, que le journal retient par son
+  // **début** — l'échéance ne le peut pas, Répit la déplace. L'appelant l'a
+  // vérifié : sans attente, il n'y a rien à lancer.
   const startedAt = caster.cooldownStartedAt
 
   if (!startedAt) {
@@ -122,7 +125,15 @@ export async function castSpell(
     return
   }
 
-  const rules = rulesForFloor(caster.currentFloor)
+  // Sur soi, la cible est connue d'avance : un lanceur saturé de magies
+  // blanches garde son exemplaire, plutôt que de le dépenser pour rien comme
+  // sur un pool d'alliés vide. Lu avant l'écriture, comme le plafond l'est au
+  // tirage : des lancers envoyés en même temps d'onglets différents peuvent
+  // tous passer — l'écran, lui, n'en envoie qu'un à la fois. Assumé.
+  // Voir specs/bonus.md#limite-deffets-positifs.
+  if (kind === 'self' && !(await canTargetSelf(db, caster))) {
+    return
+  }
 
   const [copy] = await db
     .select({ id: inventory.id })
@@ -134,29 +145,22 @@ export async function castSpell(
     return
   }
 
-  // L'exemplaire ne part que si l'attente a encore du budget. La condition vit
-  // sur l'écriture et non sur une lecture préalable : deux requêtes visant le
-  // même exemplaire ne peuvent pas le consommer toutes les deux, et c'est le cas
-  // qui compte — le double-clic sur le même bouton. Deux sorts différents partis
-  // à la même milliseconde, eux, peuvent voir le même budget libre : assumé,
-  // l'écran affiche ce qu'il reste. Voir specs/bonus.md#où-et-quand.
+  // Deux requêtes visant le même exemplaire ne peuvent pas le consommer toutes
+  // les deux : c'est le cas qui compte, le double-clic sur le même bouton.
   const [spent] = await db
     .delete(inventory)
-    .where(and(
-      eq(inventory.id, copy.id),
-      notExists(beyondBudget(db, caster.id, startedAt, rules.castsPerCooldown)),
-    ))
+    .where(eq(inventory.id, copy.id))
     .returning({ id: inventory.id })
 
-  // Budget épuisé, ou exemplaire déjà parti : rien n'est consommé, donc rien
-  // n'est posé. Ce qui suit écrit — une Purge rejouée viderait une seconde ligne
-  // du Pool Échecs pour un exemplaire resté en poche.
+  // Exemplaire déjà parti : rien n'est consommé, donc rien n'est posé. Ce qui
+  // suit écrit — une Purge rejouée viderait une seconde ligne du Pool Échecs
+  // pour un exemplaire resté en poche.
   if (!spent) {
     return
   }
 
   // La cible n'est tirée qu'une fois l'exemplaire consommé : un lancer refusé
-  // par le budget ne doit pas désigner quelqu'un pour rien.
+  // ne doit pas désigner quelqu'un pour rien.
   const target = kind === 'self' ? caster : await drawTarget(db, caster, kind, now, random)
   const face = faceFor(kind)
 
@@ -184,47 +188,6 @@ export async function castSpell(
   if (entry?.actInstantly) {
     await entry.actInstantly(db, target, face)
   }
-}
-
-/**
- * Le lancer de trop : celui qui occuperait le rang `cap` dans cette attente-là,
- * en comptant de zéro. S'il existe déjà, le budget est épuisé.
- *
- * Dit par un décalage plutôt qu'un `count(*)` : c'est ce qui permet de le poser
- * en condition d'écriture, là où une lecture préalable laisserait une fenêtre —
- * et ça passe par le query builder, donc par la conversion d'horodatage que le
- * schéma définit. Un `count(*)` écrit à la main comparerait une `Date` brute à
- * des secondes, et ne trouverait jamais rien.
- */
-function beyondBudget(db: Database, casterId: number, startedAt: Date, cap: number) {
-  return db
-    .select({ id: activeEffects.id })
-    .from(activeEffects)
-    .where(and(
-      eq(activeEffects.casterId, casterId),
-      eq(activeEffects.castCooldownStartedAt, startedAt),
-    ))
-    .limit(1)
-    .offset(cap - 1)
-}
-
-/** Ce qu'il reste de lancers à ce joueur pour l'attente où il se tient. */
-export async function castsLeftThisCooldown(db: Database, caster: User): Promise<number> {
-  const { castsPerCooldown } = rulesForFloor(caster.currentFloor)
-
-  if (!caster.cooldownStartedAt) {
-    return 0
-  }
-
-  const [row] = await db
-    .select({ used: sql<number>`count(*)` })
-    .from(activeEffects)
-    .where(and(
-      eq(activeEffects.casterId, caster.id),
-      eq(activeEffects.castCooldownStartedAt, caster.cooldownStartedAt),
-    ))
-
-  return Math.max(0, castsPerCooldown - row.used)
 }
 
 /**

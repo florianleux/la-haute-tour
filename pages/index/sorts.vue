@@ -84,13 +84,19 @@
                   v-for="kind in offeredTargets(canTargetOthers)"
                   :key="kind"
                   variant="parchment"
-                  :disabled="!count || !castsLeft || casting !== null"
+                  :disabled="!count || casting !== null || (kind === 'self' && !canTargetSelf)"
                   :loading="casting === selected && castingOn === kind"
                   @click="castOn(selected, kind)"
                 >
                   {{ targetKindLabel(kind) }}
                 </BaseButton>
               </div>
+
+              <!-- Sur soi, la cible est connue d'avance : le refus se dit avant
+                   le clic. Voir specs/bonus.md#limite-deffets-positifs. -->
+              <BaseParchmentNote v-if="!canTargetSelf" fixed class="mt-2">
+                Tu portes déjà ton plein de magies blanches : plus de sort sur toi pour l'instant.
+              </BaseParchmentNote>
 
               <BaseParchmentNote v-if="outcome" fixed class="mt-2" :tone="outcome.tone">
                 {{ outcome.text }}
@@ -161,7 +167,7 @@ const {
   log,
   failed,
   canTargetOthers,
-  castsLeft,
+  canTargetSelf,
   casting,
   castFailed,
   cast,

@@ -44,7 +44,7 @@ Tout l'état vit en base, jamais côté client :
 - **Flags de triche** — les soumissions déclenchées par une perte de focus.
 - **Inventaire** — les sorts possédés et non encore lancés. Doublons illimités.
 - **Effets actifs** — un effet posé sur un joueur, portant son sort, sa face, son lanceur et la date du lancer. Ancré sur la prochaine tentative de la cible, il meurt avec elle — sauf un sort lié à l'attente, qui meurt avec l'attente visée.
-- **Lancers** — ce qui est parti de chez qui, vers qui, et quand. C'est le journal, et c'est aussi lui qui fait respecter les deux lancers par attente.
+- **Lancers** — ce qui est parti de chez qui, vers qui, et quand. C'est le journal, et c'est aussi lui qui dit ce qu'un joueur porte, donc qui fait respecter les plafonds d'effets négatifs et positifs.
 - **Coffre** — un état porté par le verdict : *pas de coffre*, *fermé*, *ouvert avec son résultat*. Le tirage a lieu au clic et son résultat est persisté, sinon un rechargement relancerait le dé.
 - **Succès débloqués** — une entrée par succès acquis, avec sa date. Lus avec l'état du joueur plutôt qu'à part : c'est en les connaissant qu'on sait lesquels sont neufs, et un aller-retour de plus se paierait à chaque question. Voir [`succes.md`](./succes.md).
 - **Compteurs de succès**, portés par le joueur — la **série** en cours, les **vues totales**, et les **jours joués** (le dernier jour joué, leur nombre, et combien se suivent). Portés plutôt que comptés, pour la raison qui vaut déjà aux questions vues : les recompter lirait une ligne par fait à chaque question.

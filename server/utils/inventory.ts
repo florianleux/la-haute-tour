@@ -3,12 +3,11 @@ import { requireCamp } from './camp'
 import {
   castLogQuery,
   castSpell,
-  castsLeftThisCooldown,
   receivedLogQuery,
   toCastViews,
   toReceivedViews,
 } from './effects'
-import { rulesForFloor } from './rules'
+import { canTargetSelf } from './targets'
 import { activeEffects, inventory } from '../db/schema'
 import { SPELL_IDS } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
@@ -49,13 +48,12 @@ export interface InventoryView {
    */
   canTargetOthers: boolean
   /**
-   * Ce qu'il reste de lancers pour l'attente en cours. L'écran l'affiche et
-   * éteint ses boutons à zéro : la règle se voit avant le clic, elle ne se
-   * découvre pas après. Voir specs/bonus.md#où-et-quand.
+   * Le joueur peut-il encore se lancer un sort ? Faux quand il porte déjà son
+   * plafond d'effets positifs : l'écran éteint « Sur moi », et le refus se voit
+   * avant le clic plutôt qu'un exemplaire dépensé pour rien.
+   * Voir specs/bonus.md#limite-deffets-positifs.
    */
-  castsLeft: number
-  /** Ce qu'une attente permet de lancers, pour que l'écran dise la règle. */
-  castsPerCooldown: number
+  canTargetSelf: boolean
 }
 
 /**
@@ -66,9 +64,7 @@ export interface InventoryView {
  *
  * Refusé hors du camp : le lancer n'existe que là, donc la page qui montre
  * l'inventaire n'est pas atteignable ailleurs — URL comprise, d'où le refus ici
- * et pas seulement dans la navigation. Le lancer après l'attente reste compté
- * sur elle : son début (`cooldownStartedAt`) ne s'efface qu'avec le rattrapage
- * réussi.
+ * et pas seulement dans la navigation.
  * Voir specs/bonus.md#sorts et specs/ecrans.md#sorts.
  */
 export async function readInventory(db: Database, user: User, now: Date): Promise<InventoryView> {
@@ -81,8 +77,9 @@ export async function readInventory(db: Database, user: User, now: Date): Promis
  * Lancer un sort sur une catégorie de cible, puis rendre la page telle qu'elle
  * est maintenant : l'exemplaire en moins, le journal en plus — et le nom de la
  * cible avec lui, car c'est au retour du lancer que le joueur apprend qui il a
- * touché. Un lancer au-delà du budget ne fait rien et rend le même état :
- * l'appel est en retard, pas en faute. Voir specs/bonus.md#où-et-quand.
+ * touché. Un lancer refusé — plus d'exemplaire, ou sur soi au plafond
+ * d'effets positifs — ne fait rien et rend le même état : l'appel est en
+ * retard, pas en faute. Voir specs/bonus.md#où-et-quand.
  */
 export async function castFromInventory(
   db: Database,
@@ -106,7 +103,9 @@ export async function castFromInventory(
  *
  * Les quatre listes partent dans le même lot. Elles ne dépendent pas les unes des
  * autres, et la base est distante : servies l'une après l'autre, elles
- * coûteraient quatre allers-retours là où l'écran n'en demande qu'un.
+ * coûteraient quatre allers-retours là où elles n'en demandent qu'un. Ce que le
+ * joueur porte de magies blanches se lit ensuite, en un second : il passe par
+ * le même filtre que le tirage, qui ne se met pas en lot.
  * Voir tests/server/query-budget.test.ts.
  */
 async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
@@ -135,8 +134,7 @@ async function readSpellPage(db: Database, user: User): Promise<InventoryView> {
     discovered: SPELL_IDS.filter(spell => discoveredSpells.has(spell)),
     log: toCastViews(log),
     received: toReceivedViews(received),
-    castsLeft: await castsLeftThisCooldown(db, user),
-    castsPerCooldown: rulesForFloor(user.currentFloor).castsPerCooldown,
+    canTargetSelf: await canTargetSelf(db, user),
     canTargetOthers: user.team !== null,
   }
 }

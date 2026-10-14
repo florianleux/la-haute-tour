@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, inventory, missedPool, users } from '../../server/db/schema'
 import {
   castSpell,
-  castsLeftThisCooldown,
   effectsQuery,
   readCastLog,
   readReceivedLog,
@@ -81,15 +80,35 @@ describe('lancer sur un allié', () => {
 
   // Pool vide : le sort part et ne fait rien. Gaspillé, comme Purge sur un Pool
   // Échecs vide. Voir specs/bonus.md#tirage-de-la-cible.
-  it('dépense l exemplaire et le lancer même sans cible éligible', async () => {
+  it('dépense l exemplaire même sans cible éligible', async () => {
     await cast('VITALITY')
 
     expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(0)
-    expect(await castsLeftThisCooldown(db, await loadPlayer(db, caster.id)))
-      .toBe(rules.castsPerCooldown - 1)
 
     const [posed] = await db.select().from(activeEffects)
     expect(posed.userId).toBeNull()
+  })
+
+  // Un allié qui porte déjà son plafond de magies blanches sort du tirage, comme
+  // un ennemi saturé de noires : le sort part et ne touche personne.
+  // Voir specs/bonus.md#limite-deffets-positifs.
+  it('retire du tirage l allié qui porte déjà deux magies blanches', async () => {
+    const samsagace = await ally('samsagace')
+    const other = await createPlayer(db, { discordId: 'other', username: 'radagast', team: 'TLM' })
+    await db.insert(activeEffects).values(Array.from({ length: rules.maxBoons }, () => ({
+      userId: samsagace.id,
+      casterId: other,
+      spell: 'VITALITY' as const,
+      face: 'boon' as const,
+      castAt: NOW,
+      castCooldownStartedAt: NOW,
+    })))
+
+    await cast('VITALITY')
+
+    const posed = await db.select().from(activeEffects).where(eq(activeEffects.casterId, caster.id))
+    expect(posed.map(row => row.userId)).toEqual([null])
+    expect(await effectsOn(samsagace)).toHaveLength(rules.maxBoons)
   })
 
   // La cible lit sur son propre écran d'attente ce qu'elle a reçu, et de qui.

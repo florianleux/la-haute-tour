@@ -35,7 +35,7 @@ pas.
 tentative (`attempt`) de plus, dont le contenu est les épreuves du boss plutôt
 que le deck de l'étage.** Même table `attempts`, mêmes vies, même
 `cooldown`/`recovery` — voir [ADR 0006](../docs/adr/0006-le-combat-de-boss-reutilise-la-tentative.md).
-Rien à dupliquer : les Sorts, leur budget de lancers et tout ce qui s'ancre sur
+Rien à dupliquer : les Sorts, leurs plafonds d'effets et tout ce qui s'ancre sur
 le début d'une tentative s'appliquent donc aussi, sans code dédié, à un combat
 de boss.
 

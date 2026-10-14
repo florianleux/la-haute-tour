@@ -37,7 +37,7 @@ describe('jeu de règles', () => {
       chronomancyFactor: 2,
       indulgenceFactor: 2,
       maxCurses: 2,
-      castsPerCooldown: 2,
+      maxBoons: 2,
     })
   })
 

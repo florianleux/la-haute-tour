@@ -20,10 +20,8 @@ export interface InventoryRead {
   canTargetOthers: Ref<boolean>
   /** Vrai quand la lecture a échoué : un inventaire vide n'est pas la même nouvelle. */
   failed: Ref<boolean>
-  /** Ce qu'il reste de lancers pour l'attente en cours. */
-  castsLeft: Ref<number>
-  /** Ce qu'une attente permet de lancers : la règle, dite au joueur. */
-  castsPerCooldown: Ref<number>
+  /** Faux quand le joueur porte déjà son plafond d'effets positifs : plus de sort sur soi. */
+  canTargetSelf: Ref<boolean>
   /** Le sort dont le lancer est en vol, null au repos. */
   casting: Ref<SpellId | null>
   /** Vrai quand le dernier lancer n'est pas parti. */
@@ -74,8 +72,7 @@ export async function useInventory(): Promise<InventoryRead> {
     log: computed<CastView[]>(() => data.value?.log ?? []),
     received: computed<ReceivedView[]>(() => data.value?.received ?? []),
     canTargetOthers: computed<boolean>(() => data.value?.canTargetOthers ?? false),
-    castsLeft: computed<number>(() => data.value?.castsLeft ?? 0),
-    castsPerCooldown: computed<number>(() => data.value?.castsPerCooldown ?? 0),
+    canTargetSelf: computed<boolean>(() => data.value?.canTargetSelf ?? false),
     failed: computed<boolean>(() => Boolean(error.value)),
     casting,
     castFailed,

@@ -1,7 +1,8 @@
 import { and, asc, eq, inArray, isNull, ne, or } from 'drizzle-orm'
 import { activeEffects, deckFloors, reservations, users } from '../db/schema'
-import { drawByRank, hasStarted, isBorneBy, phaseOf } from './mechanics'
+import { countsTowardMaxBoons, drawByRank, hasStarted, isBorneBy, phaseOf } from './mechanics'
 import { rulesForFloor } from './rules'
+import { faceFor } from '../../shared/utils/spells'
 import { bondBetween } from '../../shared/utils/teams'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -71,29 +72,42 @@ export async function drawTarget(
     .map(row => row.user)
 
   // Le filtre des saturés passe **avant** le classement : un joueur retiré du
-  // pool n'y occupe plus de rang, donc ne pèse plus dans la distribution.
-  // Voir specs/bonus.md#limite-deffets-négatifs.
-  const eligible = kind === 'foe' ? await unsaturated(db, reachable) : reachable
+  // pool n'y occupe plus de rang, donc ne pèse plus dans la distribution. Un
+  // ennemi sature de magies noires, un allié de magies blanches.
+  // Voir specs/bonus.md#limite-deffets-négatifs et
+  // specs/bonus.md#limite-deffets-positifs.
+  const eligible = await unsaturated(db, reachable, faceFor(kind))
 
   return drawByRank(eligible, kind, random)
 }
 
 /**
- * Ceux qui peuvent encore encaisser une magie noire : un joueur ne porte jamais
- * plus de `maxCurses` effets négatifs à la fois. Au-delà il sort du tirage,
- * silencieusement — le ciblage étant déjà aléatoire, le lanceur n'a rien à
- * savoir, et il n'y a aucune UI à prévoir.
+ * Le joueur peut-il encore se lancer un sort ? Sur soi, la face est toujours
+ * blanche : faux quand il porte déjà son plafond d'effets positifs. Lu par le
+ * lancer, qui refuse alors sans consommer, et par la page Sorts, qui éteint
+ * « Sur moi ». Voir specs/bonus.md#limite-deffets-positifs.
+ */
+export async function canTargetSelf(db: Database, user: User): Promise<boolean> {
+  return (await unsaturated(db, [user], 'boon')).length > 0
+}
+
+/**
+ * Ceux qui ne sont pas encore **saturés** pour cette face : un joueur ne porte
+ * jamais plus de `maxCurses` effets négatifs, ni plus de `maxBoons` positifs, à
+ * la fois. Au-delà il sort du tirage, silencieusement — le ciblage étant déjà
+ * aléatoire, le lanceur n'a rien à savoir.
  *
  * Conséquence assumée : qui ne meurt pas ne consomme pas ses effets, occupe ses
- * places et s'en trouve protégé. Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ * places et s'en trouve protégé — ou privé de nouvelles magies blanches.
+ * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
-async function unsaturated(db: Database, candidates: User[]): Promise<User[]> {
+async function unsaturated(db: Database, candidates: User[], face: SpellFace): Promise<User[]> {
   if (!candidates.length) {
     return candidates
   }
 
   // Ce `where` ne tranche pas, il allège la facture : il écarte les
-  // malédictions mortes — ancrées sur une tentative révolue — pour ne pas payer
+  // effets morts — ancrés sur une tentative révolue — pour ne pas payer
   // des lignes qu'on jetterait ensuite. C'est `isBorneBy` qui décide, plus bas.
   //
   // L'invariant qui les lie : ce filtre doit rester **plus large** que le
@@ -110,20 +124,26 @@ async function unsaturated(db: Database, candidates: User[]): Promise<User[]> {
     .innerJoin(users, eq(users.id, activeEffects.userId))
     .where(and(
       inArray(activeEffects.userId, candidates.map(candidate => candidate.id)),
-      eq(activeEffects.face, 'curse' satisfies SpellFace),
+      eq(activeEffects.face, face),
       or(
         isNull(activeEffects.anchoredAt),
         eq(activeEffects.anchoredAt, users.attemptStartedAt),
       ),
     ))
 
+  // Les deux faces ne se comptent pas pareil : une malédiction ancrée occupe
+  // sa place jusqu'à la tentative suivante, une magie blanche ancrée la rend.
+  // Voir server/utils/mechanics.ts.
+  const counts = face === 'curse' ? isBorneBy : countsTowardMaxBoons
+
   return candidates.filter((candidate) => {
     const borne = carried.filter(row =>
-      row.userId === candidate.id && isBorneBy(row, candidate),
+      row.userId === candidate.id && counts(row, candidate),
     )
 
     // Le plafond est celui de la cible : c'est elle qui porte, pas le lanceur.
-    return borne.length < rulesForFloor(candidate.currentFloor).maxCurses
+    const rules = rulesForFloor(candidate.currentFloor)
+    return borne.length < (face === 'curse' ? rules.maxCurses : rules.maxBoons)
   })
 }
 

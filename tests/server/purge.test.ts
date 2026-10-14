@@ -117,7 +117,10 @@ describe('Purge, sur le Pool Échecs', () => {
     expect(await pool()).toHaveLength(2)
   })
 
-  it('s arrête au budget de l attente : le troisième ne retire rien', async () => {
+  // Purge est liée à l'attente : chacune y occupe une place du plafond d'effets
+  // positifs, et c'est ce qui empêche de vider le pool d'un coup.
+  // Voir specs/bonus.md#limite-deffets-positifs.
+  it('s arrête au plafond d effets positifs : la troisième ne retire rien', async () => {
     await fillPool(4)
 
     await castPurge()
@@ -128,15 +131,13 @@ describe('Purge, sur le Pool Échecs', () => {
   })
 
   // Ponctuel, sans interaction : chaque lancer sort sa question, et deux
-  // n'interagissent pas. Le second lancer suppose une seconde attente tant que
-  // le ciblage n'existe pas — deux lanceurs sur la même attente arrivent avec
-  // les équipes. Voir specs/bonus.md#cumul.
+  // n'interagissent pas, même d'une attente à l'autre. Voir specs/bonus.md#cumul.
   it('sort une seconde question au lancer suivant, sans interaction', async () => {
     const ids = await fillPool(4)
     await castPurge()
     const afterFirst = await pool()
 
-    // Une seconde attente : c'est son début qui rouvre le droit de lancer.
+    // Une seconde attente : la Purge de la première n'y occupe plus de place.
     const nextStart = new Date(NOW.getTime() + rules.cooldownMs)
     await db
       .update(users)
@@ -166,8 +167,8 @@ describe('Purge, sur le Pool Échecs', () => {
     expect(page.entries).toHaveLength(3)
   })
 
-  // Assumé : vider son pool est un objectif de jeu légitime, et les deux lancers
-  // par attente empêchent de le vider d'un coup.
+  // Assumé : vider son pool est un objectif de jeu légitime, et le plafond de
+  // deux magies blanches portées empêche de le vider d'un coup.
   // Voir specs/bonus.md#catalogue.
   it('peut faire passer le pool sous le seuil, et l attente mène alors à une reprise', async () => {
     await fillPool(rules.poolSizeForRecovery)

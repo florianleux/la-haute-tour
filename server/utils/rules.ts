@@ -76,21 +76,23 @@ export interface FloorRules {
    */
   indulgenceFactor: number
   /**
-   * Combien de sorts un joueur peut lancer pendant une même attente, quels
-   * qu'ils soient — deux fois le même y compris. Le plafond porte sur le
-   * nombre, jamais sur l'identité. Voir specs/bonus.md#où-et-quand.
-   */
-  castsPerCooldown: number
-  /**
    * Combien d'effets négatifs un joueur porte au plus. Au-delà, il sort du
    * tirage des ennemis — silencieusement, le ciblage étant déjà aléatoire.
    *
    * C'est cette limite, et non un plancher sur les vies, qui garantit qu'une
    * tentative démarre toujours avec au moins une vie : deux Vitalité noires au
-   * plus, sur trois vies. Aucune limite en face pour les effets positifs.
-   * Voir specs/bonus.md#limite-deffets-négatifs.
+   * plus, sur trois vies. Voir specs/bonus.md#limite-deffets-négatifs.
    */
   maxCurses: number
+  /**
+   * Combien d'effets positifs un joueur porte au plus. Au-delà, il sort du
+   * tirage des alliés, silencieusement, et ne peut plus se lancer de sort à
+   * lui-même. C'est la seule borne des magies blanches : aucun budget de
+   * lancers ne retient plus un joueur qui a fait des réserves, et sans elle
+   * Répit, Chronomancie ou Vitalité s'empileraient sans fin.
+   * Voir specs/bonus.md#limite-deffets-positifs.
+   */
+  maxBoons: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -113,8 +115,8 @@ const DEFAULT_RULES: FloorRules = {
   respiteFactor: 2,
   chronomancyFactor: 2,
   indulgenceFactor: 2,
-  castsPerCooldown: 2,
   maxCurses: 2,
+  maxBoons: 2,
 }
 
 /**

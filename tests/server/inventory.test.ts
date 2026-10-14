@@ -54,10 +54,9 @@ describe('inventaire des sorts', () => {
         { spell: 'RESPITE', count: 1 },
       ],
       log: [],
-      // La règle et ce qu'il en reste voyagent avec l'inventaire : l'écran les
-      // dit sans les recopier. Voir specs/bonus.md#où-et-quand.
-      castsLeft: 2,
-      castsPerCooldown: 2,
+      // Le plafond d'effets positifs voyage avec l'inventaire : l'écran éteint
+      // « Sur moi » sans recompter. Voir specs/bonus.md#limite-deffets-positifs.
+      canTargetSelf: true,
     })
   })
 
@@ -76,8 +75,7 @@ describe('inventaire des sorts', () => {
     // que ce qui la remplit. Voir specs/ecrans.md#ce-quaucun-écran-joueur-ne-montre.
     expect(Object.keys(await withTeam.json()).sort()).toEqual([
       'canTargetOthers',
-      'castsLeft',
-      'castsPerCooldown',
+      'canTargetSelf',
       'discovered',
       'entries',
       'log',
@@ -262,13 +260,13 @@ describe('inventaire des sorts', () => {
       const page = await response.json()
       expect(page.entries).toEqual([])
       expect(page.log).toHaveLength(2)
-      expect(page.castsLeft).toBe(0)
+      expect(page.canTargetSelf).toBe(false)
     })
 
-    // Le budget épuisé, le sort ne part pas et l'exemplaire reste en poche.
-    // Sans erreur : l'écran a déjà éteint le bouton, celui qui insiste est en
-    // retard, pas fautif. Voir specs/bonus.md#où-et-quand.
-    it('refuse le troisième lancer sans erreur, en rendant l état courant', async () => {
+    // Au plafond d'effets positifs, le sort sur soi ne part pas et l'exemplaire
+    // reste en poche. Sans erreur : l'écran a déjà éteint le bouton, celui qui
+    // insiste est en retard, pas fautif. Voir specs/bonus.md#limite-deffets-positifs.
+    it('refuse un troisième sort sur soi sans erreur, en rendant l état courant', async () => {
       const userId = await createPlayer(db, IN_COOLDOWN)
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY', 'VITALITY', 'RESPITE')
@@ -281,7 +279,7 @@ describe('inventaire des sorts', () => {
       const page = await response.json()
       expect(page.entries).toEqual([{ spell: 'RESPITE', count: 1 }])
       expect(page.log).toHaveLength(2)
-      expect(page.castsLeft).toBe(0)
+      expect(page.canTargetSelf).toBe(false)
     })
 
     it('ne lance rien hors attente, URL comprise', async () => {
