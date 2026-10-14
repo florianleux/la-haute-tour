@@ -10,8 +10,8 @@
 - **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension, en rattrapage, comme pendant une épreuve de combat de boss — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente, le palier ou la porte du boss (en attente de clés comme ouverte), rien ne tourne et la barre redevient vivante.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
 - **Un déblocage de Succès s'annonce par un toast**, et c'est la seule chose du jeu qui flotte par-dessus un écran. Il passe seul, sans rien demander : un succès n'appelle aucune décision, donc il ne doit rien interrompre. Il s'efface **de lui-même** au bout de quelques secondes et ne se ferme pas à la main : un bouton pour le congédier serait exactement la décision qu'un succès n'appelle pas. Il se pose sous la barre d'icônes et ne la recouvre jamais — ni au regard, ni au clic. Il n'apparaît que sur les déblocages qui arrivent pendant la partie — ceux que le joueur n'était pas là pour voir se découvrent sur leur page. Voir [`succes.md`](./succes.md#affichage).
-- **Les Succès ont leur icône dans la barre**, une coupe, entre la baguette et le buste. Elle ne s'éteint que pendant une question, comme le reste : la page se consulte à tout moment, contrairement aux Sorts qui n'existent qu'au camp. Un lien posé sur un écran de jeu aurait été introuvable — un joueur actif n'en voit aucun, sa page étant toujours prise par sa question, son verdict ou son attente.
-- **Une seule exception à « une seule route de jeu » : les Sorts.** Ils ne se lancent qu'au camp, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette est donc **désactivée hors du camp** — visible partout, cliquable là seulement. Elle annonce ainsi une page qui existe, à un moment qui viendra.
+- **Les Succès ont leur icône dans la barre**, une coupe, entre la baguette et le buste. Comme la baguette, elle est **désactivée hors du camp** : les Haut-faits s'ouvrent par-dessus le camp, sur la bannière de la guilde du joueur. Elle l'est aussi **sans équipe** : pas de guilde, pas de bannière. Voir [Haut-faits](#haut-faits).
+- **Une seule exception à « une seule route de jeu » : le camp.** Le Grimoire, le Volumen et les Haut-faits s'ouvrent par-dessus lui, et là seulement, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette et la coupe sont donc **désactivées hors du camp** — visibles partout, cliquables là seulement. Elles annoncent ainsi une page qui existe, à un moment qui viendra.
 
 ## Liste des écrans
 
@@ -23,7 +23,7 @@
 | Jeu | `/` — 7 phases, page d'accueil (5 aujourd'hui : les phases de boss ne sont pas encore implémentées) | non |
 | Profil | `/profil` | non |
 | Grimoire (les Sorts) | `/sorts` — au camp seulement | non |
-| Haut-faits (les Succès) | `/succes` — par la barre, ou la bannière du camp | non |
+| Haut-faits (les Succès) | `/succes` — au camp seulement, et avec une équipe, par la coupe ou la bannière du camp | non |
 | Volumen (les questions vues) | `/volumen` — au camp seulement | non |
 | Inventaire (les sorts en poche) | `/inventaire` — au camp seulement, par le sac. Page vide en attendant son contenu | non |
 | Dashboard admin | `/admin` | non, réservé admin |
@@ -133,6 +133,12 @@ Nommé **Grimoire** côté joueur. Atteignable **au camp seulement** (l'attente,
 - L'**historique**, dessous — les cinq derniers lancers du sort choisi, une ligne chacun : sa cible, et le jour (« Aujourd'hui », « Hier », « Il y a 3 jours », puis la date passé une semaine). Rien tant qu'aucun sort n'est choisi. C'est là que le lanceur apprend qui il a touché.
 
 Hors du camp, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Si la partie quitte le camp pendant qu'il est ouvert, le Grimoire se ferme de lui-même. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
+
+## Haut-faits
+
+Le mur des Succès (voir [`succes.md`](./succes.md#affichage)). Atteignable **au camp seulement** (l'attente, puis le rattrapage tant qu'il n'a pas commencé), et **avec une équipe seulement**, par la coupe ou la bannière du camp. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : la bannière de la guilde du joueur (bleue pour les Méridiens, rouge pour les Fauteuillistes) tombe du haut de l'écran, s'étire au bout de sa course, remonte en se tassant et rebondit en se balançant, de moins en moins, avant de s'arrêter. Son titre « Haut-faits » et le compteur des succès obtenus sur le catalogue s'y posent en haut ; dessous, une tuile par succès. Échap, la croix ou un clic à côté la referment : elle remonte hors de l'écran.
+
+Hors du camp, ou sans équipe, la coupe est désactivée et la page n'est pas atteignable, URL comprise. Si la partie quitte le camp pendant qu'elle est ouverte, la bannière se ferme d'elle-même.
 
 ## Volumen
 

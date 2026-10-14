@@ -162,16 +162,15 @@ porte déjà ses questions vues. Voir
   en tête. Les succès non obtenus y sont présents et grisés : le catalogue complet
   est visible, condition comprise. On doit pouvoir lire ce qui reste à faire, pas
   seulement admirer ce qui est fait.
-- **Le nom et la condition** se lisent au survol, et au clic pour qui n'a pas de
-  souris.
+  La page est une bannière aux couleurs de la guilde du joueur, ouverte
+  par-dessus le camp. Voir [`ecrans.md`](./ecrans.md#haut-faits).
+- **Le nom et la condition** se lisent au survol. Un clic sur une tuile ne fait
+  rien.
 - **Le toast** — au moment du déblocage, pendant la partie.
-- **Accès** : une icône dans la barre, une coupe. Elle s'éteint pendant une
-  question comme toutes les autres, et reste allumée partout ailleurs.
-
-  Un lien posé sur un écran de jeu avait d'abord été préféré, puis abandonné à
-  l'essai : la page d'accueil est presque toujours occupée par une question, un
-  verdict, une attente ou un coffre, et le lien n'y apparaissait donc jamais pour
-  un joueur actif.
+- **Accès** : au camp seulement, et avec une équipe, par la bannière du camp ou
+  par une icône dans la barre, une coupe. Elle s'éteint hors du camp et sans
+  équipe, comme la baguette hors du camp : les Haut-faits sont la bannière de la
+  guilde, posée au camp.
 
 Deux familles n'ont pas de toast : les **contestations** et l'**assiduité** hors
 jeu. Une contestation s'arbitre des heures après avoir été demandée, souvent

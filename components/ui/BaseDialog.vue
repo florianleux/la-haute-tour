@@ -58,7 +58,7 @@ onMounted(() => {
 
 // Démontée sans être fermée, la boîte ne rendrait pas le focus : il tomberait
 // sur la page. Fermée d'abord, le navigateur le rend à ce qui l'avait avant —
-// la tuile d'un haut-fait, le parchemin du camp. Sans redire `close` : c'est
+// la bannière du camp, le parchemin du camp. Sans redire `close` : c'est
 // déjà le parent qui la démonte.
 onBeforeUnmount(() => {
   dialog.value?.removeEventListener('close', onClose)

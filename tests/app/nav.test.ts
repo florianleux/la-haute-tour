@@ -44,19 +44,19 @@ function stateOf(icons: NavIcon[], key: NavIconKey): string | undefined {
 
 describe('composition de la barre', () => {
   it('porte la tour, la baguette, la coupe et le profil pour un joueur', () => {
-    const icons = navIcons({ path: '/profil', isAdmin: false, game: state({}) })
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: state({}) })
 
     expect(keys(icons)).toEqual(['tower', 'wand', 'trophy', 'profile'])
   })
 
   it('ajoute le bouclier pour un admin', () => {
-    const icons = navIcons({ path: '/profil', isAdmin: true, game: state({}) })
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: true, game: state({}) })
 
     expect(keys(icons)).toEqual(['tower', 'wand', 'trophy', 'profile', 'admin'])
   })
 
   it('reste debout tant que l état de jeu n a pas été lu', () => {
-    const icons = navIcons({ path: '/profil', isAdmin: false, game: null })
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: null })
 
     expect(keys(icons)).toEqual(['tower', 'wand', 'trophy', 'profile'])
     expect(stateOf(icons, 'tower')).toBe('link')
@@ -65,20 +65,20 @@ describe('composition de la barre', () => {
 
 describe('page courante', () => {
   it('met en avant l icône de la page regardée, qui ne mène nulle part', () => {
-    const icons = navIcons({ path: '/profil', isAdmin: false, game: state({}) })
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: state({}) })
 
     expect(stateOf(icons, 'profile')).toBe('active')
     expect(stateOf(icons, 'tower')).toBe('link')
   })
 
   it('met la tour en avant sur le jeu', () => {
-    const icons = navIcons({ path: '/', isAdmin: false, game: state({}) })
+    const icons = navIcons({ hasTeam: true, path: '/', isAdmin: false, game: state({}) })
 
     expect(stateOf(icons, 'tower')).toBe('active')
   })
 
   it('met la baguette en avant sur les Sorts', () => {
-    const icons = navIcons({ path: '/sorts', isAdmin: false, game: state({ phase: 'cooldown', lives: 0 }) })
+    const icons = navIcons({ hasTeam: true, path: '/sorts', isAdmin: false, game: state({ phase: 'cooldown', lives: 0 }) })
 
     expect(stateOf(icons, 'wand')).toBe('active')
   })
@@ -87,6 +87,7 @@ describe('page courante', () => {
 describe('chrono qui tourne', () => {
   it('éteint toute la barre pendant une question d ascension', () => {
     const icons = navIcons({
+      hasTeam: true,
       path: '/',
       isAdmin: true,
       game: state({ phase: 'ascent', question }),
@@ -100,6 +101,7 @@ describe('chrono qui tourne', () => {
 
   it('éteint toute la barre pendant une question de rattrapage', () => {
     const icons = navIcons({
+      hasTeam: true,
       path: '/',
       isAdmin: false,
       game: state({ phase: 'recovery', lives: 0, question }),
@@ -111,6 +113,7 @@ describe('chrono qui tourne', () => {
 
   it('laisse la barre vivante ailleurs, même si une question est restée en cache', () => {
     const icons = navIcons({
+      hasTeam: true,
       path: '/profil',
       isAdmin: false,
       game: state({ phase: 'ascent', question }),
@@ -121,7 +124,7 @@ describe('chrono qui tourne', () => {
 
   it('rend ses liens sur le verdict, le palier et la fin de partie', () => {
     for (const phase of ['ascent', 'floorEnd', 'gameOver'] as const) {
-      const icons = navIcons({ path: '/', isAdmin: false, game: state({ phase, question: null }) })
+      const icons = navIcons({ hasTeam: true, path: '/', isAdmin: false, game: state({ phase, question: null }) })
 
       expect(stateOf(icons, 'profile')).toBe('link')
     }
@@ -130,35 +133,78 @@ describe('chrono qui tourne', () => {
 
 describe('baguette', () => {
   it('mène aux Sorts pendant l attente', () => {
-    const icons = navIcons({ path: '/', isAdmin: false, game: state({ phase: 'cooldown', lives: 0 }) })
+    const icons = navIcons({ hasTeam: true, path: '/', isAdmin: false, game: state({ phase: 'cooldown', lives: 0 }) })
 
     expect(stateOf(icons, 'wand')).toBe('link')
   })
 
   it('reste allumée après l attente, tant que le rattrapage n est pas tiré', () => {
-    const icons = navIcons({ path: '/profil', isAdmin: false, game: state({ phase: 'recovery' }) })
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: state({ phase: 'recovery' }) })
 
     expect(stateOf(icons, 'wand')).toBe('link')
   })
 
   it('s éteint une fois le rattrapage tiré', () => {
     const recovery = { total: 3, played: 0, successes: 0, sealed: false, resumes: false, required: 2 }
-    const icons = navIcons({ path: '/profil', isAdmin: false, game: state({ phase: 'recovery', recovery }) })
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: state({ phase: 'recovery', recovery }) })
 
     expect(stateOf(icons, 'wand')).toBe('disabled')
   })
 
   it('est éteinte partout ailleurs', () => {
     for (const phase of ['ascent', 'floorEnd', 'gameOver'] as const) {
-      const icons = navIcons({ path: '/profil', isAdmin: false, game: state({ phase }) })
+      const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: state({ phase }) })
 
       expect(stateOf(icons, 'wand')).toBe('disabled')
     }
   })
 
   it('est éteinte tant que l état de jeu n a pas été lu', () => {
-    const icons = navIcons({ path: '/profil', isAdmin: false, game: null })
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: null })
 
     expect(stateOf(icons, 'wand')).toBe('disabled')
+  })
+})
+
+describe('coupe', () => {
+  it('mène aux Haut-faits pendant l attente', () => {
+    const icons = navIcons({ hasTeam: true, path: '/', isAdmin: false, game: state({ phase: 'cooldown', lives: 0 }) })
+
+    expect(stateOf(icons, 'trophy')).toBe('link')
+  })
+
+  it('reste allumée après l attente, tant que le rattrapage n est pas tiré', () => {
+    const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game: state({ phase: 'recovery' }) })
+
+    expect(stateOf(icons, 'trophy')).toBe('link')
+  })
+
+  it('s éteint hors du camp : les Haut-faits ne s ouvrent que par-dessus lui', () => {
+    const recovery = { total: 3, played: 0, successes: 0, sealed: false, resumes: false, required: 2 }
+    const outside = [
+      state({ phase: 'recovery', recovery }),
+      state({ phase: 'ascent' }),
+      state({ phase: 'floorEnd' }),
+      state({ phase: 'gameOver' }),
+    ]
+
+    for (const game of outside) {
+      const icons = navIcons({ hasTeam: true, path: '/profil', isAdmin: false, game })
+
+      expect(stateOf(icons, 'trophy')).toBe('disabled')
+    }
+  })
+
+  it('s éteint sans équipe, même au camp : pas de bannière', () => {
+    const icons = navIcons({ hasTeam: false, path: '/', isAdmin: false, game: state({ phase: 'cooldown', lives: 0 }) })
+
+    expect(stateOf(icons, 'trophy')).toBe('disabled')
+    expect(stateOf(icons, 'wand')).toBe('link')
+  })
+
+  it('est mise en avant sur les Haut-faits', () => {
+    const icons = navIcons({ hasTeam: true, path: '/succes', isAdmin: false, game: state({ phase: 'cooldown', lives: 0 }) })
+
+    expect(stateOf(icons, 'trophy')).toBe('active')
   })
 })

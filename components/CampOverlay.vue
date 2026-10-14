@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 // Une route enfant de la page de jeu, ouverte par-dessus le camp (le Volumen,
-// le Grimoire) : son fond, et comment elle se ferme. La page de jeu n'est
+// le Grimoire, les Haut-faits) : son fond, et comment elle se ferme. La page de jeu n'est
 // jamais démontée dessous. Voir specs/ecrans.md#volumen et specs/ecrans.md#sorts.
 //
 // - Fermer, c'est revenir au camp : un détour, pas une étape — croix, Échap,

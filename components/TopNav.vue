@@ -52,6 +52,7 @@ const icons = computed(() => navIcons({
   path: route.path,
   isAdmin: isAdmin.value,
   game: game.value,
+  hasTeam: Boolean(user.value?.team),
 }))
 
 /**

@@ -1033,6 +1033,57 @@
     100% { opacity: 1; transform: none; }
   }
 
+  /* La bannière des Haut-faits qui tombe sur le camp, accrochée hors champ en
+     haut de l'écran (l'appelant pose origin-top : tout pivote sur
+     l'accroche). Elle chute en accélérant, étirée par sa course ; au bout,
+     retenue par son accroche, l'étoffe file encore un peu et s'allonge, puis
+     remonte en se tassant et rebondit de moins en moins. Le balancier part au
+     rebond, pas à la chute, un temps derrière lui, et s'amortit à son tour :
+     l'étoffe suit le mouvement au lieu de le faire. */
+  --animate-banner-drop: banner-drop 0.9s linear both;
+
+  @keyframes banner-drop {
+    0% {
+      transform: translateY(-100%) scale(0.96, 1.08);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    42% {
+      transform: translateY(3dvh) scale(0.97, 1.07);
+      animation-timing-function: ease-out;
+    }
+    58% {
+      transform: translateY(-1.5dvh) rotate(-1.5deg) scale(1.03, 0.95);
+      animation-timing-function: ease-in-out;
+    }
+    72% {
+      transform: translateY(0.6dvh) rotate(1deg) scale(0.99, 1.02);
+      animation-timing-function: ease-in-out;
+    }
+    86% {
+      transform: rotate(-0.4deg);
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: none; }
+  }
+
+  /* La fermeture : elle se tasse d'un rien vers le bas, comme tirée avant
+     d'être hissée, puis remonte hors de l'écran en accélérant. Ses propres
+     keyframes, pas `banner-drop` en `reverse` : même raison que `roll-up`,
+     plus bas. */
+  --animate-banner-lift: banner-lift 0.35s linear both;
+
+  @keyframes banner-lift {
+    0% {
+      transform: none;
+      animation-timing-function: ease-out;
+    }
+    25% {
+      transform: translateY(1.5dvh) scale(1.01, 0.98);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    100% { transform: translateY(-100%) scale(0.97, 1.06); }
+  }
+
   --animate-unroll: unroll 0.9s linear var(--enter-delay, 0s) both;
 
   @keyframes unroll {

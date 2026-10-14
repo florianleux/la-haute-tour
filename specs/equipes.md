@@ -129,9 +129,9 @@ Rien d'autre que la relation. En particulier :
   découvrent en jouant, ils ne se consultent pas.
 - **Sa propre guilde, oui** : le camp porte la bannière de la guilde du joueur
   (bleue pour les Méridiens, rouge pour les Fauteuillistes), qui mène aux
-  Haut-faits. C'est la seule couleur d'équipe affichée, et c'est la sienne :
-  elle dit de quel côté il est, jamais qui est avec lui. Sans équipe, pas de
-  bannière.
+  Haut-faits — eux-mêmes ouverts sur cette bannière. C'est la seule couleur
+  d'équipe affichée, et c'est la sienne : elle dit de quel côté il est, jamais
+  qui est avec lui. Sans équipe, pas de bannière, et donc pas de Haut-faits.
 
 L'équipe est une relation entre deux joueurs, lue au moment d'un lancer. Elle
 n'est pas un camp qu'on défend, et le jeu ne propose aucune façon de la faire
