@@ -26,8 +26,7 @@
 
 <script setup lang="ts">
 // Ce qu'un effet posé sur le joueur fait, au survol de son icône : le dessin
-// est SpellDetails, partagé avec la page droite du Grimoire ; ici, seulement le
-// survol et la position. Partagée par EffectPip (rubans), SpellMention
+// est SpellDetails ; ici, seulement le survol et la position. Partagée par EffectPip (rubans), SpellMention
 // (parchemins, coffre) et EffectBadge (thème sombre). Sans effet, c'est un sort
 // en poche (le résultat d'un coffre). Voir specs/bonus.md#linfobulle-dun-sort et
 // specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.

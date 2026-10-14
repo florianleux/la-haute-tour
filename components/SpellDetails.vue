@@ -5,11 +5,10 @@
         :spell="spell"
         :face="effect?.face ?? 'mixed'"
         class="w-[3.75rem] shrink-0 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.4))]"
-        :class="inked ? 'motion-safe:animate-ink-in [--enter-delay:0s]' : ''"
         fallback-class="border-2 border-amber-900/40 text-xl text-amber-900"
       />
 
-      <div class="min-w-0" :class="inked ? 'motion-safe:animate-ink-in [--enter-delay:0.06s]' : ''">
+      <div class="min-w-0">
         <p class="text-base font-bold">
           {{ spellLabel(spell) }}
         </p>
@@ -17,7 +16,7 @@
           v-if="effect"
           class="mt-1 flex flex-wrap gap-1 text-xs"
         >
-          <span :class="[FACE_TAG_CLASS, FACE_TONES[effect.face]]">{{ spellFaceLabel(effect.face) }}</span>
+          <SpellFaceTag :face="effect.face" />
           <span class="rounded border border-amber-900/30 bg-amber-900/5 px-1.5 py-px">
             Lancé par {{ effect.casterName }}
           </span>
@@ -25,7 +24,7 @@
       </div>
     </div>
 
-    <div :class="inked ? 'motion-safe:animate-ink-in [--enter-delay:0.12s]' : ''">
+    <div>
       <p
         v-if="effect"
         class="mt-3"
@@ -43,7 +42,7 @@
           :key="face"
         >
           <dt>
-            <span :class="[FACE_TAG_CLASS, 'text-xs', FACE_TONES[face]]">{{ spellFaceLabel(face) }}</span>
+            <SpellFaceTag :face="face" class="text-xs" />
           </dt>
           <dd class="mt-1">
             {{ spellEffects(spell)[face] }}
@@ -73,20 +72,13 @@
 // Ce qu'un sort fait, dans l'encre du papier : son médaillon, son nom et sa
 // définition. Un effet posé sur le joueur y ajoute sa face, son lanceur, la
 // valeur qu'il change pour de vrai et jusqu'à quand ; un sort en poche montre
-// ses deux faces, rien à chiffrer. Lu au survol (SpellTooltip) et sur la page
-// droite du Grimoire — un seul dessin. Voir specs/bonus.md#linfobulle-dun-sort.
+// ses deux faces, rien à chiffrer. Lu au survol (SpellTooltip) ; la page droite
+// du Grimoire a son propre dessin (SpellbookDetails). Voir
+// specs/bonus.md#linfobulle-dun-sort.
 import { SPELL_FACES } from '~~/shared/utils/spells'
-import type { EffectView } from '~~/server/utils/effects'
 import type { SpellSubject } from '~~/utils/spells'
 
-const props = defineProps<{
-  subject: SpellSubject
-  /**
-   * Apparaît à l'encre, en cascade : médaillon, nom, puis définition. Rejoué
-   * à chaque montage — le Grimoire remonte le détail à chaque sort choisi.
-   */
-  inked?: boolean
-}>()
+const props = defineProps<{ subject: SpellSubject }>()
 
 const spell = computed(() => splitSubject(props.subject).spell)
 const effect = computed(() => splitSubject(props.subject).effect)
@@ -94,15 +86,6 @@ const effect = computed(() => splitSubject(props.subject).effect)
 // Offert par la page : les vies et l'échéance de l'attente disent jusqu'à quand
 // l'effet agit.
 const state = useShownGameState()
-
-// La même étiquette de face, que l'effet en porte une ou que le sort en poche
-// montre les deux.
-const FACE_TAG_CLASS = 'inline-block rounded border px-1.5 py-px font-medium'
-
-const FACE_TONES: Record<EffectView['face'], string> = {
-  boon: 'border-sky-500/50 bg-sky-100 text-sky-800',
-  curse: 'border-violet-700/40 bg-violet-100 text-violet-900',
-}
 
 // Chiffrée par le serveur ; rien pour un effet qui n'agit pas encore.
 const stake = computed(() => (effect.value?.stake ? spellStake(effect.value.stake) : null))

@@ -28,16 +28,18 @@
       <SpellPentacle
         v-model="selected"
         :discovered="discovered"
+        :counts="counts"
         v-bind="fadeLayer(closing, '0.5s')"
       />
 
       <!-- La magie du livre : des étincelles partout dessus, qui s'allument
-           une fois le livre posé. Un halo ambré au plus près les détache du
-           papier clair. Elles tournent en boucle : la sortie ne les attend
+           une fois le livre posé. Blanches : un liseré turquoise, la couleur
+           de la couverture, les détache du papier clair, et un halo blanc les
+           fait briller. Elles tournent en boucle : la sortie ne les attend
            pas. -->
       <SparkleField
         :sparks="SPARKS"
-        class="pointer-events-none [filter:drop-shadow(0_0_2px_#d97706)_drop-shadow(0_0_8px_#fde68a)]"
+        class="pointer-events-none [filter:drop-shadow(0_0_1px_rgb(15_118_110/0.8))_drop-shadow(0_0_5px_#fff)]"
         v-bind="fadeLayer(closing, '0.6s')"
       />
 
@@ -47,9 +49,7 @@
         Grimoire
       </CampOverlayTitle>
 
-      <!-- La page droite : en haut, le sort choisi et de quoi le lancer ;
-           dessous, l'historique de ses derniers lancers. Positions relevées sur
-           l'image, en % du livre. -->
+      <!-- La page droite. Positions relevées sur l'image, en % du livre. -->
       <div class="pointer-events-none absolute inset-0" v-bind="fadeLayer(closing, '0.7s')">
         <BaseCloseButton
           label="Fermer le Grimoire"
@@ -57,26 +57,25 @@
           @click="close"
         />
 
-        <!-- Il défile si la description déborde, sur un petit écran. -->
-        <div class="pointer-events-auto absolute bottom-[37%] left-[56.5%] right-[13.5%] top-[18%] overflow-y-auto text-sm leading-snug text-amber-950">
+        <!-- Une seule colonne, de haut en bas : le sort choisi et de quoi le
+             lancer, puis l'historique de ses derniers lancers, en bas de page.
+             Pas de défilement : l'historique suit le détail, il ne peut pas
+             passer dessous. -->
+        <div class="pointer-events-auto absolute bottom-[9%] left-[54%] right-[11%] top-[16%] flex flex-col text-sm leading-snug text-amber-950">
           <p
             v-if="!selected"
-            class="flex size-full items-center justify-center text-center italic text-amber-900/60"
+            class="flex flex-1 items-center justify-center text-center italic text-amber-900/60"
           >
             Choisis un sort dans le pentacle.
           </p>
 
           <template v-else>
-            <!-- Changer de sort remonte le détail, le reste du cadre et
+            <!-- Changer de sort remonte le détail, le reste de la page et
                  l'historique (`:key`) : ils réapparaissent à l'encre, en
-                 cascade, du médaillon à la dernière ligne. -->
-            <SpellDetails :key="`details-${selected}`" :subject="selected" inked />
+                 cascade, du nom du sort à la dernière ligne. -->
+            <SpellbookDetails :key="`details-${selected}`" :spell="selected" :count="count" />
 
             <div :key="`actions-${selected}`" class="motion-safe:animate-ink-in [--enter-delay:0.18s]">
-              <p class="mt-3 font-medium">
-                {{ count ? `${count} exemplaire${count > 1 ? 's' : ''} en poche` : 'Plus aucun exemplaire en poche' }}
-              </p>
-
               <!-- Une catégorie par bouton, jamais une personne : le joueur ne
                    choisit pas qui il touche, seulement de quel côté il frappe.
                    Voir specs/bonus.md#tirage-de-la-cible. -->
@@ -98,39 +97,41 @@
               </BaseParchmentNote>
             </div>
           </template>
-        </div>
 
-        <div class="pointer-events-auto absolute bottom-[9%] left-[56%] right-[12%] top-[67%] overflow-y-auto pr-4 text-sm leading-snug text-amber-950">
-          <BaseNotice v-if="failed">
-            Impossible de lire ton inventaire. Recharge la page.
-          </BaseNotice>
+          <!-- Calé en bas, à hauteur de cinq lancers : son titre ne bouge pas
+               avec le nombre de lignes. -->
+          <div class="mt-auto min-h-[8.5rem] pt-4">
+            <BaseNotice v-if="failed">
+              Impossible de lire ton inventaire. Recharge la page.
+            </BaseNotice>
 
-          <!-- L'historique du sort choisi : à qui ses derniers lancers sont
-               allés, et quand. Il survit à l'effet, qui meurt avec la
-               tentative qu'il a ouverte. Des lignes serrées, à l'encre, comme
-               un registre ; il réapparaît avec le sort choisi, dernier de la
-               cascade. -->
-          <div
-            v-else-if="selected"
-            :key="selected"
-            class="motion-safe:animate-ink-in [--enter-delay:0.26s]"
-          >
-            <p class="font-bold">
-              Historique
-            </p>
-            <p v-if="!history.length" class="mt-1 italic text-amber-900/60">
-              Tu n'as encore jamais lancé ce sort.
-            </p>
-            <ul v-else class="mt-1 space-y-0.5">
-              <li
-                v-for="(entry, index) in history"
-                :key="index"
-                class="flex items-baseline justify-between gap-4"
-              >
-                <span>Sur {{ entry.targetName ?? 'personne' }}</span>
-                <span class="shrink-0 text-amber-900/60">{{ formatPastDay(entry.castAt, now) }}</span>
-              </li>
-            </ul>
+            <!-- L'historique du sort choisi : à qui ses derniers lancers sont
+                 allés, et quand. Il survit à l'effet, qui meurt avec la
+                 tentative qu'il a ouverte. Des lignes serrées, à l'encre, comme
+                 un registre ; il réapparaît avec le sort choisi, dernier de la
+                 cascade. -->
+            <div
+              v-else-if="selected"
+              :key="selected"
+              class="motion-safe:animate-ink-in [--enter-delay:0.26s]"
+            >
+              <p class="font-bold">
+                Historique
+              </p>
+              <p v-if="!history.length" class="mt-1 italic text-amber-900/60">
+                Tu n'as encore jamais lancé ce sort.
+              </p>
+              <ul v-else class="mt-1 space-y-0.5">
+                <li
+                  v-for="(entry, index) in history"
+                  :key="index"
+                  class="flex items-baseline justify-between gap-4"
+                >
+                  <span>Sur {{ entry.targetName ?? 'personne' }}</span>
+                  <span class="shrink-0 text-amber-900/60">{{ formatPastDay(entry.castAt, now) }}</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -181,8 +182,12 @@ const now = useClockTick()
 // côté serveur.
 const history = computed(() => log.value.filter(entry => entry.spell === selected.value).slice(0, 5))
 
+/** Les exemplaires en poche, par sort : les pastilles du pentacle. */
+const counts = computed<Partial<Record<SpellId, number>>>(() =>
+  Object.fromEntries(entries.value.map(entry => [entry.spell, entry.count])))
+
 /** Les exemplaires du sort choisi encore en poche. */
-const count = computed(() => entries.value.find(entry => entry.spell === selected.value)?.count ?? 0)
+const count = computed(() => (selected.value ? counts.value[selected.value] ?? 0 : 0))
 
 // L'état de jeu : la fermeture si la partie quitte le camp (CampOverlay), et le
 // minuteur du camp, dessous, qu'un Répit fait reculer au retour du lancer.

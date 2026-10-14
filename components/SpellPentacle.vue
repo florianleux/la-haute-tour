@@ -23,6 +23,9 @@
            `will-change` fige ce rendu à la taille du médaillon, plafond de tous
            ses états.
 
+           La pastille de ses exemplaires est posée sur le médaillon, dans la
+           même boîte : elle suit sa taille, son rebond et son fondu.
+
            Au clic, un petit rebond, et le cercle se repasse. Seuls le
            médaillon et le cercle cliqués changent de clé : remontés, ils
            rejouent l'effet, même déjà choisis. Les autres, gardés, passent
@@ -34,11 +37,9 @@
           :facing="ROUNDS[spell].facing"
           class="absolute -left-[30%] -top-[30%] size-[160%] text-pentacle"
         />
-        <SpellMedallion
+        <div
           :key="replays[spell]"
-          :spell="spell"
-          face="mixed"
-          class="absolute inset-0 size-full [will-change:transform,scale] transition-[scale,filter,opacity] duration-200 motion-reduce:transition-none"
+          class="absolute inset-0 [will-change:transform,scale] transition-[scale,filter,opacity] duration-200 motion-reduce:transition-none"
           :class="[
             selected === spell
               ? 'motion-safe:animate-spell-pick'
@@ -47,8 +48,15 @@
               ? 'opacity-60 grayscale-70 group-hover-or-focus:opacity-100 group-hover-or-focus:grayscale-0'
               : '',
           ]"
-          fallback-class="border-2 border-pentacle/60 text-[50cqw] text-pentacle"
-        />
+        >
+          <SpellMedallion
+            :spell="spell"
+            face="mixed"
+            class="size-full"
+            fallback-class="border-2 border-pentacle/60 text-[50cqw] text-pentacle"
+          />
+          <SpellCountBadge :count="counts[spell] ?? 0" />
+        </div>
         <BaseSurfaceButton
           :label="spellLabel(spell)"
           :aria-pressed="selected === spell"
@@ -79,6 +87,8 @@ import type { SpellId } from '~~/shared/utils/spells'
 defineProps<{
   /** Les sorts obtenus au moins une fois : eux seuls montrent leur médaillon. */
   discovered: SpellId[]
+  /** Les exemplaires en poche, par sort : la pastille de chaque médaillon. Absent, zéro. */
+  counts: Partial<Record<SpellId, number>>
 }>()
 
 /** Le sort que la page droite montre, null tant que rien n'est choisi. */
