@@ -26,9 +26,18 @@ export async function useGameState(): Promise<GameStateRead> {
     () => $fetch<GameState>('/api/game/state', useApiFetchOptions()),
     {
       default: (): GameState | null => null,
-      // Sur navigation client, l'état serti au rendu serveur est déjà en cache —
-      // la page se lit instantanément, sans re-demander l'état au serveur.
-      getCachedData: (_key, nuxtApp) => nuxtApp.payload.data[GAME_STATE_KEY] as GameState | null | undefined,
+      // Sur navigation client, l'état est déjà en cache — la page se lit
+      // instantanément, sans re-demander l'état au serveur.
+      //
+      // L'état vivant d'abord, le payload ensuite : chaque coup du joueur pose
+      // l'état rendu par le serveur dans la lecture partagée (usePlay), pas dans
+      // le payload, qui reste sur la dernière lecture GET. Repris seul à chaque
+      // nouvel appel — le middleware du camp en fait un à chaque ouverture du
+      // Volumen ou du Grimoire —, il ramenait la partie à cet état périmé le
+      // temps de la relecture : la chute déjà lue y repassait et se rouvrait
+      // sous la boîte.
+      getCachedData: (_key, nuxtApp) =>
+        (nuxtApp._asyncData[GAME_STATE_KEY]?.data.value ?? nuxtApp.payload.data[GAME_STATE_KEY]) as GameState | null | undefined,
     },
   )
 
