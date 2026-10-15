@@ -426,7 +426,7 @@ et aient tourné — c'est leur définition même.
 ## Livraison
 
 **T1 — la boucle solo, bout en bout.** Question loot dérivée, coffre, Mimic,
-inventaire, icône baguette, page Sorts, lancer sur **Soi** uniquement, catalogue
+inventaire, Grimoire, lancer sur **Soi** uniquement, catalogue
 réduit à **Vitalité et Répit** — les deux seuls dont l'effet ne touche ni le timer,
 ni le pool, ni le rattrapage. Valide seul les trois points risqués : le loot sans
 compteur, la persistance du coffre, l'ancrage des effets sur la tentative suivante.
