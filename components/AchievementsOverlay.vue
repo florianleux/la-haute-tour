@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" :game="game" @close="$emit('close')">
+  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" @close="$emit('close')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen et le Grimoire.
          Clic à côté de la bannière = fermer.
 
@@ -66,16 +66,9 @@
 
 <script setup lang="ts">
 // Les Haut-faits : le mur des succès, sur la bannière de la guilde du joueur,
-// au camp et là seulement, ouvert par-dessus lui. Sans équipe, pas de
-// bannière : la bannière du camp qui l'ouvre n'est pas posée.
-// Voir specs/ecrans.md#haut-faits.
+// au camp et là seulement, ouvert par-dessus lui. Voir specs/ecrans.md#haut-faits.
 import { ACHIEVEMENT_IDS } from '~~/shared/utils/achievements'
 import type { TeamId } from '~~/shared/utils/teams'
-
-defineProps<{
-  /** La guilde du joueur : la couleur de la bannière. */
-  team: TeamId
-}>()
 
 defineEmits<{ close: [] }>()
 
@@ -85,13 +78,16 @@ const BANNERS: Record<TeamId, string> = {
   TLM: '/images/achievements-banner-tlm.webp',
 }
 
+const { user } = await useCurrentUser()
+
+// Sans équipe, pas de bannière : celle du camp, qui ouvre cette boîte, n'est
+// pas posée. La boîte ne se demande pas une seconde fois s'il en a une.
+const team = computed(() => user.value!.team!)
+
 const { unlockedAt, failed } = await useAchievements()
 
 // Le mur suit l'ordre du catalogue : les premières fois d'abord, puis ce qui se
 // gagne en montant, et les curiosités à la fin.
 const catalogue = ACHIEVEMENT_IDS
 const unlockedCount = computed(() => unlockedAt.value.size)
-
-// L'état de jeu : la fermeture si la partie quitte le camp (CampOverlay).
-const game = await useGameState()
 </script>

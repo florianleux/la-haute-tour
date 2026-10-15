@@ -2,7 +2,6 @@
   <CampOverlay
     v-slot="{ closing, close }"
     label="Volumen"
-    :game="game"
     class="question-log-scroll-metrics"
     @close="$emit('close')"
   >
@@ -95,6 +94,4 @@ const tab = ref<QuestionLogTab>('missed')
 // contestable : la liste se lit en arrivant.
 const { refresh } = useDisputes()
 onMounted(refresh)
-
-const game = await useGameState()
 </script>

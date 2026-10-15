@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
 import type { GameState } from '../../server/utils/game'
 
-const { serve, answerWith, breakNetwork, signIn, cached, calls, reset } = installAppGlobals()
+const { serve, answerWith, breakNetwork, signIn, cached, payloadOf, calls, reset } = installAppGlobals()
 
 const { GAME_STATE_KEY } = await import('../../composables/useGameState')
 const { usePlay } = await import('../../composables/usePlay')
@@ -49,6 +49,18 @@ describe('actions du joueur', () => {
     expect(cached(GAME_STATE_KEY)).toEqual(served)
   })
 
+  // Le payload est ce que relit chaque nouvel appel à useGameState() : resté
+  // sur la dernière lecture, il ramenait une page montée après le coup à un
+  // état périmé — une chute déjà lue se rouvrait sous le Volumen.
+  it('recopie l état renvoyé dans le payload que relit chaque nouvelle lecture', async () => {
+    answerWith(served)
+    const { next } = usePlay()
+
+    await next()
+
+    expect(payloadOf(GAME_STATE_KEY)).toEqual(served)
+  })
+
   it('envoie la réponse saisie', async () => {
     answerWith({ ...served, question: null, verdict: { correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false } })
     const { answer } = usePlay()
@@ -68,5 +80,6 @@ describe('actions du joueur', () => {
 
     expect(failed.value).toBe(true)
     expect(cached(GAME_STATE_KEY)).toEqual(served)
+    expect(payloadOf(GAME_STATE_KEY)).toBeNull()
   })
 })

@@ -54,7 +54,7 @@
       :team="user?.team ?? null"
       @skip-cooldown="run('skipCooldown', skipCooldown)"
       @advance="goNext"
-      @open="campScreen = $event"
+      @open="campOverlay = $event"
     />
 
     <ChestCard
@@ -123,23 +123,19 @@
       </template>
     </BaseCard>
 
-    <!-- Le Grimoire, le Volumen, les Haut-faits et l'Inventaire s'ouvrent
-         par-dessus le camp, sans URL : le camp reste affiché dessous et son
-         attente continue de tourner. Chaque boîte prévient quand elle a fini
-         de se fermer, ou quand la partie quitte le camp (CampOverlay). -->
-    <SpellbookOverlay v-if="campScreen === 'spellbook'" @close="campScreen = null" />
-    <QuestionLogOverlay v-else-if="campScreen === 'questionLog'" @close="campScreen = null" />
-    <AchievementsOverlay
-      v-else-if="campScreen === 'achievements' && user?.team"
-      :team="user.team"
-      @close="campScreen = null"
-    />
-    <InventoryOverlay v-else-if="campScreen === 'inventory'" @close="campScreen = null" />
+    <!-- Les boîtes du camp — le Grimoire, le Volumen, les Haut-faits et
+         l'Inventaire — s'ouvrent par-dessus lui, sans URL : le camp reste
+         affiché dessous et son attente continue de tourner. Chaque boîte
+         prévient quand elle a fini de se fermer, ou quand la partie quitte le
+         camp (CampOverlay). -->
+    <component :is="CAMP_OVERLAYS[campOverlay]" v-if="campOverlay" @close="campOverlay = null" />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { CampScreen } from '~~/utils/phase'
+import { AchievementsOverlay, InventoryOverlay, QuestionLogOverlay, SpellbookOverlay } from '#components'
+import type { Component } from 'vue'
+import type { CampOverlayId } from '~~/utils/phase'
 
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
 // celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
@@ -245,14 +241,22 @@ watch(() => state.value?.verdict?.questionId, (questionId) => {
   }
 })
 
-// La boîte ouverte par-dessus le camp, null quand aucune ne l'est.
-const campScreen = ref<CampScreen | null>(null)
+// La boîte du camp ouverte, null quand aucune ne l'est.
+const campOverlay = ref<CampOverlayId | null>(null)
+
+/** Ce que monte chaque boîte du camp. */
+const CAMP_OVERLAYS: Record<CampOverlayId, Component> = {
+  spellbook: SpellbookOverlay,
+  questionLog: QuestionLogOverlay,
+  achievements: AchievementsOverlay,
+  inventory: InventoryOverlay,
+}
 
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, la carte n'a pas d'action
 // et Entrée répond.
-// Ni quand une boîte est ouverte par-dessus le camp : Entrée y lirait, pas remonter.
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campScreen.value === null)
+// Ni quand une boîte du camp est ouverte : Entrée y lirait, pas remonter.
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campOverlay.value === null)
 
 // Le seul point d'entrée pour « avancer », bouton comme Entrée : le geste vient
 // de playView, la page l'exécute.

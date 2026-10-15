@@ -139,11 +139,11 @@ export function isAtCamp(state: GameState | null): boolean {
 }
 
 /**
- * Les boîtes que les objets du camp ouvrent par-dessus lui : le Grimoire, le
+ * Les boîtes du camp, que ses objets ouvrent par-dessus lui : le Grimoire, le
  * Volumen, les Haut-faits et l'Inventaire. Sans URL : la page de jeu retient
- * laquelle est ouverte. Voir specs/ecrans.md#liste-des-écrans.
+ * laquelle est ouverte. Voir specs/spec.md#glossaire (Boîte du camp).
  */
-export type CampScreen = "spellbook" | "questionLog" | "achievements" | "inventory";
+export type CampOverlayId = "spellbook" | "questionLog" | "achievements" | "inventory";
 
 export function gameScreen(state: GameState): GameScreen {
   const answering = isAnswering(state);

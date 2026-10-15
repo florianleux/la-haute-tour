@@ -754,8 +754,8 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  *
  * Une garde qui ne veut qu'un fait ne doit pas faire avancer la partie qu'elle
  * protège. Le chrono tombé coûte sa vie de toute façon, et c'est `/api/game/state`
- * qui l'acte — c'est son travail, écrit dans son contrat. Ce que la garde de la
- * page Sorts faisait, c'est l'acter **une seconde fois, ailleurs**, sans que rien
+ * qui l'acte — c'est son travail, écrit dans son contrat. Ce que la garde du
+ * Grimoire faisait, c'est l'acter **une seconde fois, ailleurs**, sans que rien
  * ne l'annonce. Voir server/utils/inventory.ts.
  *
  * Un seul aller-retour, et deux lignes lues : le joueur porte déjà son décompte

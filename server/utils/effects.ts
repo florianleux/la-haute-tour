@@ -281,7 +281,7 @@ function buildCastLogQuery(db: Database, casterId: number, limit: number) {
 }
 
 /**
- * La requête du journal, rendue plutôt qu'exécutée : la page Sorts la fait
+ * La requête du journal, rendue plutôt qu'exécutée : le Grimoire la fait
  * voyager dans le même lot que ses voisines, pour qu'ouvrir l'écran ne coûte pas
  * un aller-retour réseau par liste affichée.
  * Voir tests/server/query-budget.test.ts.

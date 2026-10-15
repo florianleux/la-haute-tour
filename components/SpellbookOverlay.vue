@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Grimoire" :game="game" @close="$emit('close')">
+  <CampOverlay v-slot="{ closing, close }" label="Grimoire" @close="$emit('close')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen. Clic à côté du
          livre = fermer.
 
@@ -157,6 +157,7 @@
 // historique — au camp et là seulement, ouvert par-dessus lui. Le lancer vise une
 // catégorie, jamais une personne : soi, ou un allié ou un ennemi que le serveur
 // tire et ne nomme qu'après. Voir specs/ecrans.md#sorts.
+import { GAME_STATE_KEY } from '~/composables/useGameState'
 import { faceFor } from '~~/shared/utils/spells'
 import type { SpellId } from '~~/shared/utils/spells'
 import type { TargetKind } from '~~/shared/utils/teams'
@@ -214,10 +215,6 @@ const counts = computed<Partial<Record<SpellId, number>>>(() =>
 /** Les exemplaires du sort choisi encore en poche. */
 const count = computed(() => (selected.value ? counts.value[selected.value] ?? 0 : 0))
 
-// L'état de jeu : la fermeture si la partie quitte le camp (CampOverlay), et le
-// minuteur du camp, dessous, qu'un Répit fait reculer au retour du lancer.
-const game = await useGameState()
-
 // Quelle catégorie est en vol : un bouton par catégorie, et seul celui qu'on a
 // pressé tourne.
 const castingOn = ref<TargetKind | null>(null)
@@ -254,7 +251,8 @@ async function castOn(spell: SpellId, kind: TargetKind): Promise<void> {
   }
   castingOn.value = null
 
-  await game.refresh()
+  // Le minuteur du camp, dessous, qu'un Répit fait reculer.
+  await refreshNuxtData(GAME_STATE_KEY)
 }
 
 /**

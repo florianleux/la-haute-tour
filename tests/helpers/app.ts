@@ -25,6 +25,11 @@ export interface FakeNuxt {
   signOut: () => void
   /** Ce que la lecture d'une clé rend maintenant — le client a pu l'écrire. */
   cached: (key: string) => unknown
+  /**
+   * Ce que le payload de Nuxt tient pour une clé : distinct de la lecture,
+   * comme dans le vrai — c'est lui que relit un nouvel appel à useAsyncData.
+   */
+  payloadOf: (key: string) => unknown
   /** Appels réseau, vidages de cache et navigations, dans l'ordre où ils ont eu lieu. */
   calls: () => string[]
   /** Les routes demandées, dans l'ordre. */
@@ -63,6 +68,7 @@ export function installAppGlobals(): FakeNuxt {
   // Réactifs : les composables testés les lisent à travers computed(), qui suit
   // un Map réactif mais jamais un Map ordinaire.
   const payloads = reactive(new Map<string, unknown>())
+  const nuxtPayload: { data: Record<string, unknown> } = { data: {} }
   const errors = reactive(new Map<string, unknown>())
   const navigations: string[] = []
   const reloads: string[] = []
@@ -141,6 +147,7 @@ export function installAppGlobals(): FakeNuxt {
       calls.push(`reload ${target}`)
       reloads.push(target)
     },
+    useNuxtApp: () => ({ payload: nuxtPayload }),
     useRequestHeaders: () => ({}),
     getCurrentScope,
     onScopeDispose,
@@ -187,12 +194,14 @@ export function installAppGlobals(): FakeNuxt {
     ),
     signOut,
     cached: key => payloads.get(key) ?? null,
+    payloadOf: key => nuxtPayload.data[key] ?? null,
     calls: () => [...calls],
     navigations: () => [...navigations],
     reloads: () => [...reloads],
     refresh,
     reset: (): void => {
       payloads.clear()
+      nuxtPayload.data = {}
       errors.clear()
       navigations.length = 0
       reloads.length = 0

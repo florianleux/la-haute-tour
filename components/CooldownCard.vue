@@ -175,7 +175,7 @@
 // l'image. Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
 import type { TeamId } from '~~/shared/utils/teams'
-import type { CampScreen, GameScreen, PlayAction } from '~~/utils/phase'
+import type { CampOverlayId, GameScreen, PlayAction } from '~~/utils/phase'
 
 const props = defineProps<{
   state: GameState
@@ -191,7 +191,7 @@ const props = defineProps<{
   team: TeamId | null
 }>()
 
-defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampScreen] }>()
+defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId] }>()
 
 const inCooldown = computed(() => isCooldown(props.state))
 

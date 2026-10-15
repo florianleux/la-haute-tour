@@ -27,8 +27,22 @@ export interface Play {
  * own. See specs/architecture.md.
  */
 export function usePlay(): Play {
+  const nuxtApp = useNuxtApp()
   const { data } = useNuxtData<GameState>(GAME_STATE_KEY)
-  const { pending, failed, send } = useWriteThenReplace(data)
+
+  // L'état rendu se pose dans la lecture partagée et dans le payload : Nuxt ne
+  // recopie dans le payload que ce qu'il lit lui-même, et c'est le payload que
+  // relit chaque nouvel appel à useGameState() (son getCachedData). Sans la
+  // copie, une page montée après un coup repartait de la dernière lecture —
+  // une chute déjà lue y repassait, et se rouvrait.
+  const view = computed<GameState | null>({
+    get: () => data.value,
+    set: (state) => {
+      data.value = state
+      nuxtApp.payload.data[GAME_STATE_KEY] = state
+    },
+  })
+  const { pending, failed, send } = useWriteThenReplace(view)
 
   /** Un coup du joueur : le serveur rend l'état d'après, la page l'affiche. */
   async function move(url: string, body?: Record<string, string>): Promise<void> {

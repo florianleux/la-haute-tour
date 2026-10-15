@@ -18,7 +18,7 @@ Les équipes sont traitées à part, dans [`equipes.md`](./equipes.md).
 Un Sort **se lance uniquement au camp** — l'attente, puis le rattrapage tant
 qu'il n'a pas commencé ; jamais en ascension, ni en rattrapage en cours, ni sur
 le profil. L'écran d'attente porte un accès vers
-une **page Sorts** dédiée, où le lancer se fait réellement.
+le **Grimoire**, une boîte ouverte par-dessus le camp, où le lancer se fait réellement.
 
 **Aucun budget de lancers** : un joueur lance pendant son attente autant de
 sorts qu'il en a en poche, deux fois le même y compris. Ce qui borne
@@ -391,7 +391,7 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 
 ## Écrans
 
-- **Page Sorts**, le **Grimoire** côté joueur : pentacle, lancer, journaux — voir
+- **Le Grimoire**, l'écran des Sorts, ouvert par-dessus le camp : pentacle, lancer, journaux — voir
   [`ecrans.md`](./ecrans.md#sorts). Le lancer et le nombre d'exemplaires sont
   absents tant que #76 n'est pas livré. Accessible au camp uniquement.
   L'inventaire n'est donc pas consultable hors du camp — le joueur voit passer son

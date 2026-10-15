@@ -30,19 +30,18 @@
 //   Les animations en boucle (étincelles) ne comptent pas. Une seule sortie à
 //   la fois : un second geste pendant ce temps ne relance rien.
 // - La partie peut quitter le camp pendant la lecture — attente échue,
-//   rattrapage tiré dans un autre onglet. La boîte se ferme alors d'elle-même.
-//   Un changement fait ailleurs ne se voit qu'en relisant : on relit au retour
-//   sur l'onglet.
-import type { GameStateRead } from '~/composables/useGameState'
+//   rattrapage tiré dans un autre onglet —, ou l'avoir quitté avant même que
+//   la boîte soit montée. La boîte se ferme alors d'elle-même. Un changement
+//   fait ailleurs ne se voit qu'en relisant : on relit au retour sur l'onglet.
+//
+// L'état de jeu est celui que la page a déjà lu, pris dans la lecture partagée :
+// la boîte n'en demande pas un second.
+import { GAME_STATE_KEY } from '~/composables/useGameState'
+import type { GameState } from '~~/server/utils/game'
 
-const props = defineProps<{
+defineProps<{
   /** Ce que lit une synthèse vocale en entrant dans la boîte. */
   label: string
-  /**
-   * L'état de jeu, déjà lu par l'appelant : il l'attend dans son `<script
-   * setup>`, ce que ce composant ne fait pas.
-   */
-  game: Pick<GameStateRead, 'state' | 'refresh'>
 }>()
 
 const emit = defineEmits<{ close: [] }>()
@@ -61,15 +60,17 @@ function close(): void {
   }
 }
 
-watch(props.game.state, (now) => {
+const { data: game } = useNuxtData<GameState>(GAME_STATE_KEY)
+
+watch(game, (now) => {
   if (!isAtCamp(now)) {
     close()
   }
-})
+}, { immediate: true })
 
 function onVisible(): void {
   if (document.visibilityState === 'visible') {
-    void props.game.refresh()
+    void refreshNuxtData(GAME_STATE_KEY)
   }
 }
 

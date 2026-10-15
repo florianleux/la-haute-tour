@@ -18,8 +18,8 @@ export interface MeResponse {
   user: SessionUser | null
   /**
    * Toi, quand tu en incarnes un autre — null sinon. C'est lui qui porte les
-   * droits : l'écran y lit qu'il faut garder le bouclier et le sélecteur, sans
-   * quoi l'incarnation serait sans retour. Voir specs/admin.md#incarnation.
+   * droits : l'écran y lit qu'il faut garder l'administration et le sélecteur,
+   * sans quoi l'incarnation serait sans retour. Voir specs/admin.md#incarnation.
    */
   impersonator: SessionUser | null
   /** Ce que le sélecteur propose d'incarner. Vide pour qui n'est pas admin. */

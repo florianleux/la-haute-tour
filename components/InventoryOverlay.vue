@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ close }" label="Inventaire" :game="game" @close="$emit('close')">
+  <CampOverlay v-slot="{ close }" label="Inventaire" @close="$emit('close')">
     <BaseCard title="Inventaire" class="relative my-auto">
       <BaseCloseButton label="Fermer l'Inventaire" class="absolute right-4 top-4" @click="close" />
     </BaseCard>
@@ -11,7 +11,4 @@
 // (CooldownCamp) ouvre déjà quelque chose. Au camp seulement, comme l'inventaire
 // qu'elle montrera. Voir specs/ecrans.md#liste-des-écrans.
 defineEmits<{ close: [] }>()
-
-// L'état de jeu : la fermeture si la partie quitte le camp (CampOverlay).
-const game = await useGameState()
 </script>

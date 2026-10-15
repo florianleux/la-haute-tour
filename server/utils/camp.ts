@@ -6,7 +6,8 @@ import type { User } from '../db/schema'
  * Réservé au camp : l'attente, puis le rattrapage tant qu'il n'est pas tiré.
  * Les Sorts ne se lancent que là, et le Volumen ne relit ses réponses que là —
  * le rattrapage tire dans le Pool Échecs, les lire pendant qu'il tourne serait
- * tricher. URL comprise, d'où le refus ici et pas seulement dans la navigation.
+ * tricher. Le refus vit ici : l'écran n'ouvre ses boîtes qu'au camp, mais
+ * l'API se demande sans passer par lui.
  * Même règle que isAtCamp() côté écran.
  * Voir specs/spec.md#glossaire (Camp), specs/ecrans.md#sorts et specs/ecrans.md#volumen.
  *
