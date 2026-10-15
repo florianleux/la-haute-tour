@@ -54,6 +54,7 @@
       :team="user?.team ?? null"
       @skip-cooldown="run('skipCooldown', skipCooldown)"
       @advance="goNext"
+      @open="campScreen = $event"
     />
 
     <ChestCard
@@ -122,15 +123,24 @@
       </template>
     </BaseCard>
 
-    <!-- Le Volumen, le Grimoire et les Haut-faits (pages/index/volumen.vue,
-         sorts.vue et succes.vue) s'ouvrent par-dessus le camp : des routes
-         enfants, pour que le camp reste affiché dessous et que son attente
-         continue de tourner. -->
-    <NuxtPage />
+    <!-- Le Grimoire, le Volumen, les Haut-faits et l'Inventaire s'ouvrent
+         par-dessus le camp, sans URL : le camp reste affiché dessous et son
+         attente continue de tourner. Chaque boîte prévient quand elle a fini
+         de se fermer, ou quand la partie quitte le camp (CampOverlay). -->
+    <SpellbookOverlay v-if="campScreen === 'spellbook'" @close="campScreen = null" />
+    <QuestionLogOverlay v-else-if="campScreen === 'questionLog'" @close="campScreen = null" />
+    <AchievementsOverlay
+      v-else-if="campScreen === 'achievements' && user?.team"
+      :team="user.team"
+      @close="campScreen = null"
+    />
+    <InventoryOverlay v-else-if="campScreen === 'inventory'" @close="campScreen = null" />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { CampScreen } from '~~/utils/phase'
+
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
 // celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
 // Le temps, les envois et les relectures vivent dans useQuestionRun().
@@ -218,11 +228,9 @@ const view = computed(() =>
 // objet et le rouvrirait. Sans `immediate` : une page rechargée en pleine
 // attente va droit au poster.
 //
-// Une seule fois par chute : la page reste montée sous le Volumen, et la relecture
-// faite en l'ouvrant (middleware/camp.ts) a déjà fait repasser l'état par un
-// verdict plus ancien — l'id changeait deux fois et rouvrait une chute déjà lue.
-// La chute lue s'oublie dès qu'il n'y a plus de verdict (une question est
-// servie) : une nouvelle chute sur la même question se lirait à nouveau.
+// Une seule fois par chute. La chute lue s'oublie dès qu'il n'y a plus de
+// verdict (une question est servie) : une nouvelle chute sur la même question
+// se lirait à nouveau.
 // Une chute déjà là au chargement compte comme lue : c'est le poster qui s'affiche.
 let lastFallId = state.value && fallQuestionId(state.value)
 watch(() => state.value?.verdict?.questionId, (questionId) => {
@@ -237,12 +245,14 @@ watch(() => state.value?.verdict?.questionId, (questionId) => {
   }
 })
 
+// La boîte ouverte par-dessus le camp, null quand aucune ne l'est.
+const campScreen = ref<CampScreen | null>(null)
+
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, la carte n'a pas d'action
 // et Entrée répond.
-// Ni quand le Volumen est ouvert par-dessus : Entrée y lirait, pas remonter.
-const route = useRoute()
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && route.name === 'index')
+// Ni quand une boîte est ouverte par-dessus le camp : Entrée y lirait, pas remonter.
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campScreen.value === null)
 
 // Le seul point d'entrée pour « avancer », bouton comme Entrée : le geste vient
 // de playView, la page l'exécute.

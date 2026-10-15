@@ -27,9 +27,9 @@
         :key="item.src"
       >
         <!-- Tous les objets se survolent, pour leur nom ; seuls ceux qui
-             mènent quelque part luisent et scintillent en plus. Le lien ou le
-             bouton se pose par-dessus l'objet (BaseSurfaceButton), annoncé sous le
-             nom affiché : ce qu'on lit et ce qu'on entend ne divergent pas. -->
+             mènent quelque part luisent et scintillent en plus. Le bouton se
+             pose par-dessus l'objet (BaseSurfaceButton), annoncé sous le nom
+             affiché : ce qu'on lit et ce qu'on entend ne divergent pas. -->
         <div
           class="group pointer-events-auto absolute"
           :class="[item.place, layer.origin, item.click && HOVER]"
@@ -60,8 +60,7 @@
           <BaseSurfaceButton
             v-if="item.click"
             :label="item.title"
-            :to="item.click === 'advance' ? undefined : item.click.to"
-            @click="item.click === 'advance' && !advancing && $emit('advance')"
+            @click="onClick(item.click)"
           />
         </div>
       </template>
@@ -72,8 +71,9 @@
 <script setup lang="ts">
 // Le camp de l'écran d'attente : corde, bannière de guilde, parchemin, grimoire
 // et sac, posés sur le décor de CooldownCard entre lui et le poster. Certains
-// mènent ailleurs, tous disent leur nom au survol.
+// ouvrent une boîte par-dessus le camp, tous disent leur nom au survol.
 import type { TeamId } from '~~/shared/utils/teams'
+import type { CampScreen } from '~~/utils/phase'
 
 const props = defineProps<{
   /** L'attente est échue : la corde se déroule et lance la suite. */
@@ -85,10 +85,25 @@ const props = defineProps<{
   volumen: boolean
 }>()
 
-defineEmits<{ advance: [] }>()
+const emit = defineEmits<{ advance: [], open: [screen: CampScreen] }>()
 
-/** Ce que fait un clic sur l'objet : ouvrir une page, ou lancer la suite. */
-type CampClick = { to: string } | 'advance'
+/** Ce que fait un clic sur l'objet : ouvrir une boîte, ou lancer la suite. */
+type CampClick = { open: CampScreen } | 'advance'
+
+/** Le clic qui ouvre telle boîte. Typé ici : écrit en ligne dans les tableaux
+ *  plus bas, l'écran s'élargirait en simple chaîne. */
+function opens(screen: CampScreen): CampClick {
+  return { open: screen }
+}
+
+function onClick(click: CampClick): void {
+  if (click !== 'advance') {
+    emit('open', click.open)
+  }
+  else if (!props.advancing) {
+    emit('advance')
+  }
+}
 
 interface CampItem {
   src: string
@@ -175,7 +190,7 @@ const layers = computed((): { depth: string, box: string, origin: string, items:
     items: [
       // Le nom de la bannière se lit sur l'étoffe, au milieu : au-dessus, il
       // tombait dans le feuillage du haut de l'écran.
-      ...(props.team ? [{ src: BANNERS[props.team], place: 'left-[78.33%] top-[14.44%] w-[16.72%]', title: 'Haut-faits', labelAt: 'left-[46%] top-1/2 -translate-y-1/2', click: { to: '/succes' } }] : []),
+      ...(props.team ? [{ src: BANNERS[props.team], place: 'left-[78.33%] top-[14.44%] w-[16.72%]', title: 'Haut-faits', labelAt: 'left-[46%] top-1/2 -translate-y-1/2', click: opens('achievements') }] : []),
     ],
   },
   {
@@ -186,11 +201,11 @@ const layers = computed((): { depth: string, box: string, origin: string, items:
     items: [
       // Le parchemin n'est posé qu'une fois une question vue : avant, le
       // Volumen n'aurait rien à relire.
-      ...(props.volumen ? [{ src: '/images/cooldown-scroll.webp', place: 'left-[32.55%] top-[85.94%] w-[14.95%]', title: 'Volumen', click: { to: '/volumen' } }] : []),
+      ...(props.volumen ? [{ src: '/images/cooldown-scroll.webp', place: 'left-[32.55%] top-[85.94%] w-[14.95%]', title: 'Volumen', click: opens('questionLog') }] : []),
       // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
       // devant eux, comme sur l'illustration.
-      { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { to: '/inventaire' } },
-      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { to: '/sorts' } },
+      { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: opens('inventory') },
+      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: opens('spellbook') },
     ],
   },
 ])

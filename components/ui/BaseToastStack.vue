@@ -1,6 +1,6 @@
 <template>
-  <!-- Sous la barre d'icônes, pas par-dessus : une annonce large recouvrirait
-       sinon la coupe et le buste sur un écran étroit. Et `pointer-events-none`
+  <!-- Sous le sélecteur d'incarnation de l'admin, pas par-dessus : une annonce
+       large le recouvrirait sinon sur un écran étroit. Et `pointer-events-none`
        sur toute la bande : les clics traversent vers l'écran en dessous. Un
        toast qui voudrait être cliquable le redemande pour lui seul
        (`pointer-events-auto`).

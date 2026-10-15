@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Grimoire" :game="game">
+  <CampOverlay v-slot="{ closing, close }" label="Grimoire" :game="game" @close="$emit('close')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen. Clic à côté du
          livre = fermer.
 
@@ -162,12 +162,7 @@ import type { SpellId } from '~~/shared/utils/spells'
 import type { TargetKind } from '~~/shared/utils/teams'
 import type { Tone } from '~~/utils/tone'
 
-definePageMeta({
-  // Hors du camp, la page n'est pas atteignable — URL comprise. Le serveur
-  // refuse déjà la lecture ; la garde épargne au joueur un écran qu'il ne
-  // pourrait pas remplir. Voir middleware/camp.ts.
-  middleware: 'camp',
-})
+defineEmits<{ close: [] }>()
 
 const {
   entries,

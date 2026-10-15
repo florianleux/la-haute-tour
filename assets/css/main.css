@@ -1168,7 +1168,7 @@
   /* Un fondu d'entrée, retardable par --enter-delay ; et sa sortie. */
   /* Le détail du Grimoire qui apparaît sur le papier comme de l'encre, flou
      puis net. Le délai, posé par l'appelant, fait la cascade. Voir
-     components/SpellDetails.vue et pages/index/sorts.vue. */
+     components/SpellDetails.vue et components/SpellbookOverlay.vue. */
   --animate-ink-in: ink-in 0.35s ease-out var(--enter-delay, 0s) both;
 
   @keyframes ink-in {
@@ -1215,7 +1215,7 @@
 /* Le calque du Volumen (public/images/volumen-scroll.webp, 1596×1048, rogné
    par scripts/img-trim-webp.sh : les rouleaux touchent ses bords) : ses
    repères, relevés à la main, en pixels du calque. Une nouvelle image, de
-   nouvelles mesures — ici seulement : pages/index/volumen.vue et les keyframes
+   nouvelles mesures — ici seulement : components/QuestionLogOverlay.vue et les keyframes
    unroll / roll-up les lisent. Posé sur la boîte de dialogue, hérité par tout
    ce qu'elle contient. */
 @utility question-log-scroll-metrics {

@@ -108,8 +108,8 @@ export interface RecoveryLine {
 
 /**
  * Une question tourne : le chrono court, et rien d'autre que répondre n'est
- * permis. Dit ici plutôt qu'à chaque endroit qui en dépend — l'écran de jeu comme
- * la barre d'icônes. Voir specs/ecrans.md#principes.
+ * permis. Dit ici plutôt qu'à chaque endroit qui en dépend.
+ * Voir specs/ecrans.md#principes.
  */
 export function isAnswering(state: GameState | null): boolean {
   return Boolean(state?.question);
@@ -126,9 +126,9 @@ export function isCooldown(state: GameState | null): boolean {
 /**
  * Le camp : l'attente, puis le rattrapage tant qu'il n'a ni question ni tirage.
  * C'est l'écran d'attente, et le seul moment où les Sorts existent, donc le seul
- * d'où la page qui les porte est atteignable. Dit ici, comme isAnswering, plutôt
- * qu'à chaque endroit qui en dépend — la carte de jeu, la baguette de la barre
- * et la garde de la page. Le serveur tient la même règle (requireCamp).
+ * d'où la boîte qui les porte s'ouvre. Dit ici, comme isAnswering, plutôt qu'à
+ * chaque endroit qui en dépend — la carte de jeu et les boîtes du camp, qui se
+ * ferment quand la partie le quitte. Le serveur tient la même règle (requireCamp).
  * Voir specs/spec.md#glossaire (Camp) et specs/ecrans.md#sorts.
  */
 export function isAtCamp(state: GameState | null): boolean {
@@ -137,6 +137,13 @@ export function isAtCamp(state: GameState | null): boolean {
     (state?.phase === "recovery" && !state.question && !state.recovery)
   );
 }
+
+/**
+ * Les boîtes que les objets du camp ouvrent par-dessus lui : le Grimoire, le
+ * Volumen, les Haut-faits et l'Inventaire. Sans URL : la page de jeu retient
+ * laquelle est ouverte. Voir specs/ecrans.md#liste-des-écrans.
+ */
+export type CampScreen = "spellbook" | "questionLog" | "achievements" | "inventory";
 
 export function gameScreen(state: GameState): GameScreen {
   const answering = isAnswering(state);

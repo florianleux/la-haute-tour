@@ -391,9 +391,6 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 
 ## Écrans
 
-- **Icône baguette magique**, deuxième de la barre permanente. Visible partout,
-  **cliquable au camp seulement** — le seul moment où le lancer existe. Ailleurs
-  elle est désactivée, comme toute la barre l'est tant qu'un chrono tourne.
 - **Page Sorts**, le **Grimoire** côté joueur : pentacle, lancer, journaux — voir
   [`ecrans.md`](./ecrans.md#sorts). Le lancer et le nombre d'exemplaires sont
   absents tant que #76 n'est pas livré. Accessible au camp uniquement.

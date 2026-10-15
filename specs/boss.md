@@ -194,8 +194,7 @@ Tous faits :
   `crossFloor` ; phases post-`floorEnd` (`bossDoor`, `bossFight`) et leurs
   transitions.
 - **`ecrans.md`** : nouveaux écrans (porte, introduction/dialogue de boss,
-  combat) ; barre d'icônes désactivée pendant le combat, comme pendant un
-  chrono d'ascension.
+  combat).
 - **`equipes.md`** : la porte à deux clés comme nouvel usage de l'équipe, en
   plus du ciblage des Sorts.
 - **`bonus.md`** (coffre de loot) : le tirage forcé de la clé à partir de 50 %

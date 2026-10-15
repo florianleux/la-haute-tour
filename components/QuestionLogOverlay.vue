@@ -4,6 +4,7 @@
     label="Volumen"
     :game="game"
     class="question-log-scroll-metrics"
+    @close="$emit('close')"
   >
     <!-- Par-dessus le camp (CampOverlay). Clic à côté du papier = fermer, y
          compris dans les vides de l'image autour des rouleaux : les deux
@@ -80,11 +81,7 @@
 // Voir specs/ecrans.md#volumen.
 import type { QuestionLogTab } from '~/composables/useQuestionLog'
 
-definePageMeta({
-  // Hors du camp, la page n'est pas atteignable — URL comprise. Le serveur
-  // refuse déjà la lecture. Voir middleware/camp.ts.
-  middleware: 'camp',
-})
+defineEmits<{ close: [] }>()
 
 const tabs: { id: QuestionLogTab, label: string }[] = [
   { id: 'missed', label: 'À revoir' },

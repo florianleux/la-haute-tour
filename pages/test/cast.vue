@@ -47,7 +47,7 @@
 // plutôt qu'un vrai lancer — pour régler le mouvement sans être au camp ni
 // dépenser d'exemplaire. « Échec » joue le sort qui n'est pas parti. Admin
 // seulement. Voir pages/test/chest.vue pour le même principe. Le livre garde
-// les proportions et positions de pages/index/sorts.vue, sans le camp dessous.
+// les proportions et positions de components/SpellbookOverlay.vue, sans le camp dessous.
 import { faceFor, SPELL_IDS } from '~~/shared/utils/spells'
 import { TARGET_KINDS } from '~~/shared/utils/teams'
 import type { SpellId } from '~~/shared/utils/spells'

@@ -26,7 +26,6 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Ce qu'un dialogue peut être, et ce qu'un geste y fait | [`utils/dialogue.ts`](utils/dialogue.ts) — la forme qui interdit un troisième interlocuteur, `dialogueLineup()`, `dialogueGesture()` et le défilé, sans DOM |
 | Le déroulé d'un dialogue | [`composables/useDialogue.ts`](composables/useDialogue.ts) — la réplique en cours, son défilé, le geste qui avance les deux |
 | Ce qu'un dialogue montre | [`components/DialogueScene.vue`](components/DialogueScene.vue) — décor, portraits, boîte ; elle rend la main par `end` et ne connaît aucune phase |
-| Ce que porte la barre d'icônes | [`utils/nav.ts`](utils/nav.ts) — `navIcons()` : lien, page courante, ou icône éteinte |
 | Ce que le joueur possède | [`server/utils/inventory.ts`](server/utils/inventory.ts) — l'inventaire, lisible au camp seulement ([`server/utils/camp.ts`](server/utils/camp.ts)) |
 | Ce qu'un sort lancé devient | [`server/utils/effects.ts`](server/utils/effects.ts) — lancer, ancrage sur la tentative suivante, journal, et le recalcul de l'attente qu'un Répit écourte |
 | Ce qu'un état de jeu prouve | [`server/utils/achievements.ts`](server/utils/achievements.ts) — les succès qu'un fait atteint, en seuils et jamais en franchissements, et leur écriture idempotente |
@@ -42,7 +41,7 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Ce que coûte un départ de page | [`server/utils/focus.ts`](server/utils/focus.ts) et la détection dans [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) |
 | Le deck vu par l'administration | [`server/utils/questions.ts`](server/utils/questions.ts) |
 | Le temps et les envois du jeu | [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) — décompte, envoi, passage à la suite |
-| Les mots montrés au joueur | [`utils/`](utils/), un fichier par terme — [`spells.ts`](utils/spells.ts) (noms et effets des sorts), [`achievements.ts`](utils/achievements.ts) (noms et conditions des succès), [`teams.ts`](utils/teams.ts), [`phase.ts`](utils/phase.ts), [`nav.ts`](utils/nav.ts) |
+| Les mots montrés au joueur | [`utils/`](utils/), un fichier par terme — [`spells.ts`](utils/spells.ts) (noms et effets des sorts), [`achievements.ts`](utils/achievements.ts) (noms et conditions des succès), [`teams.ts`](utils/teams.ts), [`phase.ts`](utils/phase.ts) |
 | Pourquoi ce choix ? | [`docs/adr/`](docs/adr/) |
 | Comment on écrit le code | [`CLAUDE.md`](CLAUDE.md) |
 

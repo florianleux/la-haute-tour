@@ -1,6 +1,6 @@
 <template>
-  <!-- Un bouton réduit à son icône. Comme BaseIconLink, l'appelant ne fournit
-       que le tracé : le cadre du dessin et la pastille au survol vivent ici. -->
+  <!-- Un bouton réduit à son icône. L'appelant ne fournit que le tracé : le
+       cadre du dessin et la pastille au survol vivent ici. -->
   <button
     type="button"
     :aria-label="label"

@@ -139,7 +139,6 @@ describe('une question tourne', () => {
   })
 
   it('est faux quand l état n est pas encore lu', () => {
-    // La barre d'icônes s'en sert : un état absent ne doit pas l'effacer.
     expect(isAnswering(null)).toBe(false)
   })
 
@@ -148,12 +147,12 @@ describe('une question tourne', () => {
 describe('barrage de maintenance', () => {
   it('ne bloque rien tant que le jeu est ouvert', () => {
     expect(blockedByMaintenance(state({ maintenance: false }), '/')).toBe(false)
-    expect(blockedByMaintenance(state({ maintenance: false }), '/sorts')).toBe(false)
+    expect(blockedByMaintenance(state({ maintenance: false }), '/profil')).toBe(false)
   })
 
   it('bloque toutes les pages hors le jeu lui-même', () => {
-    expect(blockedByMaintenance(state({ maintenance: true }), '/sorts')).toBe(true)
     expect(blockedByMaintenance(state({ maintenance: true }), '/profil')).toBe(true)
+    expect(blockedByMaintenance(state({ maintenance: true }), '/admin')).toBe(true)
   })
 
   it('laisse finir une question ou un verdict déjà en cours, sur le jeu', () => {

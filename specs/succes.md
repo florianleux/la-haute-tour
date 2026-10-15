@@ -167,10 +167,8 @@ porte déjà ses questions vues. Voir
 - **Le nom et la condition** se lisent au survol. Un clic sur une tuile ne fait
   rien.
 - **Le toast** — au moment du déblocage, pendant la partie.
-- **Accès** : au camp seulement, et avec une équipe, par la bannière du camp ou
-  par une icône dans la barre, une coupe. Elle s'éteint hors du camp et sans
-  équipe, comme la baguette hors du camp : les Haut-faits sont la bannière de la
-  guilde, posée au camp.
+- **Accès** : au camp seulement, et avec une équipe, par la bannière du camp :
+  les Haut-faits sont la bannière de la guilde, posée au camp.
 
 Deux familles n'ont pas de toast : les **contestations** et l'**assiduité** hors
 jeu. Une contestation s'arbitre des heures après avoir été demandée, souvent

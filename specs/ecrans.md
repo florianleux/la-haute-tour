@@ -2,16 +2,14 @@
 
 ## Principes
 
-- **Une barre d'icônes, pas un menu.** En haut à droite de chaque écran, la même barre, toujours présente : une tour vers le jeu, une baguette vers le Grimoire (les Sorts), une coupe vers les Haut-faits (les Succès), un buste vers le profil, et un bouclier vers l'administration pour l'admin seulement — les autres ne le voient pas du tout. Rien d'autre n'est permanent : pas de bandeau, pas de menu déroulant, et chaque écran porte pour le reste les seules actions qui ont un sens à cet endroit.
-- **Chaque icône a trois états.** **Lien** quand la page est atteignable d'ici. **Actif** quand c'est la page qu'on regarde : elle est mise en avant et ne mène nulle part, comme dans un en-tête ordinaire — on ne clique pas vers là où on est déjà. **Désactivé** quand on ne peut pas y aller maintenant : éteinte et inerte. La barre ne disparaît jamais ; ce sont ses liens qui s'éteignent.
+- **Ni barre, ni menu.** Rien n'est permanent à l'écran : pas de barre d'icônes, pas de bandeau, pas de menu déroulant. Chaque écran porte les seules actions qui ont un sens à cet endroit. Le profil et l'administration ne s'atteignent que par leur adresse. Seul le sélecteur d'incarnation, visible du seul admin, reste sur toutes les pages (voir [`admin.md`](./admin.md#incarnation)).
 - **Le jeu est la page d'accueil.** `/` est la partie : c'est là qu'on atterrit en se connectant, là qu'on retombe en rechargeant, et il n'existe pas de vestibule devant. Un joueur qui n'a jamais commencé y trouve l'invitation à le faire ; les autres, leur phase. Rien à traverser pour jouer.
 - **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, porte de boss, combat de boss, fin — vit sur cette page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
 - **Étage et vies ne s'affichent que pendant le jeu**, là où ils bougent. Nulle part ailleurs.
-- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller. Toute la barre est donc désactivée **tant qu'un chrono tourne** — en ascension, en rattrapage, comme pendant une épreuve de combat de boss — et seulement là. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état, donc le lien désactivé retire un piège plutôt qu'il n'enferme. Sur le verdict, l'attente, le palier ou la porte du boss (en attente de clés comme ouverte), rien ne tourne et la barre redevient vivante.
+- **Pendant une question, aucune action à part répondre.** Pas de lien, pas de sortie : rien à surveiller — en ascension, en rattrapage, comme pendant une épreuve de combat de boss. C'est la frontière que le jeu connaît déjà, celle de la perte de focus : pendant une question, partir soumettrait la réponse en l'état.
 - **Une attente montre la forme de ce qui arrive**, pas le mot « chargement » : les fiches joueurs et les questions gardent leur silhouette pendant la lecture, donc rien ne saute quand elle revient. Une relecture qui suit une action, elle, laisse la liste en place — c'est le bouton cliqué qui porte le loader, à la place de son libellé et sans changer de largeur.
-- **Un déblocage de Succès s'annonce par un toast**, et c'est la seule chose du jeu qui flotte par-dessus un écran. Il passe seul, sans rien demander : un succès n'appelle aucune décision, donc il ne doit rien interrompre. Il s'efface **de lui-même** au bout de quelques secondes et ne se ferme pas à la main : un bouton pour le congédier serait exactement la décision qu'un succès n'appelle pas. Il se pose sous la barre d'icônes et ne la recouvre jamais — ni au regard, ni au clic. Il n'apparaît que sur les déblocages qui arrivent pendant la partie — ceux que le joueur n'était pas là pour voir se découvrent sur leur page. Voir [`succes.md`](./succes.md#affichage).
-- **Les Succès ont leur icône dans la barre**, une coupe, entre la baguette et le buste. Comme la baguette, elle est **désactivée hors du camp** : les Haut-faits s'ouvrent par-dessus le camp, sur la bannière de la guilde du joueur. Elle l'est aussi **sans équipe** : pas de guilde, pas de bannière. Voir [Haut-faits](#haut-faits).
-- **Une seule exception à « une seule route de jeu » : le camp.** Le Grimoire, le Volumen et les Haut-faits s'ouvrent par-dessus lui, et là seulement, où aucun chrono ne tourne et où il n'y a donc rien à détourner. La baguette et la coupe sont donc **désactivées hors du camp** — visibles partout, cliquables là seulement. Elles annoncent ainsi une page qui existe, à un moment qui viendra.
+- **Un déblocage de Succès s'annonce par un toast**, et c'est la seule chose du jeu qui flotte par-dessus un écran. Il passe seul, sans rien demander : un succès n'appelle aucune décision, donc il ne doit rien interrompre. Il s'efface **de lui-même** au bout de quelques secondes et ne se ferme pas à la main : un bouton pour le congédier serait exactement la décision qu'un succès n'appelle pas. Il se pose en haut de l'écran, sous le sélecteur d'incarnation de l'admin, et ne le recouvre jamais — ni au regard, ni au clic. Il n'apparaît que sur les déblocages qui arrivent pendant la partie — ceux que le joueur n'était pas là pour voir se découvrent sur leur page. Voir [`succes.md`](./succes.md#affichage).
+- **Le camp ouvre des boîtes, pas des pages.** Le Grimoire, le Volumen, les Haut-faits et l'Inventaire s'ouvrent par-dessus lui, et là seulement, où aucun chrono ne tourne et où il n'y a donc rien à détourner. Ils n'ont pas d'URL : seuls les objets du camp les ouvrent — le grimoire, le parchemin, la bannière, le sac. La page de jeu reste la seule route de jeu.
 
 ## Liste des écrans
 
@@ -21,12 +19,12 @@
 | Accès refusé | `/refus` | oui |
 | Introduction | `/intro` — imposée tant qu'elle n'est pas finie, rejouable par l'URL ensuite | non |
 | Jeu | `/` — 7 phases, page d'accueil (5 aujourd'hui : les phases de boss ne sont pas encore implémentées) | non |
-| Profil | `/profil` | non |
-| Grimoire (les Sorts) | `/sorts` — au camp seulement | non |
-| Haut-faits (les Succès) | `/succes` — au camp seulement, et avec une équipe, par la coupe ou la bannière du camp | non |
-| Volumen (les questions vues) | `/volumen` — au camp seulement | non |
-| Inventaire (les sorts en poche) | `/inventaire` — au camp seulement, par le sac. Page vide en attendant son contenu | non |
-| Dashboard admin | `/admin` | non, réservé admin |
+| Profil | `/profil` — par son adresse seulement | non |
+| Grimoire (les Sorts) | boîte sur le camp, sans URL — par le grimoire du camp | non |
+| Haut-faits (les Succès) | boîte sur le camp, sans URL — avec une équipe, par la bannière du camp | non |
+| Volumen (les questions vues) | boîte sur le camp, sans URL — par le parchemin du camp | non |
+| Inventaire (les sorts en poche) | boîte sur le camp, sans URL — par le sac. Vide en attendant son contenu | non |
+| Dashboard admin | `/admin` — par son adresse seulement | non, réservé admin |
 | File de contestation | `/admin` | non, réservé admin |
 | Questions | `/admin` | non, réservé admin |
 | Whitelist | `/admin` | non, réservé admin |
@@ -42,7 +40,7 @@ Toute page non listée comme ouverte redirige vers la connexion.
 
 ## Profil
 
-Pseudo Discord, date d'inscription, **parcours**, bouton de déconnexion. Le retour au jeu se fait par la barre, comme partout ailleurs.
+Pseudo Discord, date d'inscription, **parcours**, bouton de déconnexion.
 
 Le parcours dit le chemin déjà fait, jamais l'état de l'instant :
 
@@ -88,7 +86,7 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 - Le **temps restant** avant reprise ou rattrapage.
 - L'accès au **Volumen**, par le parchemin du camp : c'est là que se relisent les erreurs de l'étage, et que se contestent celles qui peuvent l'être. Voir [Volumen](#volumen).
 - Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur au survol — et ceux qui frappent l'attente elle-même (Répit, Indulgence et Purge agissent dès le lancer). Le joueur a tout lu avant de reprendre. Chaque sort s'écrit en toutes lettres et ouvre son infobulle, voir [`bonus.md`](./bonus.md#linfobulle-dun-sort).
-- L'accès au **Grimoire**, par l'icône baguette ou le grimoire du camp.
+- L'accès au **Grimoire**, par le grimoire du camp.
 - Le **camp** lui-même, posé sur le décor : la corde (« Ascension »), roulée pendant l'attente, déroulée quand elle est échue — un clic lance alors la suite, comme le bouton « Commencer » ; la bannière de la guilde du joueur, qui mène aux Haut-faits (pas de bannière sans équipe, voir [`equipes.md`](./equipes.md)) ; le parchemin du Volumen ; le grimoire ; le sac de l'Inventaire. Chaque objet dit son nom au survol.
 
 ### `recovery` — rattrapage
@@ -122,27 +120,27 @@ Le combat s'arrête au boss à 0 PV (victoire) ou au joueur à 0 vie (défaite),
 
 ### `gameOver` — fin de partie
 
-Message de félicitations, précédé du verdict de la dernière question. Phase terminale, sans classement : plus rien n'avance, et la barre est la seule sortie.
+Message de félicitations, précédé du verdict de la dernière question. Phase terminale, sans classement : plus rien n'avance.
 
 ## Sorts
 
-Nommé **Grimoire** côté joueur. Atteignable **au camp seulement** (l'attente, puis le rattrapage tant qu'il n'a pas commencé), par l'icône baguette ou le grimoire du camp. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : un livre ouvert qui jaillit du bas, grossit et rebondit en se posant, couvert d'étincelles, son titre « Grimoire » au-dessus. Échap, la croix ou un clic à côté le referment. Pas de version mobile pour l'instant. Trois choses :
+Nommé **Grimoire** côté joueur. Atteignable **au camp seulement** (l'attente, puis le rattrapage tant qu'il n'a pas commencé), par le grimoire du camp. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : un livre ouvert qui jaillit du bas, grossit et rebondit en se posant, couvert d'étincelles, son titre « Grimoire » au-dessus. Échap, la croix ou un clic à côté le referment. Pas de version mobile pour l'instant. Trois choses :
 
 - Le **pentacle**, page gauche — un rond par sort du catalogue. Un sort jamais obtenu y garde un point d'interrogation et ne se choisit pas ; un sort **découvert** — encore en poche ou déjà lancé — y montre son médaillon, même sans exemplaire, avec en pastille dorée ses exemplaires en poche — grise à zéro. Un clic le choisit, et la page droite le montre.
 - Le **lancer**, page droite, en haut — tant que rien n'est choisi, une invite à choisir au pentacle. Le sort choisi y montre son nom, puis trois ronds dessinés qui portent ses médaillons — le sort en haut, sa magie blanche à gauche, sa magie noire à droite — et, sous chaque face, ce qu'elle fait (les définitions de son infobulle) ; ses exemplaires en poche sont écrits sous son nom ; puis un bouton par catégorie de cible (soi, allié, ennemi ; soi seulement sans équipe), éteints sans exemplaire ; « Sur moi » s'éteint aussi quand le joueur porte déjà ses deux effets positifs, et le Grimoire dit pourquoi ; « Sur un allié » et « Sur un ennemi » s'éteignent quand personne n'y est à portée, et le Grimoire le dit sans nommer personne (voir [`bonus.md`](./bonus.md#tirage-de-la-cible)). La cible réelle n'est pas annoncée avant : le tirage est pondéré mais imprévisible. Elle l'est après, au retour du lancer : le médaillon de la face lancée quitte son rond pour le centre de l'écran, s'y charge en tournant, éclate sous la foudre et s'envole, puis « Sort lancé sur … ! » jaillit au même endroit dans la couleur de sa magie (or pour la blanche, violet pour la noire) avant que le résultat s'écrive sous les boutons. Un lancer qui échoue fait retomber le médaillon, éteint. Aucun budget de lancers : le joueur lance autant de sorts qu'il en a en poche.
 - L'**historique**, dessous — les cinq derniers lancers du sort choisi, une ligne chacun : sa cible, et le jour (« Aujourd'hui », « Hier », « Il y a 3 jours », puis la date passé une semaine). Rien tant qu'aucun sort n'est choisi. C'est là que le lanceur apprend qui il a touché.
 
-Hors du camp, la baguette est désactivée et la page n'est pas atteignable, URL comprise : l'inventaire n'est donc pas consultable. Si la partie quitte le camp pendant qu'il est ouvert, le Grimoire se ferme de lui-même. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
+Hors du camp, le grimoire du camp n'est pas là pour l'ouvrir : l'inventaire n'est donc pas consultable. Si la partie quitte le camp pendant qu'il est ouvert, le Grimoire se ferme de lui-même. Le joueur voit passer son objet sur l'écran verdict, puis le retrouve à sa prochaine mort.
 
 ## Haut-faits
 
-Le mur des Succès (voir [`succes.md`](./succes.md#affichage)). Atteignable **au camp seulement** (l'attente, puis le rattrapage tant qu'il n'a pas commencé), et **avec une équipe seulement**, par la coupe ou la bannière du camp. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : la bannière de la guilde du joueur (bleue pour les Méridiens, rouge pour les Fauteuillistes) tombe du haut de l'écran, s'étire au bout de sa course, remonte en se tassant et rebondit en se balançant, de moins en moins, avant de s'arrêter. Son titre « Haut-faits » et le compteur des succès obtenus sur le catalogue s'y posent en haut ; dessous, une tuile par succès. Échap, la croix ou un clic à côté la referment : elle remonte hors de l'écran.
+Le mur des Succès (voir [`succes.md`](./succes.md#affichage)). Atteignable **au camp seulement** (l'attente, puis le rattrapage tant qu'il n'a pas commencé), et **avec une équipe seulement**, par la bannière du camp. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : la bannière de la guilde du joueur (bleue pour les Méridiens, rouge pour les Fauteuillistes) tombe du haut de l'écran, s'étire au bout de sa course, remonte en se tassant et rebondit en se balançant, de moins en moins, avant de s'arrêter. Son titre « Haut-faits » et le compteur des succès obtenus sur le catalogue s'y posent en haut ; dessous, une tuile par succès. Échap, la croix ou un clic à côté la referment : elle remonte hors de l'écran.
 
-Hors du camp, ou sans équipe, la coupe est désactivée et la page n'est pas atteignable, URL comprise. Si la partie quitte le camp pendant qu'elle est ouverte, la bannière se ferme d'elle-même.
+Hors du camp, ou sans équipe, la bannière du camp n'est pas là pour l'ouvrir. Si la partie quitte le camp pendant qu'elle est ouverte, la bannière se ferme d'elle-même.
 
 ## Volumen
 
-Le journal des questions vues. Atteignable **au camp seulement**, par le parchemin du camp ; il n'a pas d'icône dans la barre. Tant que le joueur n'a vu aucune question depuis sa dernière remise à zéro, le parchemin n'est pas posé au camp : le Volumen n'aurait rien à relire. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : un parchemin qui se déroule de gauche à droite. Échap, la croix ou un clic à côté le referment. Deux usages à la fois : **réviser** avant le rattrapage, et **garder trace** de la culture récoltée.
+Le journal des questions vues. Atteignable **au camp seulement**, par le parchemin du camp. Tant que le joueur n'a vu aucune question depuis sa dernière remise à zéro, le parchemin n'est pas posé au camp : le Volumen n'aurait rien à relire. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : un parchemin qui se déroule de gauche à droite. Échap, la croix ou un clic à côté le referment. Deux usages à la fois : **réviser** avant le rattrapage, et **garder trace** de la culture récoltée.
 
 Trois onglets :
 
@@ -158,13 +156,12 @@ La liste occupe la **gauche** du parchemin, sous les onglets, et défile : chaqu
 
 **Vingt questions par page**, et une pagination — précédent, numéros, suivant. Chaque onglet a la sienne.
 
-**Hors du camp, le Volumen n'est pas atteignable**, URL comprise, et le serveur refuse de le lire. Ce n'est pas qu'une question de moment, comme pour les Sorts : le rattrapage tire ses questions dans le Pool Échecs, et lire leurs réponses pendant qu'il tourne serait tricher. Dès que le rattrapage est tiré, le Volumen se ferme ; il rouvre à l'attente suivante.
+**Hors du camp, le Volumen ne s'ouvre pas** — le parchemin du camp n'est pas là — et le serveur refuse de le lire. Ce n'est pas qu'une question de moment, comme pour les Sorts : le rattrapage tire ses questions dans le Pool Échecs, et lire leurs réponses pendant qu'il tourne serait tricher. Dès que le rattrapage est tiré, le Volumen se ferme ; il rouvre à l'attente suivante.
 
 ## Maintenance
 
 Quand l'administration ferme le jeu, un joueur non-admin voit un écran qui le dit et
-n'offre rien d'autre : ni question, ni attente, ni pool. La barre d'icônes reste,
-c'est la seule sortie.
+n'offre rien d'autre : ni question, ni attente, ni pool.
 
 Il ne remplace pas une question en cours ni le verdict qui la suit — voir
 [`admin.md`](./admin.md#maintenance). Il prend leur place au clic suivant.
