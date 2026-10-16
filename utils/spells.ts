@@ -68,11 +68,11 @@ export function castHeadline(kind: TargetKind, targetName: string | null): CastH
  * Le médaillon d'un sort, en trois variantes : blanche pour la magie blanche,
  * noire pour son miroir, et mixte — moitié blanche à gauche, moitié noire à
  * droite — pour montrer un sort sans présumer de la face qu'on lui donnera.
- * Chronomancie n'a pas encore le sien.
  */
 const SPELL_IMAGE_SLUGS: Partial<Record<SpellId, string>> = {
   VITALITY: 'vitality',
   RESPITE: 'respite',
+  CHRONOMANCY: 'chronomancy',
   INDULGENCE: 'indulgence',
   PURGE: 'purge',
 }
