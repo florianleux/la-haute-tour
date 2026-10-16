@@ -186,7 +186,7 @@ const layers = computed((): { depth: string, box: string, origin: string, items:
     items: [
       // Le parchemin n'est posé qu'une fois une question vue : avant, le
       // Volumen n'aurait rien à relire.
-      ...(props.volumen ? [{ src: '/images/cooldown-scroll.webp', place: 'left-[32.55%] top-[85.94%] w-[14.95%]', title: 'Volumen', click: { to: '/volumen' } }] : []),
+      ...(props.volumen ? [{ src: '/images/cooldown-scroll.webp', place: 'left-[31.72%] top-[84%] w-[16.46%]', title: 'Volumen', click: { to: '/volumen' } }] : []),
       // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
       // devant eux, comme sur l'illustration.
       { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { to: '/inventaire' } },
