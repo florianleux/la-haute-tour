@@ -22,8 +22,18 @@ const props = withDefaults(defineProps<{
 }>(), { alt: '', dimmed: false })
 
 // L'art arrive après le code : une tuile dont le fichier manque montre le dessin
-// de secours plutôt qu'une image cassée.
+// de secours plutôt qu'une image cassée. Le manque se lit dans la liste de
+// `public/` relevée au build, sans rien demander au réseau : demandées pour
+// rien, les cinquante tuiles des Haut-faits attendaient chacune leur échec avant
+// de s'afficher, l'une après l'autre. `@error` reste pour un fichier listé qui
+// n'arrive pas.
+const files = useRuntimeConfig().public.assetsLoadingScreenFiles
+
 const missing = ref(false)
 
-const source = computed(() => missing.value ? ACHIEVEMENT_FALLBACK_IMAGE : achievementImage(props.id))
+const source = computed(() => {
+  const url = achievementImage(props.id)
+
+  return missing.value || !files.includes(url) ? ACHIEVEMENT_FALLBACK_IMAGE : url
+})
 </script>
