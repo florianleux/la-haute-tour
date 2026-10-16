@@ -133,6 +133,11 @@ combats de chaque boss — 72 épreuves curatées par boss au total (12 × 6).
 
 ## Introduction et animations
 
+Les images des phases de boss (porte, combat, épreuves) vont dans
+`public/images/boss/` : l'écran de chargement ne les attend pas. Une relique
+montrée hors des phases de boss — dans l'Inventaire, par exemple — n'y va pas :
+elle reste préchargée. Voir la section « Images » de [`CLAUDE.md`](../CLAUDE.md#images).
+
 - **Première rencontre d'un boss** : introduction (apparition, nom, dialogue),
   jouée une seule fois.
 - **Chaque épreuve juste** anime la barre de vie du boss : elle perd 1/7 et le
@@ -194,8 +199,7 @@ Tous faits :
   `crossFloor` ; phases post-`floorEnd` (`bossDoor`, `bossFight`) et leurs
   transitions.
 - **`ecrans.md`** : nouveaux écrans (porte, introduction/dialogue de boss,
-  combat) ; barre d'icônes désactivée pendant le combat, comme pendant un
-  chrono d'ascension.
+  combat).
 - **`equipes.md`** : la porte à deux clés comme nouvel usage de l'équipe, en
   plus du ciblage des Sorts.
 - **`bonus.md`** (coffre de loot) : le tirage forcé de la clé à partir de 50 %

@@ -54,6 +54,8 @@ const SECONDS_PER_QUESTION = 20
 
 interface Bucket {
   statements: number
+  /** Allers-retours réseau : un `execute` ou un `batch` entier en vaut un. */
+  roundTrips: number
   rowsRead: number
   rowsWritten: number
 }
@@ -69,11 +71,18 @@ const plans = new Map<string, string[]>()
 const tableSizes = new Map<string, number>()
 let roundTrips = 0
 let op = 'boot'
+/** Combien de fois chaque endpoint a été appelé, pour ramener ses coûts à un appel. */
+const calls = new Map<string, number>()
+
+function enter(name: string): void {
+  op = name
+  calls.set(name, (calls.get(name) ?? 0) + 1)
+}
 
 function bucket(map: Map<string, Bucket>, key: string): Bucket {
   let found = map.get(key)
   if (!found) {
-    found = { statements: 0, rowsRead: 0, rowsWritten: 0 }
+    found = { statements: 0, roundTrips: 0, rowsRead: 0, rowsWritten: 0 }
     map.set(key, found)
   }
   return found
@@ -162,6 +171,7 @@ function install(db: Database): void {
   client.execute = async (stmt: unknown) => {
     const result = await execute(stmt)
     roundTrips += 1
+    bucket(byOp, op).roundTrips += 1
     await account(stmt, result)
     return result
   }
@@ -169,6 +179,7 @@ function install(db: Database): void {
   client.batch = async (stmts: unknown[], mode?: unknown) => {
     const results = await batch(stmts, mode)
     roundTrips += 1
+    bucket(byOp, op).roundTrips += 1
     for (const [index, stmt] of stmts.entries()) {
       await account(stmt, results[index] ?? { rows: [], rowsAffected: 0 })
     }
@@ -313,14 +324,14 @@ async function playerLoop(
     if (day !== lastDay) {
       lastDay = day
       tally.days += 1
-      op = 'GET /api/auth/me'
+      enter('GET /api/auth/me')
       await authenticated(db, id)
       await authenticated(db, id)
-      op = 'GET /api/game/state'
+      enter('GET /api/game/state')
       await readGameState(db, await authenticated(db, id), now)
     }
 
-    op = 'POST /api/game/next'
+    enter('POST /api/game/next')
     let state = await serveNextQuestion(db, await authenticated(db, id), now)
 
     if (state.phase === 'gameOver') {
@@ -329,7 +340,7 @@ async function playerLoop(
     }
 
     if (state.chest && !state.chest.opened) {
-      op = 'POST /api/game/chest'
+      enter('POST /api/game/chest')
       await openPlayerChest(db, await authenticated(db, id), now, () => random(seed))
       tally.chests += 1
       continue
@@ -339,18 +350,18 @@ async function playerLoop(
       tally.cooldowns += 1
 
       // L'attente : le joueur ouvre sa fiche de révision, puis ses Sorts.
-      op = 'GET /api/game/pool'
+      enter('GET /api/game/pool')
       await readMissedPool(db, await authenticated(db, id), { limit: 20, offset: 0 })
 
       if (SPELLS) {
         try {
-          op = 'GET /api/game/inventory'
+          enter('GET /api/game/inventory')
           const view = await readInventory(db, await authenticated(db, id), now)
           const owned = view.entries.filter(entry => entry.count > 0)
           // Plus de budget par attente : le joueur lance un exemplaire de chaque
           // sort qu'il a en poche.
           for (const { spell } of owned) {
-            op = 'POST /api/game/cast'
+            enter('POST /api/game/cast')
             await castFromInventory(
               db,
               await authenticated(db, id),
@@ -383,7 +394,7 @@ async function playerLoop(
 
     now = new Date(now.getTime() + SECONDS_PER_QUESTION * 1_000)
 
-    op = 'POST /api/game/answer'
+    enter('POST /api/game/answer')
     state = await submitAnswer(
       db,
       await authenticated(db, id),
@@ -400,7 +411,7 @@ async function playerLoop(
     }
 
     if (state.chest && !state.chest.opened) {
-      op = 'POST /api/game/chest'
+      enter('POST /api/game/chest')
       await openPlayerChest(db, await authenticated(db, id), now, () => random(seed))
       tally.chests += 1
     }
@@ -451,10 +462,11 @@ async function main(): Promise<void> {
   const totals = [...byOp.values()].reduce(
     (sum, entry) => ({
       statements: sum.statements + entry.statements,
+      roundTrips: sum.roundTrips + entry.roundTrips,
       rowsRead: sum.rowsRead + entry.rowsRead,
       rowsWritten: sum.rowsWritten + entry.rowsWritten,
     }),
-    { statements: 0, rowsRead: 0, rowsWritten: 0 },
+    { statements: 0, roundTrips: 0, rowsRead: 0, rowsWritten: 0 },
   )
 
   const sum = (pick: (tally: Tally) => number): number => tallies.reduce((total, tally) => total + pick(tally), 0)
@@ -486,7 +498,15 @@ async function main(): Promise<void> {
   console.log('\n── par endpoint ──')
   for (const [name, entry] of [...byOp.entries()].sort((a, b) => b[1].rowsRead - a[1].rowsRead)) {
     console.log(`${name.padEnd(24)} lues ${fmt(entry.rowsRead).padStart(12)}`
-      + `  écrites ${fmt(entry.rowsWritten).padStart(10)}  requêtes ${fmt(entry.statements).padStart(10)}`)
+      + `  écrites ${fmt(entry.rowsWritten).padStart(10)}  requêtes ${fmt(entry.statements).padStart(10)}`
+      + `  allers-retours ${fmt(entry.roundTrips).padStart(10)}`)
+  }
+
+  console.log('\n── par appel ──')
+  for (const [name, entry] of [...byOp.entries()].sort((a, b) => b[1].roundTrips - a[1].roundTrips)) {
+    const n = calls.get(name) ?? 1
+    console.log(`${name.padEnd(24)} × ${fmt(n).padStart(7)}  requêtes ${(entry.statements / n).toFixed(2).padStart(6)}`
+      + `  allers-retours ${(entry.roundTrips / n).toFixed(2).padStart(6)}`)
   }
 
   console.log('\n── par requête (top 18 en lecture) ──')
@@ -511,6 +531,7 @@ async function main(): Promise<void> {
       },
       totals,
       roundTrips,
+      calls: Object.fromEntries(calls),
       bytes: pages * pageSize,
       byOp: Object.fromEntries(byOp),
       byShape: Object.fromEntries(byShape),

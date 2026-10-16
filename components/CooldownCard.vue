@@ -8,6 +8,7 @@
     :team="team"
     :volumen="state.seenTotal > 0"
     @advance="$emit('advance')"
+    @open="$emit('open', $event)"
   />
 
   <!-- Le poster est presque carré (918×980) là où le cadre de l'ascension est en
@@ -63,7 +64,7 @@
        qu'il porte. Les objets posés au sol du camp (z-[12]) se glissent entre
        les deux : devant les piquets et leurs pierres, derrière le texte et le
        bouton, qu'ils ne recouvrent donc jamais, quel que soit le format. Le tout
-       sous la barre du haut (z-20), que le poster ne doit pas masquer. -->
+       sous le sélecteur d'incarnation (z-20), que le poster ne doit pas masquer. -->
   <div
     class="fixed z-10 bg-[url(/images/cooldown-poster.webp)] bg-contain bg-center bg-no-repeat"
     :class="POSTER_BOX"
@@ -174,7 +175,7 @@
 // l'image. Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
 import type { TeamId } from '~~/shared/utils/teams'
-import type { GameScreen, PlayAction } from '~~/utils/phase'
+import type { CampOverlayId, GameScreen, PlayAction } from '~~/utils/phase'
 
 const props = defineProps<{
   state: GameState
@@ -190,7 +191,7 @@ const props = defineProps<{
   team: TeamId | null
 }>()
 
-defineEmits<{ skipCooldown: [], advance: [] }>()
+defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId] }>()
 
 const inCooldown = computed(() => isCooldown(props.state))
 

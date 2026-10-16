@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
 import type { GameState } from '../../server/utils/game'
 
-const { serve, answerWith, breakNetwork, signIn, cached, calls, reset } = installAppGlobals()
+const { serve, answerWith, breakNetwork, signIn, cached, payloadOf, calls, reset } = installAppGlobals()
 
 const { GAME_STATE_KEY } = await import('../../composables/useGameState')
-const { usePlay } = await import('../../composables/usePlay')
+const { JUDGING_MS, usePlay } = await import('../../composables/usePlay')
 
 const served: GameState = {
   phase: 'ascent',
@@ -49,6 +49,18 @@ describe('actions du joueur', () => {
     expect(cached(GAME_STATE_KEY)).toEqual(served)
   })
 
+  // Le payload est ce que relit chaque nouvel appel à useGameState() : resté
+  // sur la dernière lecture, il ramenait une page montée après le coup à un
+  // état périmé — une chute déjà lue se rouvrait sous le Volumen.
+  it('recopie l état renvoyé dans le payload que relit chaque nouvelle lecture', async () => {
+    answerWith(served)
+    const { next } = usePlay()
+
+    await next()
+
+    expect(payloadOf(GAME_STATE_KEY)).toEqual(served)
+  })
+
   it('envoie la réponse saisie', async () => {
     answerWith({ ...served, question: null, verdict: { correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false } })
     const { answer } = usePlay()
@@ -68,5 +80,68 @@ describe('actions du joueur', () => {
 
     expect(failed.value).toBe(true)
     expect(cached(GAME_STATE_KEY)).toEqual(served)
+    expect(payloadOf(GAME_STATE_KEY)).toBeNull()
+  })
+})
+
+/**
+ * Valider joue une animation d'au moins JUDGING_MS : le verdict attend sa fin même
+ * quand le serveur répond plus vite. Suivante n'attend rien, parce que le chrono
+ * de la question court déjà côté serveur. Voir specs/ecrans.md.
+ */
+describe('l attente du jugement', () => {
+  const judged: GameState = {
+    ...served,
+    question: null,
+    verdict: { questionId: 'q1', statement: 'Capitale de la Gironde ?', correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false },
+  }
+
+  beforeEach(() => {
+    reset()
+    signIn(testUser)
+    serve(GAME_STATE_KEY, served)
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('tient le verdict jusqu à la fin de son animation, même quand le serveur répond aussitôt', async () => {
+    answerWith(judged)
+    const { answer, pending } = usePlay()
+
+    const sent = answer('bordeaux')
+    await vi.advanceTimersByTimeAsync(JUDGING_MS - 1)
+
+    expect(cached(GAME_STATE_KEY)).toEqual(served)
+    expect(pending.value).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(1)
+    await sent
+
+    expect(cached(GAME_STATE_KEY)).toEqual(judged)
+    expect(pending.value).toBe(false)
+  })
+
+  it('ne retient pas la question suivante', async () => {
+    serve(GAME_STATE_KEY, judged)
+    answerWith(served)
+    const { next } = usePlay()
+
+    await next()
+
+    expect(cached(GAME_STATE_KEY)).toEqual(served)
+  })
+
+  it('ne retient rien quand le joueur a demandé moins d animations', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }))
+    answerWith(judged)
+    const { answer } = usePlay()
+
+    await answer('bordeaux')
+
+    expect(cached(GAME_STATE_KEY)).toEqual(judged)
   })
 })

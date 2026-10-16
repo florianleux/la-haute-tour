@@ -26,8 +26,10 @@ export async function useGameState(): Promise<GameStateRead> {
     () => $fetch<GameState>('/api/game/state', useApiFetchOptions()),
     {
       default: (): GameState | null => null,
-      // Sur navigation client, l'état serti au rendu serveur est déjà en cache —
-      // la page se lit instantanément, sans re-demander l'état au serveur.
+      // Sur navigation client, l'état est déjà en cache — la page se lit
+      // instantanément, sans re-demander l'état au serveur. Le payload n'est
+      // tenu à jour que par les lectures : usePlay y recopie l'état que chaque
+      // coup rend, sans quoi la page reprenait ici un état périmé.
       getCachedData: (_key, nuxtApp) => nuxtApp.payload.data[GAME_STATE_KEY] as GameState | null | undefined,
     },
   )

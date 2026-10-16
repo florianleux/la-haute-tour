@@ -122,7 +122,7 @@ Rien d'autre que la relation. En particulier :
 - **Aucune progression d'autrui affichée** : on ne voit ni l'étage, ni les vies,
   ni l'avancement de ses coéquipiers. L'équipe dit qui peut être touché, pas où
   en sont les autres.
-- **Rien de plus que deux boutons**, une fois le PvP là. La page Sorts propose
+- **Rien de plus que deux boutons**, une fois le PvP là. Le Grimoire propose
   les catégories Allié et Ennemi à qui a une équipe, pas à qui n'en a pas — ni
   liste de coéquipiers, ni effectif, ni adversaires. Les noms n'arrivent
   qu'après un lancer, un par un, par les journaux. Les autres membres se

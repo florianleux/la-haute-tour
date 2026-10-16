@@ -170,7 +170,7 @@ describe('inventaire des sorts', () => {
     expect(await response.json()).toMatchObject({ entries: [], log: [] })
   })
 
-  it('ferme la page hors attente, URL comprise', async () => {
+  it('refuse la lecture hors attente', async () => {
     const userId = await createPlayer(db)
     await loot(userId, 'VITALITY')
 
@@ -338,7 +338,7 @@ describe('inventaire des sorts', () => {
       expect(page.canTargetSelf).toBe(false)
     })
 
-    it('ne lance rien hors attente, URL comprise', async () => {
+    it('ne lance rien hors attente', async () => {
       const userId = await createPlayer(db)
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')

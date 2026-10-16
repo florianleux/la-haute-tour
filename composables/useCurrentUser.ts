@@ -15,9 +15,9 @@ export interface CurrentUser {
   testPlayers: Ref<SessionUser[]>
   /**
    * Les droits d'admin, lus sur le compte connecté et non sur l'identité
-   * servie : sous incarnation, le jeu voit un joueur ordinaire, mais le
-   * bouclier et le sélecteur doivent rester — sans quoi l'incarnation serait
-   * sans retour. La règle vit dans isRealAdmin(). Voir utils/identity.ts.
+   * servie : sous incarnation, le jeu voit un joueur ordinaire, mais
+   * l'administration et le sélecteur doivent rester — sans quoi l'incarnation
+   * serait sans retour. La règle vit dans isRealAdmin(). Voir utils/identity.ts.
    */
   isAdmin: Ref<boolean>
   refresh: () => Promise<void>

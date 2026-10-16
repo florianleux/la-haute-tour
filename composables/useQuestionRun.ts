@@ -100,9 +100,15 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     }
   }
 
-  /** L'envoi du joueur. Le départ de la page a le sien, plus bas. */
+  /**
+   * L'envoi du joueur. Le départ de la page a le sien, plus bas. Une réponse
+   * déjà en vol ne repart pas : Entrée pressée deux fois pendant l'animation de
+   * jugement (usePlay) enverrait sinon un second POST.
+   */
   async function submit(): Promise<void> {
-    await send('player')
+    if (!pending.value) {
+      await send('player')
+    }
   }
 
   async function advance(): Promise<void> {
@@ -133,7 +139,9 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     /** Envoie ce qui est saisi, une fois pour la question servie. */
     function sendOnce(source: AnswerSource): void {
       const served = state.value?.question?.id
-      if (!served || autoSubmitted === served) {
+      // Déjà partie au clic : le chrono qui tombe à zéro pendant l'animation de
+      // jugement ne la renvoie pas.
+      if (!served || autoSubmitted === served || pending.value) {
         return
       }
 

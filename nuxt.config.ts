@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
+import { assetsLoadingScreenFiles } from './scripts/assetsLoadingScreen'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-09-02',
@@ -51,6 +52,11 @@ export default defineNuxtConfig({
       clientId: '',
       clientSecret: '',
       redirectUri: '',
+    },
+    public: {
+      // Lue au démarrage : en dev, une image ajoutée n'est attendue qu'après
+      // redémarrage. Voir scripts/assetsLoadingScreen.ts.
+      assetsLoadingScreenFiles: assetsLoadingScreenFiles(fileURLToPath(new URL('public', import.meta.url))),
     },
   },
 })

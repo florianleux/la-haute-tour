@@ -13,18 +13,21 @@
       </BaseToast>
     </BaseToastStack>
 
+    <!-- `submitting` lit `pending` tout court : pendant une question, rien
+         d'autre qu'une réponse ne peut être en vol, et celle que le chrono ou
+         la perte de focus envoie se joue comme celle du bouton. -->
     <RecoveryCard
       v-if="view?.card === 'recovery'"
       :screen="view.screen"
       :action="view.action"
       :model-value="typed"
       :seconds-left="secondsLeft"
-      :submitting="isRunning('submit')"
+      :submitting="pending"
       :disputable="disputable"
       :disputing="disputing"
       :advancing="isRunning('advance')"
       @update:model-value="typed = $event"
-      @submit="run('submit', submit)"
+      @submit="submit"
       @dispute="disputeVerdict"
       @advance="goNext"
     />
@@ -35,10 +38,10 @@
       :question="view.question"
       :model-value="typed"
       :seconds-left="secondsLeft"
-      :submitting="isRunning('submit')"
+      :submitting="pending"
       :effects="view.screen.activeEffects"
       @update:model-value="typed = $event"
-      @submit="run('submit', submit)"
+      @submit="submit"
     />
 
     <CooldownCard
@@ -54,6 +57,7 @@
       :team="user?.team ?? null"
       @skip-cooldown="run('skipCooldown', skipCooldown)"
       @advance="goNext"
+      @open="campOverlay = $event"
     />
 
     <ChestCard
@@ -122,15 +126,20 @@
       </template>
     </BaseCard>
 
-    <!-- Le Volumen, le Grimoire et les Haut-faits (pages/index/volumen.vue,
-         sorts.vue et succes.vue) s'ouvrent par-dessus le camp : des routes
-         enfants, pour que le camp reste affiché dessous et que son attente
-         continue de tourner. -->
-    <NuxtPage />
+    <!-- Les boîtes du camp — le Grimoire, le Volumen, les Haut-faits et
+         l'Inventaire — s'ouvrent par-dessus lui, sans URL : le camp reste
+         affiché dessous et son attente continue de tourner. Chaque boîte
+         prévient quand elle a fini de se fermer, ou quand la partie quitte le
+         camp (CampOverlay). -->
+    <component :is="CAMP_OVERLAYS[campOverlay]" v-if="campOverlay" @close="campOverlay = null" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { AchievementsOverlay, InventoryOverlay, QuestionLogOverlay, SpellbookOverlay } from '#components'
+import type { Component } from 'vue'
+import type { CampOverlayId } from '~~/utils/phase'
+
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
 // celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
 // Le temps, les envois et les relectures vivent dans useQuestionRun().
@@ -159,7 +168,7 @@ provideGameState(state)
 // Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
 // la page, il ferait tourner « Commencer » pendant qu'un admin passe l'attente
 // juste au-dessus.
-type PendingButton = 'submit' | 'advance' | 'skipCooldown' | 'chest'
+type PendingButton = 'advance' | 'skipCooldown' | 'chest'
 const running = ref<PendingButton | null>(null)
 
 function isRunning(action: PendingButton): boolean {
@@ -218,11 +227,9 @@ const view = computed(() =>
 // objet et le rouvrirait. Sans `immediate` : une page rechargée en pleine
 // attente va droit au poster.
 //
-// Une seule fois par chute : la page reste montée sous le Volumen, et la relecture
-// faite en l'ouvrant (middleware/camp.ts) a déjà fait repasser l'état par un
-// verdict plus ancien — l'id changeait deux fois et rouvrait une chute déjà lue.
-// La chute lue s'oublie dès qu'il n'y a plus de verdict (une question est
-// servie) : une nouvelle chute sur la même question se lirait à nouveau.
+// Une seule fois par chute. La chute lue s'oublie dès qu'il n'y a plus de
+// verdict (une question est servie) : une nouvelle chute sur la même question
+// se lirait à nouveau.
 // Une chute déjà là au chargement compte comme lue : c'est le poster qui s'affiche.
 let lastFallId = state.value && fallQuestionId(state.value)
 watch(() => state.value?.verdict?.questionId, (questionId) => {
@@ -237,12 +244,22 @@ watch(() => state.value?.verdict?.questionId, (questionId) => {
   }
 })
 
+// La boîte du camp ouverte, null quand aucune ne l'est.
+const campOverlay = ref<CampOverlayId | null>(null)
+
+/** Ce que monte chaque boîte du camp. */
+const CAMP_OVERLAYS: Record<CampOverlayId, Component> = {
+  spellbook: SpellbookOverlay,
+  questionLog: QuestionLogOverlay,
+  achievements: AchievementsOverlay,
+  inventory: InventoryOverlay,
+}
+
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, la carte n'a pas d'action
 // et Entrée répond.
-// Ni quand le Volumen est ouvert par-dessus : Entrée y lirait, pas remonter.
-const route = useRoute()
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && route.name === 'index')
+// Ni quand une boîte du camp est ouverte : Entrée y lirait, pas remonter.
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campOverlay.value === null)
 
 // Le seul point d'entrée pour « avancer », bouton comme Entrée : le geste vient
 // de playView, la page l'exécute.

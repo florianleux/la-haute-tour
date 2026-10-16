@@ -71,9 +71,9 @@ export interface InventoryView {
  * nombre qui se lit. Trié par premier exemplaire obtenu, pour qu'un coffre qui
  * ajoute un doublon ne déplace pas la liste sous les yeux du joueur.
  *
- * Refusé hors du camp : le lancer n'existe que là, donc la page qui montre
- * l'inventaire n'est pas atteignable ailleurs — URL comprise, d'où le refus ici
- * et pas seulement dans la navigation.
+ * Refusé hors du camp : le lancer n'existe que là, et l'inventaire ne se montre
+ * qu'au camp. Refusé ici, pas seulement à l'écran : l'API se demande sans
+ * passer par lui.
  * Voir specs/bonus.md#sorts et specs/ecrans.md#sorts.
  */
 export async function readInventory(db: Database, user: User, now: Date): Promise<InventoryView> {
@@ -104,8 +104,8 @@ export async function castFromInventory(
 }
 
 /**
- * L'inventaire groupé, les sorts découverts et les deux journaux : ce que la
- * page Sorts montre, après une lecture comme après un lancer.
+ * L'inventaire groupé, les sorts découverts et les deux journaux : ce que le
+ * Grimoire montre, après une lecture comme après un lancer.
  *
  * Un sort lancé quitte l'inventaire : ce que le joueur a découvert se lit donc
  * aussi dans ses lancers.

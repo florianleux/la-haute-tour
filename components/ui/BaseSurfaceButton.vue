@@ -7,18 +7,8 @@
        focus, Entrée, Espace et l'annonce en synthèse vocale, qu'il faudrait
        sinon réécrire à la main. Il se pose PAR-DESSUS le contenu, jamais
        autour, pour ne rien imbriquer dans un élément interactif — d'où le
-       `label` obligatoire, seul texte qu'une synthèse vocale en tirera.
-
-       Avec `to`, la surface mène à une page : un vrai lien alors, pour les
-       mêmes raisons, sous les mêmes classes. -->
-  <NuxtLink
-    v-if="to"
-    :to="to"
-    :aria-label="label"
-    :class="SURFACE"
-  />
+       `label` obligatoire, seul texte qu'une synthèse vocale en tirera. -->
   <button
-    v-else
     type="button"
     :aria-label="label"
     :class="SURFACE"
@@ -37,8 +27,6 @@
 defineProps<{
   /** Ce que la surface fait, pour qui ne la voit pas. Une icône n'en dirait rien. */
   label: string
-  /** La page où mène la surface. Sans elle, c'est un bouton qui émet `click`. */
-  to?: string
 }>()
 
 defineEmits<{ click: [] }>()

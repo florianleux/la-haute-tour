@@ -69,7 +69,7 @@ créés depuis l'interface, sans compte Discord derrière, qu'il peut incarner.
 
 ### Incarnation
 
-Un sélecteur, à gauche de la barre d'icônes et visible du seul admin, dit qui
+Un sélecteur, en haut à gauche et visible du seul admin, dit qui
 joue : lui-même, ou l'un des joueurs test. Il est présent sur toutes les pages,
 et se teinte pendant l'incarnation — on ne doit jamais se demander de qui on
 regarde la partie.

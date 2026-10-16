@@ -18,7 +18,7 @@ Les équipes sont traitées à part, dans [`equipes.md`](./equipes.md).
 Un Sort **se lance uniquement au camp** — l'attente, puis le rattrapage tant
 qu'il n'a pas commencé ; jamais en ascension, ni en rattrapage en cours, ni sur
 le profil. L'écran d'attente porte un accès vers
-une **page Sorts** dédiée, où le lancer se fait réellement.
+le **Grimoire**, une boîte ouverte par-dessus le camp, où le lancer se fait réellement.
 
 **Aucun budget de lancers** : un joueur lance pendant son attente autant de
 sorts qu'il en a en poche, deux fois le même y compris. Ce qui borne
@@ -391,10 +391,7 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 
 ## Écrans
 
-- **Icône baguette magique**, deuxième de la barre permanente. Visible partout,
-  **cliquable au camp seulement** — le seul moment où le lancer existe. Ailleurs
-  elle est désactivée, comme toute la barre l'est tant qu'un chrono tourne.
-- **Page Sorts**, le **Grimoire** côté joueur : pentacle, lancer, journaux — voir
+- **Le Grimoire**, l'écran des Sorts, ouvert par-dessus le camp : pentacle, lancer, journaux — voir
   [`ecrans.md`](./ecrans.md#sorts). Le lancer et le nombre d'exemplaires sont
   absents tant que #76 n'est pas livré. Accessible au camp uniquement.
   L'inventaire n'est donc pas consultable hors du camp — le joueur voit passer son
@@ -429,7 +426,7 @@ et aient tourné — c'est leur définition même.
 ## Livraison
 
 **T1 — la boucle solo, bout en bout.** Question loot dérivée, coffre, Mimic,
-inventaire, icône baguette, page Sorts, lancer sur **Soi** uniquement, catalogue
+inventaire, Grimoire, lancer sur **Soi** uniquement, catalogue
 réduit à **Vitalité et Répit** — les deux seuls dont l'effet ne touche ni le timer,
 ni le pool, ni le rattrapage. Valide seul les trois points risqués : le loot sans
 compteur, la persistance du coffre, l'ancrage des effets sur la tentative suivante.

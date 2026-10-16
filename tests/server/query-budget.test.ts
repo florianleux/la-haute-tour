@@ -115,7 +115,9 @@ describe('budget de requêtes des chemins chauds', () => {
 
     await serveNextQuestion(db, player, NOW)
 
-    expect(queries()).toBeLessThanOrEqual(5)
+    // L'instantané, la question suivante comprise, puis la réservation et le
+    // curseur écrits ensemble.
+    expect(queries()).toBeLessThanOrEqual(2)
   })
 
   it('résout une réponse sans relire l état', async () => {
@@ -124,12 +126,14 @@ describe('budget de requêtes des chemins chauds', () => {
 
     await submitAnswer(db, player, 'Toulouse', NOW)
 
-    expect(queries()).toBeLessThanOrEqual(7)
+    // L'instantané, libellés acceptés compris, puis la résolution en un lot. Le
+    // troisième est le succès que cette première erreur débloque.
+    expect(queries()).toBeLessThanOrEqual(3)
   })
 
   /**
-   * La page Sorts n'est pas un chemin chaud — on l'ouvre en attente, pas à
-   * chaque question — mais elle affiche trois listes, et trois listes servies
+   * Le Grimoire n'est pas un chemin chaud — on l'ouvre en attente, pas à
+   * chaque question — mais il affiche trois listes, et trois listes servies
    * l'une après l'autre feraient trois allers-retours de plus qu'il n'en faut.
    * Le lancer, lui, tire une cible : ce tirage doit rester une requête, jamais
    * une par joueur de l'équipe. Voir specs/bonus.md#tirage-de-la-cible.
@@ -162,7 +166,7 @@ describe('budget de requêtes des chemins chauds', () => {
     expect(missed.total).toBeNull()
   })
 
-  describe('la page Sorts et le lancer', () => {
+  describe('le Grimoire et le lancer', () => {
     const IN_COOLDOWN = { lives: 0, cooldownUntil: new Date(NOW.getTime() + 60_000) }
 
     beforeEach(async () => {

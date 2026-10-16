@@ -887,6 +887,54 @@
     100% { transform: none; }
   }
 
+  /* Valider : l'encre de la réponse pâlit et remonte vers le médaillon, qui
+     la juge. Puis le médaillon tremble, de plus en plus fort, et boucle tant
+     que le verdict n'est pas revenu — c'est lui qui le tamponnera. Les deux
+     premiers temps font JUDGING_MS (composables/usePlay.ts) : ils bougent ensemble.
+     Voir specs/ecrans.md. */
+  --animate-ink-lift: ink-lift 0.15s ease-in forwards;
+  --animate-judge-quiver: judge-quiver-ramp 0.15s ease-in 0.15s, judge-quiver 0.12s linear 0.3s infinite;
+
+  @keyframes ink-lift {
+    to { opacity: 0; transform: translateY(-14%) scale(0.92); }
+  }
+
+  @keyframes judge-quiver-ramp {
+    0% { transform: none; }
+    50% { transform: rotate(-2deg); }
+    100% { transform: rotate(3deg); }
+  }
+
+  @keyframes judge-quiver {
+    0%, 100% { transform: rotate(3deg); }
+    50% { transform: rotate(-3deg); }
+  }
+
+  /* Le cadre entier pendant le jugement : il monte un peu avec l'encre, tient
+     en l'air jusqu'au verdict, puis retombe avec un petit rebond. */
+  --animate-frame-lift: frame-lift 0.15s ease-out forwards;
+  --animate-frame-settle: frame-settle 0.45s ease-out both;
+
+  @keyframes frame-lift {
+    to { transform: translateY(-3%); }
+  }
+
+  @keyframes frame-settle {
+    0% { transform: translateY(-3%); }
+    55% { transform: translateY(0.8%); }
+    80% { transform: translateY(-0.3%); }
+    100% { transform: none; }
+  }
+
+  /* Suivante : le verdict glisse vers le haut et s'efface. Rien n'attend sa fin —
+     la question s'affiche dès qu'elle arrive, son chrono court déjà. */
+  --animate-verdict-leave: verdict-leave 0.2s ease-in forwards;
+
+  @keyframes verdict-leave {
+    to { opacity: 0; transform: translateY(-12%); }
+  }
+
+
   /* Le pendant joyeux du coup, sur une bonne réponse : le cadre prend son
      élan (il se tasse), saute en s'étirant avec un petit balancement, se
      réceptionne en s'écrasant, puis fait un dernier rebond. */
@@ -948,20 +996,25 @@
 
   @keyframes bump {
     0%, 100% { transform: none; }
-    30% { transform: scale(1.35); }
-    55% { transform: scale(0.92); }
-    75% { transform: scale(1.06); }
+    30% { transform: scale(1.6); }
+    55% { transform: scale(0.88); }
+    75% { transform: scale(1.1); }
   }
 
-  /* Le « +1 » à côté de ce chiffre : il éclot, monte et s'évapore. */
-  --animate-float-away: float-away 1.3s ease-out var(--enter-delay, 0s) both;
+  /* Le « +1 » à côté de ce chiffre, et le « -1 » du cœur perdu : il jaillit
+     trop gros en penchant, se reprend en deux rebonds, puis monte loin et
+     s'évapore. Exagéré exprès : c'est la seule annonce chiffrée d'un verdict,
+     elle doit se lire du coin de l'œil. */
+  --animate-float-away: float-away 1.8s ease-out var(--enter-delay, 0s) both;
 
   @keyframes float-away {
-    0% { opacity: 0; transform: translateY(40%) scale(0.4); }
-    15% { opacity: 1; transform: translateY(0) scale(1.3); }
-    28% { opacity: 1; transform: translateY(-10%) scale(1); }
-    70% { opacity: 1; transform: translateY(-60%) scale(1); }
-    100% { opacity: 0; transform: translateY(-140%) scale(0.9); }
+    0% { opacity: 0; transform: translateY(60%) scale(0.2) rotate(-15deg); }
+    10% { opacity: 1; transform: translateY(-5%) scale(1.9) rotate(8deg); }
+    20% { transform: translateY(-12%) scale(1.1) rotate(-5deg); }
+    30% { transform: translateY(-18%) scale(1.4) rotate(2deg); }
+    40% { transform: translateY(-24%) scale(1.25) rotate(0); }
+    75% { opacity: 1; transform: translateY(-110%) scale(1.25); }
+    100% { opacity: 0; transform: translateY(-220%) scale(0.9); }
   }
 
   /* Le Volumen qui s'ouvre sur le camp, en dessin animé : il monte roulé du
@@ -1168,7 +1221,7 @@
   /* Un fondu d'entrée, retardable par --enter-delay ; et sa sortie. */
   /* Le détail du Grimoire qui apparaît sur le papier comme de l'encre, flou
      puis net. Le délai, posé par l'appelant, fait la cascade. Voir
-     components/SpellDetails.vue et pages/index/sorts.vue. */
+     components/SpellDetails.vue et components/SpellbookOverlay.vue. */
   --animate-ink-in: ink-in 0.35s ease-out var(--enter-delay, 0s) both;
 
   @keyframes ink-in {
@@ -1215,7 +1268,7 @@
 /* Le calque du Volumen (public/images/volumen-scroll.webp, 1596×1048, rogné
    par scripts/img-trim-webp.sh : les rouleaux touchent ses bords) : ses
    repères, relevés à la main, en pixels du calque. Une nouvelle image, de
-   nouvelles mesures — ici seulement : pages/index/volumen.vue et les keyframes
+   nouvelles mesures — ici seulement : components/QuestionLogOverlay.vue et les keyframes
    unroll / roll-up les lisent. Posé sur la boîte de dialogue, hérité par tout
    ce qu'elle contient. */
 @utility question-log-scroll-metrics {

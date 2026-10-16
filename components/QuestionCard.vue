@@ -1,5 +1,8 @@
 <template>
-  <PlayFrame skin="ascent">
+  <PlayFrame
+    skin="ascent"
+    :motion="submitting ? 'judging' : undefined"
+  >
     <template #ribbons>
       <StatsRibbons
         :state="state"
@@ -46,7 +49,7 @@
       <BaseCardButton
         label="Valider"
         anchor="card-bottom"
-        :disabled="submitting"
+        :loading="submitting"
         @click="$emit('submit')"
       />
     </template>
@@ -69,6 +72,7 @@ const props = defineProps<{
   question: ServedQuestion
   modelValue: string
   secondsLeft: number | null
+  /** Une réponse est en vol, envoyée au clic comme à la fin du chrono : la carte le joue. */
   submitting: boolean
   effects: EffectView[]
 }>()

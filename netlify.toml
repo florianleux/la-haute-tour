@@ -1,3 +1,11 @@
 [build]
   command = "pnpm build"
   publish = "dist"
+
+# Sans cette règle, Netlify sert les images en `max-age=0, must-revalidate` : un
+# aller-retour par image à chaque visite. Un jour suffit à ce que l'écran de
+# chargement d'une visite resserve celles de la veille sans réseau.
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

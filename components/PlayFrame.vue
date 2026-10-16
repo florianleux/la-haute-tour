@@ -23,9 +23,12 @@
          rétrécir entier. `group` sert au décalage clavier du panneau ci-dessous,
          et `data-arriving` à l'entrée des enfants, rubans compris : ils lisent
          l'attribut (`group-data-arriving:`) sans prop à faire descendre. -->
+    <!-- Il monte un peu pendant le jugement d'une réponse, et retombe quand le
+         verdict arrive (ou quand l'envoi échoue). En `!` comme le médaillon :
+         la classe d'arrivée reste tant que le cadre est monté. -->
     <div
       class="group relative mx-auto w-full origin-bottom @container"
-      :class="[SKINS[skin].frame, SKINS[skin].entrance]"
+      :class="[SKINS[skin].frame, SKINS[skin].entrance, lift]"
       :data-arriving="arriving || undefined"
     >
       <!-- Les rubans, quand l'illustration en dessine (l'ascension oui, le
@@ -43,11 +46,13 @@
       />
 
       <!-- Le médaillon, à cheval sur le bord haut : chrono pendant la question,
-           juste/faux sur le verdict. Même rôle des deux côtés, deux dessins. -->
+           juste/faux sur le verdict. Même rôle des deux côtés, deux dessins.
+           Son tremblement de jugement passe en `!` : un cadre arrivé garde sa
+           classe d'arrivée tant qu'il est monté, et elle l'emporterait sinon. -->
       <div
         v-if="$slots.medallion"
         class="absolute left-1/2 z-20 origin-bottom -translate-x-1/2 -translate-y-1/2 @container bg-contain bg-center bg-no-repeat group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
-        :class="SKINS[skin].medallion"
+        :class="[SKINS[skin].medallion, motion && MOTIONS[motion].medallion]"
         :style="{ aspectRatio: SKINS[skin].medallionRatio }"
       >
         <!-- Le chiffre au centre du disque, dont la hauteur n'est pas la même
@@ -75,7 +80,7 @@
            mesure de hauteur de clavier, juste l'état du focus. -->
       <div
         class="absolute flex flex-col items-center justify-center gap-[0.7cqw] overflow-hidden @container text-center transition-all"
-        :class="SKINS[skin].panel"
+        :class="[SKINS[skin].panel, motion && MOTIONS[motion].panel]"
       >
         <slot />
       </div>
@@ -97,6 +102,11 @@
 // mode="out-in"> entre les deux ferait rejouer l'entrée à chaque écran.
 // Côté serveur, rien ne se démonte : le premier rendu arrive des deux côtés.
 let leaving: string | null = null
+
+// Le cadre démonté était soulevé par le jugement d'une réponse : celui qui le
+// remplace, le verdict, retombe à sa place au lieu d'y apparaître. Même
+// passage de relais que `leaving`, dans le même patch.
+let liftedOnLeave = false
 </script>
 
 <script setup lang="ts">
@@ -200,7 +210,21 @@ const props = defineProps<{
    * cadre, dont l'`animation` d'arrivée écraserait celle-ci.
    */
   reaction?: 'hit' | 'hop'
+  /**
+   * L'attente d'un geste, jouée pendant que la requête part : `judging` sur
+   * Valider (l'encre remonte, le médaillon tremble jusqu'au verdict), `leaving`
+   * sur Suivante (le verdict glisse et s'efface). Retirée, la carte revient
+   * telle qu'avant le clic — c'est ce qu'on veut sur un envoi refusé.
+   * Voir specs/ecrans.md.
+   */
+  motion?: 'judging' | 'leaving'
 }>()
+
+// Chaque attente décrite d'un seul endroit, panneau et médaillon ensemble.
+const MOTIONS = {
+  judging: { panel: 'motion-safe:animate-ink-lift', medallion: 'motion-safe:animate-judge-quiver!' },
+  leaving: { panel: 'motion-safe:animate-verdict-leave', medallion: '' },
+} as const
 
 const REACTIONS = {
   hit: 'motion-safe:animate-hit',
@@ -209,10 +233,29 @@ const REACTIONS = {
 
 const arriving = leaving !== props.skin
 
+// Retombe à l'arrivée s'il prend la suite d'un cadre soulevé (la question
+// d'ascension remplacée par son verdict), ou sur place quand le jugement
+// s'achève sans démontage (le rattrapage garde son cadre, et un envoi refusé
+// laisse la question).
+const settling = ref(liftedOnLeave)
+
+watch(() => props.motion, (now, before) => {
+  settling.value = before === 'judging' && now !== 'judging'
+})
+
+const lift = computed(() => {
+  if (props.motion === 'judging') {
+    return 'motion-safe:animate-frame-lift!'
+  }
+  return settling.value ? 'motion-safe:animate-frame-settle!' : ''
+})
+
 onBeforeUnmount(() => {
   leaving = props.skin
+  liftedOnLeave = props.motion === 'judging'
   setTimeout(() => {
     leaving = null
+    liftedOnLeave = false
   })
 })
 </script>

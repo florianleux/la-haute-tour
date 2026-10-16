@@ -130,7 +130,7 @@ export async function targetableKinds(db: Database, caster: User, rows: Candidat
 /**
  * Le joueur peut-il encore se lancer un sort ? Sur soi, la face est toujours
  * blanche : faux quand il porte déjà son plafond d'effets positifs. Lu par le
- * lancer, qui refuse alors sans consommer, et par la page Sorts, qui éteint
+ * lancer, qui refuse alors sans consommer, et par le Grimoire, qui éteint
  * « Sur moi ». Voir specs/bonus.md#limite-deffets-positifs.
  */
 export async function canTargetSelf(db: Database, user: User): Promise<boolean> {

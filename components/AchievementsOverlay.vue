@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" :game="game">
+  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" @close="$emit('close')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen et le Grimoire.
          Clic à côté de la bannière = fermer.
 
@@ -66,16 +66,11 @@
 
 <script setup lang="ts">
 // Les Haut-faits : le mur des succès, sur la bannière de la guilde du joueur,
-// au camp et là seulement, ouvert par-dessus lui. Sans équipe, pas de
-// bannière : la page n'est pas atteignable. Voir specs/ecrans.md#haut-faits.
+// au camp et là seulement, ouvert par-dessus lui. Voir specs/ecrans.md#haut-faits.
 import { ACHIEVEMENT_IDS } from '~~/shared/utils/achievements'
 import type { TeamId } from '~~/shared/utils/teams'
 
-definePageMeta({
-  // Hors du camp, ou sans équipe, la page n'est pas atteignable — URL
-  // comprise. Voir middleware/camp.ts et middleware/team.ts.
-  middleware: ['camp', 'team'],
-})
+defineEmits<{ close: [] }>()
 
 /** La bannière de chaque guilde : bleue aux étoiles, rouge au livre. */
 const BANNERS: Record<TeamId, string> = {
@@ -85,8 +80,8 @@ const BANNERS: Record<TeamId, string> = {
 
 const { user } = await useCurrentUser()
 
-// La garde `team` a déjà écarté le joueur sans équipe ; la bannière ne se
-// demande pas une seconde fois s'il en a une.
+// Sans équipe, pas de bannière : celle du camp, qui ouvre cette boîte, n'est
+// pas posée. La boîte ne se demande pas une seconde fois s'il en a une.
 const team = computed(() => user.value!.team!)
 
 const { unlockedAt, failed } = await useAchievements()
@@ -95,7 +90,4 @@ const { unlockedAt, failed } = await useAchievements()
 // gagne en montant, et les curiosités à la fin.
 const catalogue = ACHIEVEMENT_IDS
 const unlockedCount = computed(() => unlockedAt.value.size)
-
-// L'état de jeu : la fermeture si la partie quitte le camp (CampOverlay).
-const game = await useGameState()
 </script>

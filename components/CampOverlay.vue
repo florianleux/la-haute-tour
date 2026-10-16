@@ -16,34 +16,35 @@
 </template>
 
 <script setup lang="ts">
-// Une route enfant de la page de jeu, ouverte par-dessus le camp (le Volumen,
-// le Grimoire, les Haut-faits) : son fond, et comment elle se ferme. La page de jeu n'est
-// jamais démontée dessous. Voir specs/ecrans.md#volumen et specs/ecrans.md#sorts.
+// Une boîte ouverte par-dessus le camp (le Volumen, le Grimoire, les Haut-faits,
+// l'Inventaire) : son fond, et comment elle se ferme. Elle n'a pas d'URL : la
+// page de jeu la monte quand un objet du camp est cliqué et la démonte quand
+// elle prévient (`close`) — elle-même n'est jamais démontée dessous.
+// Voir specs/ecrans.md#volumen et specs/ecrans.md#sorts.
 //
 // - Fermer, c'est revenir au camp : un détour, pas une étape — croix, Échap,
 //   clic à côté.
-// - Quelle que soit la sortie, l'animation de fermeture joue avant que la route
-//   change. La route attend la fin des animations elles-mêmes, pas une durée
-//   recopiée de main.css ; sans animation (mouvement réduit), elle part tout de
-//   suite. Les animations en boucle (étincelles) ne comptent pas. Une seule
-//   sortie à la fois : toute navigation qui part pendant ce temps attend la
-//   même.
-// - Le middleware `camp` ne garde que l'entrée : la partie peut quitter le camp
-//   pendant la lecture — attente échue, rattrapage tiré dans un autre onglet.
-//   La boîte se ferme alors d'elle-même. Un changement fait ailleurs ne se voit
-//   qu'en relisant : on relit au retour sur l'onglet.
-import { isNavigationFailure, NavigationFailureType } from 'vue-router'
-import type { GameStateRead } from '~/composables/useGameState'
+// - L'animation de fermeture joue avant que la boîte prévienne la page. Elle
+//   attend la fin des animations elles-mêmes, pas une durée recopiée de
+//   main.css ; sans animation (mouvement réduit), elle prévient tout de suite.
+//   Les animations en boucle (étincelles) ne comptent pas. Une seule sortie à
+//   la fois : un second geste pendant ce temps ne relance rien.
+// - La partie peut quitter le camp pendant la lecture — attente échue,
+//   rattrapage tiré dans un autre onglet —, ou l'avoir quitté avant même que
+//   la boîte soit montée. La boîte se ferme alors d'elle-même. Un changement
+//   fait ailleurs ne se voit qu'en relisant : on relit au retour sur l'onglet.
+//
+// L'état de jeu est celui que la page a déjà lu, pris dans la lecture partagée :
+// la boîte n'en demande pas un second.
+import { GAME_STATE_KEY } from '~/composables/useGameState'
+import type { GameState } from '~~/server/utils/game'
 
-const props = defineProps<{
+defineProps<{
   /** Ce que lit une synthèse vocale en entrant dans la boîte. */
   label: string
-  /**
-   * L'état de jeu, déjà lu par la page : elle l'attend dans son `<script
-   * setup>`, ce qu'un composant ne peut pas faire sans Suspense.
-   */
-  game: Pick<GameStateRead, 'state' | 'refresh'>
 }>()
+
+const emit = defineEmits<{ close: [] }>()
 
 defineSlots<{
   default: (scope: { closing: boolean, close: () => void }) => unknown
@@ -53,23 +54,23 @@ const dialog = useTemplateRef<{ element: HTMLDialogElement | null }>('dialog')
 
 const closing = ref(false)
 
-// Pendant la sortie, un second geste — ou le retour du navigateur — lance une
-// autre navigation : elle attend la même sortie au lieu de la couper.
 function close(): void {
   if (!closing.value) {
-    void navigateTo('/')
+    void playExit()
   }
 }
 
-watch(props.game.state, (now) => {
+const { data: game } = useNuxtData<GameState>(GAME_STATE_KEY)
+
+watch(game, (now) => {
   if (!isAtCamp(now)) {
     close()
   }
-})
+}, { immediate: true })
 
 function onVisible(): void {
   if (document.visibilityState === 'visible') {
-    void props.game.refresh()
+    void refreshNuxtData(GAME_STATE_KEY)
   }
 }
 
@@ -77,7 +78,6 @@ onMounted(() => document.addEventListener('visibilitychange', onVisible))
 onUnmounted(() => document.removeEventListener('visibilitychange', onVisible))
 
 const EXIT_CEILING_MS = 1000
-let exit: Promise<unknown> | null = null
 
 async function playExit(): Promise<void> {
   closing.value = true
@@ -89,27 +89,12 @@ async function playExit(): Promise<void> {
   // allSettled : une animation remplacée en route rejette sa promesse. Le
   // plafond : dans un onglet masqué, le navigateur ne fait pas avancer les
   // animations — une fermeture lancée par la partie (attente échue) y
-  // bloquerait la navigation jusqu'au retour du joueur.
+  // laisserait la boîte jusqu'au retour du joueur.
   await Promise.race([
     Promise.allSettled(exits.map(animation => animation.finished)),
     new Promise(resolve => setTimeout(resolve, EXIT_CEILING_MS)),
   ])
+
+  emit('close')
 }
-
-onBeforeRouteLeave(async () => {
-  exit ??= playExit()
-  await exit
-})
-
-// Une sortie refusée en route (une garde qui dit non, une erreur) laisserait
-// une boîte invisible, mais modale : toute la page inerte. La boîte se rouvre
-// alors. Une navigation seulement remplacée par une autre, elle, continue la
-// même sortie.
-const stopWatchingFailures = useRouter().afterEach((_to, _from, failure) => {
-  if (isNavigationFailure(failure, NavigationFailureType.aborted)) {
-    exit = null
-    closing.value = false
-  }
-})
-onUnmounted(stopWatchingFailures)
 </script>
