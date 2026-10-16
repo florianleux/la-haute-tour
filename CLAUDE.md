@@ -70,6 +70,7 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 
 ## Images
 
+- Toute image fournie passe d'abord par `cleanimage` (alias de [`scripts/img-trim-webp.sh`](scripts/img-trim-webp.sh)) : rognage de la marge transparente, conversion en webp lossless. Jamais un PNG brut dans `public/`. Une image du camp arrive sur un calque 1920×1080 : la position se lit sur la boîte rognée (`magick <img> -format '%@' info:`), puis se vérifie sur le décor.
 - Une image du jeu courant va sous `public/` (hors `images/boss/`) : l'**écran de chargement** (`assetsLoadingScreen`, voir le glossaire de [`specs/spec.md`](specs/spec.md)) l'attend d'office, rien à déclarer.
 - Une image qui ne s'affiche que dans les phases de boss (porte, combat, épreuves) va dans `public/images/boss/` : l'écran ne l'attend pas.
 - Pourquoi : sans préchargement, les animations d'entrée (`drop-in` du cadre de jeu, `book-rise` du Grimoire) se jouent avant que leur image arrive. Et chaque image ajoutée allonge l'écran à la première visite.
@@ -117,6 +118,7 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 ## Git
 
 - Conventional commits (`feat:`, `fix:`, `refactor:`, etc.).
+- Une fois le travail validé : merge dans `main` et push direct, sans PR. Une PR seulement si je la demande explicitement.
 
 ---
 
