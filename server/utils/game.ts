@@ -1,4 +1,5 @@
-import { and, asc, count, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import type { BatchItem, BatchResponse } from 'drizzle-orm/batch'
 import type { RunnableQuery } from 'drizzle-orm/runnable-query'
 import {
   canDrawRecovery,
@@ -23,7 +24,7 @@ import {
   playedToday,
   unlock,
 } from './achievements'
-import { floorSizeQuery, sizeOf, upcomingQuestions } from './deck'
+import { floorSizeQuery, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { isCooldownBound } from '../../shared/utils/spells'
@@ -31,6 +32,7 @@ import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import {
   acceptedAnswers,
+  deckFloors,
   disputes,
   missedPool,
   questions,
@@ -48,7 +50,7 @@ import type { AnswerSource, Phase } from './mechanics'
 import type { FloorRules } from './rules'
 import type { ChestState, SpellId } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
-import type { Question, Reservation, User } from '../db/schema'
+import type { MissedPoolEntry, Question, RecoveryQuestion, Reservation, User } from '../db/schema'
 
 export interface ServedQuestion {
   id: string
@@ -169,8 +171,8 @@ export interface GameState {
  * Everything the phase is derived from, in as few round trips as possible.
  *
  * The database is remote and every query is a network hop, so this is deliberately
- * two of them rather than one per fact: the player and their two counters travel
- * together, and the reservation brings its question along.
+ * one of them rather than one per fact: every read keys on the player's id, so they
+ * all travel in a single batch, and the reservation brings its question along.
  */
 export interface PlayerSnapshot {
   user: User
@@ -183,6 +185,8 @@ export interface PlayerSnapshot {
   reservation?: Reservation
   /** The reserved question, loaded with the reservation. */
   question?: Question
+  /** Le tirage du rattrapage en cours, vide hors rattrapage. Lu dans le même lot. */
+  recoveryRun: RecoveryQuestion[]
 }
 
 /**
@@ -226,23 +230,30 @@ function holdsQuestion(snapshot: PlayerSnapshot): boolean {
   return snapshot.reservation !== undefined && snapshot.reservation.resolvedAt === null
 }
 
-async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapshot> {
-  const [row] = await db
-    .select({
-      user: users,
-      // Lu avec le joueur plutôt qu'à part : la maintenance se consulte à chaque
-      // lecture d'état, et un aller-retour de plus par question se paierait cher.
-      gameClosed: sql<number>`coalesce((select ${settings.maintenanceSince} is not null
-        from ${settings} where ${settings.id} = 1), 0)`,
-    })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1)
-
-  // La réservation, les effets et la taille de l'étage voyagent dans le même
-  // lot : trois requêtes, un seul aller-retour réseau.
-  // Voir tests/server/query-budget.test.ts.
-  const [holding, effects, deckFloor] = await db.batch([
+/**
+ * Les lectures d'un instantané, rendues plutôt qu'exécutées : toutes partent du
+ * seul identifiant du joueur, donc elles voyagent dans un seul lot — un
+ * aller-retour réseau — et chaque action y ajoute ce qu'elle seule lira.
+ * Voir tests/server/query-budget.test.ts.
+ */
+function snapshotQueries(db: Database, userId: number) {
+  return [
+    db
+      .select({
+        user: users,
+        // Lu avec le joueur plutôt qu'à part : la maintenance se consulte à chaque
+        // lecture d'état, et un aller-retour de plus par question se paierait cher.
+        gameClosed: sql<number>`coalesce((select ${settings.maintenanceSince} is not null
+          from ${settings} where ${settings.id} = 1), 0)`,
+        // Lue au deck plutôt que comptée : une ligne, quel que soit l'étage. Et
+        // lue à l'étage que porte la ligne du joueur, sans attendre de l'avoir
+        // lue. Voir server/utils/deck.ts.
+        floorTotal: sql<number>`coalesce((select ${deckFloors.total} from ${deckFloors}
+          where ${deckFloors.floor} = ${users.currentFloor}), 0)`,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1),
     db
       .select({ reservation: reservations, question: questions })
       .from(reservations)
@@ -250,24 +261,50 @@ async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapsho
       .where(eq(reservations.userId, userId))
       .limit(1),
     effectsQuery(db, userId),
-    floorSizeQuery(db, row.user.currentFloor),
-  ])
+    // Vide hors rattrapage, et c'est le cas presque toujours : une ligne d'index
+    // regardée pour rien, contre un aller-retour à chaque question sans vie.
+    db
+      .select()
+      .from(recoveryQuestions)
+      .where(eq(recoveryQuestions.userId, userId))
+      .orderBy(recoveryQuestions.position),
+  ] as const
+}
 
-  const [held] = holding
+type SnapshotQueries = ReturnType<typeof snapshotQueries>
 
+function toSnapshot([[row], [held], effects, recoveryRun]: BatchResponse<SnapshotQueries>): PlayerSnapshot {
   return {
     // Le joueur porte ses deux décomptes de questions vues, il ne les compte
     // plus : les compter coûtait une ligne par question déjà vue, à chaque
     // lecture d'état. Voir server/db/schema.ts.
     user: row.user,
     effects: toEffectViews(effects, row.user),
-    // Lue au deck plutôt que comptée : une ligne, quel que soit l'étage.
-    // Voir server/utils/deck.ts.
-    floorTotal: sizeOf(deckFloor),
+    floorTotal: row.floorTotal,
     gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
+    recoveryRun,
   }
+}
+
+async function loadSnapshot(db: Database, userId: number): Promise<PlayerSnapshot> {
+  return toSnapshot(await db.batch(snapshotQueries(db, userId)))
+}
+
+/**
+ * Les libellés acceptés de la question tenue, désignée par la réservation
+ * elle-même : la lecture part dans le lot de l'instantané, et juger la réponse
+ * ne coûte plus d'aller-retour à part.
+ */
+function acceptedQuery(db: Database, userId: number) {
+  return db
+    .select({ text: acceptedAnswers.text })
+    .from(acceptedAnswers)
+    .where(inArray(
+      acceptedAnswers.questionId,
+      db.select({ questionId: reservations.questionId }).from(reservations).where(eq(reservations.userId, userId)),
+    ))
 }
 
 /** Recolle à un état ce que la requête vient de débloquer, sans toucher au reste. */
@@ -319,16 +356,7 @@ export async function hasRecoveryRun(db: Database, userId: number): Promise<bool
  * le seuil de reprise n'est pas celui de l'étage dès qu'une Indulgence noire est
  * posée. Voir specs/bonus.md#catalogue.
  */
-async function recoveryProgress(
-  db: Database,
-  user: User,
-  rules: FloorRules,
-): Promise<RecoveryProgress | null> {
-  const drawn = await db
-    .select()
-    .from(recoveryQuestions)
-    .where(eq(recoveryQuestions.userId, user.id))
-
+function recoveryProgress(drawn: RecoveryQuestion[], rules: FloorRules): RecoveryProgress | null {
   if (!drawn.length) {
     return null
   }
@@ -349,64 +377,63 @@ async function recoveryProgress(
   }
 }
 
-async function acceptedFor(db: Database, questionId: string): Promise<string[]> {
-  const rows = await db
-    .select({ text: acceptedAnswers.text })
-    .from(acceptedAnswers)
-    .where(eq(acceptedAnswers.questionId, questionId))
-
-  return rows.map(row => row.text)
-}
-
 /**
  * A recovery answer costs no life and moves no progress: the question was already
  * seen. What it moves is the question's own counter — up on a right answer, back to
  * zero on a wrong one, out of the pool once the threshold is reached.
  * See specs/mecanique.md#pool-échecs.
+ *
+ * Rend les écritures plutôt que de les jouer : elles partent dans le lot de la
+ * résolution, et un rattrapage interrompu ne laisse pas une question jouée dont
+ * le compteur n'a pas bougé.
  */
-async function resolveRecovery(
+function recoveryWrites(
   db: Database,
   user: User,
   questionId: string,
   correct: boolean,
+  poolEntry: MissedPoolEntry | undefined,
   now: Date,
-): Promise<{ leavesPool: boolean }> {
-  await db
-    .update(recoveryQuestions)
-    .set({ correct })
-    .where(and(
-      eq(recoveryQuestions.userId, user.id),
-      eq(recoveryQuestions.questionId, questionId),
-    ))
+): { writes: BatchItem<'sqlite'>[], leavesPool: boolean } {
+  const writes: BatchItem<'sqlite'>[] = [
+    db
+      .update(recoveryQuestions)
+      .set({ correct })
+      .where(and(
+        eq(recoveryQuestions.userId, user.id),
+        eq(recoveryQuestions.questionId, questionId),
+      )),
+  ]
 
-  const [entry] = await db
-    .select()
-    .from(missedPool)
-    .where(and(eq(missedPool.userId, user.id), eq(missedPool.questionId, questionId)))
-    .limit(1)
-
-  if (!entry) {
-    return { leavesPool: false }
+  if (!poolEntry) {
+    return { writes, leavesPool: false }
   }
 
   const membership = and(
     eq(missedPool.userId, user.id),
     eq(missedPool.questionId, questionId),
   )
-  const move = movePoolCounter(entry, correct, rulesForFloor(user.currentFloor), now)
+  const move = movePoolCounter(poolEntry, correct, rulesForFloor(user.currentFloor), now)
 
   if (move.leaves) {
-    await db.delete(missedPool).where(membership)
-    return { leavesPool: true }
+    writes.push(db.delete(missedPool).where(membership))
+    return { writes, leavesPool: true }
   }
 
-  await db
+  writes.push(db
     .update(missedPool)
     .set({ poolSuccesses: move.poolSuccesses, lastFailedAt: move.lastFailedAt })
-    .where(membership)
+    .where(membership))
 
-  return { leavesPool: false }
+  return { writes, leavesPool: false }
 }
+
+/**
+ * Ce qu'une réservation expirée accepte : rien. Le chrono tombé la juge fausse
+ * quoi qu'on y lise (voir judgeAnswer), donc ses libellés ne valent pas un
+ * aller-retour.
+ */
+const NOTHING_ACCEPTED: string[] = []
 
 /** La même question, lue à travers les règles de l'étage où se tient le joueur. */
 function isExpiredForUser(reservation: Reservation, user: User, now: Date): boolean {
@@ -415,8 +442,8 @@ function isExpiredForUser(reservation: Reservation, user: User, now: Date): bool
 
 /** Ce que la résolution vient d'écrire, pour éviter d'aller le relire. */
 interface Resolution {
-  user: User
-  reservation: Reservation
+  /** L'instantané tel que la résolution l'a laissé : joueur, réservation, tirage. */
+  snapshot: PlayerSnapshot
   /** Les succès que cette résolution a réellement gravés. Voir specs/succes.md. */
   unlocked: AchievementId[]
 }
@@ -427,6 +454,10 @@ interface Resolution {
  *
  * Returns the rows as it left them: the caller rebuilds the state from those rather
  * than paying a round trip to read back what it just wrote.
+ *
+ * Toutes les écritures partent dans un seul lot : un aller-retour, et une
+ * interruption au milieu ne laisse pas une réservation résolue sans sa question
+ * vue. Les libellés acceptés viennent de l'appelant, lus avec son instantané.
  */
 async function resolve(
   db: Database,
@@ -434,7 +465,8 @@ async function resolve(
   reservation: Reservation,
   answer: string,
   now: Date,
-  source: AnswerSource = 'player',
+  source: AnswerSource,
+  accepted: string[],
 ): Promise<Resolution> {
   // Le joueur vient du snapshot de l'appelant, chargé dans le même aller-retour
   // que la réservation : le relire ici coûterait un hop pour la même ligne.
@@ -443,7 +475,7 @@ async function resolve(
   const judgement = judgeAnswer({
     user,
     reservation,
-    acceptedAnswers: await acceptedFor(db, reservation.questionId),
+    acceptedAnswers: accepted,
     answer,
     source,
     rules,
@@ -455,7 +487,7 @@ async function resolve(
   // Voir specs/bonus.md#contestation.
   const chest: ChestState | null = correct && servesLoot(snapshot, reservation, rules) ? 'closed' : null
 
-  await db
+  const resolveReservation = db
     .update(reservations)
     .set({ resolvedAt: now, correct, submittedAnswer: answer, chest })
     .where(eq(reservations.userId, user.id))
@@ -478,12 +510,21 @@ async function resolve(
     // Aucune vie perdue, aucune progression : le rattrapage ne joue que sur les
     // compteurs du Pool Échecs. Les compteurs de progression passent donc
     // inchangés — ce qu'ils portaient déjà est de toute façon déjà acquis.
-    const { leavesPool } = await resolveRecovery(db, user, reservation.questionId, correct, now)
+    // Lue ici et pas avec l'instantané : seul un rattrapage s'en sert, et le
+    // lot de chaque réponse d'ascension la paierait pour rien.
+    const [poolEntry] = await db
+      .select()
+      .from(missedPool)
+      .where(and(eq(missedPool.userId, user.id), eq(missedPool.questionId, reservation.questionId)))
+      .limit(1)
+    const { writes, leavesPool } = recoveryWrites(db, user, reservation.questionId, correct, poolEntry, now)
     const recovering: User = { ...user, ...played }
 
-    if (played) {
-      await db.update(users).set(played).where(eq(users.id, user.id))
-    }
+    await db.batch([
+      resolveReservation,
+      ...writes,
+      ...played ? [db.update(users).set(played).where(eq(users.id, user.id))] : [],
+    ])
 
     const earned = [
       ...answeredAchievements(recovering, correct, answer === '', false),
@@ -491,8 +532,14 @@ async function resolve(
     ]
 
     return {
-      user: recovering,
-      reservation: resolved,
+      snapshot: {
+        ...snapshot,
+        user: recovering,
+        reservation: resolved,
+        // Le tirage tel que l'écriture ci-dessus l'a laissé, sans aller le relire.
+        recoveryRun: snapshot.recoveryRun.map(entry =>
+          entry.questionId === reservation.questionId ? { ...entry, correct } : entry),
+      },
       unlocked: await unlock(db, snapshot.user, earned, now),
     }
   }
@@ -564,31 +611,31 @@ async function resolve(
       : [],
   ]
 
-  if (!entersPool) {
-    await db.batch([markSeen, advance])
-
-    return { user: fresh, reservation: resolved, unlocked: await unlock(db, snapshot.user, earned, now) }
-  }
-
   await db.batch([
+    resolveReservation,
     markSeen,
-    db
-      .insert(missedPool)
-      .values({
-        userId: user.id,
-        questionId: reservation.questionId,
-        floor: user.currentFloor,
-        lastFailedAt: now,
-      })
-      // Already missed on this floor: the counter goes back to zero and the date moves up.
-      .onConflictDoUpdate({
-        target: [missedPool.userId, missedPool.questionId],
-        set: { poolSuccesses: 0, lastFailedAt: now },
-      }),
+    ...entersPool
+      ? [db
+          .insert(missedPool)
+          .values({
+            userId: user.id,
+            questionId: reservation.questionId,
+            floor: user.currentFloor,
+            lastFailedAt: now,
+          })
+          // Already missed on this floor: the counter goes back to zero and the date moves up.
+          .onConflictDoUpdate({
+            target: [missedPool.userId, missedPool.questionId],
+            set: { poolSuccesses: 0, lastFailedAt: now },
+          })]
+      : [],
     advance,
   ])
 
-  return { user: fresh, reservation: resolved, unlocked: await unlock(db, snapshot.user, earned, now) }
+  return {
+    snapshot: { ...snapshot, user: fresh, reservation: resolved },
+    unlocked: await unlock(db, snapshot.user, earned, now),
+  }
 }
 
 function servedQuestion(
@@ -645,7 +692,7 @@ function servesLoot(snapshot: PlayerSnapshot, reservation: Reservation, rules: F
  * cannot exist otherwise — it is created with the lives at zero and cleared when
  * they come back.
  */
-async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Promise<GameState> {
+function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
   const { user, reservation, question } = snapshot
   const seen = user.floorSeen
   const played = playedRules(snapshot)
@@ -660,7 +707,7 @@ async function stateFrom(db: Database, snapshot: PlayerSnapshot, now: Date): Pro
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
     // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
     // faut un perfect pour repartir.
-    recovery: user.lives <= 0 ? await recoveryProgress(db, user, played) : null,
+    recovery: user.lives <= 0 ? recoveryProgress(snapshot.recoveryRun, played) : null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
     attemptSeen: user.attemptSeen,
@@ -743,7 +790,7 @@ function stakeOf(effect: PlacedEffect, user: User, played: FloorRules): EffectSt
 }
 
 async function buildState(db: Database, userId: number, now: Date): Promise<GameState> {
-  return stateFrom(db, await loadSnapshot(db, userId), now)
+  return stateFrom(await loadSnapshot(db, userId), now)
 }
 
 /**
@@ -796,7 +843,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     && isExpiredForUser(reservation, snapshot.user, now)
 
   if (expired) {
-    const resolution = await resolve(db, snapshot, reservation, '', now)
+    const resolution = await resolve(db, snapshot, reservation, '', now, 'player', NOTHING_ACCEPTED)
 
     // Rien d'autre n'a bougé : l'attente ne peut pas s'achever dans la seconde où
     // elle démarre. On rend ce qui vient d'être écrit.
@@ -805,11 +852,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     // que l'onglet était fermé débloque pour de bon, et l'annoncer ici est la
     // seule occasion de le dire. Elle ne se répétera pas — la réservation est
     // résolue, ce chemin ne repasse plus.
-    return withUnlocked(await stateFrom(db, {
-      ...snapshot,
-      user: resolution.user,
-      reservation: resolution.reservation,
-    }, now), resolution.unlocked)
+    return withUnlocked(stateFrom(resolution.snapshot, now), resolution.unlocked)
   }
 
   // Une attente qui vient de s'achever est le seul cas où une lecture a quelque
@@ -818,10 +861,10 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
   const cooldownOver = phaseOfSnapshot(snapshot, false, now) === 'recovery'
 
   if (!cooldownOver) {
-    return stateFrom(db, snapshot, now)
+    return stateFrom(snapshot, now)
   }
 
-  await resumeIfPoolTooSmall(db, snapshot.user, now)
+  await resumeIfPoolTooSmall(db, snapshot.user, snapshot.recoveryRun.length > 0, now)
 
   return buildState(db, user.id, now)
 }
@@ -831,10 +874,16 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
  * lives back. Nothing is reserved and no clock starts — the phase follows from the
  * time having passed. See specs/mecanique.md#tentative-attente-et-rattrapage.
  */
-async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promise<void> {
+async function resumeIfPoolTooSmall(
+  db: Database,
+  user: User,
+  /** Un rattrapage est tiré — lu dans l'instantané de l'appelant. */
+  recovering: boolean,
+  now: Date,
+): Promise<void> {
   const elapsed = user.cooldownUntil !== null && now >= user.cooldownUntil
 
-  if (user.lives > 0 || !elapsed || await hasRecoveryRun(db, user.id)) {
+  if (user.lives > 0 || !elapsed || recovering) {
     return
   }
 
@@ -853,10 +902,14 @@ async function resumeIfPoolTooSmall(db: Database, user: User, now: Date): Promis
  * question drawn at random among those they have not seen on this floor.
  */
 export async function serveNextQuestion(db: Database, user: User, now: Date): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id)
+  // La question que le curseur désigne voyage avec l'instantané : servir la
+  // suivante ne coûte alors qu'un aller-retour d'écriture. Voir server/utils/deck.ts.
+  const [upcoming, ...rows] = await db.batch([nextQuestionQuery(db, user.id), ...snapshotQueries(db, user.id)])
+  const snapshot = toSnapshot(rows)
   const { reservation } = snapshot
   // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
   let fresh = snapshot.user
+  let recoveryRun = snapshot.recoveryRun
   // Ce que la résolution ci-dessous aura débloqué, à recoller sur l'état rendu :
   // le clic « suivant » résout la question expirée qu'il trouve, et ce qu'elle
   // débloque n'a pas d'autre occasion d'être annoncé.
@@ -867,31 +920,32 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // commencé se finit par d'autres chemins — répondre et ouvrir son coffre
   // restent permis, et le verdict se lit. Voir specs/admin.md#maintenance.
   if (snapshot.gameClosed && !snapshot.user.isAdmin && !snapshot.user.isTest) {
-    return stateFrom(db, snapshot, now)
+    return stateFrom(snapshot, now)
   }
 
   // Un coffre encore fermé retient le joueur : passer par-dessus lui ferait
   // perdre l'objet, et le clic « suivant » est justement celui dont l'ouverture
   // doit se distinguer. Voir specs/bonus.md#coffre-et-mimic.
   if (reservation?.chest === 'closed') {
-    return stateFrom(db, snapshot, now)
+    return stateFrom(snapshot, now)
   }
 
   if (reservation && !reservation.resolvedAt) {
     // A live reservation is not replaced: fleeing a question costs what a wrong
     // answer costs. An expired one resolves first, then the next is drawn.
     if (!isExpiredForUser(reservation, snapshot.user, now)) {
-      return stateFrom(db, snapshot, now)
+      return stateFrom(snapshot, now)
     }
 
-    const resolution = await resolve(db, snapshot, reservation, '', now)
-    fresh = resolution.user
+    const resolution = await resolve(db, snapshot, reservation, '', now, 'player', NOTHING_ACCEPTED)
+    fresh = resolution.snapshot.user
+    recoveryRun = resolution.snapshot.recoveryRun
     unlocked = resolution.unlocked
   }
 
   // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
   // rattrapage, d'où le delta rendu par resolve() plutôt qu'un « +1 » supposé.
-  const current: PlayerSnapshot = { ...snapshot, user: fresh }
+  const current: PlayerSnapshot = { ...snapshot, user: fresh, recoveryRun }
 
   // Le joueur vient de cliquer : plus aucune question n'est en jeu, celle qu'il
   // tenait est résolue.
@@ -902,7 +956,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // atteinte, parce que cet écran-ci n'a aucune action et que personne n'y
   // repasse. Voir specs/succes.md#progression.
   if (phase === 'gameOver') {
-    return withUnlocked(await stateFrom(db, current, now), unlocked)
+    return withUnlocked(stateFrom(current, now), unlocked)
   }
 
   if (phase === 'floorEnd') {
@@ -920,7 +974,10 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
     return withUnlocked(await advanceRecovery(db, current, fresh, playedRules(current), now), unlocked)
   }
 
-  const drawn = await drawAndReserve(db, fresh, playedRules(current), now)
+  // Ni la résolution ni l'étage n'ont bougé le curseur : la question lue avec
+  // l'instantané est toujours celle qu'il désigne.
+  const [next] = upcoming
+  const drawn = next ? await reserveDrawn(db, fresh, next.question, playedRules(current), now) : null
 
   if (!drawn) {
     // L'étage se compte des questions non vues qu'il n'a plus : le deck a bougé
@@ -932,7 +989,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
 
   // L'état renvoyé est exactement ce qu'on vient d'écrire : le relire coûterait
   // deux allers-retours de plus pour la même réponse.
-  return withUnlocked(await stateFrom(db, {
+  return withUnlocked(stateFrom({
     ...current,
     reservation: {
       userId: user.id,
@@ -968,7 +1025,7 @@ export async function openPlayerChest(
   const rules = rulesForFloor(snapshot.user.currentFloor)
 
   if (!reservation || reservation.chest !== 'closed') {
-    return stateFrom(db, snapshot, now)
+    return stateFrom(snapshot, now)
   }
 
   const outcome = rollChest(rules, random)
@@ -997,7 +1054,7 @@ export async function openPlayerChest(
   const opened: Reservation = { ...reservation, chest }
 
   if (!outcome.mimic) {
-    return stateFrom(db, { ...snapshot, reservation: opened }, now)
+    return stateFrom({ ...snapshot, reservation: opened }, now)
   }
 
   // Le Mimic retire toutes les vies d'un coup, traité comme une perte de dernière
@@ -1011,7 +1068,7 @@ export async function openPlayerChest(
 
   const unlocked = await unlock(db, snapshot.user, ['FIRST_DEATH'], now)
 
-  return withUnlocked(await stateFrom(db, {
+  return withUnlocked(stateFrom({
     ...snapshot,
     user: { ...snapshot.user, ...killed },
     reservation: opened,
@@ -1089,30 +1146,43 @@ async function drawAndReserve(
 ): Promise<DrawnQuestion | null> {
   const [question] = await upcomingQuestions(db, user, 1)
 
-  if (!question) {
-    return null
-  }
+  return question ? reserveDrawn(db, user, question, rules, now) : null
+}
 
+/** Réserve la question que le deck vient de désigner, et fait avancer le curseur jusqu'à elle. */
+async function reserveDrawn(
+  db: Database,
+  user: User,
+  question: Question,
+  rules: FloorRules,
+  now: Date,
+): Promise<DrawnQuestion> {
   const expiresAt = new Date(now.getTime() + rules.ascentTimerMs)
 
-  // Le curseur avance avec la question servie. C'est lui qui porte la place du
-  // joueur dans le deck, et non sa réservation : un rattrapage écrase celle-ci
-  // avec une question du Pool Échecs, dont le rang n'a rien à voir.
-  await db.update(users).set({ floorCursor: question.rank }).where(eq(users.id, user.id))
-  await reserve(db, user.id, question.id, 'ascent', expiresAt, now)
+  // Le curseur avance avec la question servie, dans le même lot qu'elle. C'est
+  // lui qui porte la place du joueur dans le deck, et non sa réservation : un
+  // rattrapage écrase celle-ci avec une question du Pool Échecs, dont le rang
+  // n'a rien à voir.
+  await db.batch([
+    db.update(users).set({ floorCursor: question.rank }).where(eq(users.id, user.id)),
+    reserve(db, user.id, question.id, 'ascent', expiresAt, now),
+  ])
 
   return { question, expiresAt }
 }
 
-/** Reserves one question for `mode`, replacing whatever the player was holding. */
-async function reserve(
+/**
+ * Reserves one question for `mode`, replacing whatever the player was holding.
+ * Rendue plutôt qu'exécutée, pour partir dans le lot de ce qui l'accompagne.
+ */
+function reserve(
   db: Database,
   userId: number,
   questionId: string,
   mode: 'ascent' | 'recovery',
   expiresAt: Date,
   now: Date,
-): Promise<void> {
+) {
   const reserved = {
     questionId,
     mode,
@@ -1124,7 +1194,7 @@ async function reserve(
     chest: null,
   }
 
-  await db
+  return db
     .insert(reservations)
     .values({ userId, ...reserved })
     .onConflictDoUpdate({ target: reservations.userId, set: reserved })
@@ -1149,8 +1219,11 @@ async function advanceRecovery(
   }
 
   let opened: AchievementId[] = []
+  // Le tirage vient de l'instantané : un rattrapage déjà tiré ne coûte aucune
+  // lecture pour savoir où il en est.
+  let run = snapshot.recoveryRun
 
-  if (!await hasRecoveryRun(db, user.id)) {
+  if (!run.length) {
     const drawn = await db
       .select()
       .from(missedPool)
@@ -1163,13 +1236,17 @@ async function advanceRecovery(
     // d'entrée — sinon elle empêcherait le rattrapage qu'elle rallonge.
     if (!canDrawRecovery(drawn.length, rulesForFloor(user.currentFloor))) {
       // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
-      await resumeIfPoolTooSmall(db, user, now)
+      await resumeIfPoolTooSmall(db, user, false, now)
       return buildState(db, user.id, now)
     }
 
-    await db.insert(recoveryQuestions).values(
-      drawn.map((entry, position) => ({ userId: user.id, questionId: entry.questionId, position })),
-    )
+    run = drawn.map((entry, position) => ({
+      userId: user.id,
+      questionId: entry.questionId,
+      position,
+      correct: null,
+    }))
+    await db.insert(recoveryQuestions).values(run)
 
     // Le tirage posé, le rattrapage commence : c'est l'entrée en phase, et le seul
     // instant où elle se produit. Un pool trop maigre rend les vies sans jamais
@@ -1181,21 +1258,17 @@ async function advanceRecovery(
   // ne sert pas la question suivante, le rattrapage s'arrête là. Les questions
   // non jouées restent dans le Pool Échecs sans progression de leur compteur.
   // Voir specs/mecanique.md#déroulement-du-rattrapage.
-  const progress = await recoveryProgress(db, user, rules)
+  const progress = recoveryProgress(run, rules)
 
   if (progress !== null && progress.sealed) {
-    return withUnlocked(await finishRecovery(db, snapshot, user, rules, now), opened)
+    return withUnlocked(await finishRecovery(db, snapshot, user, progress, rules, now), opened)
   }
 
-  const [nextUp] = await db
-    .select()
-    .from(recoveryQuestions)
-    .where(and(eq(recoveryQuestions.userId, user.id), isNull(recoveryQuestions.correct)))
-    .orderBy(recoveryQuestions.position)
-    .limit(1)
+  // Le tirage est rangé par position : la première non jouée est la suivante.
+  const nextUp = run.find(entry => entry.correct === null)
 
   if (!nextUp) {
-    return withUnlocked(await finishRecovery(db, snapshot, user, rules, now), opened)
+    return withUnlocked(await finishRecovery(db, snapshot, user, progress, rules, now), opened)
   }
 
   await reserve(
@@ -1221,10 +1294,11 @@ async function finishRecovery(
   db: Database,
   snapshot: PlayerSnapshot,
   user: User,
+  /** Lu par l'appelant sur le tirage qu'il tient : il ne se relit pas. */
+  progress: RecoveryProgress | null,
   recoveryRules: FloorRules,
   now: Date,
 ): Promise<GameState> {
-  const progress = await recoveryProgress(db, user, recoveryRules)
   const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, recoveryRules, now)
 
   // Le tirage joué en entier, et juste de bout en bout. Depuis que le rattrapage
@@ -1239,10 +1313,16 @@ async function finishRecovery(
     ? await unlock(db, snapshot.user, ['RECOVERY_PERFECT'], now)
     : []
 
-  await db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))
-  await db.delete(reservations).where(eq(reservations.userId, user.id))
+  // Le rattrapage s'efface d'un seul geste : une interruption entre les deux
+  // laisserait une réservation sur un tirage qui n'existe plus.
+  const cleared = [
+    db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id)),
+    db.delete(reservations).where(eq(reservations.userId, user.id)),
+  ] as const
 
   if (verdict.resumes) {
+    await db.batch(cleared)
+
     // La tentative ne se clôt qu'au moment où la suivante s'ouvre : une attente
     // de plus prolonge celle qui court. Les vies rendues sont celles de la
     // tentative qui s'ouvre, effets compris — d'où openAttempt plutôt que le
@@ -1260,10 +1340,14 @@ async function finishRecovery(
     return withUnlocked(await buildState(db, user.id, now), unlocked)
   }
 
-  await db
-    .update(users)
-    .set({ lives: verdict.livesAfter, ...cooldownFields(verdict.cooldownUntil, now) })
-    .where(eq(users.id, user.id))
+  // Manqué : l'attente plus courte part dans le même lot que l'effacement.
+  await db.batch([
+    ...cleared,
+    db
+      .update(users)
+      .set({ lives: verdict.livesAfter, ...cooldownFields(verdict.cooldownUntil, now) })
+      .where(eq(users.id, user.id)),
+  ])
 
   // Le verdict du rattrapage se lit sur le verdict de la question qui l'a
   // scellé.
@@ -1451,12 +1535,15 @@ export async function submitAnswer(
   now: Date,
   source: AnswerSource = 'player',
 ): Promise<GameState> {
-  const snapshot = await loadSnapshot(db, user.id)
+  // Les libellés acceptés voyagent avec l'instantané : juger la réponse ne coûte
+  // plus d'aller-retour à part.
+  const [accepted, ...rows] = await db.batch([acceptedQuery(db, user.id), ...snapshotQueries(db, user.id)])
+  const snapshot = toSnapshot(rows)
   const { reservation } = snapshot
 
   if (!reservation || reservation.resolvedAt) {
     // Rien à résoudre : l'appareil qui a envoyé ça est en retard, pas fautif.
-    return stateFrom(db, snapshot, now)
+    return stateFrom(snapshot, now)
   }
 
   if (source === 'focusLoss') {
@@ -1471,11 +1558,7 @@ export async function submitAnswer(
     })
   }
 
-  const resolution = await resolve(db, snapshot, reservation, answer, now, source)
+  const resolution = await resolve(db, snapshot, reservation, answer, now, source, accepted.map(row => row.text))
 
-  return withUnlocked(await stateFrom(db, {
-    ...snapshot,
-    user: resolution.user,
-    reservation: resolution.reservation,
-  }, now), resolution.unlocked)
+  return withUnlocked(stateFrom(resolution.snapshot, now), resolution.unlocked)
 }

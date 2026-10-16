@@ -115,7 +115,9 @@ describe('budget de requêtes des chemins chauds', () => {
 
     await serveNextQuestion(db, player, NOW)
 
-    expect(queries()).toBeLessThanOrEqual(5)
+    // L'instantané, la question suivante comprise, puis la réservation et le
+    // curseur écrits ensemble.
+    expect(queries()).toBeLessThanOrEqual(2)
   })
 
   it('résout une réponse sans relire l état', async () => {
@@ -124,7 +126,9 @@ describe('budget de requêtes des chemins chauds', () => {
 
     await submitAnswer(db, player, 'Toulouse', NOW)
 
-    expect(queries()).toBeLessThanOrEqual(7)
+    // L'instantané, libellés acceptés compris, puis la résolution en un lot. Le
+    // troisième est le succès que cette première erreur débloque.
+    expect(queries()).toBeLessThanOrEqual(3)
   })
 
   /**

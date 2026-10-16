@@ -83,6 +83,32 @@ export async function upcomingQuestions(
     .limit(limit)
 }
 
+type NextQuestionQuery = ReturnType<typeof buildNextQuestionQuery>
+
+function buildNextQuestionQuery(db: Database, userId: number) {
+  return db
+    .select({ question: questions })
+    .from(users)
+    .innerJoin(questions, and(
+      eq(questions.floor, users.currentFloor),
+      gt(questions.rank, users.floorCursor),
+    ))
+    .where(eq(users.id, userId))
+    .orderBy(asc(questions.rank))
+    .limit(1)
+}
+
+/**
+ * La première des `upcomingQuestions`, dans le même ordre du deck, mais lue
+ * depuis la ligne du joueur plutôt que depuis un joueur déjà chargé : le clic
+ * « suivant » la fait voyager dans le lot de son instantané, et la question
+ * servie ne coûte plus un aller-retour à elle seule.
+ * Voir tests/server/query-budget.test.ts.
+ */
+export function nextQuestionQuery(db: Database, userId: number): NextQuestionQuery {
+  return buildNextQuestionQuery(db, userId)
+}
+
 /**
  * Ce que le deck entier contient, tous étages confondus : six lignes lues, au
  * lieu de le parcourir. L'administration l'affiche au-dessus de sa liste.
