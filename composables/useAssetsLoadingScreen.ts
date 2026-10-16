@@ -16,6 +16,13 @@ export function showsAssetsLoadingScreen(path: string): boolean {
 // Une fois par onglet : le module vit autant que l'application côté client.
 let started = false
 
+// Les images préchargées, tenues jusqu'à la fin de l'onglet. Lâchées, le
+// navigateur les oublie au premier ménage de sa mémoire, et les redemande au
+// réseau quand le jeu les affiche — revalidées à chaque fois (`netlify.toml`) :
+// le parchemin du Volumen s'ouvrait sans son image, le camp visible à travers,
+// le temps de la réponse.
+const kept: HTMLImageElement[] = []
+
 export interface AssetsLoadingScreen {
   loaded: Ref<number>
   total: number
@@ -26,8 +33,8 @@ export interface AssetsLoadingScreen {
 /**
  * Le préchargement des fichiers du jeu, avant son premier affichage dans
  * l'onglet. Un fichier en erreur compte comme arrivé : il ne doit pas tenir
- * l'écran. Aucun objet `Image` n'est gardé : le cache mémoire du navigateur
- * sert le fichier quand le jeu le demande dans la même page. D'une visite à
+ * l'écran. Chaque objet `Image` est gardé (`kept`) : le navigateur sert alors
+ * le fichier de sa mémoire quand le jeu le demande dans la même page. D'une visite à
  * l'autre, chaque image est revalidée (`netlify.toml`) : un 304 sans contenu si
  * elle n'a pas changé.
  *
@@ -55,6 +62,7 @@ export function useAssetsLoadingScreen(): AssetsLoadingScreen {
       image.onload = settle
       image.onerror = settle
       image.src = url
+      kept.push(image)
     }
 
     // Les téléchargements en vol continuent en fond ; l'écran, lui, s'en va.
