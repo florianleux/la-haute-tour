@@ -9,8 +9,21 @@
         Impossible de lire le Volumen. Recharge la page.
       </p>
 
+      <!-- La première page en route : la silhouette des lignes à venir. Une page
+           tournée, elle, garde la précédente à l'écran, pâlie le temps de la
+           lecture. -->
+      <ul v-else-if="!loaded" class="mt-4 flex flex-col gap-2 pr-2" aria-busy="true">
+        <li v-for="width in SKELETON_WIDTHS" :key="width" class="rounded-lg border border-amber-900/25 px-4 py-3">
+          <BaseSkeleton parchment :width="width" />
+        </li>
+      </ul>
+
       <template v-else>
-        <ul class="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-2">
+        <ul
+          class="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-2 transition-opacity"
+          :class="loading ? 'opacity-50' : ''"
+          :aria-busy="loading"
+        >
           <QuestionLogEntry
             v-for="entry in entries"
             :key="entry.questionId"
@@ -67,6 +80,9 @@ const EMPTY: Record<QuestionLogTab, string> = {
   correct: 'Aucune question connue pour l\'instant.',
   all: 'Aucune question vue pour l\'instant.',
 }
+
+// Des longueurs différentes, comme de vrais énoncés.
+const SKELETON_WIDTHS = ['w-3/4', 'w-1/2', 'w-2/3', 'w-5/6', 'w-3/5']
 
 const { entries, page, pageCount, poolSuccessesToLeave, loading, loaded, failed, load } = useQuestionLog(props.tab)
 
