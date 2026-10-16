@@ -5,15 +5,15 @@
        le navigateur pour montrer ce qui prend le focus, et décalait tout le
        contenu vers le haut.
 
-       Le fond s'assombrit et prend le curseur main quand la souris est sur
+       Le fond prend le curseur main quand la souris est sur
        une zone qui ferme : la boîte elle-même, ou un vide que l'appelant
        marque `data-camp-backdrop` (le tour d'une image, où son `@click.self`
        ferme aussi). Dès qu'autre chose sous la souris est survolé — le
-       contenu —, le fond reste tel quel. -->
+       contenu —, le curseur redevient celui du contenu. -->
   <BaseDialog
     ref="dialog"
     :label="label"
-    class="items-start justify-center overflow-clip bg-slate-950/40 backdrop-blur-xs transition-[background-color] duration-200 [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:cursor-pointer [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:bg-slate-950/65"
+    class="items-start justify-center overflow-clip bg-slate-950/40 backdrop-blur-xs [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:cursor-pointer"
     :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0.25s]' : 'motion-safe:animate-fade-in'"
     @close="close"
   >
