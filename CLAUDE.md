@@ -68,6 +68,13 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 - Tailwind CSS uniquement — pas de CSS custom/scoped sauf cas impossible en utility classes.
 - Les classes Tailwind répétées (bouton, input, card...) vivent **dans** les composants `Base*`, jamais recopiées en inline dans les composants métier.
 
+## Images
+
+- Une image du jeu courant va sous `public/` (hors `images/boss/`) : l'**écran de chargement** (`assetsLoadingScreen`, voir le glossaire de [`specs/spec.md`](specs/spec.md)) l'attend d'office, rien à déclarer.
+- Une image qui ne s'affiche que dans les phases de boss (porte, combat, épreuves) va dans `public/images/boss/` : l'écran ne l'attend pas.
+- Pourquoi : sans préchargement, les animations d'entrée (`drop-in` du cadre de jeu, `book-rise` du Grimoire) se jouent avant que leur image arrive. Et chaque image ajoutée allonge l'écran à la première visite.
+- Le test de budget (`tests/app/assets-loading-screen.test.ts`, 15 Mo) tient la règle : il échoue si les fichiers attendus dépassent ce poids.
+
 ## API (Nitro) et base (Drizzle/Turso)
 
 - Un fichier par endpoint sous `server/api/`, nommé par ressource (`server/api/questions/[id].ts`).

@@ -133,6 +133,11 @@ combats de chaque boss — 72 épreuves curatées par boss au total (12 × 6).
 
 ## Introduction et animations
 
+Les images des phases de boss (porte, combat, épreuves) vont dans
+`public/images/boss/` : l'écran de chargement ne les attend pas. Une relique
+montrée hors des phases de boss — dans l'Inventaire, par exemple — n'y va pas :
+elle reste préchargée. Voir la section « Images » de [`CLAUDE.md`](../CLAUDE.md#images).
+
 - **Première rencontre d'un boss** : introduction (apparition, nom, dialogue),
   jouée une seule fois.
 - **Chaque épreuve juste** anime la barre de vie du boss : elle perd 1/7 et le

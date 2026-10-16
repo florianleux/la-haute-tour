@@ -43,6 +43,7 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Le deck vu par l'administration | [`server/utils/questions.ts`](server/utils/questions.ts) |
 | Le temps et les envois du jeu | [`composables/useQuestionRun.ts`](composables/useQuestionRun.ts) — décompte, envoi, passage à la suite |
 | Les mots montrés au joueur | [`utils/`](utils/), un fichier par terme — [`spells.ts`](utils/spells.ts) (noms et effets des sorts), [`achievements.ts`](utils/achievements.ts) (noms et conditions des succès), [`teams.ts`](utils/teams.ts), [`phase.ts`](utils/phase.ts) |
+| L'écran de chargement | [`composables/useAssetsLoadingScreen.ts`](composables/useAssetsLoadingScreen.ts) — le préchargement et les pages concernées ; [`components/AssetsLoadingScreen.vue`](components/AssetsLoadingScreen.vue) — ce qu'il montre ; [`scripts/assetsLoadingScreen.ts`](scripts/assetsLoadingScreen.ts) — quels fichiers il attend |
 | Pourquoi ce choix ? | [`docs/adr/`](docs/adr/) |
 | Comment on écrit le code | [`CLAUDE.md`](CLAUDE.md) |
 

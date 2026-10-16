@@ -10,7 +10,12 @@
       <!-- Dans le `v-else` comme le sélecteur : la maintenance ferme tout, et il
            n'y a rien à annoncer à qui ne peut pas jouer. -->
       <AchievementToasts />
-      <slot />
+      <!-- Une page masquée par l'écran de chargement n'est pas rendue côté serveur :
+           ses lectures doivent passer par le gabarit ou le middleware, comme
+           useCurrentUser et useGameState ci-dessous (mises en cache dans le
+           payload par getCachedData), sinon elles partent en série après l'écran. -->
+      <AssetsLoadingScreen v-if="showsAssetsLoadingScreen(route.path) && !done" />
+      <slot v-else />
     </template>
   </main>
 </template>
@@ -23,4 +28,8 @@ const game = user.value ? (await useGameState()).state : ref(null)
 
 const route = useRoute()
 const blocked = computed(() => blockedByMaintenance(game.value, route.path))
+
+// Une fois par onglet, au premier affichage d'une page de jeu : voir
+// composables/useAssetsLoadingScreen.ts.
+const { done } = useAssetsLoadingScreen()
 </script>
