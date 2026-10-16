@@ -93,7 +93,7 @@
           />
           <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
             <span
-              class="whitespace-nowrap text-[9cqw] font-black text-red-500 opacity-0 [text-shadow:0_2px_3px_rgb(69_10_10/0.95),0_0_0.4em_rgb(239_68_68/0.8)] motion-safe:animate-float-away sm:text-[3.6cqw]"
+              class="whitespace-nowrap text-[9cqw] font-black text-white opacity-0 [text-shadow:0_2px_3px_rgb(76_5_25/0.9),0_0_0.4em_rgb(225_29_72/0.9)] motion-safe:animate-float-away sm:text-[3.6cqw]"
               :style="{ '--enter-delay': `${TICKS.lives + BURST_MS}ms` }"
             >-1</span>
           </span>
