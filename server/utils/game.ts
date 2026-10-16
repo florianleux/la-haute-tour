@@ -1470,7 +1470,7 @@ export async function readMissedPool(
 
 /**
  * Les questions vues depuis la dernière remise à zéro, tous étages confondus —
- * toutes, ou les justes seulement. La plus récente en tête. Les onglets Sues et
+ * toutes, ou les justes seulement. La plus récente en tête. Les onglets Connues et
  * Toutes du Volumen. See specs/ecrans.md#volumen.
  *
  * Les vingt de la page se choisissent d'abord, dans l'index couvrant des vues

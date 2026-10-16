@@ -290,7 +290,7 @@ export const seenQuestions = sqliteTable('seen_questions', {
   index('seen_questions_user_floor_idx').on(table.userId, table.floor),
   // Le Volumen lit les vues du joueur de la plus récente à la plus ancienne,
   // vingt à la fois. Couvrant : la page se choisit, et ses onglets se comptent
-  // (Sues filtre sur `correct`), sans quitter l'index — Turso facture chaque
+  // (Connues filtre sur `correct`), sans quitter l'index — Turso facture chaque
   // ligne lue, et une page sautée n'y coûte qu'une entrée.
   // Voir specs/ecrans.md#volumen et server/utils/game.ts (readQuestionLog).
   index('seen_questions_user_log_idx').on(table.userId, table.seenAt, table.questionId, table.correct),

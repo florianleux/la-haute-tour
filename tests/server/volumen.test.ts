@@ -92,7 +92,7 @@ describe('Volumen', () => {
     })
   })
 
-  describe('les onglets Sues et Toutes', () => {
+  describe('les onglets Connues et Toutes', () => {
     it('montre toutes les vues, tous étages, la plus récente en tête', async () => {
       const userId = await createPlayer(db, { ...AT_CAMP, currentFloor: 2 })
       const lower = await createQuestion(db, { statement: 'Étage 1', floor: 1 })
@@ -109,7 +109,7 @@ describe('Volumen', () => {
       ])
     })
 
-    it('ne garde que les justes dans Sues', async () => {
+    it('ne garde que les justes dans Connues', async () => {
       const userId = await createPlayer(db, AT_CAMP)
       const right = await createQuestion(db, { statement: 'Juste' })
       await markSeen(db, userId, right, { correct: true, seenAt: at(1) })

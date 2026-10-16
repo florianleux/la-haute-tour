@@ -82,7 +82,7 @@ defineEmits<{ close: [] }>()
 
 const tabs: { id: QuestionLogTab, label: string }[] = [
   { id: 'missed', label: 'À revoir' },
-  { id: 'correct', label: 'Sues' },
+  { id: 'correct', label: 'Connues' },
   { id: 'all', label: 'Toutes' },
 ]
 

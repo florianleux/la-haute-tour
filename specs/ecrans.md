@@ -145,12 +145,12 @@ Le journal des questions vues. Atteignable **au camp seulement**, par le parchem
 Trois onglets :
 
 - **À revoir** — le **Pool Échecs de l'étage**, avec les réponses : c'est une fiche de révision, pas une punition. Il n'y a ni classement ni score à défendre ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable. Trié par **dernier échec**, du plus récent au plus ancien : une question ratée à nouveau en rattrapage remonte en tête, ce qui résiste est ce qu'on veut relire. C'est l'onglet ouvert à l'arrivée.
-- **Sues** — les questions vues justes, **tous étages confondus**, depuis la dernière remise à zéro. Une contestation acceptée y fait entrer la question.
+- **Connues** — les questions vues justes, **tous étages confondus**, depuis la dernière remise à zéro. Une contestation acceptée y fait entrer la question.
 - **Toutes** — toutes les questions vues, justes et fausses, tous étages confondus, depuis la dernière remise à zéro.
 
-Dans **Sues** et **Toutes**, la vue la plus récente en tête.
+Dans **Connues** et **Toutes**, la vue la plus récente en tête.
 
-La liste occupe la **gauche** du parchemin, sous les onglets, et défile : chaque ligne montre l'**énoncé** et le **verdict** (✓ ou ✗). Un clic sur une ligne l'ouvre à **droite**, dans les lignes du verdict de la Tour, en plus petit et sans animation : **Sue** ou **Non sue** (vert ou rouge), l'**énoncé**, la **réponse affichée**, et la **saisie du joueur** sur une question non sue — une question sue n'a rien à corriger. Une question encore au Pool Échecs montre en plus ses **Réussites** sur le seuil de sortie — ce qui reste à faire pour qu'elle quitte le pool. Sur un écran étroit, la question ouverte passe au-dessus de la liste. Chaque onglet garde sa question ouverte.
+La liste occupe la **gauche** du parchemin, sous les onglets, et défile : chaque ligne montre l'**énoncé** et le **verdict** (✓ ou ✗). Un clic sur une ligne l'ouvre à **droite**, dans les lignes du verdict de la Tour, en plus petit et sans animation : **Connue** ou **À revoir** (vert ou rouge), l'**énoncé**, la **réponse affichée**, et la **saisie du joueur** sur une question à revoir — une question connue n'a rien à corriger. Une question encore au Pool Échecs montre en plus ses **Réussites** sur le seuil de sortie — ce qui reste à faire pour qu'elle quitte le pool. Sur un écran étroit, la question ouverte passe au-dessus de la liste. Chaque onglet garde sa question ouverte.
 
 **Un lien de contestation**, sous la question ouverte, sur chaque erreur contestable, quel que soit l'onglet où elle se lit. La règle de ce qui est contestable ne change pas : voir [`validation.md`](./validation.md#quand). Une contestation en cours, ou refusée, se lit à la place du bouton.
 

@@ -7,7 +7,7 @@ import type { QuestionLogPage } from '~~/server/utils/game'
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  /** L'onglet : le Pool Échecs de l'étage, les questions sues, ou toutes les vues. */
+  /** L'onglet : le Pool Échecs de l'étage, les questions connues, ou toutes les vues. */
   filter: z.enum(['missed', 'correct', 'all']).default('all'),
 })
 

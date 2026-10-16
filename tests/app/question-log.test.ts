@@ -40,7 +40,7 @@ describe('Volumen paginé', () => {
     expect(poolSuccessesToLeave.value).toBe(2)
   })
 
-  it('lit Sues et Toutes dans le journal, avec leur verdict', async () => {
+  it('lit Connues et Toutes dans le journal, avec leur verdict', async () => {
     answerWith(page([], 0))
 
     await useQuestionLog('correct').load(1)

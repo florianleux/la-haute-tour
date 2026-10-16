@@ -64,7 +64,7 @@ const props = defineProps<{ tab: QuestionLogTab }>()
 
 const EMPTY: Record<QuestionLogTab, string> = {
   missed: 'Rien à revoir sur cet étage.',
-  correct: 'Aucune question sue pour l\'instant.',
+  correct: 'Aucune question connue pour l\'instant.',
   all: 'Aucune question vue pour l\'instant.',
 }
 

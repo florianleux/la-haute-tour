@@ -31,7 +31,7 @@
     {{ verdict.answerLabel }}
   </PlayText>
 
-  <!-- Au Volumen, une question sue n'a rien à corriger : sa saisie se tait. -->
+  <!-- Au Volumen, une question connue n'a rien à corriger : sa saisie se tait. -->
   <PlayText
     v-if="!(review && verdict.correct)"
     role="aside"
@@ -85,15 +85,15 @@ const props = defineProps<{
   /** La vie perdue était la dernière : la tentative s'arrête sur ce verdict. */
   lastLife?: boolean
   /**
-   * Relu au Volumen plutôt que rendu en jeu : « Sue » ou « Non sue », sans
-   * animation, et la saisie d'une question sue tue. Voir specs/ecrans.md#volumen.
+   * Relu au Volumen plutôt que rendu en jeu : « Connue » ou « À revoir », sans
+   * animation, et la saisie d'une question connue tue. Voir specs/ecrans.md#volumen.
    */
   review?: boolean
 }>()
 
 const headline = computed(() => {
   if (props.review) {
-    return props.verdict.correct ? 'Sue' : 'Non sue'
+    return props.verdict.correct ? 'Connue' : 'À revoir'
   }
   return props.verdict.correct ? 'Correct !' : 'Incorrect...'
 })

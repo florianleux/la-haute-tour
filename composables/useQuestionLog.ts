@@ -3,7 +3,7 @@ import type { QuestionLogEntryView, QuestionLogPage } from '~~/server/utils/game
 import { QUESTION_PAGE_SIZE } from '~~/shared/utils/questionLog'
 
 /**
- * Les trois onglets du Volumen : le Pool Échecs de l'étage, les questions sues,
+ * Les trois onglets du Volumen : le Pool Échecs de l'étage, les questions connues,
  * toutes les vues. Voir specs/ecrans.md#volumen.
  */
 export type QuestionLogTab = 'missed' | 'correct' | 'all'
