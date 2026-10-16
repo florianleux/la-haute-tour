@@ -13,10 +13,18 @@
   <BaseDialog
     ref="dialog"
     :label="label"
-    class="items-start justify-center overflow-clip bg-slate-950/40 backdrop-blur-xs [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:cursor-pointer"
-    :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0.25s]' : 'motion-safe:animate-fade-in'"
+    class="items-start justify-center overflow-clip bg-transparent [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:cursor-pointer"
     @close="close"
   >
+    <!-- Le voile, seul à se fondre : posé sur la boîte entière, le fondu
+         rendait aussi le contenu transparent pendant son entrée, et le camp se
+         voyait à travers le parchemin qui montait. Sous le contenu, et
+         traversé par les clics : ils tombent sur la boîte, qui ferme. -->
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-slate-950/40 backdrop-blur-xs"
+      :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0.25s]' : 'motion-safe:animate-fade-in'"
+    />
+
     <slot :closing="closing" :close="close" />
 
     <!-- La croix, hors du contenu : dans le coin de l'écran, la même pour

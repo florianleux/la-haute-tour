@@ -1,6 +1,6 @@
 <template>
-  <CampOverlay label="Inventaire" close-label="Fermer l'Inventaire" @close="$emit('close')">
-    <BaseCard title="Inventaire" class="relative my-auto" />
+  <CampOverlay v-slot="{ closing }" label="Inventaire" close-label="Fermer l'Inventaire" @close="$emit('close')">
+    <BaseCard title="Inventaire" class="relative my-auto" v-bind="fadeLayer(closing, '0s')" />
   </CampOverlay>
 </template>
 
