@@ -1181,6 +1181,35 @@
     100% { transform: none; }
   }
 
+  /* Le texte du papier, dévoilé avec lui (unroll) : il se lit dès que le
+     papier passe, au lieu d'attendre la fin du déroulé sur un papier vide.
+     Mêmes étapes, mesurées depuis la boîte du texte — en retrait de --text-x
+     (voir roll-up-text) —, et arrêtées au bord du rouleau droit, pas à son
+     centre comme le papier : le texte passe devant le rouleau, il le
+     recouvrirait. À la fin, plus rien de coupé : ce qui reste caché n'est que
+     de la marge. */
+  --animate-unroll-text: unroll-text 0.9s linear var(--enter-delay, 0s) both;
+
+  @keyframes unroll-text {
+    0% {
+      clip-path: inset(0 calc(var(--rolled-inset) + var(--k) * (var(--text-x) + var(--rod-body))) 0 0);
+      animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1);
+    }
+    55% {
+      clip-path: inset(0 calc(var(--k) * (var(--rod-r) - 35 - var(--text-x) + var(--rod-body))) 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    72% {
+      clip-path: inset(0 calc(var(--k) * (var(--rod-r) + 10 - var(--text-x) + var(--rod-body))) 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    86% {
+      clip-path: inset(0 calc(var(--k) * (var(--rod-r) - 3 - var(--text-x) + var(--rod-body))) 0 0);
+      animation-timing-function: ease-in-out;
+    }
+    100% { clip-path: inset(0); }
+  }
+
   /* La fermeture : l'ouverture à l'envers — le rouleau droit repart contre le
      gauche en ré-enroulant le papier, en accélérant, pendant que le Volumen
      redescend sous l'écran (sink, parti en cours de route via --enter-delay). Ses propres keyframes,
@@ -1282,6 +1311,9 @@
   --rod-l: 111;
   --rod-r: 112;
   --cap-y: 174;
+  /* La demi-largeur du bois du rouleau, sous sa poignée plus large : là où le
+     texte qui se déroule s'arrête. */
+  --rod-body: 35;
   /* Le haut du papier, sous les poignées ; le retrait du texte des bords. */
   --paper-y: 199;
   --text-x: 78;

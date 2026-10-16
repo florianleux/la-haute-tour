@@ -51,11 +51,10 @@
         Volumen
       </CampOverlayTitle>
 
-      <!-- Le papier : de quoi lire, une fois déroulé, et ré-enroulé avec lui
-           à la fermeture. -->
+      <!-- Le papier : de quoi lire, déroulé et ré-enroulé avec lui. -->
       <div
         class="absolute inset-x-[calc(var(--k)*var(--text-x))] top-[calc(var(--k)*var(--cut-t))] bottom-[calc(var(--k)*var(--cut-b)+1.5rem)] flex flex-col p-4 sm:p-8"
-        :class="closing ? 'motion-safe:animate-roll-up-text' : 'motion-safe:animate-fade-in [--enter-delay:0.95s]'"
+        :class="closing ? 'motion-safe:animate-roll-up-text' : 'motion-safe:animate-unroll-text [--enter-delay:0.15s]'"
       >
         <!-- Chaque onglet garde sa page et sa question choisie quand on passe
              à un autre et qu'on revient. Les onglets se posent au-dessus de la
