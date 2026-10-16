@@ -23,9 +23,12 @@
          rétrécir entier. `group` sert au décalage clavier du panneau ci-dessous,
          et `data-arriving` à l'entrée des enfants, rubans compris : ils lisent
          l'attribut (`group-data-arriving:`) sans prop à faire descendre. -->
+    <!-- Il monte un peu pendant le jugement d'une réponse, et retombe quand le
+         verdict arrive (ou quand l'envoi échoue). En `!` comme le médaillon :
+         la classe d'arrivée reste tant que le cadre est monté. -->
     <div
       class="group relative mx-auto w-full origin-bottom @container"
-      :class="[SKINS[skin].frame, SKINS[skin].entrance]"
+      :class="[SKINS[skin].frame, SKINS[skin].entrance, lift]"
       :data-arriving="arriving || undefined"
     >
       <!-- Les rubans, quand l'illustration en dessine (l'ascension oui, le
@@ -99,6 +102,11 @@
 // mode="out-in"> entre les deux ferait rejouer l'entrée à chaque écran.
 // Côté serveur, rien ne se démonte : le premier rendu arrive des deux côtés.
 let leaving: string | null = null
+
+// Le cadre démonté était soulevé par le jugement d'une réponse : celui qui le
+// remplace, le verdict, retombe à sa place au lieu d'y apparaître. Même
+// passage de relais que `leaving`, dans le même patch.
+let liftedOnLeave = false
 </script>
 
 <script setup lang="ts">
@@ -225,10 +233,29 @@ const REACTIONS = {
 
 const arriving = leaving !== props.skin
 
+// Retombe à l'arrivée s'il prend la suite d'un cadre soulevé (la question
+// d'ascension remplacée par son verdict), ou sur place quand le jugement
+// s'achève sans démontage (le rattrapage garde son cadre, et un envoi refusé
+// laisse la question).
+const settling = ref(liftedOnLeave)
+
+watch(() => props.motion, (now, before) => {
+  settling.value = before === 'judging' && now !== 'judging'
+})
+
+const lift = computed(() => {
+  if (props.motion === 'judging') {
+    return 'motion-safe:animate-frame-lift!'
+  }
+  return settling.value ? 'motion-safe:animate-frame-settle!' : ''
+})
+
 onBeforeUnmount(() => {
   leaving = props.skin
+  liftedOnLeave = props.motion === 'judging'
   setTimeout(() => {
     leaving = null
+    liftedOnLeave = false
   })
 })
 </script>
