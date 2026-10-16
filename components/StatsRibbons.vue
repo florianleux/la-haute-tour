@@ -93,7 +93,7 @@
           />
           <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
             <span
-              class="whitespace-nowrap text-[4.5cqw] font-bold text-white opacity-0 [text-shadow:0_1px_2px_rgb(76_5_25/0.8)] motion-safe:animate-float-away sm:text-[1.8cqw]"
+              class="whitespace-nowrap text-[9cqw] font-black text-red-500 opacity-0 [text-shadow:0_2px_3px_rgb(69_10_10/0.95),0_0_0.4em_rgb(239_68_68/0.8)] motion-safe:animate-float-away sm:text-[3.6cqw]"
               :style="{ '--enter-delay': `${TICKS.lives + BURST_MS}ms` }"
             >-1</span>
           </span>
@@ -181,7 +181,7 @@ const lostHeart = computed(() => (props.lifeLost ? props.state.lives + 1 : null)
 // hérite du délai de son chiffre. Sous « réduire les animations », ni
 // gonflement ni « +1 » : le chiffre change, c'est tout.
 const BUMPED = 'relative inline-block motion-safe:animate-bump'
-const PLUS_ONE = 'pointer-events-none absolute left-full top-0 whitespace-nowrap px-[0.3em] text-[4.5cqw] text-white opacity-0 [text-shadow:0_1px_2px_rgb(2_44_34/0.8)] motion-safe:animate-float-away sm:left-auto sm:right-full sm:text-[1.8cqw]'
+const PLUS_ONE = 'pointer-events-none absolute left-full top-0 whitespace-nowrap px-[0.3em] text-[9cqw] font-black text-white opacity-0 [text-shadow:0_2px_3px_rgb(2_44_34/0.9),0_0_0.4em_rgb(16_185_129/0.9)] motion-safe:animate-float-away sm:left-auto sm:right-full sm:text-[3.6cqw]'
 
 /**
  * Quand Palier et Série prennent leur un, en ms après l'arrivée du verdict :
