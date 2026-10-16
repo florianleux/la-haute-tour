@@ -2,10 +2,14 @@
   command = "pnpm build"
   publish = "dist"
 
-# Sans cette règle, Netlify sert les images en `max-age=0, must-revalidate` : un
-# aller-retour par image à chaque visite. Un jour suffit à ce que l'écran de
-# chargement d'une visite resserve celles de la veille sans réseau.
+# Les images gardent leur nom quand on les remplace : le navigateur doit donc
+# redemander à chaque visite si elles ont changé. Netlify répond par l'ETag — un
+# 304 sans contenu quand rien n'a bougé, la nouvelle image sinon. Un `max-age`
+# laissait l'ancienne image à l'écran jusqu'à son expiration. Le prix : un
+# aller-retour par image à l'écran de chargement, en parallèle sur HTTP/2.
+# Écrit ici plutôt que laissé au défaut de Netlify, qui dit la même chose
+# aujourd'hui, pour qu'aucun cache plus long n'y revienne sans lire ceci.
 [[headers]]
   for = "/images/*"
   [headers.values]
-    Cache-Control = "public, max-age=86400"
+    Cache-Control = "public, max-age=0, must-revalidate"

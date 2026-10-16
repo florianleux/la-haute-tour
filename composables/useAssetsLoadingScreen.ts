@@ -26,8 +26,10 @@ export interface AssetsLoadingScreen {
 /**
  * Le préchargement des fichiers du jeu, avant son premier affichage dans
  * l'onglet. Un fichier en erreur compte comme arrivé : il ne doit pas tenir
- * l'écran. Aucun objet `Image` n'est gardé : le cache HTTP (`netlify.toml`) sert
- * le fichier quand le jeu le demande.
+ * l'écran. Aucun objet `Image` n'est gardé : le cache mémoire du navigateur
+ * sert le fichier quand le jeu le demande dans la même page. D'une visite à
+ * l'autre, chaque image est revalidée (`netlify.toml`) : un 304 sans contenu si
+ * elle n'a pas changé.
  *
  * `start()` ne part que d'un `onMounted`, donc jamais côté serveur.
  */
