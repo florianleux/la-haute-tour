@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" @close="$emit('close')">
+  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" close-label="Fermer les Haut-faits" @close="$emit('close')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen et le Grimoire.
          Clic à côté de la bannière = fermer.
 
@@ -11,6 +11,7 @@
     <div
       class="relative aspect-[1292/1849] h-[min(92dvh,calc(96vw*1849/1292))] shrink-0 origin-top"
       :class="closing ? 'motion-safe:animate-banner-lift' : 'motion-safe:animate-banner-drop'"
+      data-camp-backdrop
       @click.self="close"
     >
       <img
@@ -34,12 +35,6 @@
       </CampOverlayTitle>
 
       <div class="pointer-events-none absolute inset-0" v-bind="fadeLayer(closing, '0.6s')">
-        <BaseCloseButton
-          label="Fermer les Haut-faits"
-          class="pointer-events-auto absolute right-[9%] top-[2%] z-10"
-          @click="close"
-        />
-
         <BaseNotice v-if="failed" class="pointer-events-auto absolute inset-x-[12%] top-[21.5%]">
           Tes succès n'ont pas pu être lus. Recharge la page.
         </BaseNotice>

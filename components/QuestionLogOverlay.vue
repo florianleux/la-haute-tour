@@ -2,6 +2,7 @@
   <CampOverlay
     v-slot="{ closing, close }"
     label="Volumen"
+    close-label="Fermer le Volumen"
     class="question-log-scroll-metrics"
     @close="$emit('close')"
   >
@@ -19,6 +20,7 @@
     <div
       class="relative mt-[6dvh] h-[round(calc(94dvh+var(--k)*var(--cut-b)),1px)] w-[round(92vw,1px)] shrink-0 origin-bottom"
       :class="closing ? 'motion-safe:animate-sink [--enter-delay:0.12s]' : 'motion-safe:animate-rise'"
+      data-camp-backdrop
       @click.self="close"
     >
       <!-- Le parchemin monte roulé (rise, sur cette boîte) et commence à se
@@ -55,10 +57,6 @@
         class="absolute inset-x-[calc(var(--k)*var(--text-x))] top-[calc(var(--k)*var(--cut-t))] bottom-[calc(var(--k)*var(--cut-b)+1.5rem)] flex flex-col p-4 sm:p-8"
         :class="closing ? 'motion-safe:animate-roll-up-text' : 'motion-safe:animate-fade-in [--enter-delay:0.95s]'"
       >
-        <!-- La croix, dans le coin du papier : elle ne prend pas de ligne à la
-             lecture. -->
-        <BaseCloseButton label="Fermer le Volumen" class="absolute right-2 top-2 z-10" @click="close" />
-
         <!-- Chaque onglet garde sa page et sa question choisie quand on passe
              à un autre et qu'on revient. Les onglets se posent au-dessus de la
              liste, pas de la question relue. -->

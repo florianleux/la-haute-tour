@@ -3,15 +3,25 @@
        contenu, posé par l'appelant, arrête les clics qu'il veut garder.
        `overflow-clip` et non `hidden` : une boîte `hidden` se fait défiler par
        le navigateur pour montrer ce qui prend le focus, et décalait tout le
-       contenu vers le haut. -->
+       contenu vers le haut.
+
+       Le fond s'assombrit et prend le curseur main quand la souris est sur
+       une zone qui ferme : la boîte elle-même, ou un vide que l'appelant
+       marque `data-camp-backdrop` (le tour d'une image, où son `@click.self`
+       ferme aussi). Dès qu'autre chose sous la souris est survolé — le
+       contenu —, le fond reste tel quel. -->
   <BaseDialog
     ref="dialog"
     :label="label"
-    class="items-start justify-center overflow-clip bg-slate-950/40 backdrop-blur-xs"
+    class="items-start justify-center overflow-clip bg-slate-950/40 backdrop-blur-xs transition-[background-color] duration-200 [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:cursor-pointer [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:bg-slate-950/65"
     :class="closing ? 'motion-safe:animate-fade-out [--enter-delay:0.25s]' : 'motion-safe:animate-fade-in'"
     @close="close"
   >
     <slot :closing="closing" :close="close" />
+
+    <!-- La croix, hors du contenu : dans le coin de l'écran, la même pour
+         toutes les boîtes. Après le contenu, pour passer devant. -->
+    <BaseCloseButton :label="closeLabel" class="absolute right-[2vw] top-[2dvh] z-20" @click="close" />
   </BaseDialog>
 </template>
 
@@ -42,6 +52,8 @@ import type { GameState } from '~~/server/utils/game'
 defineProps<{
   /** Ce que lit une synthèse vocale en entrant dans la boîte. */
   label: string
+  /** Ce que lit une synthèse vocale sur la croix : « Fermer le Volumen ». */
+  closeLabel: string
 }>()
 
 const emit = defineEmits<{ close: [] }>()

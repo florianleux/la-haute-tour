@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Grimoire" @close="$emit('close')">
+  <CampOverlay v-slot="{ closing, close }" label="Grimoire" close-label="Fermer le Grimoire" @close="$emit('close')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen. Clic à côté du
          livre = fermer.
 
@@ -11,6 +11,7 @@
     <div
       class="relative -mb-[3dvh] mt-auto aspect-[1828/1080] w-[min(96vw,calc(90dvh*1828/1080))] shrink-0 origin-bottom"
       :class="closing ? 'motion-safe:animate-sink [--enter-delay:0.1s]' : 'motion-safe:animate-book-rise'"
+      data-camp-backdrop
       @click.self="close"
     >
       <img
@@ -51,12 +52,6 @@
 
       <!-- La page droite. Positions relevées sur l'image, en % du livre. -->
       <div class="pointer-events-none absolute inset-0" v-bind="fadeLayer(closing, '0.7s')">
-        <BaseCloseButton
-          label="Fermer le Grimoire"
-          class="pointer-events-auto absolute right-[9%] top-[12%] z-10"
-          @click="close"
-        />
-
         <!-- Une seule colonne, de haut en bas : le sort choisi et de quoi le
              lancer, puis l'historique de ses derniers lancers, en bas de page.
              Pas de défilement : l'historique suit le détail, il ne peut pas
