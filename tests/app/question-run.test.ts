@@ -105,6 +105,36 @@ describe('déroulé d une question', () => {
     expect(typed.value).toBe('')
   })
 
+  // Le verdict attend la fin de l'animation de jugement (usePlay) : pendant ce
+  // temps, une réponse déjà partie ne doit pas repartir.
+  it('n envoie qu une fois quand Entrée est pressée deux fois pendant le jugement', async () => {
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
+    answerWith(gameState())
+    const { typed, submit } = await run({ now: ref(NOW) })
+    typed.value = 'bordeaux'
+
+    const first = submit()
+    await submit()
+    await first
+
+    expect(calls()).toEqual(['fetch POST /api/game/answer'])
+  })
+
+  it('ne renvoie pas au chrono une réponse partie juste avant zéro', async () => {
+    serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
+    answerWith(gameState())
+    const now = ref(NOW + ASCENT_TIMER_MS - 1_000)
+    const { typed, submit } = await run({ now })
+    typed.value = 'bordeaux'
+
+    const sent = submit()
+    now.value = NOW + ASCENT_TIMER_MS
+    await nextTick()
+    await sent
+
+    expect(calls()).toEqual(['fetch POST /api/game/answer'])
+  })
+
   it('garde la saisie quand l envoi est refusé', async () => {
     serve(GAME_STATE_KEY, servedAt(ASCENT_TIMER_MS))
     breakNetwork()

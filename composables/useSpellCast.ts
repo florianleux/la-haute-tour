@@ -1,3 +1,4 @@
+import { prefersReducedMotion, wait } from '../utils/motion'
 import type { Ref } from 'vue'
 import type { SpellFace, SpellId } from '~~/shared/utils/spells'
 import type { CastHeadline } from '~~/utils/spells'
@@ -27,10 +28,6 @@ export const CHARGE_MS = 1500
 export const RELEASE_MS = 3850
 export const FIZZLE_MS = 700
 
-function wait(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
 /**
  * L'animation d'un lancer, autour de sa requête. La requête part au clic et la
  * montée en puissance la cache : le climax ne joue qu'une fois les deux finies,
@@ -52,7 +49,7 @@ export function useSpellCast(): {
   const cast = ref<SpellCast | null>(null)
 
   async function play(spell: SpellId, face: SpellFace, send: () => Promise<CastHeadline | null>): Promise<void> {
-    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    if (prefersReducedMotion()) {
       await send()
       return
     }

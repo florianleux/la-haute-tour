@@ -1,5 +1,8 @@
 <template>
-  <PlayFrame skin="recovery">
+  <PlayFrame
+    skin="recovery"
+    :motion="motion"
+  >
     <template #medallion>
       <PlayText
         v-if="screen.question"
@@ -75,7 +78,7 @@
         label="Valider"
         anchor="parchment-bottom"
         face="plank"
-        :disabled="submitting"
+        :loading="submitting"
         @click="$emit('submit')"
       />
       <BaseCardButton
@@ -131,6 +134,14 @@ const score = computed(() => {
   }
   const s = (n: number): string => (n > 1 ? 's' : '')
   return `${line.successes} réponse${s(line.successes)} juste${s(line.successes)} sur ${line.required} requise${s(line.required)}`
+})
+
+// Les mêmes attentes qu'en ascension : la réponse se fait juger, le verdict s'en va.
+const motion = computed(() => {
+  if (props.screen.question) {
+    return props.submitting ? 'judging' : undefined
+  }
+  return props.advancing ? 'leaving' : undefined
 })
 
 const statement = computed(() =>

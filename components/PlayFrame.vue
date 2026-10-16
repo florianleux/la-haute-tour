@@ -43,11 +43,13 @@
       />
 
       <!-- Le médaillon, à cheval sur le bord haut : chrono pendant la question,
-           juste/faux sur le verdict. Même rôle des deux côtés, deux dessins. -->
+           juste/faux sur le verdict. Même rôle des deux côtés, deux dessins.
+           Son tremblement de jugement passe en `!` : un cadre arrivé garde sa
+           classe d'arrivée tant qu'il est monté, et elle l'emporterait sinon. -->
       <div
         v-if="$slots.medallion"
         class="absolute left-1/2 z-20 origin-bottom -translate-x-1/2 -translate-y-1/2 @container bg-contain bg-center bg-no-repeat group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
-        :class="SKINS[skin].medallion"
+        :class="[SKINS[skin].medallion, motion && MOTIONS[motion].medallion]"
         :style="{ aspectRatio: SKINS[skin].medallionRatio }"
       >
         <!-- Le chiffre au centre du disque, dont la hauteur n'est pas la même
@@ -75,7 +77,7 @@
            mesure de hauteur de clavier, juste l'état du focus. -->
       <div
         class="absolute flex flex-col items-center justify-center gap-[0.7cqw] overflow-hidden @container text-center transition-all"
-        :class="SKINS[skin].panel"
+        :class="[SKINS[skin].panel, motion && MOTIONS[motion].panel]"
       >
         <slot />
       </div>
@@ -200,7 +202,21 @@ const props = defineProps<{
    * cadre, dont l'`animation` d'arrivée écraserait celle-ci.
    */
   reaction?: 'hit' | 'hop'
+  /**
+   * L'attente d'un geste, jouée pendant que la requête part : `judging` sur
+   * Valider (l'encre remonte, le médaillon tremble jusqu'au verdict), `leaving`
+   * sur Suivante (le verdict glisse et s'efface). Retirée, la carte revient
+   * telle qu'avant le clic — c'est ce qu'on veut sur un envoi refusé.
+   * Voir specs/ecrans.md.
+   */
+  motion?: 'judging' | 'leaving'
 }>()
+
+// Chaque attente décrite d'un seul endroit, panneau et médaillon ensemble.
+const MOTIONS = {
+  judging: { panel: 'motion-safe:animate-ink-lift', medallion: 'motion-safe:animate-judge-quiver!' },
+  leaving: { panel: 'motion-safe:animate-verdict-leave', medallion: '' },
+} as const
 
 const REACTIONS = {
   hit: 'motion-safe:animate-hit',

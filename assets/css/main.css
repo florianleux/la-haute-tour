@@ -887,6 +887,38 @@
     100% { transform: none; }
   }
 
+  /* Valider : l'encre de la réponse pâlit et remonte vers le médaillon, qui
+     la juge. Puis le médaillon tremble, de plus en plus fort, et boucle tant
+     que le verdict n'est pas revenu — c'est lui qui le tamponnera. Les deux
+     premiers temps font JUDGING_MS (composables/usePlay.ts) : ils bougent ensemble.
+     Voir specs/ecrans.md. */
+  --animate-ink-lift: ink-lift 0.15s ease-in forwards;
+  --animate-judge-quiver: judge-quiver-ramp 0.15s ease-in 0.15s, judge-quiver 0.12s linear 0.3s infinite;
+
+  @keyframes ink-lift {
+    to { opacity: 0; transform: translateY(-14%) scale(0.92); }
+  }
+
+  @keyframes judge-quiver-ramp {
+    0% { transform: none; }
+    50% { transform: rotate(-2deg); }
+    100% { transform: rotate(3deg); }
+  }
+
+  @keyframes judge-quiver {
+    0%, 100% { transform: rotate(3deg); }
+    50% { transform: rotate(-3deg); }
+  }
+
+  /* Suivante : le verdict glisse vers le haut et s'efface. Rien n'attend sa fin —
+     la question s'affiche dès qu'elle arrive, son chrono court déjà. */
+  --animate-verdict-leave: verdict-leave 0.2s ease-in forwards;
+
+  @keyframes verdict-leave {
+    to { opacity: 0; transform: translateY(-12%); }
+  }
+
+
   /* Le pendant joyeux du coup, sur une bonne réponse : le cadre prend son
      élan (il se tasse), saute en s'étirant avec un petit balancement, se
      réceptionne en s'écrasant, puis fait un dernier rebond. */

@@ -13,18 +13,21 @@
       </BaseToast>
     </BaseToastStack>
 
+    <!-- `submitting` lit `pending` tout court : pendant une question, rien
+         d'autre qu'une réponse ne peut être en vol, et celle que le chrono ou
+         la perte de focus envoie se joue comme celle du bouton. -->
     <RecoveryCard
       v-if="view?.card === 'recovery'"
       :screen="view.screen"
       :action="view.action"
       :model-value="typed"
       :seconds-left="secondsLeft"
-      :submitting="isRunning('submit')"
+      :submitting="pending"
       :disputable="disputable"
       :disputing="disputing"
       :advancing="isRunning('advance')"
       @update:model-value="typed = $event"
-      @submit="run('submit', submit)"
+      @submit="submit"
       @dispute="disputeVerdict"
       @advance="goNext"
     />
@@ -35,10 +38,10 @@
       :question="view.question"
       :model-value="typed"
       :seconds-left="secondsLeft"
-      :submitting="isRunning('submit')"
+      :submitting="pending"
       :effects="view.screen.activeEffects"
       @update:model-value="typed = $event"
-      @submit="run('submit', submit)"
+      @submit="submit"
     />
 
     <CooldownCard
@@ -165,7 +168,7 @@ provideGameState(state)
 // Le bouton exact sur lequel on vient de cliquer : `pending` est vrai pour toute
 // la page, il ferait tourner « Commencer » pendant qu'un admin passe l'attente
 // juste au-dessus.
-type PendingButton = 'submit' | 'advance' | 'skipCooldown' | 'chest'
+type PendingButton = 'advance' | 'skipCooldown' | 'chest'
 const running = ref<PendingButton | null>(null)
 
 function isRunning(action: PendingButton): boolean {

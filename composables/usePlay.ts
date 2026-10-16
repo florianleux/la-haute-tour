@@ -1,4 +1,5 @@
 import { GAME_STATE_KEY } from './useGameState'
+import { prefersReducedMotion, wait } from '../utils/motion'
 import { useWriteThenReplace } from './useWriteThenReplace'
 import type { Ref } from 'vue'
 import type { AnswerSource } from '~~/server/utils/mechanics'
@@ -20,6 +21,14 @@ export interface Play {
   failed: Ref<boolean>
   pending: Ref<boolean>
 }
+
+/**
+ * Ce que dure au moins l'attente du jugement d'une réponse : l'animation de Valider va à
+ * son terme avant le verdict, même quand le serveur répond plus vite. La
+ * durée de `animate-ink-lift` et du début de `animate-judge-quiver`
+ * (assets/css/main.css) : elles bougent ensemble. Voir specs/ecrans.md.
+ */
+export const JUDGING_MS = 300
 
 /**
  * The player's moves. Each action answers with the new game state, which replaces
@@ -44,14 +53,28 @@ export function usePlay(): Play {
   })
   const { pending, failed, send } = useWriteThenReplace(view)
 
-  /** Un coup du joueur : le serveur rend l'état d'après, la page l'affiche. */
-  async function move(url: string, body?: Record<string, string>): Promise<void> {
-    await send(() => $fetch<GameState>(url, { method: 'POST', body }))
+  /**
+   * Un coup du joueur : le serveur rend l'état d'après, la page l'affiche —
+   * pas avant `hold` ms, le temps que l'animation du geste aille à son terme.
+   */
+  async function move(url: string, body?: Record<string, string>, hold = 0): Promise<void> {
+    await send(async () => {
+      const [state] = await Promise.all([
+        $fetch<GameState>(url, { method: 'POST', body }),
+        hold > 0 ? wait(hold) : undefined,
+      ])
+      return state
+    })
   }
+
+  // Seule Valider attend : sur Suivante, chaque instant d'animation serait pris
+  // au chrono de la question, qui court déjà côté serveur. Sous « réduire les
+  // animations », rien à attendre — `motion-safe:` a retiré l'animation.
+  const judgingHold = (): number => (prefersReducedMotion() ? 0 : JUDGING_MS)
 
   return {
     next: () => move('/api/game/next'),
-    answer: (text, source = 'player') => move('/api/game/answer', { answer: text, source }),
+    answer: (text, source = 'player') => move('/api/game/answer', { answer: text, source }, judgingHold()),
     skipCooldown: () => move('/api/game/skip-cooldown'),
     openChest: () => move('/api/game/chest'),
     failed,

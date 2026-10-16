@@ -13,3 +13,17 @@ export function fadeLayer(closing: boolean, delay: string): { class: string, sty
     style: { '--enter-delay': closing ? '0s' : delay },
   }
 }
+
+/**
+ * Le joueur a demandé moins d'animations : `motion-safe:` les retire déjà, il ne
+ * reste qu'à ne pas attendre leur fin. Écrit une fois pour le lancer d'un sort
+ * (composables/useSpellCast.ts) et le jugement d'une réponse
+ * (composables/usePlay.ts).
+ */
+export function prefersReducedMotion(): boolean {
+  return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
+export function wait(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}

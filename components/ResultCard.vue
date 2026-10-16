@@ -2,6 +2,7 @@
   <PlayFrame
     skin="ascent"
     :reaction="reaction"
+    :motion="advancing ? 'leaving' : undefined"
   >
     <template #ribbons>
       <!-- Palier et Série prennent un sur tout verdict d'ascension, juste ou
@@ -83,7 +84,7 @@
         v-if="action"
         :label="action.label"
         anchor="card-bottom"
-        :disabled="advancing"
+        :loading="advancing"
         @click="$emit('advance')"
       />
     </template>
