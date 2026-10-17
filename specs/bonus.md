@@ -15,9 +15,11 @@ Les équipes sont traitées à part, dans [`equipes.md`](./equipes.md).
 
 ### Où et quand
 
-Un Sort **se lance uniquement au camp** — l'attente, puis le rattrapage tant
-qu'il n'a pas commencé ; jamais en ascension, ni en rattrapage en cours, ni sur
-le profil. L'écran d'attente porte un accès vers
+Un Sort **se lance uniquement au camp** — l'attente, le rattrapage tant
+qu'il n'a pas commencé, et l'ascension au repos jusqu'au clic sur la corde ;
+jamais pendant une question, ni en rattrapage en cours, ni sur le profil. Un
+sort lancé sur soi au repos attend son déclencheur, comme sur toute cible qui
+n'est pas en attente (voir [Ancrage et durée de vie](#ancrage-et-durée-de-vie)). L'écran d'attente porte un accès vers
 le **Grimoire**, une boîte ouverte par-dessus le camp, où le lancer se fait réellement.
 
 **Aucun budget de lancers** : un joueur lance pendant son attente autant de
@@ -90,7 +92,7 @@ toucherait ni pourquoi les autres sont écartés.
 Si le pool se vide **entre** la lecture et le lancer — le dernier ennemi
 exposé vient d'être saturé par un autre —, le sort part quand même et ne fait
 rien. Gaspillé, même logique que Purge sur un Pool Échecs vide. Le lancer est
-bel et bien dépensé : l'exemplaire quitte l'inventaire, et le journal porte la
+bel et bien dépensé : l'exemplaire quitte les sorts en poche, et le journal porte la
 ligne — sans nom en face.
 
 Le tirage restant imprévisible, la cible n'est **pas affichée avant le lancer**.
@@ -349,7 +351,7 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
   « suivant », avant de passer à la question suivante.
 - Question loot **ratée** → échec ordinaire, pas de coffre.
 - **Coffre normal (95 %)** → un Sort tiré au hasard dans le catalogue rejoint
-  l'inventaire. Doublons illimités.
+  les sorts en poche. Doublons illimités.
 - **Mimic (5 %)** → aucun objet : **toutes les vies de la tentative en cours sont
   retirées d'un coup**, traité comme une perte de dernière vie ordinaire.
 - **Exception, à partir de 50 % de l'étage parcouru et tant que le joueur n'a
@@ -394,7 +396,7 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 - **Le Grimoire**, l'écran des Sorts, ouvert par-dessus le camp : pentacle, lancer, journaux — voir
   [`ecrans.md`](./ecrans.md#sorts). Le lancer et le nombre d'exemplaires sont
   absents tant que #76 n'est pas livré. Accessible au camp uniquement.
-  L'inventaire n'est donc pas consultable hors du camp — le joueur voit passer son
+  Les sorts en poche ne sont donc pas consultables hors du camp — le joueur voit passer son
   objet sur l'écran de coffre, puis le retrouve à sa prochaine mort.
   Chaque sort porte un bouton **par catégorie de cible** — jamais un nom, et jamais
   une liste de joueurs. La catégorie Allié n'apparaît qu'à qui a une équipe : sans
@@ -426,7 +428,7 @@ et aient tourné — c'est leur définition même.
 ## Livraison
 
 **T1 — la boucle solo, bout en bout.** Question loot dérivée, coffre, Mimic,
-inventaire, Grimoire, lancer sur **Soi** uniquement, catalogue
+sorts en poche, Grimoire, lancer sur **Soi** uniquement, catalogue
 réduit à **Vitalité et Répit** — les deux seuls dont l'effet ne touche ni le timer,
 ni le pool, ni le rattrapage. Valide seul les trois points risqués : le loot sans
 compteur, la persistance du coffre, l'ancrage des effets sur la tentative suivante.

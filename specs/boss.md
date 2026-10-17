@@ -107,9 +107,9 @@ chacun posant sa clé, pour l'ouvrir.
 - Si le joueur ne réussit aucun coffre de loot après 50 % avant la fin de
   l'étage, il n'a pas de clé cette ascension — il compte alors sur deux
   coéquipiers qui en ont une.
-- Une clé obtenue alors que la porte est déjà ouverte **reste en inventaire,
-  inutile — mais se stocke quand même**, dans une **table dédiée**, à part de
-  l'inventaire de Sorts (`inventory.spell` est un enum strict qui ne l'accepte
+- Une clé obtenue alors que la porte est déjà ouverte **reste acquise,
+  inutile — mais se stocke quand même**, dans une **table dédiée**, à part des
+  sorts en poche (`pocketSpells.spell` est un enum strict qui ne l'accepte
   pas).
 
 ### Poser la clé

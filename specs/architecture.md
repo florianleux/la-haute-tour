@@ -42,7 +42,8 @@ Tout l'état vit en base, jamais côté client :
 - **Attente en cours** — l'échéance à partir de laquelle le joueur peut reprendre ou rattraper.
 - **Contestations** — la question, la réponse du joueur, le statut d'arbitrage.
 - **Flags de triche** — les soumissions déclenchées par une perte de focus.
-- **Inventaire** — les sorts possédés et non encore lancés. Doublons illimités.
+- **Sorts en poche** — les sorts possédés et non encore lancés. Doublons illimités.
+- **Objets** — ce que le sac de l'Inventaire contient et qui n'est pas un sort (le Fromage), un par ligne, jusqu'à ce qu'il soit donné.
 - **Effets actifs** — un effet posé sur un joueur, portant son sort, sa face, son lanceur et la date du lancer. Ancré sur la prochaine tentative de la cible, il meurt avec elle — sauf un sort lié à l'attente, qui meurt avec l'attente visée.
 - **Lancers** — ce qui est parti de chez qui, vers qui, et quand. C'est le journal, et c'est aussi lui qui dit ce qu'un joueur porte, donc qui fait respecter les plafonds d'effets négatifs et positifs.
 - **Coffre** — un état porté par le verdict : *pas de coffre*, *fermé*, *ouvert avec son résultat*. Le tirage a lieu au clic et son résultat est persisté, sinon un rechargement relancerait le dé.
