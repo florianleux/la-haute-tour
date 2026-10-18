@@ -206,16 +206,22 @@ describe('carte de jeu', () => {
     // Le coffre d'une autre question : il repasse par son verdict.
     expect(card({ verdict: { ...right, questionId: 'q2' }, chest: closed }, { chestOf: verdict.questionId, fallenOn: null }))
       .toEqual({ card: 'result', action: { label: 'Suivant', move: 'enterChest', chestOf: 'q2' } })
-    // Un Mimic bascule en attente : le poster passe devant l'écran du coffre.
-    expect(card({ phase: 'cooldown', lives: 0, verdict: right, chest: { opened: true, mimic: true, spell: null } }, { chestOf: verdict.questionId, fallenOn: null }))
-      .toEqual({ card: 'cooldown', action: null })
+  })
+
+  it('montre le Mimic avant le poster, et le poster une fois quitté', () => {
+    const mauled = { phase: 'cooldown' as const, lives: 0, verdict: right, chest: { opened: true, mimic: true, spell: null } }
+
+    expect(card(mauled, { chestOf: verdict.questionId, fallenOn: null }))
+      .toEqual({ card: 'chest', action: { label: 'Suivant', move: 'leave' } })
+    // Quitté, ou la page rechargée : le poster.
+    expect(card(mauled)).toEqual({ card: 'cooldown', action: null })
   })
 
   it('fait lire le verdict de la dernière vie avant le poster', () => {
     const fallen = { phase: 'cooldown' as const, lives: 0, verdict }
 
     expect(card(fallen, { chestOf: null, fallenOn: verdict.questionId }))
-      .toEqual({ card: 'result', action: { label: 'Redescendre', move: 'leaveFall' } })
+      .toEqual({ card: 'result', action: { label: 'Redescendre', move: 'leave' } })
     // Rechargée en pleine attente, la page va droit au poster.
     expect(card(fallen)).toEqual({ card: 'cooldown', action: null })
   })

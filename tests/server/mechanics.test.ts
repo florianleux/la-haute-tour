@@ -273,18 +273,23 @@ describe('contenu d un coffre', () => {
   it('rend un Mimic sous le taux', () => {
     const roll = rules.mimicChance - 0.001
 
-    expect(rollChest(rules, rolls(roll))).toEqual({ mimic: true, spell: null })
+    expect(rollChest(rules, rolls(roll), 'spell')).toEqual({ mimic: true, spell: null })
+  })
+
+  it('épargne le premier coffre et celui qui suit un Mimic', () => {
+    expect(rollChest(rules, rolls(0, 0), null)).toEqual({ mimic: false, spell: SPELL_IDS[0] })
+    expect(rollChest(rules, rolls(0, 0), 'mimic')).toEqual({ mimic: false, spell: SPELL_IDS[0] })
   })
 
   it('rend un sort au taux pile', () => {
-    expect(rollChest(rules, rolls(rules.mimicChance, 0))).toEqual({
+    expect(rollChest(rules, rolls(rules.mimicChance, 0), 'spell')).toEqual({
       mimic: false,
       spell: SPELL_IDS[0],
     })
   })
 
   it('tire dans tout le catalogue, jusqu au dernier', () => {
-    expect(rollChest(rules, rolls(0.5, 0.999))).toEqual({
+    expect(rollChest(rules, rolls(0.5, 0.999), 'spell')).toEqual({
       mimic: false,
       spell: SPELL_IDS[SPELL_IDS.length - 1],
     })

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { disputes, inventory } from '../../server/db/schema'
+import { disputes, inventory, users } from '../../server/db/schema'
 import { openDispute, settleDispute } from '../../server/utils/disputes'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -137,6 +137,11 @@ describe('coffre de loot', () => {
   })
 
   describe('mimic', () => {
+    // Un sort déjà sorti d'un coffre : le Mimic peut attaquer.
+    beforeEach(async () => {
+      await db.update(users).set({ lastChest: 'spell' }).where(eq(users.id, player.id))
+    })
+
     it('ne donne rien et vide la tentative d un coup', async () => {
       await playLootQuestion('Bordeaux')
 
@@ -162,6 +167,30 @@ describe('coffre de loot', () => {
       const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
 
       expect(state.verdict).toMatchObject({ correct: true, lifeLost: false })
+    })
+
+    it('épargne le tout premier coffre ouvert', async () => {
+      await db.update(users).set({ lastChest: null }).where(eq(users.id, player.id))
+      await playLootQuestion('Bordeaux')
+
+      const state = await openPlayerChest(db, await reload(), NOW, rolls(0, 0))
+
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
+      expect((await reload()).lastChest).toBe('spell')
+    })
+
+    it('n attaque jamais deux fois d affilée', async () => {
+      await playLootQuestion('Bordeaux')
+      await openPlayerChest(db, await reload(), NOW, givesMimic())
+      expect((await reload()).lastChest).toBe('mimic')
+
+      // Le coffre suivant, sur une attente déjà passée.
+      await db.update(users).set({ lives: rules.lives, cooldownUntil: null, cooldownStartedAt: null }).where(eq(users.id, player.id))
+      await playLootQuestion('Bordeaux', STEP * 2 - 1)
+
+      const state = await openPlayerChest(db, await reload(), NOW, rolls(0, 0))
+
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
     })
   })
 

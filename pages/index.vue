@@ -267,8 +267,9 @@ async function goNext(): Promise<void> {
   const action = view.value?.action
 
   switch (action?.move) {
-    case 'leaveFall':
+    case 'leave':
       fallenOn.value = null
+      chestOf.value = null
       return
     case 'enterChest':
       chestOf.value = action.chestOf

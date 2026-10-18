@@ -2,7 +2,10 @@
   <!-- Le cadre de l'ascension, rubans compris : le coffre s'ouvre au milieu
        de la partie, pas ailleurs. Seul le médaillon manque — aucun temps ne
        court sur un coffre. -->
-  <PlayFrame skin="ascent">
+  <PlayFrame
+    skin="ascent"
+    :reaction="reaction"
+  >
     <template #ribbons>
       <StatsRibbons
         :state="state"
@@ -26,7 +29,7 @@
             // Ouvert, le contenu est sorti : plus rien ne remue dedans.
             'motion-safe:animate-rattle': stage === 'idle' && !revealed,
             'motion-safe:animate-burst': stage === 'bursting',
-            'motion-safe:animate-settle': stage === 'open',
+            'motion-safe:animate-settle': stage === 'open' && revealed,
           }"
         >
           <img
@@ -39,7 +42,20 @@
             src="/images/chest-open.webp"
             alt="Un coffre ouvert"
             class="absolute inset-0 h-full w-full transition-opacity duration-300"
-            :class="revealed ? 'opacity-100' : 'opacity-0'"
+            :class="looted ? 'opacity-100' : 'opacity-0'"
+          >
+
+          <!-- Le Mimic, à la place du coffre ouvert : il bondit au centre de
+               l'écran, au visage du joueur, y reste suspendu, puis retombe à
+               sa place. Calé sur le coffre ouvert par la caisse, commune aux
+               deux images : même largeur (77 % de la boîte), même bas. Au
+               bond, `--lunge` dit de combien il grossit — moins en mobile,
+               où le cadre portrait le fait déjà plus grand. -->
+          <img
+            v-if="chest.mimic"
+            src="/images/chest-mimic.webp"
+            alt="Un mimic"
+            class="absolute left-[10.3%] top-[4.1%] z-10 w-[77%] max-w-none [--lunge:2.4] sm:[--lunge:3] motion-safe:animate-mimic-lunge"
           >
 
           <!-- L'éclair, centré sur la fente entre couvercle et caisse (48% de
@@ -47,7 +63,7 @@
                fait dessous. Seulement à l'ouverture, pas sur un coffre déjà
                ouvert quand l'écran arrive. -->
           <div
-            v-if="stage === 'open'"
+            v-if="stage === 'open' && looted"
             class="absolute left-1/2 top-[48%] aspect-square w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,white_0%,rgb(254_243_199/0.9)_30%,transparent_70%)] opacity-0 motion-safe:animate-dazzle"
           />
 
@@ -101,7 +117,7 @@
 
           <!-- Les étincelles, dans le couvercle ouvert et juste au-dessus. -->
           <SparkleField
-            v-if="revealed"
+            v-if="looted"
             :sparks="SPARKS"
             class="drop-shadow-[0_0_3px_#fde68a]"
           />
@@ -125,14 +141,14 @@
           >
             Ce coffre rutilant doit renfermer quelque chose de précieux...
           </PlayText>
-          <!-- Le Mimic bascule la partie en attente : la page passe aussitôt au
-               poster, et ce message n'y est pas lu. Voir specs/bonus.md#coffre-et-mimic. -->
+          <!-- Le Mimic a déjà basculé la partie en attente : « Suivant » mène au
+               poster, qui ne le rappelle pas. Voir specs/bonus.md#coffre-et-mimic. -->
           <PlayText
             v-else-if="chest.mimic"
             role="recall"
             class="font-semibold text-rose-700"
           >
-            Un mimic. Aucun objet, et toutes tes vies d'un coup.
+            Oh non, ce coffre contenait un mimic qui t'a attaqué ! Tu perds toutes tes vies.
           </PlayText>
           <PlayText
             v-else-if="chest.spell"
@@ -243,7 +259,27 @@ const SPELL_SPRAY = Array.from({ length: 10 }, (_, index) => {
 const stage = ref<'idle' | 'bursting' | 'open'>('idle')
 /** Le serveur n'a pas ouvert le coffre : on le dit, au lieu d'un échec muet. */
 const refused = ref(false)
-const revealed = computed(() => stage.value === 'open' || props.chest.opened)
+// Le coffre ne s'ouvre qu'avec la réponse du serveur, pas à la fin du
+// tremblement : ouvert plus tôt, il montrerait un trésor — fondu, éclair,
+// étincelles — avant que le Mimic n'arrive le remplacer.
+const revealed = computed(() => props.chest.opened)
+/** Ouvert sur un trésor : le coffre ouvert, son éclair et ses étincelles. Pas sur un Mimic. */
+const looted = computed(() => revealed.value && !props.chest.mimic)
+
+/**
+ * Le cadre suit le coffre : il tremble avec lui (`quake`), rebondit quand il
+ * s'ouvre sur un trésor (`pop`), encaisse le Mimic (`mauled`). Un coffre déjà
+ * ouvert à l'arrivée de l'écran ne fait rien rebondir.
+ */
+const reaction = computed(() => {
+  if (props.chest.mimic) {
+    return 'mauled'
+  }
+  if (stage.value === 'bursting') {
+    return 'quake'
+  }
+  return stage.value === 'open' && looted.value ? 'pop' : undefined
+})
 
 // Un minuteur plutôt que `animationend` : sous « réduire les animations »,
 // `motion-safe:` retire l'animation et l'événement ne viendrait jamais.

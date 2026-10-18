@@ -321,7 +321,8 @@ describe('les succès en jeu', () => {
 
   describe('au coffre', () => {
     it('compte le Mimic comme une mort, et lui casse la série', async () => {
-      await db.update(users).set({ streak: 12 }).where(eq(users.id, player.id))
+      // Un sort déjà sorti d'un coffre : le Mimic peut attaquer.
+      await db.update(users).set({ streak: 12, lastChest: 'spell' }).where(eq(users.id, player.id))
 
       // Une de plus que le seuil : la dernière question restante de l étage ne
       // porte jamais de coffre, un Mimic y opposerait le palier à l attente.

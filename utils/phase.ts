@@ -166,11 +166,12 @@ export function gameScreen(state: GameState): GameScreen {
 
 /**
  * Le bouton qui avance et ce qu'il fait : demander la suite au serveur, quitter
- * la chute pour le poster, ou entrer dans l'écran du coffre de telle question.
- * Les deux derniers sont des allers purement client.
+ * pour le poster l'écran que la page retenait (la chute, le Mimic), ou entrer
+ * dans l'écran du coffre de telle question. Les deux derniers sont des allers
+ * purement client.
  */
 export type PlayAction =
-  | { label: string; move: "advance" | "leaveFall" }
+  | { label: string; move: "advance" | "leave" }
   | { label: string; move: "enterChest"; chestOf: string };
 
 /**
@@ -246,9 +247,10 @@ export function playView(
 
   // Avant le verdict : celui de la question qui a pris la dernière vie reste
   // dans l'état, et le ferait relire au lieu du poster — sauf le temps de la
-  // chute, que le joueur lit avant de redescendre. L'attente porte ses propres
-  // boutons ; seul le rattrapage prêt à démarrer avance d'ici.
-  if (atCamp && !readingFall) {
+  // chute, que le joueur lit avant de redescendre, et du Mimic, qu'il voit
+  // sauter avant le poster. L'attente porte ses propres boutons ; seul le
+  // rattrapage prêt à démarrer avance d'ici.
+  if (atCamp && !readingFall && !viewingChest) {
     return {
       screen,
       card: "cooldown",
@@ -257,12 +259,14 @@ export function playView(
   }
 
   if (viewingChest && screen.chest) {
-    // Fermé, le coffre porte son propre bouton : l'ouvrir n'avance rien.
+    // Fermé, le coffre porte son propre bouton : l'ouvrir n'avance rien. Le
+    // Mimic, lui, a déjà ouvert l'attente côté serveur : son bouton mène au
+    // poster. Un rechargement y va droit. Voir specs/bonus.md#coffre-et-mimic.
     return {
       screen,
       card: "chest",
       chest: screen.chest,
-      action: screen.chest.opened ? next : null,
+      action: !screen.chest.opened ? null : atCamp ? { label: NEXT, move: "leave" } : next,
     };
   }
 
@@ -286,7 +290,7 @@ export function playView(
       return {
         screen,
         card: "result",
-        action: { label: "Redescendre", move: "leaveFall" },
+        action: { label: "Redescendre", move: "leave" },
       };
     }
 

@@ -7,10 +7,12 @@
     :data-arriving="arriving || undefined"
   />
 
-  <!-- Le coup reçu : le bord de l'écran rougit, le temps d'un éclair. -->
+  <!-- Le coup reçu : le bord de l'écran rougit, le temps d'un éclair. Sous le
+       Mimic, il rougit et reste rouge : toutes les vies sont parties. -->
   <div
-    v-if="reaction === 'hit'"
-    class="pointer-events-none fixed inset-0 z-20 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgb(185_28_28/0.75)_100%)] opacity-0 motion-safe:animate-vignette-flash"
+    v-if="reaction && VIGNETTES[reaction]"
+    class="pointer-events-none fixed inset-0 z-20"
+    :class="VIGNETTES[reaction]"
   />
 
   <div
@@ -206,10 +208,13 @@ const props = defineProps<{
   /**
    * Le cadre entier, rubans compris, réagit au verdict : `hit` sur une vie
    * perdue (il encaisse un coup et le bord de l'écran rougit), `hop` sur une
-   * bonne réponse (il fait un petit saut). Sur l'enveloppe et non sur le
-   * cadre, dont l'`animation` d'arrivée écraserait celle-ci.
+   * bonne réponse (il fait un petit saut), `mauled` sous le Mimic (le même
+   * coup au moment où il frappe, et le bord reste rouge), `quake` à
+   * l'ouverture d'un coffre (il tremble avec lui), `pop` quand le coffre
+   * s'ouvre sur un trésor (il gonfle et rebondit). Sur l'enveloppe et
+   * non sur le cadre, dont l'`animation` d'arrivée écraserait celle-ci.
    */
-  reaction?: 'hit' | 'hop'
+  reaction?: 'hit' | 'hop' | 'mauled' | 'quake' | 'pop'
   /**
    * L'attente d'un geste, jouée pendant que la requête part : `judging` sur
    * Valider (l'encre remonte, le médaillon tremble jusqu'au verdict), `leaving`
@@ -229,7 +234,17 @@ const MOTIONS = {
 const REACTIONS = {
   hit: 'motion-safe:animate-hit',
   hop: 'motion-safe:animate-hop',
+  mauled: 'motion-safe:animate-mauled',
+  quake: 'motion-safe:animate-quake',
+  pop: 'motion-safe:animate-pop',
 } as const
+
+// Le bord rouge de chaque coup : un éclair sur `hit`, plus dense et qui reste
+// en battant sous le Mimic.
+const VIGNETTES: Partial<Record<keyof typeof REACTIONS, string>> = {
+  hit: 'bg-[radial-gradient(ellipse_at_center,transparent_35%,rgb(185_28_28/0.75)_100%)] opacity-0 motion-safe:animate-vignette-flash',
+  mauled: 'bg-[radial-gradient(ellipse_at_center,transparent_20%,rgb(220_38_38/0.5)_55%,rgb(127_29_29/0.95)_100%)] motion-safe:animate-vignette-hold',
+}
 
 const arriving = leaving !== props.skin
 

@@ -169,6 +169,16 @@ export const users = sqliteTable('users', {
   /** Jours joués qui se suivent, le dernier compris. */
   playStreak: integer('play_streak').notNull().default(0),
   /**
+   * Ce qu'a donné le dernier coffre ouvert : un sort ou un Mimic. Null tant que
+   * le joueur n'en a ouvert aucun.
+   *
+   * Porté parce que rien d'autre ne le garde : la réservation ne tient qu'une
+   * question, et l'inventaire perd ses sorts lancés. Le Mimic n'attaque qu'après
+   * un sort — jamais sur le premier coffre, jamais deux fois d'affilée.
+   * Voir specs/bonus.md#coffre-et-mimic.
+   */
+  lastChest: text('last_chest', { enum: ['spell', 'mimic'] }),
+  /**
    * Les succès déjà acquis, portés plutôt que relus.
    *
    * La table `achievements` reste la source : elle seule les date, et c'est

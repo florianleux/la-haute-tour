@@ -354,12 +354,19 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
   les sorts en poche. Doublons illimités.
 - **Mimic (5 %)** → aucun objet : **toutes les vies de la tentative en cours sont
   retirées d'un coup**, traité comme une perte de dernière vie ordinaire.
+- **Le Mimic n'attaque qu'après un sort** : jamais sur le tout premier coffre
+  ouvert par le joueur, jamais deux fois d'affilée. Ces coffres-là donnent
+  toujours un Sort. Le dernier résultat est porté par le joueur (`lastChest`),
+  et la remise à zéro d'un joueur rend son prochain coffre à nouveau sûr.
 - **Exception, à partir de 50 % de l'étage parcouru et tant que le joueur n'a
   pas sa clé de boss** : le tirage 95/5 ne s'applique plus, le coffre est
   **forcé** de donner la clé — ni Sort, ni Mimic. Voir
   [`boss.md`](./boss.md#obtention-de-la-clé).
-- Le résultat d'un sort s'affiche sur l'écran de coffre. Un Mimic bascule
-  aussitôt en attente, et le poster d'attente ne le rappelle pas.
+- Le résultat s'affiche sur l'écran de coffre, sort comme Mimic. Le Mimic bascule
+  aussitôt la partie en attente côté serveur, mais l'écran le montre d'abord : il
+  saute au visage du joueur, le bord de l'écran rougit et reste rouge, et un
+  message rouge annonce la perte de toutes les vies. « Suivant » mène au poster
+  d'attente, qui ne le rappelle pas. Un rechargement va droit au poster.
 
 **Le tirage a lieu au clic, côté serveur, et son résultat est persisté sur le
 verdict.** Le verdict porte donc trois états : *pas de coffre*, *coffre fermé*,

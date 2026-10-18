@@ -1028,7 +1028,7 @@ export async function openPlayerChest(
     return stateFrom(snapshot, now)
   }
 
-  const outcome = rollChest(rules, random)
+  const outcome = rollChest(rules, random, snapshot.user.lastChest)
   const chest: ChestState = outcome.spell ?? 'mimic'
 
   // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures
@@ -1045,16 +1045,19 @@ export async function openPlayerChest(
     return buildState(db, user.id, now)
   }
 
-  if (outcome.spell) {
-    // Une ligne par exemplaire : le tirage ignore le stock, les doublons sont
-    // illimités.
-    await db.insert(inventory).values({ userId: user.id, spell: outcome.spell, obtainedAt: now })
-  }
-
   const opened: Reservation = { ...reservation, chest }
 
-  if (!outcome.mimic) {
-    return stateFrom({ ...snapshot, reservation: opened }, now)
+  if (outcome.spell) {
+    // Une ligne par exemplaire : le tirage ignore le stock, les doublons sont
+    // illimités. Le sort arme le Mimic pour le coffre suivant.
+    const armed = { lastChest: 'spell' as const }
+
+    await db.batch([
+      db.insert(inventory).values({ userId: user.id, spell: outcome.spell, obtainedAt: now }),
+      db.update(users).set(armed).where(eq(users.id, user.id)),
+    ])
+
+    return stateFrom({ ...snapshot, user: { ...snapshot.user, ...armed }, reservation: opened }, now)
   }
 
   // Le Mimic retire toutes les vies d'un coup, traité comme une perte de dernière
@@ -1062,7 +1065,7 @@ export async function openPlayerChest(
   // l'était — reste lisible par-dessus. La série tombe avec les vies : « toute vie
   // perdue casse la série » ne souffre pas d'exception, pas même celle-ci.
   const cooldown = cooldownFields(cooldownFrom(rules, now), now)
-  const killed = { lives: 0, streak: 0, ...cooldown }
+  const killed = { lives: 0, streak: 0, lastChest: 'mimic' as const, ...cooldown }
 
   await db.update(users).set(killed).where(eq(users.id, user.id))
 

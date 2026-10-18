@@ -37,7 +37,8 @@ const chest = ref<ChestView>(CLOSED)
 // gagné le coffre : le bouton une fois ouvert est celui du jeu, et ramène ici
 // un coffre fermé.
 const state = computed(() => demoState({
-  lives: 2,
+  // Le Mimic les prend toutes, comme en vrai.
+  lives: chest.value.mimic ? 0 : 2,
   started: true,
   floorSeen: 49,
   floorTotal: 166,

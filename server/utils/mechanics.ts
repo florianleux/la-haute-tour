@@ -309,10 +309,16 @@ export interface ChestOutcome {
  * Ce qu'un coffre contenait. Le hasard vient de l'appelant : la mécanique décide,
  * elle ne tire pas — c'est ce qui la rend jouable sans horloge ni dé. Nommée pour
  * le geste qu'elle fait, jeter le dé, et non pour celui du joueur.
+ *
+ * Le Mimic n'attaque qu'après un sort : jamais sur le premier coffre ouvert
+ * (`lastChest` null), jamais deux fois d'affilée. Son dé est jeté quand même :
+ * le sort se tire toujours sur le second.
  * Voir specs/bonus.md#coffre-et-mimic.
  */
-export function rollChest(rules: FloorRules, random: () => number): ChestOutcome {
-  if (random() < rules.mimicChance) {
+export function rollChest(rules: FloorRules, random: () => number, lastChest: User['lastChest']): ChestOutcome {
+  const mimicRoll = random()
+
+  if (lastChest === 'spell' && mimicRoll < rules.mimicChance) {
     return { mimic: true, spell: null }
   }
 
