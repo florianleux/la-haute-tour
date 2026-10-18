@@ -29,6 +29,9 @@ export function levenshtein(a, b) {
 }
 
 const norm = s => s.normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim()
+// Les guillemets ajoutés autour d'un titre sont une correction demandée, pas une
+// réécriture : ils ne comptent pas dans la distance.
+const unquoted = s => norm(s).replaceAll('"', '')
 
 export function validateBatch(n) {
   const inPath = join(DIR, 'build', 'batches', `batch-${n}.json`)
@@ -73,7 +76,7 @@ export function validateBatch(n) {
     if (typeof o.statement === 'string') {
       if (/<[^>]+>|&[a-z]+;|&#\d+;/i.test(o.statement)) errors.push(`${where}: HTML dans statement`)
       // Garde-fou contre la reformulation : corriger une faute, pas réécrire.
-      const d = levenshtein(norm(src.statement), norm(o.statement))
+      const d = levenshtein(unquoted(src.statement), unquoted(o.statement))
       const limit = Math.max(4, Math.ceil(src.statement.length * 0.15))
       if (d > limit) warnings.push(`${where}: enonce trop reecrit (distance ${d} > ${limit})`)
     }

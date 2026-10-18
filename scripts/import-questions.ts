@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { createDatabase, type Database } from '../server/db/client'
+import { CATEGORY_LABELS, type CategoryCode } from '../shared/utils/categories'
 import { FLOOR_COUNT } from '../shared/utils/floors'
 import {
   acceptedAnswers,
@@ -17,13 +18,15 @@ import {
  * through TURSO_DATABASE_URL. See specs/architecture.md.
  */
 
+const categoryCodes = Object.keys(CATEGORY_LABELS) as [CategoryCode, ...CategoryCode[]]
+
 /** Shape of one entry in the source file. Anything else is skipped, never fatal. */
 const sourceQuestionSchema = z.object({
   statement: z.string().trim().min(1),
   answer: z.string().trim().min(1),
   answerLabel: z.string().trim().min(1),
   variants: z.array(z.string()).default([]),
-  categories: z.array(z.string()).default([]),
+  categories: z.array(z.enum(categoryCodes)).default([]),
 })
 
 export interface ParsedQuestion {

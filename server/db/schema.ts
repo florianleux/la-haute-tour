@@ -254,7 +254,10 @@ export const acceptedAnswers = sqliteTable('accepted_answers', {
   text: text('text').notNull(),
 }, table => [index('accepted_answers_question_idx').on(table.questionId)])
 
-/** Themes a question belongs to (Histoire, Musique, Sport…). Seeded by the import. */
+/**
+ * Themes a question belongs to. `name` holds the code (`HISTOIRE`), the label lives in
+ * shared/utils/categories.ts. Seeded by the import.
+ */
 export const categories = sqliteTable('categories', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull().unique(),

@@ -27,9 +27,11 @@ Recopie l'`id` **exactement**. N'invente aucun id, n'en omets aucun, n'en ajoute
 
 ## 1. `statement` — l'énoncé corrigé
 
-Corrige uniquement ce qui est **objectivement fautif** : orthographe, accents manquants, accord, ponctuation, noms propres mal orthographiés (`Genesys` → `Genesis`), espaces parasites. Ajoute le point d'interrogation s'il manque à une question.
+Fais une **passe d'orthographe complète** et corrige tout ce qui est **objectivement fautif** : orthographe, accents manquants (y compris sur les majuscules : `Ecole` → `École`), accord, conjugaison, ponctuation, noms propres mal orthographiés (`Genesys` → `Genesis`), espaces parasites. Ajoute le point d'interrogation s'il manque à une question.
 
-**Ne reformule pas.** Ne change pas le niveau de langue, ne raccourcis pas, n'ajoute pas d'indice, ne retire pas d'indice. Si l'énoncé est correct, recopie-le à l'identique. Un énoncé dont tu changerais plus de quelques caractères est un énoncé que tu reformules : arrête-toi.
+**Titres d'œuvres entre guillemets droits.** Un titre de livre, film, série, chanson, album, tableau, sculpture, opéra, pièce, émission ou journal cité dans l'énoncé s'écrit entre `"` : `Quel roman de Zola ouvre le cycle des "Rougon-Macquart" ?`. Ajoute les guillemets s'ils manquent, n'en mets jamais d'autres que `"`. Une citation reste entre guillemets, elle aussi.
+
+En dehors de ces corrections, **ne reformule pas.** Ne change pas le niveau de langue, ne raccourcis pas, n'ajoute pas d'indice, ne retire pas d'indice. Si l'énoncé est correct, recopie-le à l'identique. Un énoncé dont tu changerais plus de quelques caractères est un énoncé que tu reformules : arrête-toi.
 
 ## 2. `answer` et `answerLabel` — la réponse
 
@@ -57,15 +59,21 @@ Mets en variante :
 - des titres d'œuvres de l'auteur, un palmarès : `Goncourt 2012`, `Le Pavillon d'or (1956)`.
 - une définition ou une précision : `Déesse de la jeunesse`, `Vaccin contre la variole`.
 
-Cas particulier : si `tail` contient les **autres éléments d'une réponse multiple** (l'énoncé demande « 3 films de… » et `answer` + `tail` en donnent trois), mets les autres éléments en variantes et **signale-le** en commençant `why` par `[multi]`.
+## 4. Signalements — les questions à traiter à part
 
-Si l'énoncé n'identifie pas une réponse unique (par exemple `Skieur américain`, sans autre indice), commence `why` par `[flou]`.
+Certaines questions ne se jouent pas telles quelles. Elles seront **mises de côté** pour être reprises à la main : signale-les, ne les répare pas. Le signalement se met en tête de `why`, un seul par item, dans cet ordre de priorité :
+
+- `[liste]` : l'énoncé demande **plusieurs éléments** (`3 films de Howard HAWKS ?`, `Qui sont les fondateurs de Polytechnique ?`). Ne range pas les autres éléments en variantes.
+- `[pas-question]` : l'énoncé **n'est pas formulé en question** (`Peintre espagnol d'origine crétoise`, `Indépendance d'Haïti`). Ne le réécris pas en question : corrige seulement l'orthographe, comme pour tout énoncé.
+- `[flou]` : l'énoncé est une vraie question mais n'identifie pas une réponse unique. Celle-ci reste dans le deck, elle est seulement rapportée.
+
+Un item signalé reste complet en sortie : `statement`, `answer`, `answerLabel` et `variants` remplis comme les autres.
 
 Ne mets **jamais** `answer` lui-même dans `variants`. Tableau vide si rien à ajouter. N'invente pas de variantes que le texte d'entrée ne fournit pas, sauf synonyme évident et incontestable.
 
-## 4. `why`
+## 5. `why`
 
-Dix mots maximum, en français. Ce champ ne porte que les **signalements** décrits ci-dessus : il commence par `[multi]` quand la réponse est multiple, par `[flou]` quand l'énoncé n'identifie pas une réponse unique. Pour tout le reste, une justification courte du découpage de la réponse, ou une chaîne vide.
+Dix mots maximum, en français. Il commence par le signalement de la section 4 s'il y en a un. Sinon, une justification courte du découpage de la réponse, ou une chaîne vide.
 
 ## Rappels
 

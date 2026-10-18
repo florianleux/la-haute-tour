@@ -1,6 +1,6 @@
 ---
 name: prepare-questions
-description: Transforme un export Anki TSV de questions en JSON nettoyé, avec réponse brute, libellé, variantes et catégories.
+description: Transforme un export Anki TSV de questions en JSON nettoyé, avec réponse brute, libellé, variantes et codes de catégorie, et met à part les questions mal formées.
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ Le pipeline sépare strictement le **déterministe** (parse, découpe, validatio
 
 Les scripts sont dans `scripts/`, le template de prompt dans `templates/`. Tous prennent le répertoire de run en argument et n'écrivent que dedans.
 
-**Ce que la passe LLM fait, et ne fait pas.** Elle corrige les énoncés et découpe les réponses. Elle ne note rien : les questions ne portent aucune difficulté, et c'est l'import qui les répartit au hasard sur les 6 étages de la tour. Voir `specs/spec.md`.
+**Ce que la passe LLM fait, et ne fait pas.** Elle corrige l'orthographe des énoncés, met les titres d'œuvres entre guillemets droits, découpe les réponses et signale les questions mal formées. Elle ne note rien : les questions ne portent aucune difficulté, et c'est l'import qui les répartit au hasard sur les 6 étages de la tour. Voir `specs/spec.md`.
 
 ## 1. Initialiser et parser
 
@@ -21,7 +21,9 @@ node scripts/init.mjs <source.txt> <runDir>
 node scripts/parse.mjs <runDir>
 ```
 
-`init` copie la source et pose `run.config.json` (taille de lot, graine). `parse` échoue franchement si les en-têtes Anki ne sont pas ceux attendus — le format est réputé fixe, un écart doit arrêter le run.
+**Export attendu** : « Notes en texte brut » avec **« Inclure le HTML et les références aux médias » coché** et les tags inclus. Sans HTML, Anki fond les lignes de la réponse en une seule, et la queue (dates, détail) ne se sépare plus de la réponse. La colonne `guid` est acceptée ou absente.
+
+`init` copie la source et pose `run.config.json` (taille de lot, graine). `parse` lit les en-têtes Anki pour placer les colonnes, et échoue franchement sur un export sans HTML. Il traduit chaque tag en code via `shared/utils/categories.ts` (`Géographie` → `GEOGRAPHIE`). Un tag absent de la table **arrête le run** et la liste entière s'affiche : compléter la table, relancer. Les marqueurs Anki `leech` et `marked` ne sont pas des catégories. Les guillemets `“ ”` et `« »` de l'énoncé deviennent `"`.
 
 Publier les compteurs affichés : cartes, ids uniques, réponses mono-segment, segments de date éliminés sans LLM, segments restant à juger, catégories.
 
@@ -42,7 +44,7 @@ Le mélange avant découpe : un export Anki est ordonné par thème, et un lot e
 
 Traiter **un seul** lot, puis `node scripts/ingest.mjs <runDir> 1`.
 
-Montrer à l'utilisateur les énoncés modifiés et les arbitrages de variantes. Chercher deux dérapages : des reformulations déguisées en corrections, et du détail promu en variante (dates, nationalités, palmarès). Ajuster `templates/enrich.md` si besoin et refaire le pilote. On itère ici, pas sur 120 lots.
+Montrer à l'utilisateur les énoncés modifiés, les arbitrages de variantes et les signalements. Chercher trois dérapages : des reformulations déguisées en corrections, du détail promu en variante (dates, nationalités, palmarès), et des énoncés réécrits en question au lieu d'être signalés `[pas-question]`. Ajuster `templates/enrich.md` si besoin et refaire le pilote. On itère ici, pas sur 120 lots.
 
 **Fini quand** : `ingest.mjs` passe et la qualité du lot est jugée bonne.
 
@@ -68,13 +70,15 @@ node scripts/assemble.mjs <runDir>
 
 Le script joint sur l'`id` et génère les variantes de nom pour les réponses en `NOM (Prénom)`.
 
-Lire la sortie et **ne pas livrer en silence si quelque chose cloche** : aucun HTML résiduel, aucun id dupliqué, aucune variante identique à sa réponse.
+Les items signalés `[liste]` et `[pas-question]` sortent du deck et vont dans `to-review.json`, avec leur motif dans `reason`.
+
+Lire la sortie et **ne pas livrer en silence si quelque chose cloche** : aucun HTML résiduel, aucun id dupliqué, aucune variante identique à sa réponse, aucune catégorie hors de la table.
 
 **Fini quand** : « toutes passées », ou l'échec est expliqué à l'utilisateur.
 
 ## 6. Livrer
 
-Envoyer `<runDir>/questions.json`, puis rendre compte : répartition par catégorie, énoncés corrigés, variantes produites, et les questions signalées `[multi]` (réponse multiple) et `[flou]` (énoncé n'identifiant pas une réponse unique) — leur liste est dans `build/report.json`.
+Envoyer `<runDir>/questions.json` et `<runDir>/to-review.json`, puis rendre compte : répartition par catégorie, énoncés corrigés, variantes produites, questions mises à part (`[liste]` : liste demandée, `[pas-question]` : énoncé qui n'est pas une question), et questions `[flou]` restées dans le deck (énoncé n'identifiant pas une réponse unique) — leur liste est dans `build/report.json`.
 
 Rappeler où est le fichier : un répertoire de run temporaire n'est pas un endroit où le laisser.
 
@@ -89,9 +93,11 @@ Rappeler où est le fichier : un répertoire de run temporaire n'est pas un endr
   "answer": "Mishima",
   "answerLabel": "MISHIMA (Yukio)",
   "variants": ["Yukio Mishima", "Mishima Yukio"],
-  "categories": ["Littérature"]
+  "categories": ["LITTERATURE"]
 }
 ```
+
+`to-review.json` a la même forme, plus un champ `reason` (`[liste] …` ou `[pas-question] …`).
 
 `answer` est ce que le joueur tape, `answerLabel` ce qui s'affiche. L'ordre du tableau ne veut rien dire : l'import mélange avant de répartir.
 
