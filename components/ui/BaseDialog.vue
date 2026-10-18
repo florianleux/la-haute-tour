@@ -60,8 +60,21 @@ onMounted(() => {
 // sur la page. Fermée d'abord, le navigateur le rend à ce qui l'avait avant —
 // la bannière du camp, le parchemin du camp. Sans redire `close` : c'est
 // déjà le parent qui la démonte.
+//
+// Mais le navigateur rallume l'anneau de focus sur l'élément rendu, même à la
+// souris : un cadre blanc sur le bouton qui avait ouvert la boîte. Pour un
+// joueur à la souris, le focus rendu est donc retiré aussitôt, et confié à la
+// boîte qui l'entoure s'il y en a une encore ouverte, pour ne pas sortir d'elle.
+// Le clavier le garde : la boîte, ou ce qu'elle contient, porte alors
+// `:focus-visible` — dès l'ouverture, qui hérite du clavier qui l'a demandée.
 onBeforeUnmount(() => {
+  const keyboard = dialog.value?.matches(':focus-visible, :has(:focus-visible)') ?? false
   dialog.value?.removeEventListener('close', onClose)
   dialog.value?.close()
+  const restored = document.activeElement
+  if (!keyboard && restored instanceof HTMLElement) {
+    restored.blur()
+    restored.closest<HTMLElement>('dialog[open]')?.focus({ preventScroll: true })
+  }
 })
 </script>
