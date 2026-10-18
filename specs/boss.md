@@ -39,7 +39,9 @@ que le deck de l'étage.** Même table `attempts`, mêmes vies, même
 Une exception : **les Sorts n'agissent pas en combat de boss.** Le combat se
 joue avec les vies standard et le timer de son boss, sans Vitalité ni
 Chronomancie — sinon une vie de plus ferait déborder les 10 épreuves d'un
-combat. L'attente et le rattrapage entre deux combats, eux, restent ceux de
+combat. Un effet qui attendait la prochaine tentative de sa cible n'est pas
+consommé par un combat de boss : il est gardé pour la tentative d'ascension
+suivante. L'attente et le rattrapage entre deux combats, eux, restent ceux de
 l'ascension : Répit, Indulgence et Purge y agissent comme d'habitude.
 
 Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
@@ -67,7 +69,8 @@ Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
   60.
 - **6 échecs consécutifs → passage automatique** à l'étage suivant.
 - **1er combat** : le joueur entre avec les vies qu'il lui restait à la fin
-  de l'ascension — sauf si elles sont à 0, voir « Cas à 0 vie » plus bas.
+  de l'ascension, **3 au plus** — une vie gagnée par Vitalité ne passe pas la
+  porte du boss. Sauf si elles sont à 0, voir « Cas à 0 vie » plus bas.
 - **Combats suivants** : vies pleines standard (3), comme une tentative
   d'ascension normale.
 - **Entre deux combats** : attente (12h par défaut) puis rattrapage, sur le
@@ -186,13 +189,6 @@ l'a été.
 - **Le 7e boss**, Le Présentateur, que le lore place entre le boss de l'étage 6
   et `gameOver` (voir [`lore.md`](./lore.md#boss)). À venir : d'ici là,
   `gameOver` suit le boss de l'étage 6.
-- **Une vie de Vitalité au 1er combat.** Le 1er combat hérite des vies de fin
-  d'ascension, qui peuvent dépasser 3 si une Vitalité agissait sur cette
-  tentative. Jusqu'à 4 vies, 10 épreuves suffisent encore (3 échecs + 7
-  réussites) ; à 5, non. Plafonner à 3 en entrant au combat, ou pas ?
-- **Un effet qui attend un combat de boss.** Un effet s'ancre sur la prochaine
-  tentative de sa cible ; si c'est un combat de boss, où il n'agit pas,
-  attend-il la tentative d'ascension suivante ou est-il perdu ?
 
 Le reste est réglé par le grillage — voir les sections ci-dessus. Reste aussi, propre à
 chaque boss et hors périmètre de ce document : le contenu exact d'une épreuve
