@@ -42,15 +42,17 @@
     <BaseParchmentInput
       :model-value="modelValue"
       @update:model-value="$emit('update:modelValue', $event)"
-      @submit="$emit('submit')"
+      @submit="send('enter')"
     />
+
+    <EmptyAnswerNotice :method="heldEmptySend" />
 
     <template #action>
       <BaseCardButton
         label="Valider"
         anchor="card-bottom"
         :loading="submitting"
-        @click="$emit('submit')"
+        @click="send('click')"
       />
     </template>
   </PlayFrame>
@@ -66,6 +68,7 @@
 // interdit — plus simple de sortir du système Base* pour les écrans reskinés.
 import type { GameState, ServedQuestion } from '~~/server/utils/game'
 import type { EffectView } from '~~/server/utils/effects'
+import type { SendMethod } from '~/composables/useEmptyAnswerHold'
 
 const props = defineProps<{
   state: GameState
@@ -77,7 +80,17 @@ const props = defineProps<{
   effects: EffectView[]
 }>()
 
-defineEmits<{ 'update:modelValue': [string], submit: [] }>()
+const emit = defineEmits<{ 'update:modelValue': [string], submit: [] }>()
+
+// Une réponse vide attend d'être confirmée. Une réponse en vol, elle, est déjà
+// arbitrée par useQuestionRun : rien à retenir.
+const { heldEmptySend, holds } = useEmptyAnswerHold(() => props.modelValue, () => props.question.id)
+
+function send(method: SendMethod): void {
+  if (props.submitting || !holds(method)) {
+    emit('submit')
+  }
+}
 
 const statement = computed(() => withNonBreakingSpaces(props.question.statement))
 </script>

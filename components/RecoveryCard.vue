@@ -47,8 +47,10 @@
       <BaseParchmentInput
         :model-value="modelValue"
         @update:model-value="$emit('update:modelValue', $event)"
-        @submit="$emit('submit')"
+        @submit="send('enter')"
       />
+
+      <EmptyAnswerNotice :method="heldEmptySend" />
     </template>
 
     <template v-else-if="screen.verdict">
@@ -79,7 +81,7 @@
         anchor="parchment-bottom"
         face="plank"
         :loading="submitting"
-        @click="$emit('submit')"
+        @click="send('click')"
       />
       <BaseCardButton
         v-else-if="action"
@@ -105,6 +107,7 @@
 // palier, pas de vie perdue. Ce qui reste tient dans un fichier.
 import type { GameScreen, PlayAction } from '~~/utils/phase'
 import { RECOVERY_FAILURE_MESSAGE, RECOVERY_SUCCESS_MESSAGE } from '~~/utils/phase'
+import type { SendMethod } from '~/composables/useEmptyAnswerHold'
 
 const props = defineProps<{
   screen: GameScreen
@@ -118,12 +121,22 @@ const props = defineProps<{
   advancing: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [string]
   'submit': []
   'dispute': []
   'advance': []
 }>()
+
+// Une réponse vide attend d'être confirmée, comme en ascension (QuestionCard).
+// La carte reste montée de la question au verdict : la retenue suit la question.
+const { heldEmptySend, holds } = useEmptyAnswerHold(() => props.modelValue, () => props.screen.question?.id)
+
+function send(method: SendMethod): void {
+  if (props.submitting || !holds(method)) {
+    emit('submit')
+  }
+}
 
 // « Question 3/5 · 2 réponses justes sur 3 requises » : où il en est, ce qu'il a,
 // ce qu'il lui faut. Le pluriel suit chaque nombre, zéro compris au singulier.

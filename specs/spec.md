@@ -64,6 +64,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
 | **Erreur contestable** | `disputableError` (`isDisputable`) | Une erreur que le joueur peut encore contester. Les conditions vivent dans [`validation.md`](./validation.md#quand). |
 | **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Visible de l'administration seulement, et non contestable. |
+| **Envoi vide retenu** | `heldEmptySend` | Le premier envoi d'un champ de réponse vide ou blanc, qui ne part pas : la carte demande de recommencer de la même façon — Entrée ou clic sur Valider, la **façon d'envoyer** (`sendMethod` : `enter` ou `click`) —, et le second envoi, de l'une ou l'autre façon, part. Taper dans le champ l'oublie. Le chrono et la perte de focus envoient sans le connaître. Voir [`ecrans.md`](./ecrans.md#ascent--question). |
 | **Whitelist** | `whitelist` | Discord IDs autorisés à s'inscrire, alimentée manuellement. |
 | **Énoncé** | `statement` | Le texte de la question posée au joueur. |
 | **Réponses acceptées** | `acceptedAnswers` | Toutes les formulations qui valident la question. Aucune n'est privilégiée : la tolérance typo s'applique à chacune. L'admin en ajoute une quand il accepte une contestation. |

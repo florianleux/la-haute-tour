@@ -84,7 +84,7 @@ Un **indicateur de question loot** avant de répondre, quand le passage en est u
 
 Aucune autre action que répondre.
 
-**Entrée envoie la réponse, puis enchaîne.** Sur le verdict, le palier, la fin de rattrapage, la même touche passe à la suite : on joue au clavier sans en sortir. Elle est rendue à l'élément qui a le focus quand il en fait déjà quelque chose — un champ de saisie, un bouton, un lien —, sinon un seul appui déclencherait deux choses.
+**Entrée envoie la réponse, puis enchaîne.** Sur le verdict, le palier, la fin de rattrapage, la même touche passe à la suite : on joue au clavier sans en sortir. Elle est rendue à l'élément qui a le focus quand il en fait déjà quelque chose — un champ de saisie, un bouton, un lien —, sinon un seul appui déclencherait deux choses. **Une réponse vide se confirme** : le premier envoi d'un champ vide ou blanc, à Entrée comme au clic sur Valider, ne part pas ; la carte dit « Réponse vide. Appuie encore sur Entrée pour l'envoyer quand même. » (ou « Clique encore sur Valider »), et le second geste, quel qu'il soit, l'envoie. Une réponse vide coûte une vie, et Entrée vient de passer le verdict : un double appui un peu rapide grillerait la question qui s'affiche. Taper dans le champ efface l'avertissement. La fin du chrono et le départ de la page envoient sans demander.
 
 ### `ascent` — verdict
 
