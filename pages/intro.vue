@@ -67,7 +67,7 @@ const GREETING_LINES: [DuoLine, ...DuoLine[]] = [
   {
     place: 'right',
     text: 'Donne-moi ton nom. Qu\'on sache au moins quoi raconter après.',
-    prompt: { label: 'Votre nom', minLength: 1, maxLength: 15 },
+    prompt: { label: 'Ton nom', minLength: 1, maxLength: 15 },
   },
 ]
 

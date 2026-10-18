@@ -41,7 +41,7 @@ export interface Speaker {
  * specs/spec.md (« Invite »).
  */
 export interface DialoguePrompt {
-  /** Le libellé du champ : « Votre nom ». */
+  /** Le libellé du champ : « Ton nom ». */
   label: string
   /**
    * Les bornes de ce qui est accepté, espaces de bout coupés. En dessous du

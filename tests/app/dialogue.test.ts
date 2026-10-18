@@ -51,7 +51,7 @@ const ASKED: Dialogue = {
     {
       place: 'right',
       text: 'Dis ton nom.',
-      prompt: { label: 'Votre nom', minLength: 1, maxLength: 15 },
+      prompt: { label: 'Ton nom', minLength: 1, maxLength: 15 },
     },
     { place: 'left', text: 'Le voilà.' },
   ],
@@ -118,7 +118,7 @@ const PROMPT_AND_CHOICES: Dialogue = {
     {
       place: 'right',
       text: 'Dis ton nom.',
-      prompt: { label: 'Votre nom', minLength: 1, maxLength: 15 },
+      prompt: { label: 'Ton nom', minLength: 1, maxLength: 15 },
       choices: ['Frodo'],
     },
   ],
@@ -228,7 +228,7 @@ describe('ce qu un geste fait du dialogue', () => {
 })
 
 describe('ce qu une invite accepte', () => {
-  const NAME = { label: 'Votre nom', minLength: 1, maxLength: 15 }
+  const NAME = { label: 'Ton nom', minLength: 1, maxLength: 15 }
 
   it('accepte ce qui tient dans les bornes', () => {
     expect(promptAnswered(NAME, 'Frodo')).toBe(true)
