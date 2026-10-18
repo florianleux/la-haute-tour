@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnEnter } from '../../utils/keyboard'
+import { advancesOnEnter, DIALOGUE_KEYS } from '../../utils/keyboard'
 import type { EnterPress, EnterTarget } from '../../utils/keyboard'
 
 /** Un appui, tel que le navigateur le décrit, réduit à ce qui décide. */
@@ -44,5 +44,34 @@ describe('Entrée fait passer à la suite', () => {
 
   it('enchaîne depuis un élément ordinaire', () => {
     expect(advancesOnEnter(press('Enter', { tagName: 'DIV' }), true)).toBe(true)
+  })
+})
+
+// Dans un dialogue, les flèches bas et droite font aussi passer à la suite ; le
+// jeu garde Entrée seule. Voir specs/ecrans.md.
+describe('les flèches d un dialogue', () => {
+  it('font passer à la suite quand on les demande', () => {
+    expect(advancesOnEnter(press('ArrowDown'), true, DIALOGUE_KEYS)).toBe(true)
+    expect(advancesOnEnter(press('ArrowRight'), true, DIALOGUE_KEYS)).toBe(true)
+  })
+
+  it('ne font rien par défaut : le jeu garde Entrée seule', () => {
+    expect(advancesOnEnter(press('ArrowDown'), true)).toBe(false)
+    expect(advancesOnEnter(press('ArrowRight'), true)).toBe(false)
+  })
+
+  it('laissent les autres flèches tranquilles', () => {
+    expect(advancesOnEnter(press('ArrowUp'), true, DIALOGUE_KEYS)).toBe(false)
+    expect(advancesOnEnter(press('ArrowLeft'), true, DIALOGUE_KEYS)).toBe(false)
+  })
+
+  it('restent au champ de saisie, où elles déplacent le curseur', () => {
+    expect(advancesOnEnter(press('ArrowRight', { tagName: 'INPUT' }), true, DIALOGUE_KEYS)).toBe(false)
+  })
+
+  it('avancent même quand un bouton a le focus : il ne fait rien d une flèche', () => {
+    // Juste après un clic sur la boîte, c'est elle qui a le focus.
+    expect(advancesOnEnter(press('ArrowDown', { tagName: 'BUTTON' }), true, DIALOGUE_KEYS)).toBe(true)
+    expect(advancesOnEnter(press('Enter', { tagName: 'BUTTON' }), true, DIALOGUE_KEYS)).toBe(false)
   })
 })

@@ -16,11 +16,14 @@ import type { MaybeRefOrGetter } from 'vue'
  * `ready` dit quand la touche a quelque chose à enchaîner. Un écran qui attend
  * toujours un geste ne le passe pas.
  *
+ * `keys` ajoute d'autres touches à Entrée : les flèches d'un dialogue.
+ *
  * La décision, elle, vit dans `advancesOnEnter` — testable sans DOM.
  */
 export function useAdvanceOnEnter(
   advance: () => unknown,
   ready: MaybeRefOrGetter<boolean> = true,
+  keys?: readonly string[],
 ): void {
   if (!import.meta.client) {
     return
@@ -33,7 +36,7 @@ export function useAdvanceOnEnter(
       target: event.target as EnterTarget | null,
     }
 
-    if (!advancesOnEnter(press, toValue(ready))) {
+    if (!advancesOnEnter(press, toValue(ready), keys)) {
       return
     }
 

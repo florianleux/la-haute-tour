@@ -167,10 +167,12 @@ export interface DialogueProgress {
   revealed: boolean
   /** Son invite attend encore une saisie valable, ou ses choix un clic. */
   awaiting: boolean
+  /** Combien de choix elle propose ; absent quand elle n'en propose pas. */
+  choiceCount?: number
 }
 
-/** Ce qu'un geste — clic, tape ou Entrée — fait d'un dialogue. */
-export type DialogueGesture = 'reveal' | 'next' | 'end' | 'wait'
+/** Ce qu'un geste — clic, tape, Entrée ou flèche bas/droite — fait d'un dialogue. */
+export type DialogueGesture = 'reveal' | 'next' | 'end' | 'wait' | 'choose'
 
 /**
  * Un geste pendant le défilé affiche la réplique en entier ; le suivant passe à
@@ -182,9 +184,13 @@ export type DialogueGesture = 'reveal' | 'next' | 'end' | 'wait'
  * tant qu'aucun n'est cliqué : ce sont les seuls moments où le geste ne fait
  * rien, et ils viennent après le défilé — révéler la réplique reste possible,
  * c'est passer outre la question qui ne l'est pas.
+ *
+ * Un choix seul n'en est pas un : Entrée ou une flèche le prend (`choose`),
+ * comme elle passerait une réplique ordinaire. Entre plusieurs, rien ne choisit
+ * à la place du joueur.
  */
 export function dialogueGesture(
-  { index, revealed, awaiting }: DialogueProgress,
+  { index, revealed, awaiting, choiceCount }: DialogueProgress,
   total: number,
 ): DialogueGesture {
   if (!revealed) {
@@ -192,7 +198,7 @@ export function dialogueGesture(
   }
 
   if (awaiting) {
-    return 'wait'
+    return choiceCount === 1 ? 'choose' : 'wait'
   }
 
   return index + 1 < total ? 'next' : 'end'

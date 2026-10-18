@@ -70,7 +70,8 @@
          le champ ou les réponses, et aucun z-index de la boîte n'y changerait
          rien — la carte porte un `transform`, qui enferme la boîte dans son
          propre empilement. On répond alors par Entrée ou « Répondre », ou en
-         cliquant un choix. -->
+         cliquant un choix — un choix seul se prend aussi à Entrée ou aux
+         flèches. -->
     <BaseSurfaceButton
       v-if="!((prompt || choices) && revealed)"
       label="Suite du dialogue"
@@ -90,6 +91,7 @@
 // Lui servir un autre dialogue le reprend à sa première réplique (voir
 // useDialogue) : aucun `:key` à poser dessus.
 import type { Dialogue } from '~~/utils/dialogue'
+import { DIALOGUE_KEYS } from '~~/utils/keyboard'
 
 const props = defineProps<{ dialogue: Dialogue }>()
 
@@ -117,9 +119,10 @@ const {
 // au milieu de la scène, personne ne répond en couleur.
 const answerer = computed(() => lineup.value.find(member => member.place !== place.value)?.speaker)
 
-// Entrée fait avancer comme le clic, par le même chemin que les écrans de jeu.
-// Sans condition : un dialogue affiché est un dialogue qui attend un geste.
-// Quand c'est le bouton de la scène qui a le focus, `advancesOnEnter` lui rend
-// la touche — il s'active déjà seul, sinon un appui avancerait de deux.
-useAdvanceOnEnter(advance)
+// Entrée fait avancer comme le clic, par le même chemin que les écrans de jeu,
+// et les flèches bas et droite aussi : on lit un dialogue comme on tourne des
+// pages. Sans condition : un dialogue affiché est un dialogue qui attend un
+// geste. Quand c'est le bouton de la scène qui a le focus, `advancesOnEnter`
+// lui rend Entrée — il s'active déjà seul, sinon un appui avancerait de deux.
+useAdvanceOnEnter(advance, true, DIALOGUE_KEYS)
 </script>

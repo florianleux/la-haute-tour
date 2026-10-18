@@ -206,6 +206,20 @@ describe('ce qu un geste fait du dialogue', () => {
     expect(dialogueGesture({ index: 0, revealed: true, awaiting: true }, 3)).toBe('wait')
   })
 
+  // Un seul choix n'en est pas un : le geste qui fait avancer le prend, comme
+  // il passerait une réplique ordinaire. Vu au playtest du 16 octobre 2026.
+  it('prend le choix quand il est seul', () => {
+    expect(dialogueGesture({ index: 0, revealed: true, awaiting: true, choiceCount: 1 }, 3)).toBe('choose')
+  })
+
+  it('ne choisit jamais à la place du joueur entre plusieurs choix', () => {
+    expect(dialogueGesture({ index: 0, revealed: true, awaiting: true, choiceCount: 2 }, 3)).toBe('wait')
+  })
+
+  it('révèle d abord la réplique qui porte un choix unique', () => {
+    expect(dialogueGesture({ index: 0, revealed: false, awaiting: true, choiceCount: 1 }, 3)).toBe('reveal')
+  })
+
   it('révèle quand même la réplique qui porte l invite', () => {
     // Le champ ne paraît qu'une fois la question posée en entier : le geste
     // doit donc encore pouvoir la révéler.
@@ -460,6 +474,23 @@ describe('le déroulé d un dialogue', () => {
     expect(awaiting.value).toBe(true)
     advance()
     expect(shown.value).toBe('Tu viens\u00A0?')
+  })
+
+  it('prend au geste un choix qui est seul, et passe à la suite', () => {
+    const now = ref(START)
+    const { advance, ranks, speaker } = play({
+      ...CHOSEN,
+      lines: [
+        { place: 'right', text: 'Des questions ?', choices: ['C\'est quoi, cette Tour ?'] },
+        { place: 'left', text: 'Une longue histoire.' },
+      ],
+    }, now)
+
+    now.value = START + 10_000
+    advance()
+
+    expect(ranks).toEqual([0])
+    expect(speaker.value).toEqual(GANDALF)
   })
 
   it('ne prend pas de clic avant que la question soit posée', () => {

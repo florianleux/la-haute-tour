@@ -139,7 +139,7 @@ Message de félicitations, précédé du verdict de la dernière question. Phase
 
 ## Leçons de Michel
 
-Michel, la souris du camp (voir [`lore.md`](./lore.md#michel)), explique l'interface au moment où le joueur la découvre. Une **leçon** se joue une fois, ne se passe pas, et chaque réplique avance au clic ou à Entrée. Sa forme : une **bulle** qui sort de Michel ; ce dont il parle **s'éclaire** et le reste s'assombrit ; quand il demande un geste, seul ce qu'il montre se clique. Hors du camp, Michel entre par un coin de l'écran, avec la même bulle. Hors leçon, il reste dans le décor, et un clic sur lui propose de rejouer une leçon déjà vue.
+Michel, la souris du camp (voir [`lore.md`](./lore.md#michel)), explique l'interface au moment où le joueur la découvre. Une **leçon** se joue une fois, ne se passe pas, et chaque réplique avance au clic, à Entrée ou aux flèches bas et droite. Sa forme : une **bulle** qui sort de Michel ; ce dont il parle **s'éclaire** et le reste s'assombrit ; quand il demande un geste, seul ce qu'il montre se clique. Hors du camp, Michel entre par un coin de l'écran, avec la même bulle. Hors leçon, il reste dans le décor, et un clic sur lui propose de rejouer une leçon déjà vue.
 
 Les textes sont à écrire ; seul leur contenu est fixé ici.
 

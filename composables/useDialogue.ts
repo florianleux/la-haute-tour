@@ -115,8 +115,8 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   const awaiting = computed(() => {
     const asked = prompt.value
 
-    // Des choix attendent toujours : c'est le clic sur l'un d'eux qui passe,
-    // jamais le geste.
+    // Des choix attendent toujours un clic sur l'un d'eux. Seule exception, au
+    // clavier : un choix seul se prend à Entrée ou aux flèches (dialogueGesture).
     return choices.value !== null || (asked !== null && !promptAnswered(asked, answer.value))
   })
 
@@ -171,7 +171,12 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   }
 
   function advance(): void {
-    const progress = { index: index.value, revealed: revealed.value, awaiting: awaiting.value }
+    const progress = {
+      index: index.value,
+      revealed: revealed.value,
+      awaiting: awaiting.value,
+      choiceCount: choices.value?.length,
+    }
     const gesture = dialogueGesture(progress, dialogue.value.lines.length)
 
     // La saisie est rendue avant que la réplique change : après, l'invite n'est
@@ -203,6 +208,9 @@ export function useDialogue(dialogue: Ref<Dialogue>, options: DialogueOptions): 
   function perform(gesture: DialogueGesture): void {
     switch (gesture) {
       case 'wait':
+        break
+      case 'choose':
+        choose(0)
         break
       case 'reveal':
         revealAll()
