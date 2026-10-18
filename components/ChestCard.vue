@@ -22,9 +22,13 @@
         <!-- Les deux coffres empilés dans la même boîte : les deux webp ont été
              rognés sur le même cadre (pieds, serrure, poignées au même pixel),
              si bien que le fondu ne fait bouger que le couvercle. C'est la
-             boîte qui remue, pas une image : les deux restent calées. -->
+             boîte qui remue, pas une image : les deux restent calées.
+             z-30 : ce qui en jaillit passe devant tout le reste de la carte —
+             le texte dessous, dont la petite icône du sort (filtrée, donc
+             peinte par-dessus sans lui), et le bouton (z-20) sous le Mimic
+             qui saute. -->
         <div
-          class="relative h-full shrink-0 origin-bottom"
+          class="relative z-30 h-full shrink-0 origin-bottom"
           :class="{
             // Ouvert, le contenu est sorti : plus rien ne remue dedans.
             'motion-safe:animate-rattle': stage === 'idle' && !revealed,
@@ -155,7 +159,7 @@
             role="recall"
             class="font-semibold text-emerald-700"
           >
-            Le coffre contenait <strong><SpellMention :subject="chest.spell" /></strong>. Il rejoint ton inventaire.
+            Le coffre contenait <strong><SpellMention :subject="chest.spell" /></strong>. Il rejoint ton Grimoire.
           </PlayText>
         </div>
       </div>
