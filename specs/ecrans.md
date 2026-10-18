@@ -156,6 +156,11 @@ La **question d'essai** (voir [`spec.md`](./spec.md#glossaire)) a l'écran d'une
 
 Nommé **Inventaire** côté joueur, ouvert par le sac du camp. Il montre les **Objets** du joueur — le Fromage, tant qu'il ne l'a pas donné à Michel — et rien des sorts, qui vivent au Grimoire. Vide, il le dit dans l'univers du jeu.
 
+Il s'ouvre **par-dessus le camp**, comme le Grimoire : un sac vu de face qui jaillit du bas et rebondit en se posant, son titre « Inventaire » au-dessus. Échap, la croix ou un clic à côté le referment. Tout se passe dans son volet ouvert, au-dessus du nœud, en deux parties :
+
+- La **grille**, à gauche — 5 cases de large sur 20 de haut, qui défile verticalement. Un Objet par case ; les cases sans Objet restent dessinées, vides.
+- La **page de détail**, à droite — vide tant qu'aucun Objet n'est choisi. Un clic sur un Objet de la grille l'y montre : son image, sa description, et un bouton « Utiliser » s'il s'utilise.
+
 ## Sorts
 
 Nommé **Grimoire** côté joueur. Atteignable **au camp seulement** (l'attente, le rattrapage tant qu'il n'a pas commencé, et l'ascension au repos), par le grimoire du camp. Il s'ouvre **par-dessus le camp**, qui reste affiché dessous : un livre ouvert qui jaillit du bas, grossit et rebondit en se posant, couvert d'étincelles, son titre « Grimoire » au-dessus. Échap, la croix ou un clic à côté le referment. Pas de version mobile pour l'instant. Trois choses :
