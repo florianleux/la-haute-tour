@@ -1,4 +1,4 @@
-import { isAnswerAccepted } from './answers'
+import { isAnswerAccepted } from '../../shared/utils/answers'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { isCooldownBound, SPELL_IDS } from '../../shared/utils/spells'
 import { rulesForFloor } from './rules'

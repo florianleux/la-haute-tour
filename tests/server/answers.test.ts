@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isAnswerAccepted, normalizeAnswer, phoneticKeys } from '../../server/utils/answers'
+import { isAnswerAccepted, normalizeAnswer, phoneticKeys } from '../../shared/utils/answers'
 
 describe('normalisation', () => {
   it('met de côté casse, espaces, accents et ponctuation', () => {
