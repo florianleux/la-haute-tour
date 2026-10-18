@@ -15,18 +15,19 @@ pas.
   boss peut le remplacer entièrement par sa propre logique de victoire/défaite
   (par exemple sans PV ni vies ; aucun boss de ce genre n'est encore
   spécifié — `boss-etage2-tacautac.md`, cité ici, n'existe pas).
-- **12 épreuves maximum** par combat sous le modèle par défaut — ce plafond
-  découle du calcul PV/vies et ne s'applique pas aux boss qui s'en écartent.
-  Le combat s'arrête dès que le boss est à 0 PV (victoire) ou le joueur à 0
-  vie (défaite) — jamais par épuisement du pool : à 12 épreuves et un maximum
-  théorique de 5 vies, le pire cas (4 échecs tolérés + 7 réussites) se résout
-  en 11 épreuves au plus.
+- **10 épreuves par combat** sous le modèle par défaut — ce nombre découle
+  du calcul PV/vies (7 PV + 3 vies) et ne s'applique pas aux boss qui s'en
+  écartent. Le combat s'arrête dès que le boss est à 0 PV (victoire) ou le
+  joueur à 0 vie (défaite) — jamais par épuisement du pool : à 3 vies, le
+  pire cas (2 échecs tolérés + 7 réussites) se résout en 9 épreuves au plus,
+  la 10e est une marge. Le compte tient parce que les Sorts n'agissent pas en
+  combat de boss (voir plus bas).
 - **Combat individuel** : chaque joueur affronte son propre boss, ses propres
   PV, ses propres épreuves — même une fois la porte ouverte pour l'équipe
   (voir plus bas).
 - Format d'une épreuve (saisie, timer, anti-triche) : propre à chaque boss,
   hors périmètre de ce document — mais **un seul format par boss**, partagé par
-  ses 72 épreuves curatées. Un boss ne mélange pas les types de mini-jeu d'une
+  ses 60 épreuves curatées. Un boss ne mélange pas les types de mini-jeu d'une
   épreuve à l'autre dans un même combat.
 
 ## Le combat de boss est une tentative d'ascension
@@ -35,9 +36,11 @@ pas.
 tentative (`attempt`) de plus, dont le contenu est les épreuves du boss plutôt
 que le deck de l'étage.** Même table `attempts`, mêmes vies, même
 `cooldown`/`recovery` — voir [ADR 0006](../docs/adr/0006-le-combat-de-boss-reutilise-la-tentative.md).
-Rien à dupliquer : les Sorts, leurs plafonds d'effets et tout ce qui s'ancre sur
-le début d'une tentative s'appliquent donc aussi, sans code dédié, à un combat
-de boss.
+Une exception : **les Sorts n'agissent pas en combat de boss.** Le combat se
+joue avec les vies standard et le timer de son boss, sans Vitalité ni
+Chronomancie — sinon une vie de plus ferait déborder les 10 épreuves d'un
+combat. L'attente et le rattrapage entre deux combats, eux, restent ceux de
+l'ascension : Répit, Indulgence et Purge y agissent comme d'habitude.
 
 Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
 [`architecture.md`](./architecture.md#état-de-jeu)) :
@@ -61,7 +64,7 @@ Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
   **contenu des épreuves lui-même** — pas sur le timer ni une autre règle
   transversale — donc elle est propre à chaque boss : c'est le curateur qui
   place ses épreuves les plus dures dans les tranches 1-2 en construisant les
-  72.
+  60.
 - **6 échecs consécutifs → passage automatique** à l'étage suivant.
 - **1er combat** : le joueur entre avec les vies qu'il lui restait à la fin
   de l'ascension — sauf si elles sont à 0, voir « Cas à 0 vie » plus bas.
@@ -126,10 +129,10 @@ chacun posant sa clé, pour l'ouvrir.
 
 ## Contenu des épreuves — pas d'aléatoire
 
-Le contenu d'un combat de boss n'est **jamais tiré au hasard** : les 12
+Le contenu d'un combat de boss n'est **jamais tiré au hasard** : les 10
 épreuves d'un combat sont choisies à la main, une fois, en base. Seul leur
 **ordre de présentation** est mélangé à chaque combat. Ça vaut pour les 6
-combats de chaque boss — 72 épreuves curatées par boss au total (12 × 6).
+combats de chaque boss — 60 épreuves curatées par boss au total (10 × 6).
 
 ## Introduction et animations
 
@@ -183,10 +186,17 @@ l'a été.
 - **Le 7e boss**, Le Présentateur, que le lore place entre le boss de l'étage 6
   et `gameOver` (voir [`lore.md`](./lore.md#boss)). À venir : d'ici là,
   `gameOver` suit le boss de l'étage 6.
+- **Une vie de Vitalité au 1er combat.** Le 1er combat hérite des vies de fin
+  d'ascension, qui peuvent dépasser 3 si une Vitalité agissait sur cette
+  tentative. Jusqu'à 4 vies, 10 épreuves suffisent encore (3 échecs + 7
+  réussites) ; à 5, non. Plafonner à 3 en entrant au combat, ou pas ?
+- **Un effet qui attend un combat de boss.** Un effet s'ancre sur la prochaine
+  tentative de sa cible ; si c'est un combat de boss, où il n'agit pas,
+  attend-il la tentative d'ascension suivante ou est-il perdu ?
 
 Le reste est réglé par le grillage — voir les sections ci-dessus. Reste aussi, propre à
 chaque boss et hors périmètre de ce document : le contenu exact d'une épreuve
-(saisie, timer, anti-triche) et celui des 72 par boss (quelles épreuves dans
+(saisie, timer, anti-triche) et celui des 60 par boss (quelles épreuves dans
 quelle tranche de difficulté).
 
 ## Amendements requis

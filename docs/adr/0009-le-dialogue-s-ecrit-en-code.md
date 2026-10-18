@@ -8,7 +8,7 @@
 Le module de dialogue (#51) sert d'abord l'introduction d'un boss : apparition,
 nom, répliques, une seule fois par boss (voir `boss.md#introduction-et-animations`).
 
-Le contenu du boss, lui, est déjà tranché dans l'autre sens : ses 12 épreuves par
+Le contenu du boss, lui, est déjà tranché dans l'autre sens : ses 10 épreuves par
 combat sont « choisies à la main, une fois, **en base** » (`boss.md#contenu-des-épreuves`),
 et les drapeaux de l'étage 1 ont leur table dédiée. Un lecteur qui voit les
 épreuves d'un boss en base s'attend à y trouver ses répliques.

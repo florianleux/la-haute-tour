@@ -51,6 +51,11 @@ qui s'ancre sur `attemptStartedAt` — les Sorts, leur budget de lancers, les
 effets qui attendent la tentative suivante — s'applique donc aussi, gratuitement
 et sans code dédié, à un combat de boss.
 
+**Amendé le 2026-10-18** : les Sorts n'agissent pas en combat de boss, pour que
+10 épreuves suffisent à décider un combat (7 PV + 3 vies). Cette exception
+demande du code dédié ; l'attente et le rattrapage entre deux combats restent
+ceux de l'ascension. Voir `boss.md`.
+
 Le prix : `attempts.seen` devient trompeur sans le marqueur (ADR non résolue
 côté schéma — le marqueur exact, champ ou table, reste à choisir à
 l'implémentation). Et parce que le combat de boss est un `attempt` comme un

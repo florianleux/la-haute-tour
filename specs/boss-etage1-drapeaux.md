@@ -3,7 +3,7 @@
 Mini-jeu : **Drapeaux**. Le joueur voit un drapeau, doit donner le lieu
 associé en saisie libre.
 
-Suit le cadre général défini dans [`boss.md`](./boss.md) : 7 PV, 12 épreuves
+Suit le cadre général défini dans [`boss.md`](./boss.md) : 7 PV, 10 épreuves
 curatées par combat de boss (pas d'aléatoire sur le contenu, seul l'ordre est
 mélangé), 6 combats en 3 paliers de difficulté dégressive.
 
@@ -36,7 +36,7 @@ Le degré de difficulté suit les 3 paliers du cadre général :
 
 ## Points encore à spécifier
 
-- Liste exacte des 72 drapeaux curatés (12 par combat × 6).
+- Liste exacte des 60 drapeaux curatés (10 par combat × 6).
 - Gestion des images en base (format, stockage, admin).
 
 ---
