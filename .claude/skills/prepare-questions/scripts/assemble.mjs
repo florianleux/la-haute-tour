@@ -99,7 +99,7 @@ const check = (cond, msg) => { if (!cond) problems.push(msg) }
 
 check(rows.length === cards.length, `${rows.length} lignes au lieu de ${cards.length}`)
 check(new Set(rows.map(r => r.id)).size === rows.length, 'ids dupliques')
-const HTML = /<[^>]+>|&[a-z]+;|&#\d+;/i
+const HTML = /<\/?[a-z][^>]*>|&[a-z]+;|&#\d+;/i
 check(!rows.some(r => HTML.test(r.statement + r.answer + r.answerLabel + r.variants.join(''))), 'HTML residuel')
 check(rows.every(r => r.categories.every(c => c in CATEGORY_LABELS)), 'categorie hors de shared/utils/categories.ts')
 check(!rows.some(r => r.variants.some(v => v.toLowerCase() === r.answer.toLowerCase())), 'answer present dans variants')

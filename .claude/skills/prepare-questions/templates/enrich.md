@@ -31,11 +31,13 @@ Fais une **passe d'orthographe complète** et corrige tout ce qui est **objectiv
 
 **Titres d'œuvres entre guillemets droits.** Un titre de livre, film, série, chanson, album, tableau, sculpture, opéra, pièce, émission ou journal cité dans l'énoncé s'écrit entre `"` : `Quel roman de Zola ouvre le cycle des "Rougon-Macquart" ?`. Ajoute les guillemets s'ils manquent, n'en mets jamais d'autres que `"`. Une citation reste entre guillemets, elle aussi.
 
+Tu corriges la **langue**, jamais les **faits** : un titre d'œuvre, un nom d'institution ou une date restent ceux du texte, même s'ils te semblent inexacts (`Derrière l'horizon` reste `Derrière l'horizon`).
+
 En dehors de ces corrections, **ne reformule pas.** Ne change pas le niveau de langue, ne raccourcis pas, n'ajoute pas d'indice, ne retire pas d'indice. Si l'énoncé est correct, recopie-le à l'identique. Un énoncé dont tu changerais plus de quelques caractères est un énoncé que tu reformules : arrête-toi.
 
 ## 2. `answer` et `answerLabel` — la réponse
 
-- `answerLabel` : **ce qui est affiché au joueur**. Reprends `answer` d'entrée en corrigeant sa casse et son orthographe, et en gardant sa forme complète. `MISHIMA (Yukio)` reste `MISHIMA (Yukio)`. Conserve les majuscules du nom de famille, c'est la convention du deck.
+- `answerLabel` : **ce qui est affiché au joueur**. Reprends `answer` d'entrée en corrigeant sa casse et son orthographe, et en gardant sa forme complète. N'y ajoute rien : pas de prénom absent de l'entrée. `MISHIMA (Yukio)` reste `MISHIMA (Yukio)`. Conserve les majuscules du nom de famille, c'est la convention du deck.
 - `answer` : **ce que le joueur tape au clavier**, en casse normale. C'est le noyau strictement nécessaire.
   - `MISHIMA (Yukio)` → `Mishima`
   - `LA FORTUNE DES ROUGON` → `La Fortune des Rougon`

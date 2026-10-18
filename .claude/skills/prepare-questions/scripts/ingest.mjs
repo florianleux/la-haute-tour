@@ -74,7 +74,7 @@ export function validateBatch(n) {
     if (!Array.isArray(o.variants)) errors.push(`${where}: variants non tableau`)
 
     if (typeof o.statement === 'string') {
-      if (/<[^>]+>|&[a-z]+;|&#\d+;/i.test(o.statement)) errors.push(`${where}: HTML dans statement`)
+      if (/<\/?[a-z][^>]*>|&[a-z]+;|&#\d+;/i.test(o.statement)) errors.push(`${where}: HTML dans statement`)
       // Garde-fou contre la reformulation : corriger une faute, pas réécrire.
       const d = levenshtein(unquoted(src.statement), unquoted(o.statement))
       const limit = Math.max(4, Math.ceil(src.statement.length * 0.15))
