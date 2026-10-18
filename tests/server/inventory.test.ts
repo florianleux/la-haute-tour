@@ -170,13 +170,38 @@ describe('inventaire des sorts', () => {
     expect(await response.json()).toMatchObject({ entries: [], log: [] })
   })
 
-  it('refuse la lecture hors attente', async () => {
+  /** Une question réservée, encore à répondre ou déjà résolue : l'ascension en cours. */
+  async function hold(userId: number, resolvedAt: Date | null = null): Promise<void> {
+    const questionId = await createQuestion(db)
+    await db.insert(reservations).values({
+      userId,
+      questionId,
+      mode: 'ascent',
+      expiresAt: new Date(Date.now() + 60_000),
+      resolvedAt,
+    })
+  }
+
+  it('refuse la lecture en pleine ascension, question en main comme verdict à lire', async () => {
+    const holding = await createPlayer(db, { discordId: 'holding' })
+    await hold(holding)
+    const reading = await createPlayer(db, { discordId: 'reading' })
+    await hold(reading, new Date())
+
+    for (const userId of [holding, reading]) {
+      const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+      expect(response.status).toBe(403)
+    }
+  })
+
+  // L'ascension au repos se tient au camp. Voir docs/adr/0012-le-camp-au-repos-se-deduit-de-l-ascension.md.
+  it('ouvre la lecture à l ascension au repos', async () => {
     const userId = await createPlayer(db)
     await loot(userId, 'VITALITY')
 
     const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(200)
   })
 
   // Le camp dure jusqu'au tirage du rattrapage : l'attente échue, le joueur
@@ -338,10 +363,21 @@ describe('inventaire des sorts', () => {
       expect(page.canTargetSelf).toBe(false)
     })
 
-    it('ne lance rien hors attente', async () => {
+    it('lance à l ascension au repos', async () => {
       const userId = await createPlayer(db)
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')
+
+      const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
+
+      expect(response.status).toBe(200)
+    })
+
+    it('ne lance rien en pleine ascension', async () => {
+      const userId = await createPlayer(db)
+      const cookie = await sessionCookieFor(userId)
+      await loot(userId, 'VITALITY')
+      await hold(userId)
 
       const response = await cast(jsonRequest('http://test/cast', 'POST', { spell: 'VITALITY', target: 'self' }, cookie))
 

@@ -28,7 +28,7 @@ describe('boucle d ascension', () => {
 
       const state = await readGameState(db, player, NOW)
 
-      expect(state).toMatchObject({ phase: 'ascent', floor: 1, lives: 3, started: false })
+      expect(state).toMatchObject({ phase: 'ascent', floor: 1, lives: 3 })
       expect(state.question).toBeNull()
       expect(await db.select().from(reservations)).toHaveLength(0)
     })

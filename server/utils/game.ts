@@ -122,8 +122,6 @@ export interface GameState {
   /** Les vies pleines pour la tentative en cours, Vitalité comprise : ce que
    *  l'écran compare à `lives` pour montrer les vies déjà perdues. */
   maxLives: number
-  /** False only while the player has never resolved nor reserved anything. */
-  started: boolean
   question: ServedQuestion | null
   verdict: Verdict | null
   /** ISO 8601 end of the cooldown, null outside a cooldown. */
@@ -701,7 +699,6 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     floor: user.currentFloor,
     lives: user.lives,
     maxLives: played.lives,
-    started: seen > 0 || reservation !== undefined,
     question: null as ServedQuestion | null,
     verdict: null as Verdict | null,
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,

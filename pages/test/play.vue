@@ -71,7 +71,6 @@ const state = ref(demoState({
   // En ascension, jamais zéro : à zéro vie, le joueur est en attente, pas en
   // train de répondre. Voir server/utils/mechanics.ts.
   lives: 1 + Math.floor(Math.random() * 3),
-  started: true,
   // Palier 545, sur un étage qui en compte largement plus.
   floorSeen: 544,
   floorTotal: 1000,

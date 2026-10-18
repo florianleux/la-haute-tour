@@ -3,12 +3,9 @@ import { blockedByMaintenance, fallQuestionId, gameScreen, isAnswering, isAtCamp
 import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
-  it('propose de commencer tant que rien n a été joué', () => {
-    expect(nextActionLabel(state({ phase: 'ascent', started: false }))).toBe('Commencer l\'ascension')
-  })
-
-  it('propose de reprendre une ascension entamée', () => {
-    expect(nextActionLabel(state({ phase: 'ascent', started: true }))).toBe('Reprendre l\'ascension')
+  // Le bouton du poster, au camp : un mot, comme celui du rattrapage.
+  it('propose de commencer au camp', () => {
+    expect(nextActionLabel(state({ phase: 'ascent' }))).toBe('Commencer')
   })
 })
 
@@ -93,6 +90,16 @@ describe('camp (écran d attente)', () => {
       .toBe(false)
     expect(isAtCamp(state({ phase: 'recovery', recovery: ongoing, verdict })))
       .toBe(false)
+  })
+
+  // L'ascension au repos : rien de tiré, rien à lire. Voir specs/spec.md#glossaire (Au repos).
+  it('accueille l ascension au repos', () => {
+    expect(isAtCamp(state({ phase: 'ascent' }))).toBe(true)
+  })
+
+  it('laisse l ascension en cours, question servie comme verdict à lire', () => {
+    expect(isAtCamp(state({ phase: 'ascent', question }))).toBe(false)
+    expect(isAtCamp(state({ phase: 'ascent', verdict }))).toBe(false)
   })
 })
 
@@ -184,8 +191,8 @@ describe('carte de jeu', () => {
     expect(card({ question })).toEqual({ card: 'question', action: null })
   })
 
-  it('propose de commencer une ascension au repos', () => {
-    expect(card({})).toEqual({ card: 'start', action: { label: 'Commencer l\'ascension', move: 'advance' } })
+  it('montre le camp à l ascension au repos, avec de quoi la commencer', () => {
+    expect(card({})).toEqual({ card: 'cooldown', action: { label: 'Commencer', move: 'advance' } })
   })
 
   it('enchaîne sur la suite après un verdict', () => {

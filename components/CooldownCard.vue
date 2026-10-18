@@ -77,7 +77,8 @@
          à droite par la corde nouée sur le piquet gauche. Elle porte le décompte
          pendant l'attente : c'est le seul chiffre que le joueur vient chercher,
          et le drapeau est ce qu'on lit en premier. Hors attente il n'y a plus
-         rien à décompter : la bannière dit que l'attente est finie.
+         rien à décompter : la bannière dit que l'attente est finie. Au repos,
+         il n'y a eu aucune attente : la bannière reste vide.
          `tabular-nums` comme le chrono de l'ascension, sinon le cadrage tremble
          à chaque seconde ; pas d'`uppercase` sur le décompte, qui rendrait
          « 4m 12s » en « 4M 12S ». -->
@@ -85,7 +86,7 @@
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
       :class="inCooldown ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
     >
-      {{ inCooldown ? (cooldownRemaining || 'Attente') : 'Attente terminée' }}
+      {{ inCooldown ? (cooldownRemaining || 'Attente') : atRest ? '' : 'Attente terminée' }}
     </h1>
 
     <!-- Le panneau de parchemin porte tout ce que l'écran a à dire : décompte,
@@ -108,9 +109,10 @@
     >
       <!-- Le décompte est monté dans la bannière : le répéter ici ferait lire
            deux fois le même chiffre à dix centimètres d'écart. Une seule phrase
-           pour les deux phases : ce que le joueur a à faire, attendre ou jouer. -->
+           pour les deux phases : ce que le joueur a à faire, attendre ou jouer.
+           Au repos, l'accueil du camp. -->
       <p class="text-[4.16cqw]">
-        {{ inCooldown && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
+        {{ atRest ? 'Bienvenue au camp de base' : inCooldown && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
       </p>
 
       <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
@@ -142,9 +144,9 @@
     </div>
 
     <!-- Les deux actions ne coexistent jamais : « Passer l'attente » n'existe
-         que pour l'admin pendant le cooldown, « Commencer »
-         qu'une fois l'attente échue. Un seul emplacement suffit donc, entre le
-         bas du panneau et les pierres des piquets. -->
+         que pour l'admin pendant le cooldown, « Commencer » qu'une fois
+         l'attente échue, ou au repos. Un seul emplacement suffit donc, entre
+         le bas du panneau et les pierres des piquets. -->
     <BaseCardButton
       v-if="action"
       :label="action.label"
@@ -165,8 +167,8 @@
 </template>
 
 <script setup lang="ts">
-// L'écran d'attente — cooldown comme rattrapage prêt à démarrer. Partagé entre
-// la vraie partie (pages/index.vue) et son banc de design (pages/test/cooldown.vue) :
+// Le camp — l'attente, le rattrapage prêt à démarrer et l'ascension au repos.
+// Partagé entre la vraie partie (pages/index.vue) et son banc de design (pages/test/cooldown.vue) :
 // modifier l'un modifie l'autre, comme QuestionCard pour l'ascension.
 //
 // Reskin parchemin/médiéval au même titre que l'ascension : les deux phases se
@@ -180,7 +182,7 @@ import type { CampOverlayId, GameScreen, PlayAction } from '~~/utils/phase'
 const props = defineProps<{
   state: GameState
   screen: GameScreen
-  /** « Commencer » une fois l'attente échue, null pendant. Voir utils/phase.ts (playView). */
+  /** « Commencer » une fois l'attente échue ou au repos, null pendant. Voir utils/phase.ts (playView). */
   action: PlayAction | null
   cooldownRemaining: string
   loading: boolean
@@ -194,6 +196,7 @@ const props = defineProps<{
 defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId] }>()
 
 const inCooldown = computed(() => isCooldown(props.state))
+const atRest = computed(() => isAtRest(props.state))
 
 // La place et la taille du poster, partagées par son image et son contenu.
 const POSTER_BOX = 'bottom-[calc(4svh+1.5rem)] left-1/2 aspect-918/980 w-[min(calc(100%-3rem),calc((94svh-3rem)*918/980))] -translate-x-1/2 translate-y-[calc(5svh_-_min(8svh,max(0px,(100svh*16/9_-_100vw)/6)))]'

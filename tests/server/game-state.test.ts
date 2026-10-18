@@ -60,7 +60,6 @@ describe('endpoints de jeu', () => {
       phase: 'ascent',
       floor: 1,
       lives: 3,
-      started: false,
       seenTotal: 0,
       question: null,
       verdict: null,

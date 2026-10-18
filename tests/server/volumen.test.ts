@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { disputes, missedPool, recoveryQuestions } from '../../server/db/schema'
+import { disputes, missedPool, recoveryQuestions, reservations } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -40,8 +40,11 @@ describe('Volumen', () => {
   }
 
   describe('la garde du camp', () => {
-    it('ferme le Volumen hors du camp', async () => {
-      const cookie = await sessionCookieFor(await createPlayer(db))
+    it('ferme le Volumen en pleine ascension', async () => {
+      const userId = await createPlayer(db)
+      const questionId = await createQuestion(db)
+      await db.insert(reservations).values({ userId, questionId, mode: 'ascent', expiresAt: new Date(Date.now() + 60_000) })
+      const cookie = await sessionCookieFor(userId)
 
       expect((await log(apiRequest('http://test/question-log?filter=missed', cookie))).status).toBe(403)
       expect((await log(apiRequest('http://test/question-log', cookie))).status).toBe(403)

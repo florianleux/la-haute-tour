@@ -54,7 +54,6 @@ const state = ref(demoState({
   phase: 'recovery',
   // Le rattrapage ne se joue qu'à zéro vie : c'est sa définition même.
   lives: 0,
-  started: true,
   question: answering
     ? {
         id: 'test-recovery',

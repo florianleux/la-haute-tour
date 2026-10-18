@@ -28,7 +28,7 @@ function run(options: QuestionRunOptions): Promise<QuestionRun> {
 }
 
 function gameState(overrides: Partial<GameState> = {}): GameState {
-  return demoState({ started: true, ...overrides })
+  return demoState(overrides)
 }
 
 function servedAt(msFromNow: number): GameState {

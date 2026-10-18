@@ -39,7 +39,6 @@ const chest = ref<ChestView>(CLOSED)
 const state = computed(() => demoState({
   // Le Mimic les prend toutes, comme en vrai.
   lives: chest.value.mimic ? 0 : 2,
-  started: true,
   floorSeen: 49,
   floorTotal: 166,
   attemptSeen: 12,

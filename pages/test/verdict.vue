@@ -42,7 +42,6 @@ const state = useState<GameState>('test-verdict-state', () => {
   return demoState({
     phase,
     lives: 1 + Math.floor(Math.random() * 3),
-    started: true,
     verdict: {
       questionId: 'test-verdict',
       statement: picked.statement,

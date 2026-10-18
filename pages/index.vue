@@ -89,41 +89,6 @@
       <BaseNotice v-if="readFailed">
         Impossible de lire ta partie. Recharge la page.
       </BaseNotice>
-
-      <!-- L'ascension au repos : rien en cours, le joueur la commence ou la
-           reprend. -->
-      <template v-if="view?.card === 'start' && state">
-        <!-- Le rattrapage tiré mais sans question ni verdict passe aussi par ici :
-             seul son bouton s'affiche, pas les chiffres de l'ascension. -->
-        <div v-if="state.phase === 'ascent'" class="grid grid-cols-3 gap-3">
-          <BaseStat label="Étage" :value="state.floor" />
-          <BaseStat label="Vies" :value="state.lives" />
-          <BaseStat label="Tentative" :value="state.attemptSeen" />
-        </div>
-
-        <BaseHint v-if="state.phase === 'ascent'" class="mt-2">
-          Étage {{ state.floor }} — question {{ state.floorSeen }} / {{ state.floorTotal }}
-        </BaseHint>
-
-        <!-- Une icône par effet actif : un joueur dont les chiffres ont changé
-             doit pouvoir comprendre pourquoi plutôt que de croire à un bug.
-             C'est un état, comme les vies — pas une action. -->
-        <EffectList
-          v-if="view.screen.activeEffects.length"
-          :effects="view.screen.activeEffects"
-          class="mt-3"
-        />
-
-        <BaseButton
-          v-if="view.action"
-          block
-          class="mt-6"
-          :loading="isRunning('advance')"
-          @click="goNext"
-        >
-          {{ view.action.label }}
-        </BaseButton>
-      </template>
     </BaseCard>
 
     <!-- Les boîtes du camp — le Grimoire, le Volumen, les Haut-faits et

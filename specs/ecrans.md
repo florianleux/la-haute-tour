@@ -61,7 +61,7 @@ Une page, sept phases. Le serveur décide, la page affiche.
 
 ### Camp au repos
 
-L'ascension **au repos** (voir [`spec.md`](./spec.md#glossaire)) s'affiche au camp, et non sur une carte de départ : c'est là qu'arrive le joueur qui sort de l'introduction, et celui qui revient d'une attente échue sans rattrapage possible. Le camp est le même que pendant l'attente, sans délai à afficher : la corde est déroulée, et un clic sur elle tire la première question. Objets et Sorts s'y ouvrent comme pendant l'attente.
+L'ascension **au repos** (voir [`spec.md`](./spec.md#glossaire)) s'affiche au camp, et non sur une carte de départ : c'est là qu'arrive le joueur qui sort de l'introduction, et celui qui revient d'une attente échue sans rattrapage possible. Le camp est le même que pendant l'attente, sans délai à afficher : la bannière du poster reste vide, son parchemin dit « Bienvenue au camp de base », la corde est déroulée, et un clic sur elle ou sur le bouton « Commencer » du poster tire la première question. Objets et Sorts s'y ouvrent comme pendant l'attente.
 
 **Les objets du camp apparaissent avec leur contenu**, puis restent :
 

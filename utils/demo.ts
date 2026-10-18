@@ -84,7 +84,6 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     floor: 1,
     lives: 3,
     maxLives: 3,
-    started: false,
     question: null,
     verdict: null,
     cooldownUntil: null,

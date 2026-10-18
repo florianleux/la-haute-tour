@@ -76,7 +76,7 @@ import type { TeamId } from '~~/shared/utils/teams'
 import type { CampOverlayId } from '~~/utils/phase'
 
 const props = defineProps<{
-  /** L'attente est échue : la corde se déroule et lance la suite. */
+  /** L'attente est échue, ou l'ascension au repos : la corde se déroule et lance la suite. */
   ready: boolean
   advancing: boolean
   /** La guilde du joueur, qui choisit la couleur de la bannière. Sans équipe, pas de bannière. */

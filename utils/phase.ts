@@ -62,7 +62,8 @@ export function nextActionLabel(state: GameState): string {
     return NEXT;
   }
 
-  return state.started ? "Reprendre l'ascension" : "Commencer l'ascension";
+  // Au repos : le bouton du poster, un mot comme celui du rattrapage.
+  return "Commencer";
 }
 
 /**
@@ -124,7 +125,17 @@ export function isCooldown(state: GameState | null): boolean {
 }
 
 /**
- * Le camp : l'attente, puis le rattrapage tant qu'il n'a ni question ni tirage.
+ * L'ascension au repos : rien de tiré, rien à lire. Pas une phase — la phase
+ * reste `ascent` —, mais ce qui la met au camp. Voir specs/spec.md#glossaire
+ * (Au repos) et docs/adr/0012-le-camp-au-repos-se-deduit-de-l-ascension.md.
+ */
+export function isAtRest(state: GameState | null): boolean {
+  return state?.phase === "ascent" && !state.question && !state.verdict;
+}
+
+/**
+ * Le camp : l'attente, le rattrapage tant qu'il n'a ni question ni tirage, et
+ * l'ascension au repos.
  * C'est l'écran d'attente, et le seul moment où les Sorts existent, donc le seul
  * d'où la boîte qui les porte s'ouvre. Dit ici, comme isAnswering, plutôt qu'à
  * chaque endroit qui en dépend — la carte de jeu et les boîtes du camp, qui se
@@ -134,7 +145,8 @@ export function isCooldown(state: GameState | null): boolean {
 export function isAtCamp(state: GameState | null): boolean {
   return (
     isCooldown(state) ||
-    (state?.phase === "recovery" && !state.question && !state.recovery)
+    (state?.phase === "recovery" && !state.question && !state.recovery) ||
+    isAtRest(state)
   );
 }
 
@@ -186,7 +198,7 @@ export interface PlayClientState {
   fallenOn: string | null;
 }
 
-const AT_REST: PlayClientState = { chestOf: null, fallenOn: null };
+const NO_DETOUR: PlayClientState = { chestOf: null, fallenOn: null };
 
 /**
  * La carte que l'écran de jeu monte — une seule — avec ce qu'elle seule porte :
@@ -199,7 +211,7 @@ export type PlayView = {
 } & (
   | { card: "question"; question: ServedQuestion }
   | { card: "chest"; chest: ChestView }
-  | { card: "recovery" | "cooldown" | "result" | "start" }
+  | { card: "recovery" | "cooldown" | "result" }
 );
 
 /**
@@ -220,7 +232,7 @@ export function fallQuestionId(state: GameState): string | null {
  */
 export function playView(
   state: GameState,
-  client: PlayClientState = AT_REST,
+  client: PlayClientState = NO_DETOUR,
 ): PlayView {
   const screen = gameScreen(state);
   const atCamp = isAtCamp(state);
@@ -231,13 +243,9 @@ export function playView(
   const viewingChest = onVerdict(client.chestOf);
   const next: PlayAction = { label: nextActionLabel(state), move: "advance" };
 
-  // Avant l'attente : le rattrapage en cours porte sa question et son verdict.
+  // Avant l'attente : le rattrapage tiré porte sa question et son verdict.
   // Pendant une question, aucune action à part répondre.
-  if (
-    state.phase === "recovery" &&
-    !atCamp &&
-    (screen.question || screen.verdict)
-  ) {
+  if (state.phase === "recovery" && !atCamp) {
     return { screen, card: "recovery", action: screen.question ? null : next };
   }
 
@@ -249,12 +257,12 @@ export function playView(
   // dans l'état, et le ferait relire au lieu du poster — sauf le temps de la
   // chute, que le joueur lit avant de redescendre, et du Mimic, qu'il voit
   // sauter avant le poster. L'attente porte ses propres boutons ; seul le
-  // rattrapage prêt à démarrer avance d'ici.
+  // rattrapage prêt à démarrer et l'ascension au repos avancent d'ici.
   if (atCamp && !readingFall && !viewingChest) {
     return {
       screen,
       card: "cooldown",
-      action: state.phase === "recovery" ? next : null,
+      action: isCooldown(state) ? null : next,
     };
   }
 
@@ -270,39 +278,34 @@ export function playView(
     };
   }
 
-  if (
-    screen.verdict ||
-    state.phase === "floorEnd" ||
-    state.phase === "gameOver"
-  ) {
-    // Le coffre fermé retient le joueur : « Suivant » mène à son écran, qui
-    // a son propre bouton pour l'ouvrir — sinon l'objet se perdrait.
-    // Voir specs/bonus.md#coffre-et-mimic.
-    if (screen.verdict && screen.chest && !screen.chest.opened) {
-      return {
-        screen,
-        card: "result",
-        action: { label: NEXT, move: "enterChest", chestOf: screen.verdict.questionId },
-      };
-    }
+  // Reste le verdict à lire, le palier et la fin de partie : l'ascension au
+  // repos est au camp, et tout rattrapage tiré sur sa carte.
 
-    if (readingFall) {
-      return {
-        screen,
-        card: "result",
-        action: { label: "Redescendre", move: "leave" },
-      };
-    }
-
-    // La fin de partie n'a plus aucune action. Voir specs/ecrans.md#principes.
+  // Le coffre fermé retient le joueur : « Suivant » mène à son écran, qui
+  // a son propre bouton pour l'ouvrir — sinon l'objet se perdrait.
+  // Voir specs/bonus.md#coffre-et-mimic.
+  if (screen.verdict && screen.chest && !screen.chest.opened) {
     return {
       screen,
       card: "result",
-      action: state.phase === "gameOver" ? null : next,
+      action: { label: NEXT, move: "enterChest", chestOf: screen.verdict.questionId },
     };
   }
 
-  return { screen, card: "start", action: next };
+  if (readingFall) {
+    return {
+      screen,
+      card: "result",
+      action: { label: "Redescendre", move: "leave" },
+    };
+  }
+
+  // La fin de partie n'a plus aucune action. Voir specs/ecrans.md#principes.
+  return {
+    screen,
+    card: "result",
+    action: state.phase === "gameOver" ? null : next,
+  };
 }
 
 /**
