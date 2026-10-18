@@ -7,23 +7,17 @@
          1828×1080) : jamais étiré, au plus large qui tienne, posé en bas de
          l'écran. Son bas tombe un peu dessous, comme celui du Volumen. Pas de
          version mobile pour l'instant. Les positions en % sont relevées sur
-         l'image. -->
-    <div
-      class="relative -mb-[3dvh] mt-auto aspect-[1828/1080] w-[min(96vw,calc(90dvh*1828/1080))] shrink-0 origin-bottom"
-      :class="closing ? 'motion-safe:animate-sink [--enter-delay:0.1s]' : 'motion-safe:animate-book-rise'"
-      data-camp-backdrop
-      @click.self="close"
+         l'image. Le livre garde ses clics d'une couverture à l'autre, sous
+         les onglets du haut. -->
+    <CampOverlayFrame
+      src="/images/spellbook.webp"
+      :closing="closing"
+      enter="motion-safe:animate-camp-rise"
+      leave="motion-safe:animate-sink [--enter-delay:0.1s]"
+      :hits="['inset-x-[1.5%] bottom-0 top-[10%]']"
+      class="-mb-[3dvh] mt-auto aspect-[1828/1080] w-[min(96vw,calc(90dvh*1828/1080))] origin-bottom"
+      @close="close"
     >
-      <img
-        src="/images/spellbook.webp"
-        alt=""
-        class="pointer-events-none absolute inset-0 size-full select-none"
-      >
-
-      <!-- Le livre attrape ses clics : seul le vide autour ferme. Il couvre
-           d'une couverture à l'autre, sous les onglets du haut. -->
-      <div class="absolute inset-x-[1.5%] bottom-0 top-[10%]" />
-
       <!-- La page gauche : un rond par sort, médaillon une fois découvert. Le
            rond choisi dit quel sort la page droite montre. -->
       <SpellPentacle
@@ -143,7 +137,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </CampOverlayFrame>
   </CampOverlay>
 </template>
 

@@ -7,24 +7,18 @@
          1292×1849, rognée par scripts/img-trim-webp.sh) : jamais étirée, au
          plus haut qui tienne. Son haut est coupé au ras de l'image : elle pend
          du bord de l'écran, accrochée hors champ. Pivot en haut, à son point
-         d'accroche. Les positions en % sont relevées sur l'image. -->
-    <div
-      class="relative aspect-[1292/1849] h-[min(92dvh,calc(96vw*1849/1292))] shrink-0 origin-top"
-      :class="closing ? 'motion-safe:animate-banner-lift' : 'motion-safe:animate-banner-drop'"
-      data-camp-backdrop
-      @click.self="close"
+         d'accroche. Les positions en % sont relevées sur l'image. L'étoffe
+         garde ses clics d'une couture à l'autre, jusqu'au bas des emblèmes :
+         l'échancrure entre ses deux pointes ferme. -->
+    <CampOverlayFrame
+      :src="BANNERS[team]"
+      :closing="closing"
+      enter="motion-safe:animate-banner-drop"
+      leave="motion-safe:animate-banner-lift"
+      :hits="['inset-x-[3%] top-0 h-[70%]']"
+      class="aspect-[1292/1849] h-[min(92dvh,calc(96vw*1849/1292))] origin-top"
+      @close="close"
     >
-      <img
-        :src="BANNERS[team]"
-        alt=""
-        class="pointer-events-none absolute inset-0 size-full select-none"
-      >
-
-      <!-- L'étoffe attrape ses clics : seul le vide autour ferme, y compris
-           l'échancrure entre ses deux pointes. Elle couvre d'une couture à
-           l'autre, jusqu'au bas des emblèmes. -->
-      <div class="absolute inset-x-[3%] top-0 h-[70%]" />
-
       <!-- Le titre et le compteur, posés sur l'étoffe, en haut, dans l'éclat
            des noms du camp. Ils jaillissent pendant que la bannière rebondit.
            Le compteur passe dessous, plus petit : sur une seule ligne, il
@@ -55,7 +49,7 @@
           />
         </div>
       </div>
-    </div>
+    </CampOverlayFrame>
   </CampOverlay>
 </template>
 

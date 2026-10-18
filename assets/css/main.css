@@ -1154,13 +1154,18 @@
     100% { transform: none; }
   }
 
-  /* Le Grimoire qui s'ouvre sur le camp : il jaillit du bas tout petit, monte
-     en grossissant, dépasse sa taille et sa place, s'écrase en s'y posant et
-     rebondit comme de la gélatine, de moins en moins. Pivot en bas (l'appelant
-     pose origin-bottom) : il s'écrase sur sa base. La fermeture reprend sink. */
-  --animate-book-rise: book-rise 0.8s linear both;
+  /* Le grimoire ou le sac qui s'ouvre sur le camp : il jaillit du bas tout
+     petit, monte en grossissant, dépasse sa taille et sa place, s'écrase en s'y
+     posant et rebondit comme de la gélatine, de moins en moins. Pivot en bas
+     (l'appelant pose origin-bottom) : il s'écrase sur sa base. La fermeture
+     reprend sink.
 
-  @keyframes book-rise {
+     Au sommet, il dépasse sa place de --rise-lift et sa hauteur de
+     --rise-stretch. Le sac, coupé au ras de l'écran, ne doit jamais décoller
+     du bord : il pose un --rise-lift nul et s'étire plus à la place. */
+  --animate-camp-rise: camp-rise 0.8s linear both;
+
+  @keyframes camp-rise {
     0% {
       opacity: 0;
       transform: translateY(70dvh) scale(0.35);
@@ -1168,7 +1173,7 @@
     }
     12% { opacity: 1; }
     45% {
-      transform: translateY(-4dvh) scale(1.1, 1.06);
+      transform: translateY(var(--rise-lift, -4dvh)) scale(1.1, var(--rise-stretch, 1.06));
       animation-timing-function: ease-in-out;
     }
     62% {
