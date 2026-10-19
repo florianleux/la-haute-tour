@@ -31,4 +31,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (!user.value.introDone && !to.meta.admin && to.path !== '/intro') {
     return navigateTo('/intro')
   }
+
+  // Finie, elle se ferme : c'est elle qui donne le Fromage, une fois par
+  // partie. Seul un admin la revoit, pour la relire — le serveur, lui, ne
+  // redonne rien à une introduction finie (server/api/profile/intro.post.ts).
+  if (user.value.introDone && !isAdmin.value && to.path === '/intro') {
+    return navigateTo('/')
+  }
 })

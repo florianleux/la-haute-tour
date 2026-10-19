@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
+import { users } from '../../server/db/schema'
 import { createPlayer, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -49,11 +51,24 @@ describe('le genre donné à l introduction', () => {
     expect((await loadPlayer(db, playerId)).gender).toBe('NEUTRAL')
   })
 
-  it('réécrit la réponse quand l introduction se rejoue', async () => {
+  // Quitter l'introduction avant la fin la fait reprendre du début.
+  it('réécrit la réponse tant que l introduction n est pas finie', async () => {
     await setGender(genderRequest({ gender: 'FEMALE' }, cookie))
     await setGender(genderRequest({ gender: 'MALE' }, cookie))
 
     expect((await loadPlayer(db, playerId)).gender).toBe('MALE')
+  })
+
+  // L'admin qui relit l'introduction ne change rien à la partie du joueur
+  // servi. Voir specs/spec.md (glossaire, « Introduction »).
+  it('ne change plus une fois l introduction finie', async () => {
+    await setGender(genderRequest({ gender: 'FEMALE' }, cookie))
+    await db.update(users).set({ introDoneAt: new Date() }).where(eq(users.id, playerId))
+
+    const response = await setGender(genderRequest({ gender: 'MALE' }, cookie))
+
+    expect(response.status).toBe(200)
+    expect((await loadPlayer(db, playerId)).gender).toBe('FEMALE')
   })
 
   it('rejette un genre qui n existe pas', async () => {

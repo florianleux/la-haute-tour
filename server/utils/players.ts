@@ -6,6 +6,7 @@ import {
   attempts,
   deckFloors,
   disputes,
+  items,
   pocketSpells,
   missedPool,
   recoveryQuestions,
@@ -151,6 +152,7 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
     db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
     db.delete(pocketSpells).where(eq(pocketSpells.userId, player.id)),
+    db.delete(items).where(eq(items.userId, player.id)),
     db.delete(activeEffects).where(eq(activeEffects.userId, player.id)),
     db.delete(activeEffects).where(eq(activeEffects.casterId, player.id)),
     db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),
@@ -176,6 +178,10 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         playStreak: 0,
         // Le premier coffre de la partie neuve est à nouveau à l'abri du Mimic.
         lastChest: null,
+        // L'introduction se rejoue : elle redonne le Fromage et redemande le
+        // genre. Voir specs/admin.md#gestion-des-joueurs.
+        introDoneAt: null,
+        gender: null,
         // Le palmarès porté tombe avec les lignes qu'il double : le laisser
         // plein ferait croire au jeu que le joueur test possède encore ce qu'on
         // vient d'effacer, et aucune « première fois » ne se réécrirait.

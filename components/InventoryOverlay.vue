@@ -35,21 +35,41 @@
         v-bind="fadeLayer(closing, '0.6s')"
       >
         <!-- La grille : 5 cases de large sur 20 de haut, qui défile. Les cases
-             restent dessinées même vides. -->
+             restent dessinées même vides ; les Objets les remplissent dans
+             l'ordre où le joueur les a reçus. -->
         <div class="grid w-1/2 shrink-0 grid-cols-5 content-start gap-2 overflow-y-auto pr-[2%] [scrollbar-color:rgb(69_26_3/0.4)_transparent] [scrollbar-width:thin]">
           <div
-            v-for="cell in SLOTS"
+            v-for="(item, cell) in cells"
             :key="cell"
-            class="aspect-square rounded-md border-2 border-amber-950/25 bg-amber-950/10"
-          />
+            class="relative aspect-square rounded-md border-2 bg-amber-950/10"
+            :class="item && item === selected ? 'border-amber-950/70' : 'border-amber-950/25'"
+          >
+            <template v-if="item">
+              <img :src="itemLabel(item).image" alt="" class="size-full object-contain p-[12%]">
+              <BaseSurfaceButton
+                :label="itemLabel(item).name"
+                :aria-pressed="item === selected"
+                class="rounded-md"
+                @click="selected = item"
+              />
+            </template>
+          </div>
         </div>
 
-        <!-- La page de détail : l'Objet choisi, une fois les Objets là (#98).
-             D'ici là, le sac dit qu'il est vide. -->
-        <div class="flex flex-1 items-center justify-center text-center">
-          <!-- TODO(texte) : phrase provisoire, Flo l'écrira. -->
+        <!-- La page de détail : l'Objet choisi, son image, son nom et sa
+             description. Sans Objet choisi, une phrase à la place. -->
+        <div v-if="shown" class="flex flex-1 flex-col items-center justify-center gap-[4%] text-center">
+          <img :src="shown.image" alt="" class="h-[40%] object-contain">
+          <h3 class="text-[max(1.25rem,3.5dvh)] font-semibold">
+            {{ shown.name }}
+          </h3>
+          <p class="text-[max(1rem,2.5dvh)]">
+            {{ shown.description }}
+          </p>
+        </div>
+        <div v-else class="flex flex-1 items-center justify-center text-center">
           <p class="text-[max(1rem,2.5dvh)] italic text-amber-950/70">
-            Rien qu'un peu de poussière au fond du sac.
+            {{ hint }}
           </p>
         </div>
       </div>
@@ -59,10 +79,35 @@
 
 <script setup lang="ts">
 // L'Inventaire : le sac du camp (CooldownCamp), ouvert par-dessus lui. Au camp
-// seulement. Vide tant que les Objets n'existent pas (#98). Voir
-// specs/ecrans.md#inventaire.
+// seulement. Il montre les Objets du joueur, jamais ses sorts, qui vivent au
+// Grimoire. Voir specs/ecrans.md#inventaire.
+import type { ItemId } from '~~/shared/utils/items'
+
 defineEmits<{ close: [] }>()
 
 /** Les cases de la grille : 5 de large sur 20 de haut. */
 const SLOTS = 5 * 20
+
+const { items, failed } = await useItems()
+
+/** L'Objet montré par la page de détail. Aucun tant que le joueur n'a pas cliqué. */
+const selected = ref<ItemId | null>(null)
+
+/** Une case par place de la grille : l'Objet qui l'occupe, ou rien. */
+const cells = computed<(ItemId | null)[]>(() =>
+  Array.from({ length: SLOTS }, (_, cell) => items.value[cell] ?? null))
+
+/** Ce que la page de détail dit de l'Objet choisi. */
+const shown = computed(() => selected.value && itemLabel(selected.value))
+
+// TODO(texte) : phrases provisoires, Flo les écrira.
+const hint = computed(() => {
+  if (failed.value) {
+    return 'Impossible de fouiller le sac. Recharge la page.'
+  }
+
+  return items.value.length === 0
+    ? 'Rien qu\'un peu de poussière au fond du sac.'
+    : 'Choisis un objet pour le regarder de plus près.'
+})
 </script>

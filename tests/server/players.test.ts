@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
-import { disputes, missedPool, users } from '../../server/db/schema'
+import { disputes, items, missedPool, users } from '../../server/db/schema'
 import { disputableErrors } from '../../server/utils/disputes'
 import { playerRoster, resetPlayer } from '../../server/utils/players'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -149,6 +149,18 @@ describe('repartir de zéro', () => {
       daysPlayed: 0,
       playStreak: 0,
     })
+  })
+
+  // L'introduction rejouée redonne le Fromage et redemande le genre.
+  // Voir specs/admin.md#gestion-des-joueurs.
+  it('efface les Objets et le genre, et renvoie à l introduction', async () => {
+    await db.update(users).set({ introDoneAt: NOW, gender: 'FEMALE' }).where(eq(users.id, userId))
+    await db.insert(items).values({ userId, item: 'CHEESE', obtainedAt: NOW })
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    expect(await db.select().from(items).where(eq(items.userId, userId))).toEqual([])
+    expect(await loadPlayer(db, userId)).toMatchObject({ introDoneAt: null, gender: null })
   })
 
   it('ne laisse aucune attente derrière lui, durée comprise', async () => {

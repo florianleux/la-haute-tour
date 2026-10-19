@@ -3,6 +3,7 @@ import { check, index, integer, primaryKey, sqliteTable, text, unique } from 'dr
 import { ACHIEVEMENT_IDS } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { GENDERS } from '../../shared/utils/genders'
+import { ITEM_IDS } from '../../shared/utils/items'
 import { CHEST_STATES, SPELL_FACES, SPELL_IDS } from '../../shared/utils/spells'
 import { TEAM_IDS } from '../../shared/utils/teams'
 import type { AchievementId } from '../../shared/utils/achievements'
@@ -470,6 +471,20 @@ export const pocketSpells = sqliteTable('pocket_spells', {
 }, table => [index('pocket_spells_user_idx').on(table.userId, table.obtainedAt)])
 
 /**
+ * Les Objets que le joueur porte dans son sac. Une ligne par Objet : le
+ * Fromage, donné à la fin de l'introduction, est le seul aujourd'hui.
+ * Voir specs/spec.md (glossaire, « Objet ») et specs/ecrans.md#inventaire.
+ */
+export const items = sqliteTable('items', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  item: text('item', { enum: ITEM_IDS }).notNull(),
+  obtainedAt: integer('obtained_at', { mode: 'timestamp' }).notNull(),
+}, table => [index('items_user_idx').on(table.userId, table.obtainedAt)])
+
+/**
  * Un sort lancé, et ce qu'il attend pour agir. Une ligne par lancer : le sort
  * est consommé des sorts en poche, et ce qu'il devient vit ici.
  *
@@ -601,6 +616,7 @@ export type Dispute = typeof disputes.$inferSelect
 export type Attempt = typeof attempts.$inferSelect
 export type FocusLoss = typeof focusLosses.$inferSelect
 export type PocketSpell = typeof pocketSpells.$inferSelect
+export type Item = typeof items.$inferSelect
 export type ActiveEffect = typeof activeEffects.$inferSelect
 export type Settings = typeof settings.$inferSelect
 export type Achievement = typeof achievements.$inferSelect

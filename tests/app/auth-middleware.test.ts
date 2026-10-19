@@ -82,6 +82,24 @@ describe('middleware d authentification', () => {
     expect(navigations()).toEqual([])
   })
 
+  // Le Fromage ne se donne qu'une fois par partie. Voir specs/spec.md
+  // (glossaire, « Introduction »).
+  it('ne rejoue pas l introduction à qui l a finie', async () => {
+    signIn({ ...testUser, introDone: true })
+
+    await middleware({ path: '/intro', meta: {} })
+
+    expect(navigations()).toEqual(['/'])
+  })
+
+  it('laisse un admin relire l introduction qu il a finie', async () => {
+    signIn({ ...testAdmin, introDone: true })
+
+    await middleware({ path: '/intro', meta: {} })
+
+    expect(navigations()).toEqual([])
+  })
+
   it('laisse l admin qui incarne un joueur test neuf revenir sur /admin', async () => {
     impersonate(testAdmin, { ...testUser, id: 42, username: 'Testeur A', introDone: false })
 

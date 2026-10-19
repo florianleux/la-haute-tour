@@ -34,7 +34,13 @@ export async function useAdminPlayers(): Promise<AdminPlayers> {
     { default: (): PlayersResponse => ({ players: [] }) },
   )
 
-  const { pending: acting, send } = useWriteThenRead(refresh)
+  // L'identité servie est relue avec la liste : un geste sur le joueur que
+  // l'admin incarne la change — remis à zéro, il doit rejouer l'introduction,
+  // et le garde des pages lirait sinon l'ancienne.
+  const { refresh: refreshUser } = await useCurrentUser()
+  const { pending: acting, send } = useWriteThenRead(async () => {
+    await Promise.all([refresh(), refreshUser()])
+  })
 
   return {
     players: computed<PlayerCard[]>(() => data.value?.players ?? []),

@@ -17,7 +17,7 @@
 |---|---|---|
 | Connexion | `/login` | oui |
 | Accès refusé | `/refus` | oui |
-| Introduction | `/intro` — imposée tant qu'elle n'est pas finie, rejouable par l'URL ensuite | non |
+| Introduction | `/intro` — imposée tant qu'elle n'est pas finie, fermée ensuite (sauf à un admin) | non |
 | Jeu | `/` — 7 phases, page d'accueil (5 aujourd'hui : les phases de boss ne sont pas encore implémentées) | non |
 | Profil | `/profil` — par son adresse seulement | non |
 | Grimoire (les Sorts) | boîte sur le camp, sans URL — par le grimoire du camp | non |
@@ -159,7 +159,7 @@ Nommé **Inventaire** côté joueur, ouvert par le sac du camp. Il montre les **
 Il s'ouvre **par-dessus le camp**, comme le Grimoire : un sac vu de face qui jaillit du bas et rebondit en se posant, son titre « Inventaire » au-dessus. Échap, la croix ou un clic à côté le referment. Tout se passe dans son volet ouvert, au-dessus du nœud, en deux parties :
 
 - La **grille**, à gauche — 5 cases de large sur 20 de haut, qui défile verticalement. Un Objet par case ; les cases sans Objet restent dessinées, vides.
-- La **page de détail**, à droite — vide tant qu'aucun Objet n'est choisi. Un clic sur un Objet de la grille l'y montre : son image, sa description, et un bouton « Utiliser » s'il s'utilise.
+- La **page de détail**, à droite — une invite d'une ligne tant qu'aucun Objet n'est choisi. Un clic sur un Objet de la grille l'y montre : son image, sa description, et un bouton « Utiliser » s'il s'utilise.
 
 ## Sorts
 

@@ -47,6 +47,18 @@ describe('joueurs côté admin', () => {
       'fetch POST /api/admin/players/7/skip-cooldown',
       'fetch POST /api/admin/players/7/grant-life',
     ])
+    // La liste et l'identité servie, à chaque geste.
+    expect(refresh).toHaveBeenCalledTimes(4)
+  })
+
+  // Remis à zéro, le joueur que l'admin incarne doit rejouer l'introduction :
+  // l'identité en cache dirait encore qu'il l'a finie. Voir specs/admin.md.
+  it('relit aussi l identité servie après une remise à zéro', async () => {
+    const { resetPlayer } = await useAdminPlayers()
+    refresh.mockClear()
+
+    expect(await resetPlayer(7)).toBe(true)
+    expect(calls()).toEqual(['fetch POST /api/admin/players/7/reset'])
     expect(refresh).toHaveBeenCalledTimes(2)
   })
 

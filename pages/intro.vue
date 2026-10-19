@@ -10,7 +10,8 @@
 <script setup lang="ts">
 // L'introduction de l'aventure : la scène par laquelle le joueur entre dans la
 // Tour. Toute page y ramène tant qu'il ne l'a pas finie (voir
-// middleware/auth.global.ts) ; finie, elle reste rejouable ici.
+// middleware/auth.global.ts) ; finie, elle se ferme, sauf à un admin qui la
+// relit.
 //
 // L'Inconnu salue, demande son nom au joueur, puis ce qu'il est, et répond
 // ensuite à ses questions — la Tour, comment on y monte — jusqu'à ce que le
@@ -238,11 +239,24 @@ const FAREWELL: [DuoLine, ...DuoLine[]] = [
 ]
 
 /**
+ * Le don, au moment de partir : il rappelle le joueur et lui tend le Fromage,
+ * sans dire pourquoi — c'est lui qui attirera Michel au camp (voir
+ * specs/lore.md). Le prendre finit l'introduction.
+ */
+const GIFT: [DuoLine, ...DuoLine[]] = [
+  {
+    place: 'right',
+    text: 'J\'oubliais ! Prends ceci, ça te sera utile !',
+    choices: ['Prendre ce que L\'Inconnu te tend'],
+  },
+]
+
+/**
  * Où en est l'introduction. Chaque étape porte ce que son dialogue doit
  * afficher, plutôt qu'un état à côté qui pourrait être vide au mauvais moment.
  */
 type Step =
-  | { scene: 'greeting' | 'question' | 'menu' | 'farewell' }
+  | { scene: 'greeting' | 'question' | 'menu' | 'farewell' | 'gift' }
   | { scene: 'reaction', reply: Reply }
   | { scene: 'topic', topic: Topic }
 
@@ -318,6 +332,8 @@ const dialogue = computed<Dialogue>(() => {
       return stage([menu('Autre chose ?')])
     case 'farewell':
       return stage(FAREWELL)
+    case 'gift':
+      return stage(GIFT)
   }
 
   return stage([{ place: 'left', text: now.topic }, ...ANSWERS[now.topic]])
@@ -355,7 +371,10 @@ async function end(): Promise<void> {
       step.value = { scene: 'menu' }
       break
     case 'farewell':
-      // L'introduction rend la main au jeu : la page de jeu affiche ce que la
+      step.value = { scene: 'gift' }
+      break
+    case 'gift':
+      // Le Fromage pris, l'introduction rend la main au jeu : la page de jeu affiche ce que la
       // phase du joueur désigne, et c'est là qu'il commence. L'identité est
       // relue avant d'y aller : gardée en cache, elle dirait encore
       // l'introduction à faire, et le garde des pages y renverrait le joueur.
