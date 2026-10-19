@@ -13,6 +13,7 @@
   <BaseDialog
     ref="dialog"
     :label="label"
+    :locked="locked"
     class="items-start justify-center overflow-clip bg-transparent [&:hover:not(:has(:not([data-camp-backdrop]):hover))]:cursor-pointer"
     @close="close"
   >
@@ -29,7 +30,11 @@
 
     <!-- La croix, hors du contenu : dans le coin de l'écran, la même pour
          toutes les boîtes. Après le contenu, pour passer devant. -->
-    <BaseCloseButton :label="closeLabel" class="absolute right-[2vw] top-[2dvh] z-20" @click="close" />
+    <BaseCloseButton v-if="!locked" :label="closeLabel" class="absolute right-[2vw] top-[2dvh] z-20" @click="close" />
+
+    <!-- Michel, quand il parle depuis la boîte : dedans, et non sur le camp —
+         une boîte modale passe devant tout ce qui n'est pas en elle. -->
+    <MichelLesson v-if="lesson" :line="lesson" @next="$emit('next')" />
   </BaseDialog>
 </template>
 
@@ -56,15 +61,25 @@
 // la boîte n'en demande pas un second.
 import { GAME_STATE_KEY } from '~/composables/useGameState'
 import type { GameState } from '~~/server/utils/game'
+import type { LessonLine } from '~~/utils/lessons'
 
-defineProps<{
+const props = defineProps<{
   /** Ce que lit une synthèse vocale en entrant dans la boîte. */
   label: string
   /** Ce que lit une synthèse vocale sur la croix : « Fermer le Volumen ». */
   closeLabel: string
+  /**
+   * La réplique de Michel quand il parle depuis la boîte, en leçon. Tant qu'il
+   * n'a pas demandé de la refermer, le joueur ne le peut pas : une leçon ne se
+   * passe pas. Ni croix, ni Échap, ni clic à côté. La partie qui quitte le camp
+   * la ferme quand même.
+   */
+  lesson?: LessonLine
 }>()
 
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: [], next: [] }>()
+
+const locked = computed(() => locksOverlay(props.lesson))
 
 defineSlots<{
   default: (scope: { closing: boolean, close: () => void }) => unknown
@@ -75,6 +90,12 @@ const dialog = useTemplateRef<{ element: HTMLDialogElement | null }>('dialog')
 const closing = ref(false)
 
 function close(): void {
+  if (!locked.value) {
+    leave()
+  }
+}
+
+function leave(): void {
   if (!closing.value) {
     void playExit()
   }
@@ -84,7 +105,7 @@ const { data: game } = useNuxtData<GameState>(GAME_STATE_KEY)
 
 watch(game, (now) => {
   if (!isAtCamp(now)) {
-    close()
+    leave()
   }
 }, { immediate: true })
 

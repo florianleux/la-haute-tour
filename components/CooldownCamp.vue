@@ -30,9 +30,13 @@
              mènent quelque part luisent et scintillent en plus. Le bouton se
              pose par-dessus l'objet (BaseSurfaceButton), annoncé sous le nom
              affiché : ce qu'on lit et ce qu'on entend ne divergent pas. -->
+        <!-- En leçon, ce que Michel ne montre pas s'assombrit, et ce qu'il ne
+             demande pas de cliquer ne répond plus, au clavier non plus
+             (`inert`). Ce qu'il demande d'ouvrir pulse. Voir spotlightOn. -->
         <div
-          class="group pointer-events-auto absolute"
-          :class="[item.place, layer.origin, item.click && HOVER]"
+          class="group pointer-events-auto absolute transition duration-200"
+          :class="[item.place, layer.origin, item.click && HOVER, item.spot.dimmed && LESSON_SHADE, item.spot.pulses && 'motion-safe:animate-nudge']"
+          :inert="!item.spot.clickable"
         >
           <img
             :src="item.src"
@@ -73,6 +77,7 @@
 // et sac, posés sur le décor de CooldownCard entre lui et le poster. Certains
 // ouvrent une boîte par-dessus le camp, tous disent leur nom au survol.
 import type { TeamId } from '~~/shared/utils/teams'
+import type { LessonLine, Spotlit } from '~~/utils/lessons'
 import type { CampOverlayId } from '~~/utils/phase'
 
 const props = defineProps<{
@@ -85,15 +90,23 @@ const props = defineProps<{
   volumen: boolean
   /** Le joueur a déjà obtenu un sort : le Grimoire a de quoi se montrer. */
   spellbook: boolean
+  /** La réplique de Michel en cours, null hors leçon : elle dit ce qui s'éclaire. */
+  lesson: LessonLine | null
 }>()
 
-const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId] }>()
+const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId], michel: [] }>()
 
-/** Ce que fait un clic sur l'objet : ouvrir une boîte du camp, ou lancer la suite. */
-type CampClick = { open: CampOverlayId } | 'advance'
+/**
+ * Ce que fait un clic sur l'objet : ouvrir une boîte du camp, lancer la suite,
+ * ou demander à Michel de rejouer une leçon.
+ */
+type CampClick = { open: CampOverlayId } | 'advance' | 'michel'
 
 function onClick(click: CampClick): void {
-  if (click !== 'advance') {
+  if (click === 'michel') {
+    emit('michel')
+  }
+  else if (click !== 'advance') {
     emit('open', click.open)
   }
   else if (!props.advancing) {
@@ -135,7 +148,7 @@ const BANNERS: Record<TeamId, string> = {
 // détouré de l'image, pas son rectangle — un cœur blanc serré pour l'éclat,
 // un voile gris-bleu plus large pour l'argent. Le halo s'étend aux
 // étincelles, qui n'en ont pas d'autre.
-const HOVER = 'transition duration-200 hover:scale-[1.01] hover:[filter:drop-shadow(0_0_3px_rgb(255_255_255/0.95))_drop-shadow(0_0_12px_rgb(203_213_225/0.85))]'
+const HOVER = 'hover:scale-[1.01] hover:[filter:drop-shadow(0_0_3px_rgb(255_255_255/0.95))_drop-shadow(0_0_12px_rgb(203_213_225/0.85))]'
 
 /**
  * Les étincelles du survol, en % de la boîte de l'objet : semées sur toute sa
@@ -167,7 +180,10 @@ const GROUND = 'bottom-0 w-[calc(100cqh*16/9)]'
 // Chaque objet n'est posé qu'une fois apparu : voir campObjects.
 interface CampLayer { depth: string, box: string, origin: string, items: CampItem[] }
 
-const layers = computed((): CampLayer[] => {
+/** Un calque tel qu'il s'affiche : ses objets apparus, et ce que la leçon fait de chacun. */
+interface ShownLayer extends Omit<CampLayer, 'items'> { items: (CampItem & { spot: Spotlit })[] }
+
+const layers = computed((): ShownLayer[] => {
   const shown = campObjects(props)
   const all: CampLayer[] = [
     // La corde suit le sol, où elle repose, déroulée ou non : calée sur le
@@ -207,9 +223,18 @@ const layers = computed((): CampLayer[] => {
         // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
         // devant eux, comme sur l'illustration.
         { object: 'spellbook', src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } },
+        // TODO(image) : Michel, sur le rocher du bord droit (vers 1822×949 du
+        // calque), revient ici avec le sprite du décor que Flo fournit — un
+        // clic sur lui propose alors de rejouer une leçon (`click: 'michel'`).
       ],
     },
   ]
-  return all.map(layer => ({ ...layer, items: layer.items.filter(item => shown.has(item.object)) }))
+  // Chaque objet porte ce que la réplique de Michel fait de lui, calculé une fois.
+  return all.map(layer => ({
+    ...layer,
+    items: layer.items
+      .filter(item => shown.has(item.object))
+      .map(item => ({ ...item, spot: spotlightOn(props.lesson, item.object) })),
+  }))
 })
 </script>

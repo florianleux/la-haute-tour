@@ -1,5 +1,10 @@
 <template>
-  <div class="fixed inset-0 z-0 bg-[url(/images/cooldown-bg.webp)] bg-cover bg-center" />
+  <!-- En leçon, le décor et le poster s'assombrissent : seul ce que Michel
+       montre reste éclairé. Voir spotlightOn. -->
+  <div
+    class="fixed inset-0 z-0 bg-[url(/images/cooldown-bg.webp)] bg-cover bg-center"
+    :class="shade"
+  />
 
   <!-- Les objets du camp, entre le décor et le poster. Voir CooldownCamp. -->
   <CooldownCamp
@@ -8,8 +13,10 @@
     :team="team"
     :volumen="state.seenTotal > 0"
     :spellbook="state.spellDiscovered"
+    :lesson="lesson"
     @advance="$emit('advance')"
     @open="$emit('open', $event)"
+    @michel="$emit('michel')"
   />
 
   <!-- Le poster est presque carré (918×980) là où le cadre de l'ascension est en
@@ -68,11 +75,14 @@
        sous le sélecteur d'incarnation (z-20), que le poster ne doit pas masquer. -->
   <div
     class="fixed z-10 bg-[url(/images/cooldown-poster.webp)] bg-contain bg-center bg-no-repeat"
-    :class="POSTER_BOX"
+    :class="[POSTER_BOX, shade]"
   />
+  <!-- En leçon, rien du poster ne se clique : « Commencer » sauterait la
+       leçon, c'est la corde que Michel montre. -->
   <div
     class="pointer-events-none fixed z-[15] *:pointer-events-auto @container"
-    :class="POSTER_BOX"
+    :class="[POSTER_BOX, shade]"
+    :inert="lesson !== null"
   >
     <!-- La bannière en haut du poster, plus étroite que le panneau et décalée
          à droite par la corde nouée sur le piquet gauche. Elle porte le décompte
@@ -178,6 +188,7 @@
 // l'image. Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
 import type { TeamId } from '~~/shared/utils/teams'
+import type { LessonLine } from '~~/utils/lessons'
 import type { CampOverlayId, GameScreen, PlayAction } from '~~/utils/phase'
 
 const props = defineProps<{
@@ -192,9 +203,17 @@ const props = defineProps<{
   advancing: boolean
   /** La guilde du joueur, qui choisit la couleur de la bannière. Sans équipe, pas de bannière. */
   team: TeamId | null
+  /** La réplique de Michel en cours, null hors leçon. Voir CooldownCamp. */
+  lesson: LessonLine | null
 }>()
 
-defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId] }>()
+defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId], michel: [] }>()
+
+/**
+ * En leçon, le décor et le poster restent dans l'ombre : Michel ne les montre
+ * jamais. La transition, toujours posée, adoucit l'entrée comme la sortie.
+ */
+const shade = computed(() => ['transition duration-200', lessonDims(props.lesson) && LESSON_SHADE])
 
 const inCooldown = computed(() => isCooldown(props.state))
 const atRest = computed(() => isAtRest(props.state))

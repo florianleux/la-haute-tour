@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { activeEffects, pocketSpells } from '../../server/db/schema'
+import { activeEffects, pocketSpells, users } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -88,6 +89,17 @@ describe('endpoints de jeu', () => {
       castCooldownStartedAt: new Date(),
     })
     expect(await read()).toBe(true)
+  })
+
+  it('dit les leçons de Michel déjà vues', async () => {
+    const userId = await createPlayer(db, { discordId: 'eleve', username: 'eleve' })
+    const read = async (): Promise<string[]> =>
+      (await (await state(apiRequest('http://test/state', await sessionCookieFor(userId)))).json()).lessonsDone
+
+    expect(await read()).toEqual([])
+
+    await db.update(users).set({ campLessonAt: new Date() }).where(eq(users.id, userId))
+    expect(await read()).toEqual(['camp'])
   })
 
   it('sert une question sur action du joueur, puis son verdict', async () => {

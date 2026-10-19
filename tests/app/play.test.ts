@@ -27,6 +27,7 @@ const served: GameState = {
   attemptSeen: 0,
   seenTotal: 0,
   spellDiscovered: false,
+  lessonsDone: ['camp'],
   chest: null,
   maintenance: false,
   effects: [],

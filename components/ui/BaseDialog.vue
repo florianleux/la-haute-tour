@@ -7,7 +7,7 @@
     tabindex="-1"
     class="fixed inset-0 m-0 h-full max-h-none w-full max-w-none border-0 p-0 text-inherit outline-none backdrop:bg-transparent open:flex"
     :aria-label="label"
-    @click.self="$emit('close')"
+    @click.self="locked || $emit('close')"
   >
     <slot />
   </dialog>
@@ -23,9 +23,14 @@
 // l'appelant qui décide — démonter, changer de route, animer la sortie. Si le
 // navigateur la ferme quand même (il ignore un Échap retenu trop souvent sans
 // geste du joueur entre deux), `close` suit aussi.
-defineProps<{
+const props = defineProps<{
   /** Ce que lit une synthèse vocale en entrant dans la boîte. */
   label: string
+  /**
+   * La boîte ne se ferme pas : ni Échap, ni clic sur le fond. Si le navigateur
+   * la ferme quand même (Échap répété), elle se rouvre aussitôt.
+   */
+  locked?: boolean
 }>()
 
 const emit = defineEmits<{ close: [] }>()
@@ -38,10 +43,17 @@ defineExpose({ element: dialog })
 
 function onCancel(event: Event): void {
   event.preventDefault()
-  emit('close')
+  if (!props.locked) {
+    emit('close')
+  }
 }
 
 function onClose(): void {
+  if (props.locked) {
+    dialog.value?.showModal()
+    dialog.value?.focus({ preventScroll: true })
+    return
+  }
   emit('close')
 }
 

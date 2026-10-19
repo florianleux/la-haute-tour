@@ -93,6 +93,7 @@ const state = ref(demoState({
   attemptSeen: 995,
   seenTotal: 1_204,
   spellDiscovered: true,
+  lessonsDone: ['camp'],
   effects: Array.from({ length: Math.floor(Math.random() * 3) }, () => randomEffect('active')),
 }))
 

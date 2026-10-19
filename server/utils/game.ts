@@ -28,6 +28,7 @@ import { floorSizeQuery, nextQuestionQuery, sizeOf, upcomingQuestions } from './
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { isCooldownBound } from '../../shared/utils/spells'
+import { lessonsDone } from './lessons'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import {
@@ -47,6 +48,7 @@ import {
 } from '../db/schema'
 import type { EffectStake, EffectView, PlacedEffect } from './effects'
 import type { AchievementId } from '../../shared/utils/achievements'
+import type { LessonId } from '../../shared/utils/lessons'
 import type { AnswerSource, Phase } from './mechanics'
 import type { FloorRules } from './rules'
 import type { ChestState, SpellId } from '../../shared/utils/spells'
@@ -147,6 +149,11 @@ export interface GameState {
    * server/utils/pocketSpells.ts.
    */
   spellDiscovered: boolean
+  /**
+   * Les leçons de Michel que le joueur a déjà vues : une leçon absente se joue
+   * à son moment. Voir specs/ecrans.md#leçons-de-michel.
+   */
+  lessonsDone: LessonId[]
   /**
    * Le coffre de la question loot qui vient d'être réussie, null partout
    * ailleurs. Tant qu'il est fermé, rien ne sert la question suivante.
@@ -725,6 +732,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     attemptSeen: user.attemptSeen,
     seenTotal: user.seenTotal,
     spellDiscovered: snapshot.spellDiscovered,
+    lessonsDone: lessonsDone(user),
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
     // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une

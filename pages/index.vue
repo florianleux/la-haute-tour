@@ -55,9 +55,11 @@
       :skipping="isRunning('skipCooldown')"
       :advancing="isRunning('advance')"
       :team="user?.team ?? null"
+      :lesson="lesson.line.value"
       @skip-cooldown="run('skipCooldown', skipCooldown)"
-      @advance="goNext"
-      @open="campOverlay = $event"
+      @advance="advanceFromCamp"
+      @open="openCampOverlay"
+      @michel="lesson.offer"
     />
 
     <ChestCard
@@ -91,12 +93,32 @@
       </BaseNotice>
     </BaseCard>
 
+    <!-- Michel en leçon, sur le camp. Hors de la chaîne des cartes : glissé
+         dedans, il la coupait, et la carte vide du `v-else` s'affichait à côté
+         de la question. Quand une boîte du camp est ouverte, c'est
+         elle qui le porte (l'Inventaire) : une boîte modale passerait devant. -->
+    <MichelLesson
+      v-if="view?.card === 'cooldown' && lesson.line.value && lesson.line.value.awaits !== 'pause' && !lesson.line.value.overlay && !campOverlay"
+      :line="lesson.line.value"
+      :choices="lesson.choices.value ?? undefined"
+      @next="lesson.next"
+      @choose="lesson.choose"
+      @ascent="leaveForAscent"
+    />
+
     <!-- Les boîtes du camp — le Grimoire, le Volumen, les Haut-faits et
          l'Inventaire — s'ouvrent par-dessus lui, sans URL : le camp reste
          affiché dessous et son attente continue de tourner. Chaque boîte
          prévient quand elle a fini de se fermer, ou quand la partie quitte le
          camp (CampOverlay). -->
-    <component :is="CAMP_OVERLAYS[campOverlay]" v-if="campOverlay" @close="campOverlay = null" />
+    <component
+      :is="CAMP_OVERLAYS[campOverlay]"
+      v-if="campOverlay"
+      v-bind="lesson.line.value?.overlay === campOverlay ? { lesson: lesson.line.value } : {}"
+      @close="closeCampOverlay"
+      @next="lesson.next"
+      @used="lesson.done('use')"
+    />
   </div>
 </template>
 
@@ -220,11 +242,48 @@ const CAMP_OVERLAYS: Record<CampOverlayId, Component> = {
   inventory: InventoryOverlay,
 }
 
+// Michel au camp : la leçon du camp à la première arrivée, rejouée à la
+// demande. Voir specs/ecrans.md#leçons-de-michel.
+const lesson = useCampLesson(state, computed(() => user.value?.team ?? null))
+
+/** Un objet du camp cliqué : en leçon, c'est peut-être le geste que Michel attendait. */
+function openCampOverlay(screen: CampOverlayId): void {
+  campOverlay.value = screen
+  lesson.done('click')
+}
+
+/** Une boîte du camp refermée : en leçon, c'est peut-être ce que Michel venait de demander. */
+function closeCampOverlay(): void {
+  campOverlay.value = null
+  lesson.done('close')
+}
+
+/**
+ * La corde, ou « Commencer » : la suite de la partie. En leçon, seule la corde
+ * répond, et Michel dit au revoir avant que l'ascension parte.
+ */
+function advanceFromCamp(): void {
+  if (lesson.line.value) {
+    lesson.done('click')
+  }
+  else {
+    void goNext()
+  }
+}
+
+/** Le clic sur l'au revoir de Michel : la leçon du camp est vue, l'ascension part. */
+async function leaveForAscent(): Promise<void> {
+  await lesson.finish()
+  await goNext()
+}
+
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
 // suivant. Jamais pendant qu'une question tourne — là, la carte n'a pas d'action
 // et Entrée répond.
-// Ni quand une boîte du camp est ouverte : Entrée y lirait, pas remonter.
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campOverlay.value === null)
+// Ni quand une boîte du camp est ouverte : Entrée y lirait, pas remonter. Ni
+// pendant que Michel parle : Entrée fait avancer sa bulle, et une leçon ne se
+// passe pas.
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campOverlay.value === null && !lesson.line.value)
 
 // Le seul point d'entrée pour « avancer », bouton comme Entrée : le geste vient
 // de playView, la page l'exécute.

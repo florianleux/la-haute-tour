@@ -1,7 +1,7 @@
 import type { TeamId } from '~~/shared/utils/teams'
 
 /** Un objet posé sur le décor du camp. */
-export type CampObject = 'rope' | 'banner' | 'scroll' | 'backpack' | 'spellbook'
+export type CampObject = 'rope' | 'banner' | 'scroll' | 'backpack' | 'spellbook' | 'michel'
 
 /** Ce que le camp lit de l'état servi pour savoir quels objets poser. */
 export interface CampContents {

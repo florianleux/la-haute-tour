@@ -182,6 +182,8 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         // genre. Voir specs/admin.md#gestion-des-joueurs.
         introDoneAt: null,
         gender: null,
+        // Michel redonne ses leçons à la partie neuve.
+        campLessonAt: null,
         // Le palmarès porté tombe avec les lignes qu'il double : le laisser
         // plein ferait croire au jeu que le joueur test possède encore ce qu'on
         // vient d'effacer, et aucune « première fois » ne se réécrirait.

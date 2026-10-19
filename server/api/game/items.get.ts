@@ -1,7 +1,6 @@
-import { asc, eq } from 'drizzle-orm'
 import { useDatabase } from '~~/server/db/client'
-import { items } from '~~/server/db/schema'
 import { requireCamp } from '~~/server/utils/camp'
+import { readItems } from '~~/server/utils/items'
 import type { ItemId } from '~~/shared/utils/items'
 
 export interface ItemsView {
@@ -20,11 +19,5 @@ export default defineEventHandler(async (event): Promise<ItemsView> => {
 
   await requireCamp(db, user, new Date())
 
-  const rows = await db
-    .select({ item: items.item })
-    .from(items)
-    .where(eq(items.userId, user.id))
-    .orderBy(asc(items.obtainedAt), asc(items.id))
-
-  return { items: rows.map(row => row.item) }
+  return { items: await readItems(db, user.id) }
 })

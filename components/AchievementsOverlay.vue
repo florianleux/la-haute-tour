@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" close-label="Fermer les Haut-faits" @close="$emit('close')">
+  <CampOverlay v-slot="{ closing, close }" label="Haut-faits" close-label="Fermer les Haut-faits" :lesson="lesson" @close="$emit('close')" @next="$emit('next')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen et le Grimoire.
          Clic à côté de la bannière = fermer.
 
@@ -58,8 +58,18 @@
 // au camp et là seulement, ouvert par-dessus lui. Voir specs/ecrans.md#haut-faits.
 import { ACHIEVEMENT_IDS } from '~~/shared/utils/achievements'
 import type { TeamId } from '~~/shared/utils/teams'
+import type { LessonLine } from '~~/utils/lessons'
 
-defineEmits<{ close: [] }>()
+defineProps<{
+  /** La réplique de Michel quand il parle depuis la bannière, à la leçon du camp. */
+  lesson?: LessonLine
+}>()
+
+defineEmits<{
+  close: []
+  /** Michel passe à sa réplique suivante. */
+  next: []
+}>()
 
 /** La bannière de chaque guilde : bleue aux étoiles, rouge au livre. */
 const BANNERS: Record<TeamId, string> = {

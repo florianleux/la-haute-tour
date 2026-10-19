@@ -9,6 +9,7 @@
     :skipping="false"
     :advancing="false"
     :team="team"
+    :lesson="null"
     @skip-cooldown="() => {}"
     @advance="() => {}"
   />
@@ -56,6 +57,7 @@ const state = ref(demoState({
   attemptSeen: 995,
   seenTotal: 1_204,
   spellDiscovered: true,
+  lessonsDone: ['camp'],
   effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('pending')),
 }))
 

@@ -163,6 +163,15 @@ describe('repartir de zéro', () => {
     expect(await loadPlayer(db, userId)).toMatchObject({ introDoneAt: null, gender: null })
   })
 
+  // Michel redonne ses leçons à la partie neuve. Voir specs/admin.md#gestion-des-joueurs.
+  it('remet la leçon du camp à voir', async () => {
+    await db.update(users).set({ campLessonAt: NOW }).where(eq(users.id, userId))
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    expect((await loadPlayer(db, userId)).campLessonAt).toBeNull()
+  })
+
   it('ne laisse aucune attente derrière lui, durée comprise', async () => {
     await db
       .update(users)

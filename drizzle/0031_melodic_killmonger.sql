@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `camp_lesson_at` integer;

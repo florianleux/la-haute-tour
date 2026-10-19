@@ -78,6 +78,7 @@ const state = ref(demoState({
   attemptSeen: 995,
   seenTotal: 1_204,
   spellDiscovered: true,
+  lessonsDone: ['camp'],
 }))
 
 provideGameState(state)

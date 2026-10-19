@@ -72,6 +72,13 @@ export const users = sqliteTable('users', {
    * (glossaire, « Introduction »).
    */
   introDoneAt: integer('intro_done_at', { mode: 'timestamp' }),
+  /**
+   * Quand le joueur a vu la leçon du camp, celle que Michel donne à sa première
+   * arrivée. Null tant qu'il ne l'a pas finie : elle se joue alors à chaque
+   * passage au camp. Une colonne par leçon. Voir specs/spec.md (glossaire,
+   * « Leçon ») et specs/ecrans.md#leçons-de-michel.
+   */
+  campLessonAt: integer('camp_lesson_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /** When the cooldown ends. Null outside a cooldown. The phase derives from it. */
