@@ -102,6 +102,8 @@ function onClick(click: CampClick): void {
 }
 
 interface CampItem {
+  /** L'objet que l'image représente : posé seulement s'il a quelque chose à montrer. */
+  object: CampObject
   src: string
   /** Position et largeur en % du décor 1920×1080, relevées sur le calque d'origine. */
   place: string
@@ -162,49 +164,52 @@ const GROUND = 'bottom-0 w-[calc(100cqh*16/9)]'
 
 // Ce qui pend grandit depuis son point d'attache, ce qui est posé depuis le
 // sol : centré, le scale ferait décoller les objets ou glisser la corde.
-const layers = computed((): { depth: string, box: string, origin: string, items: CampItem[] }[] => [
-  // La corde suit le sol, où elle repose, déroulée ou non : calée sur le
-  // décor, son rouleau tombait hors écran sur une fenêtre large. Déroulée, elle
-  // descend du haut de la fenêtre jusqu'au sol, à toutes les largeurs. Derrière
-  // le poster, comme la bannière, et non devant avec le reste du sol.
-  {
-    depth: 'z-[5]',
-    box: GROUND,
-    origin: 'origin-top',
-    items: [
-      props.ready
-        // Déroulée, la corde part du haut de la fenêtre : son nom se pose au-dessus
-        // du rouleau, pas au-dessus de l'image.
-        ? { src: '/images/cooldown-rope-up.webp', place: 'left-[17.92%] top-0 w-[15%]', title: 'Ascension', labelAt: 'bottom-[13%] left-[61%]', click: 'advance' }
-        : { src: '/images/cooldown-rope-coiled.webp', place: 'left-[21.61%] top-[83.33%] w-[11.3%]', title: 'Ascension', note: '(en attente)' },
-    ],
-  },
-  {
-    depth: 'z-[5]',
-    box: COVER,
-    origin: 'origin-top',
-    items: [
-      // Le nom de la bannière se lit sur l'étoffe, au milieu : au-dessus, il
-      // tombait dans le feuillage du haut de l'écran.
-      ...(props.team ? [{ src: BANNERS[props.team], place: 'left-[78.33%] top-[14.44%] w-[16.72%]', title: 'Haut-faits', labelAt: 'left-[46%] top-1/2 -translate-y-1/2', click: { open: 'achievements' } } satisfies CampItem] : []),
-    ],
-  },
-  {
-    // Entre l'image du poster (z-10) et son contenu (z-[15]) : voir CooldownCard.
-    depth: 'z-[12]',
-    box: GROUND,
-    origin: 'origin-bottom',
-    items: [
-      // Le parchemin n'est posé qu'une fois une question vue : avant, le
-      // Volumen n'aurait rien à relire.
-      ...(props.volumen ? [{ src: '/images/cooldown-scroll.webp', place: 'left-[31.72%] top-[84%] w-[16.46%]', title: 'Volumen', click: { open: 'questionLog' } } satisfies CampItem] : []),
-      // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
-      // devant eux, comme sur l'illustration.
-      { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { open: 'inventory' } },
-      // Le grimoire n'est posé qu'une fois un sort obtenu, et le reste une fois
-      // tous lancés. Voir specs/ecrans.md#camp-au-repos.
-      ...(props.spellbook ? [{ src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } } satisfies CampItem] : []),
-    ],
-  },
-])
+// Chaque objet n'est posé qu'une fois apparu : voir campObjects.
+interface CampLayer { depth: string, box: string, origin: string, items: CampItem[] }
+
+const layers = computed((): CampLayer[] => {
+  const shown = campObjects(props)
+  const all: CampLayer[] = [
+    // La corde suit le sol, où elle repose, déroulée ou non : calée sur le
+    // décor, son rouleau tombait hors écran sur une fenêtre large. Déroulée, elle
+    // descend du haut de la fenêtre jusqu'au sol, à toutes les largeurs. Derrière
+    // le poster, comme la bannière, et non devant avec le reste du sol.
+    {
+      depth: 'z-[5]',
+      box: GROUND,
+      origin: 'origin-top',
+      items: [
+        props.ready
+          // Déroulée, la corde part du haut de la fenêtre : son nom se pose au-dessus
+          // du rouleau, pas au-dessus de l'image.
+          ? { object: 'rope', src: '/images/cooldown-rope-up.webp', place: 'left-[17.92%] top-0 w-[15%]', title: 'Ascension', labelAt: 'bottom-[13%] left-[61%]', click: 'advance' }
+          : { object: 'rope', src: '/images/cooldown-rope-coiled.webp', place: 'left-[21.61%] top-[83.33%] w-[11.3%]', title: 'Ascension', note: '(en attente)' },
+      ],
+    },
+    {
+      depth: 'z-[5]',
+      box: COVER,
+      origin: 'origin-top',
+      items: [
+        // Le nom de la bannière se lit sur l'étoffe, au milieu : au-dessus, il
+        // tombait dans le feuillage du haut de l'écran.
+        ...(props.team ? [{ object: 'banner', src: BANNERS[props.team], place: 'left-[78.33%] top-[14.44%] w-[16.72%]', title: 'Haut-faits', labelAt: 'left-[46%] top-1/2 -translate-y-1/2', click: { open: 'achievements' } } satisfies CampItem] : []),
+      ],
+    },
+    {
+      // Entre l'image du poster (z-10) et son contenu (z-[15]) : voir CooldownCard.
+      depth: 'z-[12]',
+      box: GROUND,
+      origin: 'origin-bottom',
+      items: [
+        { object: 'scroll', src: '/images/cooldown-scroll.webp', place: 'left-[31.72%] top-[84%] w-[16.46%]', title: 'Volumen', click: { open: 'questionLog' } },
+        { object: 'backpack', src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { open: 'inventory' } },
+        // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
+        // devant eux, comme sur l'illustration.
+        { object: 'spellbook', src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } },
+      ],
+    },
+  ]
+  return all.map(layer => ({ ...layer, items: layer.items.filter(item => shown.has(item.object)) }))
+})
 </script>
