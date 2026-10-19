@@ -70,7 +70,7 @@ node scripts/assemble.mjs <runDir>
 
 Le script joint sur l'`id` et génère les variantes de nom pour les réponses en `NOM (Prénom)`.
 
-Les items signalés `[liste]` et `[pas-question]` sortent du deck et vont dans `to-review.json`, avec leur motif dans `reason`.
+Les items signalés `[liste]` et `[pas-question]` sortent du deck et vont dans `to-review.json`, avec leur motif dans `reason`. Un item dont on a mis `[supprime]` en tête de `why`, à la main dans `build/out/`, est retiré de partout.
 
 Lire la sortie et **ne pas livrer en silence si quelque chose cloche** : aucun HTML résiduel, aucun id dupliqué, aucune variante identique à sa réponse, aucune catégorie hors de la table.
 

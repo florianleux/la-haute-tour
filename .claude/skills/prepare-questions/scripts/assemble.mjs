@@ -89,8 +89,11 @@ for (const c of cards) {
 // Mal formées : pas une question, ou une liste demandée. Elles sortent du deck
 // et attendent une reprise à la main dans to-review.json.
 const SET_ASIDE = /^\[(liste|pas-question)\]/
+// Retirées à la main après relecture : ni dans le deck, ni à reprendre.
+const DROPPED = /^\[supprime\]/
+const dropped = rows.filter(r => DROPPED.test(r.why))
 const setAside = rows.filter(r => SET_ASIDE.test(r.why))
-const deck = rows.filter(r => !SET_ASIDE.test(r.why))
+const deck = rows.filter(r => !SET_ASIDE.test(r.why) && !DROPPED.test(r.why))
 const flagged = deck.filter(r => /^\[flou\]/.test(r.why))
 
 // ---------- 4. Vérifications ----------
@@ -118,6 +121,7 @@ console.log('=== CONTENU ===')
 console.log(`  questions du deck        : ${deck.length}`)
 console.log(`  mises a part [liste]     : ${setAside.filter(r => r.why.startsWith('[liste]')).length}`)
 console.log(`  mises a part [pas-quest.]: ${setAside.filter(r => r.why.startsWith('[pas-question]')).length}`)
+console.log(`  supprimees [supprime]    : ${dropped.length}`)
 console.log(`  avec au moins 1 variante : ${deck.filter(r => r.variants.length).length}`)
 console.log(`  variantes au total       : ${deck.reduce((a, r) => a + r.variants.length, 0)}`)
 console.log(`  enonces modifies         : ${rows.filter(r => r.statement !== byId.get(r.id).statement).length}`)
