@@ -7,6 +7,7 @@
     :advancing="advancing"
     :team="team"
     :volumen="state.seenTotal > 0"
+    :spellbook="state.spellDiscovered"
     @advance="$emit('advance')"
     @open="$emit('open', $event)"
   />

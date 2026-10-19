@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, exists, inArray, isNull, sql } from 'drizzle-orm'
 import type { BatchItem, BatchResponse } from 'drizzle-orm/batch'
 import type { RunnableQuery } from 'drizzle-orm/runnable-query'
 import {
@@ -32,6 +32,7 @@ import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import {
   acceptedAnswers,
+  activeEffects,
   deckFloors,
   disputes,
   missedPool,
@@ -140,6 +141,13 @@ export interface GameState {
    */
   seenTotal: number
   /**
+   * Le joueur a obtenu au moins un sort depuis sa dernière remise à zéro : il en
+   * a un en poche ou en a déjà lancé un. Faux, le camp ne pose pas son grimoire.
+   * La même définition que les sorts découverts du Grimoire, voir
+   * server/utils/inventory.ts.
+   */
+  spellDiscovered: boolean
+  /**
    * Le coffre de la question loot qui vient d'être réussie, null partout
    * ailleurs. Tant qu'il est fermé, rien ne sert la question suivante.
    */
@@ -178,6 +186,8 @@ export interface PlayerSnapshot {
   gameClosed: boolean
   /** Questions the current floor holds. */
   floorTotal: number
+  /** Au moins un sort en poche ou déjà lancé. Lu avec le joueur. */
+  spellDiscovered: boolean
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
   effects: PlacedEffect[]
   reservation?: Reservation
@@ -248,6 +258,10 @@ function snapshotQueries(db: Database, userId: number) {
         // lue. Voir server/utils/deck.ts.
         floorTotal: sql<number>`coalesce((select ${deckFloors.total} from ${deckFloors}
           where ${deckFloors.floor} = ${users.currentFloor}), 0)`,
+        // Lu avec le joueur, pour la même raison : le camp pose son grimoire
+        // dessus, à chaque lecture d'état.
+        spellDiscovered: sql<number>`(${exists(db.select({ one: sql`1` }).from(inventory).where(eq(inventory.userId, users.id)))}
+          or ${exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))})`,
       })
       .from(users)
       .where(eq(users.id, userId))
@@ -279,6 +293,7 @@ function toSnapshot([[row], [held], effects, recoveryRun]: BatchResponse<Snapsho
     user: row.user,
     effects: toEffectViews(effects, row.user),
     floorTotal: row.floorTotal,
+    spellDiscovered: row.spellDiscovered === 1,
     gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
@@ -709,6 +724,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     floorTotal: snapshot.floorTotal,
     attemptSeen: user.attemptSeen,
     seenTotal: user.seenTotal,
+    spellDiscovered: snapshot.spellDiscovered,
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
     // Lus à chaque état : l'attente les récapitule, l'ascension en affiche une

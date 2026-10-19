@@ -92,6 +92,7 @@ const state = ref(demoState({
   floorTotal: 1000,
   attemptSeen: 995,
   seenTotal: 1_204,
+  spellDiscovered: true,
   effects: Array.from({ length: Math.floor(Math.random() * 3) }, () => randomEffect('active')),
 }))
 

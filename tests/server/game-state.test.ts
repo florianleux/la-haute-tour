@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
+import { activeEffects, inventory } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -64,6 +65,29 @@ describe('endpoints de jeu', () => {
       question: null,
       verdict: null,
     })
+  })
+
+  it('pose le grimoire au premier sort obtenu, et le garde une fois lancé', async () => {
+    const userId = await createPlayer(db, { discordId: 'sorcier', username: 'sorcier' })
+    const read = async (): Promise<boolean> =>
+      (await (await state(apiRequest('http://test/state', await sessionCookieFor(userId)))).json()).spellDiscovered
+
+    expect(await read()).toBe(false)
+
+    await db.insert(inventory).values({ userId, spell: 'VITALITY', obtainedAt: new Date() })
+    expect(await read()).toBe(true)
+
+    // Lancé : plus rien en poche, le sort reste découvert.
+    await db.delete(inventory)
+    await db.insert(activeEffects).values({
+      userId,
+      casterId: userId,
+      spell: 'VITALITY',
+      face: 'boon',
+      castAt: new Date(),
+      castCooldownStartedAt: new Date(),
+    })
+    expect(await read()).toBe(true)
   })
 
   it('sert une question sur action du joueur, puis son verdict', async () => {

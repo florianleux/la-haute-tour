@@ -83,6 +83,8 @@ const props = defineProps<{
   team: TeamId | null
   /** Le joueur a déjà vu une question : le Volumen a de quoi se lire. */
   volumen: boolean
+  /** Le joueur a déjà obtenu un sort : le Grimoire a de quoi se montrer. */
+  spellbook: boolean
 }>()
 
 const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId] }>()
@@ -199,7 +201,9 @@ const layers = computed((): { depth: string, box: string, origin: string, items:
       // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
       // devant eux, comme sur l'illustration.
       { src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { open: 'inventory' } },
-      { src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } },
+      // Le grimoire n'est posé qu'une fois un sort obtenu, et le reste une fois
+      // tous lancés. Voir specs/ecrans.md#camp-au-repos.
+      ...(props.spellbook ? [{ src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } } satisfies CampItem] : []),
     ],
   },
 ])

@@ -77,6 +77,7 @@ const state = ref(demoState({
   // Série : question 995.
   attemptSeen: 995,
   seenTotal: 1_204,
+  spellDiscovered: true,
 }))
 
 provideGameState(state)

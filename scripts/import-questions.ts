@@ -207,8 +207,9 @@ export async function importQuestions(
     )
 
     // Le deck effacé a emporté les questions vues par cascade : les décomptes
-    // que les joueurs portaient ne décrivent plus rien.
-    await tx.update(users).set({ floorSeen: 0, attemptSeen: 0, floorCursor: 0 })
+    // que les joueurs portaient ne décrivent plus rien. `seenTotal` compris : il
+    // compte ce que relit le Volumen, et le camp pose son parchemin dessus.
+    await tx.update(users).set({ floorSeen: 0, attemptSeen: 0, floorCursor: 0, seenTotal: 0 })
 
     return {
       questions: questionRows.length,

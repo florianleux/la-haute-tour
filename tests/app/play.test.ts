@@ -26,6 +26,7 @@ const served: GameState = {
   floorTotal: 0,
   attemptSeen: 0,
   seenTotal: 0,
+  spellDiscovered: false,
   chest: null,
   maintenance: false,
   effects: [],

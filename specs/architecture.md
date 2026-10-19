@@ -60,6 +60,7 @@ Il n'existe **aucun compteur de loot**. Le statut de question loot se dérive du
 - Le script fusionne réponse et variantes en réponses acceptées, puis **répartit les questions au hasard sur les 6 étages**, en tranches de tailles égales à une question près. Aucun critère de difficulté n'entre dans cette répartition ; l'équilibre, lui, est garanti par construction plutôt que laissé à six tirages indépendants, sinon un étage pourrait se dégarnir.
 - Les catégories arrivent en code. Un code absent de `shared/utils/categories.ts` rend la ligne invalide.
 - Lignes invalides **ignorées**, jamais bloquantes : rapportées en fin de run avec les compteurs par étage.
+- **L'import remplace le deck entier** : il efface les questions, et avec elles, par cascade, ce que les joueurs en avaient vu ou raté. Il remet donc à zéro les décomptes que les joueurs portent (`floorSeen`, `attemptSeen`, `floorCursor`, `seenTotal`). Le reste de leur partie (étage, vies, sorts, palmarès) ne bouge pas : repartir de zéro, c'est la remise à zéro admin.
 - Pas d'UI d'import dans l'admin — le script suffit.
 
 ## Forme de l'API de jeu
