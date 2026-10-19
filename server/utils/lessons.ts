@@ -8,6 +8,8 @@ import type { LessonId } from '../../shared/utils/lessons'
  */
 export const LESSON_COLUMNS = {
   camp: 'campLessonAt',
+  fall: 'fallLessonAt',
+  recovery: 'recoveryLessonAt',
 } as const satisfies Record<LessonId, keyof User>
 
 /** Les leçons que le joueur a déjà vues. */

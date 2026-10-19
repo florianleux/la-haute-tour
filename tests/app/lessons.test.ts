@@ -1,5 +1,53 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, campLesson, lessonDims, lessonStart, locksOverlay, replayedLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, campLesson, fallLesson, lessonDims, recoveryLesson, lessonStart, locksOverlay, replayedLesson, spotlightOn } from '../../utils/lessons'
+
+// Voir specs/ecrans.md#leçons-de-michel (Chute).
+describe('la leçon de la chute', () => {
+  const lines = fallLesson()
+
+  it('s ouvre sur la même entrée que la leçon du camp : la pause, puis « HÉ ! »', () => {
+    expect(lines.slice(0, 2)).toEqual(campLesson({ team: null }).slice(0, 2))
+  })
+
+  it('montre la bannière du poster, puis le parchemin, dans cet ordre', () => {
+    const shown = lines.map(line => line.spotlight).filter(spot => spot && spot !== 'michel')
+
+    expect([...new Set(shown)]).toEqual(['posterBanner', 'scroll'])
+  })
+
+  it('fait ouvrir le Volumen, y parle, puis le fait refermer', () => {
+    const scroll = lines.findIndex(line => line.spotlight === 'scroll')
+
+    expect(lines.slice(scroll).map(line => [line.overlay, line.awaits]).slice(0, 3)).toEqual([
+      [undefined, 'click'],
+      ['questionLog', undefined],
+      ['questionLog', 'close'],
+    ])
+  })
+
+  it('finit sur un au revoir jusqu à la fin de l attente, qui avance au clic', () => {
+    expect(lines.at(-1)).toMatchObject({ text: 'On se voit une fois ton attente finie pour la suite !' })
+    expect(lines.at(-1)?.awaits).toBeUndefined()
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Rattrapage).
+describe('la leçon du rattrapage', () => {
+  it('s ouvre sur la même entrée que les autres leçons', () => {
+    expect(recoveryLesson({ total: 6, required: 1 }).slice(0, 2)).toEqual(fallLesson().slice(0, 2))
+  })
+
+  it('annonce les chiffres du rattrapage qu on lui donne', () => {
+    expect(recoveryLesson({ total: 3, required: 1 }).map(line => line.text))
+      .toContain('Trois questions que tu as ratées précédemment te seront présentées, donne une bonne réponse pour reprendre ton ascension !')
+    expect(recoveryLesson({ total: 6, required: 6 }).map(line => line.text))
+      .toContain('Six questions que tu as ratées précédemment te seront présentées, donne six bonnes réponses pour reprendre ton ascension !')
+  })
+
+  it('n attend aucun geste : « Commencer » n apparaît qu après elle', () => {
+    expect(recoveryLesson({ total: 3, required: 1 }).every(line => !line.awaits || line.awaits === 'pause')).toBe(true)
+  })
+})
 
 describe('la leçon du camp', () => {
   it('montre Michel, le sac, la bannière puis la corde, dans cet ordre', () => {

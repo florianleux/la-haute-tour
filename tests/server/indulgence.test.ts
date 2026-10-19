@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { acceptedAnswers, activeEffects, pocketSpells, missedPool, recoveryQuestions } from '../../server/db/schema'
+import { acceptedAnswers, activeEffects, pocketSpells, missedPool, recoveryQuestions, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { castSpell } from '../../server/utils/effects'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -63,6 +63,41 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
   async function startRecovery(): Promise<void> {
     await serveNextQuestion(db, await reload(), COOLDOWN_OVER)
   }
+
+  // Ce que Michel annonce à la leçon de la chute, lu dans les règles jouées.
+  // Voir specs/ecrans.md#leçons-de-michel.
+  describe('les chiffres du rattrapage, servis avant qu il commence', () => {
+    const nextRecovery = async (at = NOW) => (await readGameState(db, await reload(), at)).nextRecovery
+
+    it('sert les chiffres de l étage pendant l attente', async () => {
+      expect(await nextRecovery()).toEqual({ total: 3, required: 1 })
+    })
+
+    it('les sert encore une fois l attente échue, tant que rien n est tiré', async () => {
+      await fillPool(3)
+
+      expect(await nextRecovery(COOLDOWN_OVER)).toEqual({ total: 3, required: 1 })
+    })
+
+    it('double les questions tirées sous une Indulgence blanche', async () => {
+      await castIndulgence()
+
+      expect(await nextRecovery()).toEqual({ total: 6, required: 1 })
+    })
+
+    it('ne les sert plus une fois le rattrapage tiré', async () => {
+      await fillPool(3)
+      await startRecovery()
+
+      expect(await nextRecovery(COOLDOWN_OVER)).toBeNull()
+    })
+
+    it('ne les sert pas en pleine ascension', async () => {
+      await db.update(users).set({ lives: 3, cooldownUntil: null }).where(eq(users.id, player.id))
+
+      expect(await nextRecovery()).toBeNull()
+    })
+  })
 
   it('tire le nombre ordinaire quand rien n est posé', async () => {
     await fillPool(rules.recoveryQuestions * 3)
@@ -129,6 +164,12 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
         .set({ face: 'curse' })
         .where(eq(activeEffects.userId, player.id))
     }
+
+    it('exige un perfect dans les chiffres servis avant le rattrapage', async () => {
+      await curse()
+
+      expect((await readGameState(db, await reload(), NOW)).nextRecovery).toEqual({ total: 3, required: 3 })
+    })
 
     /** Répond juste à `count` questions du rattrapage, faux aux suivantes. */
     async function play(right: number, wrong: number): Promise<void> {

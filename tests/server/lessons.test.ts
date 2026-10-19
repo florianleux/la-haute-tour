@@ -45,6 +45,19 @@ describe('une leçon de Michel vue', () => {
     expect((await loadPlayer(db, playerId)).campLessonAt).toBeInstanceOf(Date)
   })
 
+  it('date la leçon de la chute, sans toucher à celle du camp', async () => {
+    const response = await markLesson(lessonRequest({ lesson: 'fall' }, await sessionCookieFor(playerId)))
+
+    expect(response.status).toBe(200)
+    expect(await loadPlayer(db, playerId)).toMatchObject({ fallLessonAt: expect.any(Date), campLessonAt: null })
+  })
+
+  it('date la leçon du rattrapage', async () => {
+    await markLesson(lessonRequest({ lesson: 'recovery' }, await sessionCookieFor(playerId)))
+
+    expect((await loadPlayer(db, playerId)).recoveryLessonAt).toBeInstanceOf(Date)
+  })
+
   it('ne réécrit pas une date déjà posée', async () => {
     const seenAt = new Date(1_000)
     await db.update(users).set({ campLessonAt: seenAt }).where(eq(users.id, playerId))

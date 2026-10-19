@@ -30,6 +30,8 @@ export interface QuestionRun {
   readFailed: Ref<boolean>
   /** Une relecture est en cours. */
   loading: Ref<boolean>
+  /** Relit l'état servi : après une écriture qui ne le renvoie pas, comme une leçon datée. */
+  refresh: () => Promise<void>
 }
 
 export interface QuestionRunOptions {
@@ -235,5 +237,6 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     actionFailed,
     readFailed,
     loading,
+    refresh,
   }
 }

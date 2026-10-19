@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockedByMaintenance, fallQuestionId, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView } from '../../utils/phase'
+import { blockedByMaintenance, dueLesson, fallQuestionId, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView } from '../../utils/phase'
 import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
@@ -65,6 +65,45 @@ describe('écran de jeu', () => {
 
     expect(gameScreen(state({ phase: 'recovery', recovery: failed, verdict })).recovery?.resumes)
       .toBe(false)
+  })
+})
+
+// Les leçons de Michel se jouent à leur moment, lu dans l'état servi.
+// Voir specs/ecrans.md#leçons-de-michel.
+describe('la leçon due', () => {
+  const numbers = { total: 3, required: 1 }
+  const inCooldown = { phase: 'cooldown' as const, lives: 0, cooldownUntil: '2099-01-01T00:00:00.000Z', nextRecovery: numbers }
+  const overdue = { phase: 'recovery' as const, lives: 0, nextRecovery: numbers }
+
+  it('est celle du camp au repos, tant qu elle n est pas vue', () => {
+    expect(dueLesson(state({ lessonsDone: [] }))).toBe('camp')
+    expect(dueLesson(state({ lessonsDone: ['camp'] }))).toBeNull()
+  })
+
+  it('est celle de la chute sans vies, l attente en cours ou échue', () => {
+    expect(dueLesson(state({ ...inCooldown, lessonsDone: ['camp'] }))).toBe('fall')
+    expect(dueLesson(state({ ...overdue, lessonsDone: ['camp'] }))).toBe('fall')
+  })
+
+  it('est celle du rattrapage l attente échue, la chute vue', () => {
+    expect(dueLesson(state({ ...overdue, lessonsDone: ['camp', 'fall'] }))).toBe('recovery')
+    expect(dueLesson(state({ ...inCooldown, lessonsDone: ['camp', 'fall'] }))).toBeNull()
+  })
+
+  it('n est aucune une fois tout vu, ou le rattrapage tiré', () => {
+    expect(dueLesson(state({ ...overdue, lessonsDone: ['camp', 'fall', 'recovery'] }))).toBeNull()
+    expect(dueLesson(state({ ...overdue, nextRecovery: null, lessonsDone: ['camp'] }))).toBeNull()
+  })
+
+  // Le joueur ne lance pas un rattrapage qu'on ne lui a pas expliqué.
+  it('retient « Commencer » tant que la chute ou le rattrapage reste à voir', () => {
+    expect(playView(state({ ...overdue, lessonsDone: ['camp'] })).action).toBeNull()
+    expect(playView(state({ ...overdue, lessonsDone: ['camp', 'fall'] })).action).toBeNull()
+    expect(playView(state({ ...overdue, lessonsDone: ['camp', 'fall', 'recovery'] })).action?.label).toBe('Commencer')
+  })
+
+  it('laisse la corde à la leçon du camp, qui la fait cliquer', () => {
+    expect(playView(state({ lessonsDone: [] })).action).not.toBeNull()
   })
 })
 

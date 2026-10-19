@@ -88,6 +88,7 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     verdict: null,
     cooldownUntil: null,
     recovery: null,
+    nextRecovery: null,
     floorSeen: 0,
     floorTotal: 0,
     attemptSeen: 0,

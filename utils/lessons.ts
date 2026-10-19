@@ -1,5 +1,6 @@
 import { teamLabel } from './teams'
 import type { CampObject } from './camp'
+import type { GameState } from '~~/server/utils/game'
 import type { CampOverlayId } from './phase'
 import type { TeamId } from '~~/shared/utils/teams'
 
@@ -39,6 +40,16 @@ export interface LessonLine {
 }
 
 /**
+ * L'entrée de Michel, la même à chaque leçon jouée d'elle-même : il se fait
+ * attendre, puis on l'entend avant de le voir. Le camp s'assombrit dès le cri :
+ * Michel est déjà là, hors de vue.
+ */
+const MICHEL_ENTRANCE: LessonLine[] = [
+  { text: '', spotlight: null, awaits: 'pause' },
+  { text: 'HÉ !', spotlight: 'michel', bubbleOnly: true },
+]
+
+/**
  * La leçon du camp, à la première arrivée au camp : Michel se fait attendre,
  * s'annonce, se fait donner le Fromage, montre l'Inventaire, les Haut-faits
  * de la guilde puis la corde. Sans équipe, ni bannière ni Haut-faits.
@@ -46,9 +57,7 @@ export interface LessonLine {
 export function campLesson({ team }: { team: TeamId | null }): LessonLine[] {
   // TODO(texte) : répliques provisoires, Flo les écrira.
   return [
-    { text: '', spotlight: null, awaits: 'pause' },
-    // Le camp s'assombrit dès le cri : Michel est déjà là, hors de vue.
-    { text: 'HÉ !', spotlight: 'michel', bubbleOnly: true },
+    ...MICHEL_ENTRANCE,
     { text: 'Je sens du fromage, non ??', spotlight: 'michel' },
     { text: 'Je suis Michel, et je vais t\'aider à découvrir le camp de base !', spotlight: 'michel' },
     { text: 'C\'est ici que tu reviendras entre deux tentatives d\'ascension, quand tes vies tomberont à zéro !', spotlight: null },
@@ -65,6 +74,50 @@ export function campLesson({ team }: { team: TeamId | null }): LessonLine[] {
       : [],
     { text: 'Quand tu es prêt, la corde te ramène dans la Tour. Clique dessus !', spotlight: 'rope', awaits: 'click' },
     { text: 'On se revoit bientôt, bonne chance !', spotlight: 'michel', awaits: 'ascent' },
+  ]
+}
+
+/**
+ * La leçon de la chute, au premier retour au camp après la dernière vie :
+ * l'attente, puis le Volumen et ses erreurs. Le rattrapage s'explique à
+ * l'échéance (recoveryLesson). Voir specs/ecrans.md#leçons-de-michel.
+ */
+export function fallLesson(): LessonLine[] {
+  // TODO(texte) : répliques provisoires, Flo les écrira.
+  return [
+    ...MICHEL_ENTRANCE,
+    { text: 'Aïe, plus de vies ! Ça arrive aux meilleurs.', spotlight: 'michel' },
+    { text: 'Te voilà au camp pour un moment : la bannière du poster dit combien de temps il te reste à attendre.', spotlight: 'posterBanner' },
+    { text: 'Tes erreurs ne sont pas perdues : elles sont écrites dans le Volumen. Ouvre-le !', spotlight: 'scroll', awaits: 'click' },
+    { text: 'Le Volumen garde toutes les questions que tu as vues. Tes erreurs t\'attendent dans « À revoir ».', spotlight: null, overlay: 'questionLog' },
+    { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
+    { text: 'On se voit une fois ton attente finie pour la suite !', spotlight: 'michel' },
+  ]
+}
+
+/**
+ * Un nombre en toutes lettres, au féminin — questions et réponses le sont.
+ * Assez loin pour deux Indulgences blanches ; au-delà, en chiffres.
+ */
+const NUMBER_WORDS = ['zéro', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze']
+
+function inWords(count: number): string {
+  return NUMBER_WORDS[count] ?? String(count)
+}
+
+/**
+ * La leçon du rattrapage, la première attente échue, avant que « Commencer »
+ * n'apparaisse : ses chiffres, servis par le serveur, Indulgence comprise.
+ * Voir specs/ecrans.md#leçons-de-michel.
+ */
+export function recoveryLesson({ total, required }: NonNullable<GameState['nextRecovery']>): LessonLine[] {
+  // TODO(texte) : répliques provisoires, Flo les écrira.
+  return [
+    ...MICHEL_ENTRANCE,
+    { text: 'Ton attente est finie : place au rattrapage !', spotlight: 'michel' },
+    // Toujours plusieurs questions : les règles en tirent trois, et l'Indulgence n'en retire jamais.
+    { text: `${inWords(total).charAt(0).toUpperCase()}${inWords(total).slice(1)} questions que tu as ratées précédemment te seront présentées, donne ${inWords(required)} ${required > 1 ? 'bonnes réponses' : 'bonne réponse'} pour reprendre ton ascension !`, spotlight: 'michel' },
+    { text: 'Clique sur « Commencer » quand tu es prêt. Bonne chance !', spotlight: 'michel' },
   ]
 }
 

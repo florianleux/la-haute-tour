@@ -79,6 +79,10 @@ export const users = sqliteTable('users', {
    * « Leçon ») et specs/ecrans.md#leçons-de-michel.
    */
   campLessonAt: integer('camp_lesson_at', { mode: 'timestamp' }),
+  /** Quand le joueur a vu la leçon de la chute, au premier retour au camp après sa dernière vie. Comme campLessonAt. */
+  fallLessonAt: integer('fall_lesson_at', { mode: 'timestamp' }),
+  /** Quand le joueur a vu la leçon du rattrapage, la première attente échue. Comme campLessonAt. */
+  recoveryLessonAt: integer('recovery_lesson_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /** When the cooldown ends. Null outside a cooldown. The phase derives from it. */

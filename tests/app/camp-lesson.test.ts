@@ -1,16 +1,17 @@
-import { effectScope, nextTick, ref } from 'vue'
+import { effectScope, isRef, nextTick, ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
 import { demoState } from '../../utils/demo'
-import { isAtRest } from '../../utils/phase'
-import { LESSON_PAUSE_MS, campLesson, lessonStart, replayedLesson } from '../../utils/lessons'
+import { dueLesson, isAtRest } from '../../utils/phase'
+import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson } from '../../utils/lessons'
 import type { GameState } from '../../server/utils/game'
+import type { Ref } from 'vue'
 import type { TeamId } from '../../shared/utils/teams'
 
 const { answerWith, breakNetwork, calls, reset } = installAppGlobals()
 
 // Les auto-imports dont le composable se sert, que Vitest ne pose pas.
-Object.assign(globalThis, { isAtRest, campLesson, lessonStart, replayedLesson, LESSON_PAUSE_MS })
+Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson, LESSON_PAUSE_MS })
 const { fetchItems } = await import('../../composables/useItems')
 Object.assign(globalThis, { fetchItems })
 
@@ -27,9 +28,31 @@ const WITHOUT_CHEESE = { items: [] }
 
 let scope = effectScope()
 
-function start(state: GameState, team: TeamId | null = 'MIDI'): CampLesson {
-  return scope.run(() => useCampLesson(ref(state), ref(team)))!
+/** Les relectures de l'état que le composable a demandées. */
+let refreshes = 0
+
+/**
+ * Michel sur l'état servi donné. `refresh` relit l'état : par défaut, il ne fait
+ * que se compter ; un test qui enchaîne deux leçons y pose ce que le serveur
+ * rendrait.
+ */
+function start(state: GameState | Ref<GameState>, team: TeamId | null = 'MIDI', refresh = async (): Promise<void> => {
+  refreshes += 1
+}): CampLesson {
+  return scope.run(() => useCampLesson(isRef(state) ? state : ref(state), ref(team), refresh))!
 }
+
+beforeEach(() => {
+  vi.useFakeTimers()
+  scope.stop()
+  scope = effectScope()
+  reset()
+  refreshes = 0
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 /** Laisse passer la pause de Michel et la lecture du sac. */
 async function settle(ms = 0): Promise<void> {
@@ -48,15 +71,7 @@ function clickThrough(lesson: CampLesson): void {
 // Voir specs/ecrans.md#leçons-de-michel.
 describe('le déroulé de la leçon du camp', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
-    scope.stop()
-    scope = effectScope()
-    reset()
     answerWith(WITH_CHEESE)
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   it('part dès l arrivée au camp, sur la pause : le camp ne répond déjà plus', () => {
@@ -161,19 +176,124 @@ describe('le déroulé de la leçon du camp', () => {
   })
 })
 
+/** Le joueur revenu au camp après sa dernière vie, leçon du camp déjà vue. */
+function fallen(overrides: Partial<GameState> = {}): GameState {
+  return demoState({
+    phase: 'cooldown',
+    lives: 0,
+    cooldownUntil: new Date(Date.now() + 60_000).toISOString(),
+    nextRecovery: { total: 6, required: 1 },
+    lessonsDone: ['camp'],
+    ...overrides,
+  })
+}
+
+/** Fait ce que la réplique attend — ouvrir ou refermer —, ou clique sa bulle. */
+function act(lesson: CampLesson): void {
+  const awaits = lesson.line.value?.awaits
+  if (awaits === 'click' || awaits === 'close') {
+    lesson.done(awaits)
+  }
+  else {
+    lesson.next()
+  }
+}
+
+// Voir specs/ecrans.md#leçons-de-michel (Chute).
+describe('le déroulé de la leçon de la chute', () => {
+  it('part au retour au camp après la dernière vie', () => {
+    expect(start(fallen()).line.value?.awaits).toBe('pause')
+  })
+
+  it('part aussi l attente échue, tant que le rattrapage n a pas commencé', () => {
+    expect(start(overdue()).line.value?.awaits).toBe('pause')
+  })
+
+  it('ne se joue pas une fois vue', () => {
+    expect(start(fallen({ lessonsDone: ['camp', 'fall'] })).line.value).toBeNull()
+  })
+
+  it('ne se joue pas sans rattrapage à venir', () => {
+    expect(start(fallen({ nextRecovery: null })).line.value).toBeNull()
+  })
+
+  it('se date au clic sur sa dernière réplique, puis se tait', async () => {
+    const lesson = start(fallen())
+    await settle(LESSON_PAUSE_MS)
+    while (lesson.line.value) {
+      expect(calls()).not.toContain('fetch POST /api/profile/lessons')
+      act(lesson)
+    }
+
+    expect(calls()).toContain('fetch POST /api/profile/lessons')
+  })
+})
+
+/** L'attente échue, rattrapage pas commencé. */
+function overdue(overrides: Partial<GameState> = {}): GameState {
+  return fallen({ phase: 'recovery', cooldownUntil: null, ...overrides })
+}
+
+/** Joue la leçon en cours jusqu'à ce que Michel se taise, et rend ce qu'il a dit. */
+function playThrough(lesson: CampLesson): string[] {
+  const spoken: string[] = []
+  while (lesson.line.value) {
+    spoken.push(lesson.line.value.text)
+    act(lesson)
+  }
+  return spoken
+}
+
+// Voir specs/ecrans.md#leçons-de-michel (Rattrapage).
+describe('le déroulé de la leçon du rattrapage', () => {
+  it('part l attente échue, et annonce les chiffres servis', async () => {
+    const lesson = start(overdue({ lessonsDone: ['camp', 'fall'] }))
+    await settle(LESSON_PAUSE_MS)
+
+    expect(playThrough(lesson).some(text => text.startsWith('Six questions'))).toBe(true)
+  })
+
+  it('ne se joue pas pendant l attente', () => {
+    const lesson = start(fallen({ lessonsDone: ['camp', 'fall'] }))
+
+    expect(lesson.line.value).toBeNull()
+  })
+
+  // « Commencer » revient avec l'état relu : la leçon y est vue. Voir playView.
+  it('se date à sa dernière réplique, puis relit l état', async () => {
+    const lesson = start(overdue({ lessonsDone: ['camp', 'fall'] }))
+    await settle(LESSON_PAUSE_MS)
+
+    playThrough(lesson)
+    await settle()
+
+    expect(calls()).toContain('fetch POST /api/profile/lessons')
+    expect(refreshes).toBe(1)
+  })
+
+  it('ne se joue pas une fois vue', () => {
+    expect(start(overdue({ lessonsDone: ['camp', 'fall', 'recovery'] })).line.value).toBeNull()
+  })
+
+  // Revenu après l'échéance sans avoir vu la chute : les deux leçons, à la suite.
+  it('suit la leçon de la chute quand le joueur revient après l échéance', async () => {
+    const served = ref(overdue())
+    const lesson = start(served, 'MIDI', async () => {
+      served.value = { ...served.value, lessonsDone: ['camp', 'fall'] }
+    })
+    await settle(LESSON_PAUSE_MS)
+
+    expect(playThrough(lesson).at(-1)).toBe('On se voit une fois ton attente finie pour la suite !')
+    await settle()
+
+    expect(lesson.line.value?.awaits).toBe('pause')
+    await settle(LESSON_PAUSE_MS)
+    expect(playThrough(lesson).some(text => text.startsWith('Six questions'))).toBe(true)
+  })
+})
+
 // Hors leçon, Michel propose de rejouer une leçon déjà vue.
 describe('le rejeu d une leçon', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    scope.stop()
-    scope = effectScope()
-    reset()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('propose les leçons vues, et de refuser', () => {
     const lesson = start(demoState({ lessonsDone: ['camp'] }))
 
@@ -204,6 +324,27 @@ describe('le rejeu d une leçon', () => {
 
     expect(spoken).toBeGreaterThan(5)
     expect(calls()).not.toContain('fetch POST /api/profile/lessons')
+  })
+
+  it('rejoue la leçon de la chute, sur le camp, sans rien faire ouvrir', () => {
+    const lesson = start(demoState({ lessonsDone: ['camp', 'fall'] }))
+    lesson.offer()
+
+    lesson.choose(1)
+
+    expect(lesson.line.value?.text).toBe('HÉ !')
+    const spoken = playThrough(lesson)
+    expect(spoken.at(-1)).toBe('On se voit une fois ton attente finie pour la suite !')
+    expect(calls()).not.toContain('fetch POST /api/profile/lessons')
+  })
+
+  it('ne rejoue pas le rattrapage sans ses chiffres', () => {
+    const lesson = start(demoState({ lessonsDone: ['camp', 'fall', 'recovery'] }))
+    lesson.offer()
+
+    lesson.choose(2)
+
+    expect(lesson.line.value).toBeNull()
   })
 
   it('se tait sur « Non merci »', () => {

@@ -1,5 +1,6 @@
 import type { ChestView, GameState, ServedQuestion } from "~~/server/utils/game";
 import type { Phase } from "~~/server/utils/mechanics";
+import type { LessonId } from "~~/shared/utils/lessons";
 
 /**
  * La phase, dite en français. L'onglet Joueurs de l'administration l'affiche
@@ -134,6 +135,26 @@ export function isAtRest(state: GameState | null): boolean {
 }
 
 /**
+ * La leçon de Michel qui attend d'être jouée d'elle-même, une à la fois, lue
+ * dans l'état servi : celle du camp au repos ; sans vies et rien de tiré, celle
+ * de la chute, puis celle du rattrapage une fois l'attente échue. Null quand
+ * aucune n'est due. Voir specs/ecrans.md#leçons-de-michel.
+ */
+export function dueLesson(state: GameState | null): LessonId | null {
+  const done = state?.lessonsDone ?? [];
+  if (isAtRest(state) && !done.includes("camp")) {
+    return "camp";
+  }
+  if (!state?.nextRecovery) {
+    return null;
+  }
+  if (!done.includes("fall")) {
+    return "fall";
+  }
+  return state.phase === "recovery" && !done.includes("recovery") ? "recovery" : null;
+}
+
+/**
  * Le camp : l'attente, le rattrapage tant qu'il n'a ni question ni tirage, et
  * l'ascension au repos.
  * C'est l'écran d'attente, et le seul moment où les Sorts existent, donc le seul
@@ -257,12 +278,15 @@ export function playView(
   // dans l'état, et le ferait relire au lieu du poster — sauf le temps de la
   // chute, que le joueur lit avant de redescendre, et du Mimic, qu'il voit
   // sauter avant le poster. L'attente porte ses propres boutons ; seul le
-  // rattrapage prêt à démarrer et l'ascension au repos avancent d'ici.
+  // rattrapage prêt à démarrer et l'ascension au repos avancent d'ici — le
+  // rattrapage une fois expliqué : Michel retient « Commencer » tant que la
+  // leçon de la chute ou du rattrapage reste à voir.
   if (atCamp && !readingFall && !viewingChest) {
+    const lesson = dueLesson(state);
     return {
       screen,
       card: "cooldown",
-      action: isCooldown(state) ? null : next,
+      action: isCooldown(state) || lesson === "fall" || lesson === "recovery" ? null : next,
     };
   }
 

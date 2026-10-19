@@ -4,7 +4,9 @@
     label="Volumen"
     close-label="Fermer le Volumen"
     class="question-log-scroll-metrics"
+    :lesson="lesson"
     @close="$emit('close')"
+    @next="$emit('next')"
   >
     <!-- Par-dessus le camp (CampOverlay). Clic à côté du papier = fermer, y
          compris dans les vides de l'image autour des rouleaux : les deux
@@ -76,8 +78,18 @@
 // dans le Pool Échecs, en lire les réponses pendant qu'il tourne serait tricher.
 // Voir specs/ecrans.md#volumen.
 import type { QuestionLogTab } from '~/composables/useQuestionLog'
+import type { LessonLine } from '~~/utils/lessons'
 
-defineEmits<{ close: [] }>()
+defineProps<{
+  /** La réplique de Michel quand il parle depuis le Volumen, à la leçon de la chute. */
+  lesson?: LessonLine
+}>()
+
+defineEmits<{
+  close: []
+  /** Michel passe à sa réplique suivante. */
+  next: []
+}>()
 
 const tabs: { id: QuestionLogTab, label: string }[] = [
   { id: 'missed', label: 'À revoir' },

@@ -131,6 +131,14 @@ export interface GameState {
   cooldownUntil: string | null
   /** Tally of the recovery under way, null outside one. */
   recovery: RecoveryProgress | null
+  /**
+   * Le rattrapage qui attend le joueur sans vies, avant son tirage : combien de
+   * questions il tirera et combien de bonnes réponses il exigera, lus dans les
+   * règles jouées — une Indulgence posée s'y voit. Null dès le tirage posé, et
+   * hors attente. Ce que Michel annonce à la leçon de la chute.
+   * Voir specs/ecrans.md#leçons-de-michel.
+   */
+  nextRecovery: Pick<RecoveryProgress, 'total' | 'required'> | null
   /** Questions vues à l'étage courant. */
   floorSeen: number
   /** Questions que l'étage courant contient. */
@@ -727,6 +735,11 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
     // faut un perfect pour repartir.
     recovery: user.lives <= 0 ? recoveryProgress(snapshot.recoveryRun, played) : null,
+    // Les règles seules, sans compter le Pool Échecs : le tirage réel s'arrête
+    // à ce qu'il contient.
+    nextRecovery: user.lives <= 0 && !snapshot.recoveryRun.length
+      ? { total: played.recoveryQuestions, required: recoveryThreshold(played.recoveryQuestions, played) }
+      : null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
     attemptSeen: user.attemptSeen,

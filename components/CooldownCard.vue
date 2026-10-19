@@ -1,6 +1,7 @@
 <template>
   <!-- En leçon, le décor et le poster s'assombrissent : seul ce que Michel
-       montre reste éclairé. Voir spotlightOn. -->
+       montre reste éclairé — sa bannière comprise, à la leçon de la chute.
+       Voir spotlightOn. -->
   <div
     class="fixed inset-0 z-0 bg-[url(/images/cooldown-bg.webp)] bg-cover bg-center"
     :class="shade"
@@ -77,11 +78,27 @@
     class="fixed z-10 bg-[url(/images/cooldown-poster.webp)] bg-contain bg-center bg-no-repeat"
     :class="[POSTER_BOX, shade]"
   />
+  <!-- La bannière du poster, quand Michel la montre : la même image, découpée
+       au ras de l'étoffe et de ses cordes, reposée par-dessus le poster
+       assombri, sous le décompte qu'elle porte. L'ombre se pose donc sur les
+       parties du poster plutôt que sur lui en entier : un enfant ne sort pas de
+       l'ombre de son parent. -->
+  <div
+    v-if="bannerLit"
+    class="pointer-events-none fixed z-[11]"
+    :class="POSTER_BOX"
+  >
+    <img
+      src="/images/cooldown-poster-banner.webp"
+      alt=""
+      class="absolute left-0 top-0 w-[96.73%]"
+    >
+  </div>
   <!-- En leçon, rien du poster ne se clique : « Commencer » sauterait la
        leçon, c'est la corde que Michel montre. -->
   <div
     class="pointer-events-none fixed z-[15] *:pointer-events-auto @container"
-    :class="[POSTER_BOX, shade]"
+    :class="POSTER_BOX"
     :inert="lesson !== null"
   >
     <!-- La bannière en haut du poster, plus étroite que le panneau et décalée
@@ -95,7 +112,7 @@
          « 4m 12s » en « 4M 12S ». -->
     <h1
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
-      :class="inCooldown ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase'"
+      :class="[inCooldown ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase', bannerLit ? 'transition duration-200' : shade]"
     >
       {{ inCooldown ? (cooldownRemaining || 'Attente') : atRest ? '' : 'Attente terminée' }}
     </h1>
@@ -117,6 +134,7 @@
          chargement) en pèse ~42, le décompte étant passé dans la bannière. -->
     <div
       class="absolute left-[23%] top-[21%] flex h-[46%] w-[62%] flex-col items-center justify-center gap-[1.5cqw] overflow-hidden px-[2cqw] text-center text-[2.6cqw] leading-snug text-amber-800"
+      :class="shade"
     >
       <!-- Le décompte est monté dans la bannière : le répéter ici ferait lire
            deux fois le même chiffre à dix centimètres d'écart. Une seule phrase
@@ -163,14 +181,16 @@
       :label="action.label"
       anchor="poster"
       face="plank"
+      :class="shade"
       :loading="advancing"
       @click="$emit('advance')"
     />
     <BaseCardButton
-      v-else-if="isAdmin"
+      v-else-if="isAdmin && inCooldown"
       label="Passer"
       anchor="poster"
       face="plank"
+      :class="shade"
       :loading="skipping"
       @click="$emit('skipCooldown')"
     />
@@ -214,6 +234,9 @@ defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId], mich
  * jamais. La transition, toujours posée, adoucit l'entrée comme la sortie.
  */
 const shade = computed(() => ['transition duration-200', lessonDims(props.lesson) && LESSON_SHADE])
+
+/** Michel montre la bannière du poster : elle seule échappe à l'ombre. */
+const bannerLit = computed(() => lessonDims(props.lesson) && !spotlightOn(props.lesson, 'posterBanner').dimmed)
 
 const inCooldown = computed(() => isCooldown(props.state))
 const atRest = computed(() => isAtRest(props.state))

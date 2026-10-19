@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { items, users } from '../../server/db/schema'
-import { createPlayer, createTestDatabase, loadPlayer } from '../helpers/db'
+import { items, missedPool, users } from '../../server/db/schema'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
+import type { LessonId } from '../../shared/utils/lessons'
 
 installNitroGlobals()
 
@@ -12,24 +13,31 @@ const { default: benchHandler } = await import('../../server/api/admin/camp-less
 
 const replayCamp = mountHandler('/camp-lesson', benchHandler)
 
-function benchRequest(cookie?: string): Request {
-  return jsonRequest('http://test/camp-lesson', 'POST', { team: 'MIDI' }, cookie)
+function benchRequest(cookie?: string, lesson?: LessonId): Request {
+  return jsonRequest('http://test/camp-lesson', 'POST', { team: 'MIDI', lesson }, cookie)
 }
+
+let db: Database
+let adminId: number
+let testerId: number
+
+beforeEach(async () => {
+  db = await createTestDatabase()
+  setDatabase(db)
+  adminId = await createPlayer(db, { discordId: '999', username: 'saruman', isAdmin: true })
+  testerId = await createPlayer(db, {
+    discordId: 'test-1',
+    username: 'testeur',
+    isTest: true,
+    currentFloor: 3,
+    campLessonAt: new Date(1_000),
+    fallLessonAt: new Date(1_000),
+  })
+})
 
 // Le banc de la leçon du camp (/test/camp) remet le joueur servi à la sortie
 // de l'introduction : partie neuve, introduction finie, Fromage en poche.
 describe('le banc de la leçon du camp', () => {
-  let db: Database
-  let adminId: number
-  let testerId: number
-
-  beforeEach(async () => {
-    db = await createTestDatabase()
-    setDatabase(db)
-    adminId = await createPlayer(db, { discordId: '999', username: 'saruman', isAdmin: true })
-    testerId = await createPlayer(db, { discordId: 'test-1', username: 'testeur', isTest: true, currentFloor: 3, campLessonAt: new Date(1_000) })
-  })
-
   it('refuse un joueur qui n est pas admin', async () => {
     const playerId = await createPlayer(db, { discordId: 'joueur' })
 
@@ -61,5 +69,38 @@ describe('le banc de la leçon du camp', () => {
 
     expect(response.status).toBe(403)
     expect((await loadPlayer(db, adminId)).currentFloor).toBe(4)
+  })
+})
+
+// Le même banc, pour la leçon de la chute (/test/camp?lesson=fall) : le joueur
+// servi joue une vraie partie jusqu'à perdre sa dernière vie.
+describe('le banc de la leçon de la chute', () => {
+  beforeEach(async () => {
+    for (let i = 0; i < 5; i++) {
+      await createQuestion(db, { statement: `Question ${i} ?`, accepted: [`r${i}`] })
+    }
+  })
+
+  it('remet le joueur test juste après sa première chute, leçon de la chute à voir', async () => {
+    const response = await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'fall'))
+
+    expect(response.status).toBe(200)
+    const tester = await loadPlayer(db, testerId)
+    expect(tester).toMatchObject({ lives: 0, fallLessonAt: null, team: 'MIDI' })
+    expect(tester.cooldownUntil).toBeInstanceOf(Date)
+    expect(tester.introDoneAt).toBeInstanceOf(Date)
+    expect(tester.campLessonAt).toBeInstanceOf(Date)
+    expect(await db.select().from(missedPool).where(eq(missedPool.userId, testerId))).toHaveLength(3)
+    expect(await db.select().from(items).where(eq(items.userId, testerId))).toEqual([])
+  })
+
+  it('remet le joueur à l échéance de sa première attente, leçon du rattrapage à voir', async () => {
+    await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'recovery'))
+
+    const tester = await loadPlayer(db, testerId)
+    expect(tester).toMatchObject({ lives: 0, recoveryLessonAt: null })
+    expect(tester.cooldownUntil?.getTime()).toBeLessThanOrEqual(Date.now())
+    expect(tester.fallLessonAt).toBeInstanceOf(Date)
+    expect(await db.select().from(missedPool).where(eq(missedPool.userId, testerId))).toHaveLength(3)
   })
 })

@@ -164,12 +164,12 @@ describe('repartir de zéro', () => {
   })
 
   // Michel redonne ses leçons à la partie neuve. Voir specs/admin.md#gestion-des-joueurs.
-  it('remet la leçon du camp à voir', async () => {
-    await db.update(users).set({ campLessonAt: NOW }).where(eq(users.id, userId))
+  it('remet les leçons du camp, de la chute et du rattrapage à voir', async () => {
+    await db.update(users).set({ campLessonAt: NOW, fallLessonAt: NOW, recoveryLessonAt: NOW }).where(eq(users.id, userId))
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
 
-    expect((await loadPlayer(db, userId)).campLessonAt).toBeNull()
+    expect(await loadPlayer(db, userId)).toMatchObject({ campLessonAt: null, fallLessonAt: null, recoveryLessonAt: null })
   })
 
   it('ne laisse aucune attente derrière lui, durée comprise', async () => {

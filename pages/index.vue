@@ -143,6 +143,7 @@ const {
   actionFailed,
   readFailed,
   loading,
+  refresh,
 } = await useQuestionRun()
 
 // L'admin peut passer l'attente de la partie qu'il regarde — la sienne, ou
@@ -242,9 +243,9 @@ const CAMP_OVERLAYS: Record<CampOverlayId, Component> = {
   inventory: InventoryOverlay,
 }
 
-// Michel au camp : la leçon du camp à la première arrivée, rejouée à la
-// demande. Voir specs/ecrans.md#leçons-de-michel.
-const lesson = useCampLesson(state, computed(() => user.value?.team ?? null))
+// Michel au camp : chaque leçon à son moment, rejouée à la demande. Une leçon
+// datée relit l'état, qui dit la suivante. Voir specs/ecrans.md#leçons-de-michel.
+const lesson = useCampLesson(state, computed(() => user.value?.team ?? null), refresh)
 
 /** Un objet du camp cliqué : en leçon, c'est peut-être le geste que Michel attendait. */
 function openCampOverlay(screen: CampOverlayId): void {
