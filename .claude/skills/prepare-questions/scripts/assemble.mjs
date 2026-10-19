@@ -42,6 +42,9 @@ if (orphans.length) throw new Error(`${orphans.length} ids inconnus en sortie LL
 // complet est refusé par la tolérance Levenshtein <= 2.
 const NAME_RE = /^(.+?)\s*\(([^)]+)\)\s*$/
 function nameVariants(answerLabel, answer, existing) {
+  // Deux personnes dans un libellé (« LACATON (Anne) ET VASSAL (Jean-Philippe) ») :
+  // la forme Prénom Nom ne se reconstruit pas, les variantes viennent d'ailleurs.
+  if ((answerLabel.match(/\(/g) ?? []).length > 1) return []
   const m = NAME_RE.exec(answerLabel)
   if (!m) return []
   const given = m[2].trim()
