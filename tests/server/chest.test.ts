@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { disputes, inventory, users } from '../../server/db/schema'
+import { disputes, pocketSpells, users } from '../../server/db/schema'
 import { openDispute, settleDispute } from '../../server/utils/disputes'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -31,7 +31,7 @@ describe('coffre de loot', () => {
 
   const reload = (): Promise<User> => loadPlayer(db, player.id)
   const stock = (): Promise<{ spell: string }[]> =>
-    db.select({ spell: inventory.spell }).from(inventory).where(eq(inventory.userId, player.id))
+    db.select({ spell: pocketSpells.spell }).from(pocketSpells).where(eq(pocketSpells.userId, player.id))
 
   /**
    * Amène le joueur juste devant une question loot, qu'il résout. `answer` décide
@@ -78,7 +78,7 @@ describe('coffre de loot', () => {
   })
 
   describe('ouverture', () => {
-    it('donne un sort à l inventaire, doublons compris', async () => {
+    it('donne un sort en poche, doublons compris', async () => {
       await playLootQuestion('Bordeaux')
 
       const state = await openPlayerChest(db, await reload(), NOW, givesSpell())

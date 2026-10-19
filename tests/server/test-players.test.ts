@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { and, asc, eq } from 'drizzle-orm'
-import { inventory, missedPool, questions, reservations, seenQuestions, users } from '../../server/db/schema'
+import { pocketSpells, missedPool, questions, reservations, seenQuestions, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import {
@@ -47,10 +47,10 @@ describe('gestes sur un joueur test', () => {
     (await db.select().from(missedPool).where(eq(missedPool.userId, testPlayerId))).length
 
   describe('donner un sort', () => {
-    it('ajoute un exemplaire à l inventaire', async () => {
+    it('ajoute un exemplaire en poche', async () => {
       await grantSpell(db, await reload(), 'VITALITY', NOW)
 
-      const owned = await db.select().from(inventory).where(eq(inventory.userId, testPlayerId))
+      const owned = await db.select().from(pocketSpells).where(eq(pocketSpells.userId, testPlayerId))
       expect(owned).toHaveLength(1)
       expect(owned[0].spell).toBe('VITALITY')
     })
@@ -59,7 +59,7 @@ describe('gestes sur un joueur test', () => {
       await grantSpell(db, await reload(), 'VITALITY', NOW)
       await grantSpell(db, await reload(), 'VITALITY', NOW)
 
-      expect(await db.select().from(inventory).where(eq(inventory.userId, testPlayerId))).toHaveLength(2)
+      expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, testPlayerId))).toHaveLength(2)
     })
   })
 
@@ -189,7 +189,7 @@ describe('gestes sur un joueur test', () => {
       expect(fresh.floorCursor).toBe(0)
       expect(await seen()).toBe(0)
       expect(await pool()).toBe(0)
-      expect(await db.select().from(inventory).where(eq(inventory.userId, testPlayerId))).toHaveLength(0)
+      expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, testPlayerId))).toHaveLength(0)
     })
 
     it('ne touche pas aux autres joueurs', async () => {

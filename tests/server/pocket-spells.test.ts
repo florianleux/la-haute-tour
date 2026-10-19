@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { activeEffects, inventory, recoveryQuestions, reservations } from '../../server/db/schema'
+import { activeEffects, pocketSpells, recoveryQuestions, reservations } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
@@ -10,16 +10,16 @@ import type { SpellId } from '../../shared/utils/spells'
 
 installNitroGlobals()
 
-const { default: inventoryHandler } = await import('../../server/api/game/inventory.get')
+const { default: pocketSpellsHandler } = await import('../../server/api/game/pocket-spells.get')
 const { default: castHandler } = await import('../../server/api/game/cast.post')
 
-const inventoryRead = mountHandler('/inventory', inventoryHandler)
+const pocketSpellsRead = mountHandler('/pocket-spells', pocketSpellsHandler)
 const cast = mountHandler('/cast', castHandler)
 
 /** Un joueur en attente : c'est la seule phase où les Sorts existent. */
 const IN_COOLDOWN = { lives: 0, cooldownUntil: new Date(Date.now() + 60_000) }
 
-describe('inventaire des sorts', () => {
+describe('sorts en poche', () => {
   let db: Database
 
   beforeEach(async () => {
@@ -30,7 +30,7 @@ describe('inventaire des sorts', () => {
 
   /** Des coffres ouverts dans cet ordre — une seconde d'écart, comme l'horloge les compte. */
   async function loot(userId: number, ...owned: SpellId[]): Promise<void> {
-    await db.insert(inventory).values(owned.map((spell, index) => ({
+    await db.insert(pocketSpells).values(owned.map((spell, index) => ({
       userId,
       spell,
       obtainedAt: new Date((index + 1) * 1_000),
@@ -38,14 +38,14 @@ describe('inventaire des sorts', () => {
   }
 
   it('refuse tout sans session', async () => {
-    expect((await inventoryRead(apiRequest('http://test/inventory'))).status).toBe(401)
+    expect((await pocketSpellsRead(apiRequest('http://test/pocket-spells'))).status).toBe(401)
   })
 
-  it('liste l inventaire du joueur en attente, doublons compris', async () => {
+  it('liste les sorts en poche du joueur en attente, doublons compris', async () => {
     const userId = await createPlayer(db, IN_COOLDOWN)
     await loot(userId, 'VITALITY', 'RESPITE', 'VITALITY')
 
-    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({
@@ -54,7 +54,7 @@ describe('inventaire des sorts', () => {
         { spell: 'RESPITE', count: 1 },
       ],
       log: [],
-      // Le plafond d'effets positifs voyage avec l'inventaire : l'écran éteint
+      // Le plafond d'effets positifs voyage avec les sorts en poche : l'écran éteint
       // « Sur moi » sans recompter. Voir specs/bonus.md#limite-deffets-positifs.
       canTargetSelf: true,
     })
@@ -66,8 +66,8 @@ describe('inventaire des sorts', () => {
     const alone = await createPlayer(db, IN_COOLDOWN)
     const teamed = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'teamed', team: 'MIDI' })
 
-    const withoutTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(alone)))
-    const withTeam = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(teamed)))
+    const withoutTeam = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(alone)))
+    const withTeam = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(teamed)))
 
     expect((await withoutTeam.json()).canTargetOthers).toBe(false)
 
@@ -95,7 +95,7 @@ describe('inventaire des sorts', () => {
     })
 
     async function page(userId: number): Promise<{ canTargetAlly: boolean, canTargetFoe: boolean }> {
-      return (await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))).json()
+      return (await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))).json()
     }
 
     it('ouvre un côté dès qu il y a quelqu un à toucher, et lui seul', async () => {
@@ -143,7 +143,7 @@ describe('inventaire des sorts', () => {
     const userId = await createPlayer(db, IN_COOLDOWN)
     await loot(userId, 'RESPITE', 'VITALITY', 'VITALITY')
 
-    const { entries } = await (await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))).json()
+    const { entries } = await (await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))).json()
 
     expect(entries).toEqual([
       { spell: 'RESPITE', count: 1 },
@@ -151,10 +151,10 @@ describe('inventaire des sorts', () => {
     ])
   })
 
-  it('rend un inventaire vide plutôt que rien', async () => {
+  it('rend une poche vide plutôt que rien', async () => {
     const userId = await createPlayer(db, IN_COOLDOWN)
 
-    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ entries: [], log: [] })
@@ -165,7 +165,7 @@ describe('inventaire des sorts', () => {
     const other = await createPlayer(db, { ...IN_COOLDOWN, discordId: '987654321' })
     await loot(owner, 'VITALITY')
 
-    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(other)))
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(other)))
 
     expect(await response.json()).toMatchObject({ entries: [], log: [] })
   })
@@ -189,7 +189,7 @@ describe('inventaire des sorts', () => {
     await hold(reading, new Date())
 
     for (const userId of [holding, reading]) {
-      const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+      const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
       expect(response.status).toBe(403)
     }
   })
@@ -199,7 +199,7 @@ describe('inventaire des sorts', () => {
     const userId = await createPlayer(db)
     await loot(userId, 'VITALITY')
 
-    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
   })
@@ -209,7 +209,7 @@ describe('inventaire des sorts', () => {
   it('la laisse ouverte après l attente, tant que le rattrapage n est pas tiré', async () => {
     const userId = await createPlayer(db, { lives: 0, cooldownUntil: new Date(Date.now() - 60_000) })
 
-    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
   })
@@ -219,7 +219,7 @@ describe('inventaire des sorts', () => {
     const questionId = await createQuestion(db)
     await db.insert(recoveryQuestions).values({ userId, questionId, position: 0 })
 
-    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(403)
   })
@@ -237,7 +237,7 @@ describe('inventaire des sorts', () => {
       expiresAt: new Date(Date.now() - 60_000),
     })
 
-    const response = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(403)
     const [held] = await db.select().from(reservations).where(eq(reservations.userId, userId))
@@ -246,11 +246,11 @@ describe('inventaire des sorts', () => {
   })
 
   // Le pentacle montre le médaillon d'un sort déjà obtenu, même sans exemplaire
-  // en poche : un sort lancé quitte l'inventaire, pas la mémoire du joueur.
+  // en poche : un sort lancé quitte la poche, pas la mémoire du joueur.
   // Voir specs/ecrans.md#sorts.
   describe('sorts découverts', () => {
     async function discovered(userId: number): Promise<SpellId[]> {
-      return (await (await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(userId)))).json()).discovered
+      return (await (await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))).json()).discovered
     }
 
     it('compte un sort en poche, dans l ordre du catalogue', async () => {
@@ -316,7 +316,7 @@ describe('inventaire des sorts', () => {
       expect(response.status).toBe(401)
     })
 
-    it('consomme l exemplaire et rend l inventaire à jour', async () => {
+    it('consomme l exemplaire et rend les sorts en poche à jour', async () => {
       const userId = await createPlayer(db, IN_COOLDOWN)
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY', 'VITALITY')
@@ -437,7 +437,7 @@ describe('inventaire des sorts', () => {
       expect(response.status).toBe(200)
       expect((await response.json()).log).toMatchObject([{ spell: 'VITALITY', targetName: 'samsagace' }])
 
-      const seen = await inventoryRead(apiRequest('http://test/inventory', await sessionCookieFor(allyId)))
+      const seen = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(allyId)))
       expect((await seen.json()).received).toMatchObject([{ spell: 'VITALITY', casterName: 'gandalf' }])
     })
 

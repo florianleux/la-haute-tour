@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, inventory, missedPool, users } from '../../server/db/schema'
+import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import { readGameState } from '../../server/utils/game'
 import { castSpell, readCastLog } from '../../server/utils/effects'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -37,7 +37,7 @@ describe('Répit, sur l attente en cours', () => {
 
   /** Un exemplaire en poche, puis lancé sur soi pendant l'attente. */
   async function castRespite(at: Date = NOW): Promise<void> {
-    await db.insert(inventory).values({ userId: player.id, spell: 'RESPITE', obtainedAt: at })
+    await db.insert(pocketSpells).values({ userId: player.id, spell: 'RESPITE', obtainedAt: at })
     await castSpell(db, await reload(), 'RESPITE', 'self', at)
   }
 

@@ -4,7 +4,7 @@ import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import type { SpellLifetime, StakeRule } from './spellbook'
 import { canTargetSelf, drawTarget } from './targets'
-import { activeEffects, inventory, users } from '../db/schema'
+import { activeEffects, pocketSpells, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -74,7 +74,7 @@ export interface ReceivedView {
 }
 
 /**
- * Lancer un sort. L'exemplaire quitte l'inventaire et le sort est consommé,
+ * Lancer un sort. L'exemplaire quitte la poche et le sort est consommé,
  * qu'il produise un effet ou non.
  *
  * Le lanceur choisit une **catégorie**, jamais une personne : sur soi, la cible
@@ -136,9 +136,9 @@ export async function castSpell(
   }
 
   const [copy] = await db
-    .select({ id: inventory.id })
-    .from(inventory)
-    .where(and(eq(inventory.userId, caster.id), eq(inventory.spell, spell)))
+    .select({ id: pocketSpells.id })
+    .from(pocketSpells)
+    .where(and(eq(pocketSpells.userId, caster.id), eq(pocketSpells.spell, spell)))
     .limit(1)
 
   if (!copy) {
@@ -148,9 +148,9 @@ export async function castSpell(
   // Deux requêtes visant le même exemplaire ne peuvent pas le consommer toutes
   // les deux : c'est le cas qui compte, le double-clic sur le même bouton.
   const [spent] = await db
-    .delete(inventory)
-    .where(eq(inventory.id, copy.id))
-    .returning({ id: inventory.id })
+    .delete(pocketSpells)
+    .where(eq(pocketSpells.id, copy.id))
+    .returning({ id: pocketSpells.id })
 
   // Exemplaire déjà parti : rien n'est consommé, donc rien n'est posé. Ce qui
   // suit écrit — une Purge rejouée viderait une seconde ligne du Pool Échecs

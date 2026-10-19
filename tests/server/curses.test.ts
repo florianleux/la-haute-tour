@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, inventory, missedPool, users } from '../../server/db/schema'
+import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import { anchorEffects, castSpell, effectsQuery, toEffectViews } from '../../server/utils/effects'
 import { readGameState } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -52,7 +52,7 @@ describe('magie noire, sur un ennemi', () => {
 
   /** Un exemplaire en poche, puis lancé sur la catégorie Ennemi. */
   async function strike(spell: SpellId): Promise<void> {
-    await db.insert(inventory).values({ userId: caster.id, spell, obtainedAt: NOW })
+    await db.insert(pocketSpells).values({ userId: caster.id, spell, obtainedAt: NOW })
     await castSpell(db, await loadPlayer(db, caster.id), spell, 'foe', NOW)
   }
 
@@ -160,7 +160,7 @@ describe('magie noire, sur un ennemi', () => {
 
     await strike('VITALITY')
 
-    expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(0)
+    expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, caster.id))).toHaveLength(0)
     const posed = await db.select().from(activeEffects).where(eq(activeEffects.castAt, NOW))
     expect(posed.filter(row => row.userId === null)).toHaveLength(1)
     // Ce qu'il portait n'a pas bougé : il en porte toujours deux, pas trois.
@@ -178,7 +178,7 @@ describe('magie noire, sur un ennemi', () => {
     await strike('VITALITY')
     await strike('CHRONOMANCY')
 
-    expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(0)
+    expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, caster.id))).toHaveLength(0)
     const posed = await db.select().from(activeEffects).where(eq(activeEffects.casterId, caster.id))
     expect(posed.filter(row => row.userId !== null)).toHaveLength(3)
   })
@@ -190,7 +190,7 @@ describe('magie noire, sur un ennemi', () => {
 
     await strike('VITALITY')
 
-    expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(1)
+    expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, caster.id))).toHaveLength(1)
     expect(await db.select().from(activeEffects)).toHaveLength(0)
   })
 

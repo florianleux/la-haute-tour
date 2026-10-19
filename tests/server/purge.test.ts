@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, inventory, missedPool, seenQuestions, users } from '../../server/db/schema'
+import { activeEffects, pocketSpells, missedPool, seenQuestions, users } from '../../server/db/schema'
 import { readGameState, readMissedPool, serveNextQuestion } from '../../server/utils/game'
 import { castSpell } from '../../server/utils/effects'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -35,7 +35,7 @@ describe('Purge, sur le Pool Échecs', () => {
 
   /** Un exemplaire en poche, puis lancé sur soi pendant l'attente. */
   async function castPurge(caster: number = player.id): Promise<void> {
-    await db.insert(inventory).values({ userId: caster, spell: 'PURGE', obtainedAt: NOW })
+    await db.insert(pocketSpells).values({ userId: caster, spell: 'PURGE', obtainedAt: NOW })
     await castSpell(db, await loadPlayer(db, caster), 'PURGE', 'self', NOW)
   }
 
@@ -103,7 +103,7 @@ describe('Purge, sur le Pool Échecs', () => {
 
     expect(await pool()).toHaveLength(0)
     expect(await db.select().from(activeEffects)).toHaveLength(1)
-    expect(await db.select().from(inventory).where(eq(inventory.userId, player.id))).toHaveLength(0)
+    expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, player.id))).toHaveLength(0)
   })
 
   // Ponctuel et sans interaction : deux lancers sortent deux questions.

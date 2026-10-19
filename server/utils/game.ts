@@ -39,7 +39,7 @@ import {
   questions,
   recoveryQuestions,
   focusLosses,
-  inventory,
+  pocketSpells,
   settings,
   reservations,
   seenQuestions,
@@ -144,7 +144,7 @@ export interface GameState {
    * Le joueur a obtenu au moins un sort depuis sa dernière remise à zéro : il en
    * a un en poche ou en a déjà lancé un. Faux, le camp ne pose pas son grimoire.
    * La même définition que les sorts découverts du Grimoire, voir
-   * server/utils/inventory.ts.
+   * server/utils/pocketSpells.ts.
    */
   spellDiscovered: boolean
   /**
@@ -260,7 +260,7 @@ function snapshotQueries(db: Database, userId: number) {
           where ${deckFloors.floor} = ${users.currentFloor}), 0)`,
         // Lu avec le joueur, pour la même raison : le camp pose son grimoire
         // dessus, à chaque lecture d'état.
-        spellDiscovered: sql<number>`(${exists(db.select({ one: sql`1` }).from(inventory).where(eq(inventory.userId, users.id)))}
+        spellDiscovered: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(eq(pocketSpells.userId, users.id)))}
           or ${exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))})`,
       })
       .from(users)
@@ -816,7 +816,7 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * protège. Le chrono tombé coûte sa vie de toute façon, et c'est `/api/game/state`
  * qui l'acte — c'est son travail, écrit dans son contrat. Ce que la garde du
  * Grimoire faisait, c'est l'acter **une seconde fois, ailleurs**, sans que rien
- * ne l'annonce. Voir server/utils/inventory.ts.
+ * ne l'annonce. Voir server/utils/pocketSpells.ts.
  *
  * Un seul aller-retour, et deux lignes lues : le joueur porte déjà son décompte
  * de questions vues, il ne reste qu'à savoir s'il tient une question et ce que
@@ -1046,7 +1046,7 @@ export async function openPlayerChest(
 
   // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures
   // simultanées jetteraient deux dés, et la seconde écraserait la première —
-  // un sort de plus à l'inventaire, ou un Mimic par-dessus.
+  // un sort de plus en poche, ou un Mimic par-dessus.
   const [claimed] = await db
     .update(reservations)
     .set({ chest })
@@ -1066,7 +1066,7 @@ export async function openPlayerChest(
     const armed = { lastChest: 'spell' as const }
 
     await db.batch([
-      db.insert(inventory).values({ userId: user.id, spell: outcome.spell, obtainedAt: now }),
+      db.insert(pocketSpells).values({ userId: user.id, spell: outcome.spell, obtainedAt: now }),
       db.update(users).set(armed).where(eq(users.id, user.id)),
     ])
 

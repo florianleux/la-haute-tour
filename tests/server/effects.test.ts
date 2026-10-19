@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
-import { activeEffects, inventory, users } from '../../server/db/schema'
+import { activeEffects, pocketSpells, users } from '../../server/db/schema'
 import { anchorEffects, castSpell, effectsQuery, readCastLog, toEffectViews } from '../../server/utils/effects'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createTestDatabase, loadPlayer } from '../helpers/db'
@@ -24,11 +24,11 @@ describe('lancer et ancrage des effets', () => {
   })
 
   async function own(...spells: SpellId[]): Promise<void> {
-    await db.insert(inventory).values(spells.map(spell => ({ userId, spell, obtainedAt: NOW })))
+    await db.insert(pocketSpells).values(spells.map(spell => ({ userId, spell, obtainedAt: NOW })))
   }
 
   async function copies(): Promise<number> {
-    return (await db.select().from(inventory).where(eq(inventory.userId, userId))).length
+    return (await db.select().from(pocketSpells).where(eq(pocketSpells.userId, userId))).length
   }
 
   /** Les effets vivants du joueur, tels qu'un écran les lit. */

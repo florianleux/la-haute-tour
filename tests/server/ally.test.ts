@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, inventory, missedPool, users } from '../../server/db/schema'
+import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import {
   castSpell,
   effectsQuery,
@@ -58,7 +58,7 @@ describe('lancer sur un allié', () => {
 
   /** Un exemplaire en poche, puis lancé sur la catégorie Allié. */
   async function cast(spell: SpellId, at: Date = NOW): Promise<void> {
-    await db.insert(inventory).values({ userId: caster.id, spell, obtainedAt: at })
+    await db.insert(pocketSpells).values({ userId: caster.id, spell, obtainedAt: at })
     await castSpell(db, await loadPlayer(db, caster.id), spell, 'ally', at)
   }
 
@@ -83,7 +83,7 @@ describe('lancer sur un allié', () => {
   it('dépense l exemplaire même sans cible éligible', async () => {
     await cast('VITALITY')
 
-    expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(0)
+    expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, caster.id))).toHaveLength(0)
 
     const [posed] = await db.select().from(activeEffects)
     expect(posed.userId).toBeNull()
@@ -133,7 +133,7 @@ describe('lancer sur un allié', () => {
 
     await cast('VITALITY')
 
-    expect(await db.select().from(inventory).where(eq(inventory.userId, caster.id))).toHaveLength(1)
+    expect(await db.select().from(pocketSpells).where(eq(pocketSpells.userId, caster.id))).toHaveLength(1)
     expect(await db.select().from(activeEffects)).toHaveLength(0)
   })
 
@@ -156,7 +156,7 @@ describe('lancer sur un allié', () => {
   })
 
   it('ne montre pas au lanceur ce qu il a lancé sur lui-même comme reçu', async () => {
-    await db.insert(inventory).values({ userId: caster.id, spell: 'VITALITY', obtainedAt: NOW })
+    await db.insert(pocketSpells).values({ userId: caster.id, spell: 'VITALITY', obtainedAt: NOW })
     await castSpell(db, caster, 'VITALITY', 'self', NOW)
 
     expect(await readReceivedLog(db, await loadPlayer(db, caster.id))).toEqual([])

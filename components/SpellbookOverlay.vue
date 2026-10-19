@@ -104,7 +104,7 @@
                avec le nombre de lignes. -->
           <div class="mt-auto min-h-[8.5rem] pt-4">
             <BaseNotice v-if="failed">
-              Impossible de lire ton inventaire. Recharge la page.
+              Impossible de lire tes sorts. Recharge la page.
             </BaseNotice>
 
             <!-- L'historique du sort choisi : à qui ses derniers lancers sont
@@ -166,7 +166,7 @@ const {
   casting,
   castFailed,
   cast,
-} = await useInventory()
+} = await usePocketSpells()
 
 /** Le sort choisi au pentacle : rien à l'ouverture. */
 const selected = ref<SpellId | null>(null)

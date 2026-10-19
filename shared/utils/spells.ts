@@ -15,7 +15,7 @@ export type SpellId = typeof SPELL_IDS[number]
 
 /**
  * Les sorts dont l'effet existe, et qui se lancent donc pour de bon. Un coffre
- * peut déjà donner les autres — ils rejoignent l'inventaire et attendent leur
+ * peut déjà donner les autres — ils rejoignent la poche et attendent leur
  * ticket. Lancer un sort qui ne fait rien coûterait un exemplaire pour rien,
  * alors que « consommé qu'il produise un effet ou non » parle d'un sort dont
  * l'effet existe mais tombe à vide. Voir specs/bonus.md#livraison.

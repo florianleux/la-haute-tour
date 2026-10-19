@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { activeEffects, inventory } from '../../server/db/schema'
+import { activeEffects, pocketSpells } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -74,11 +74,11 @@ describe('endpoints de jeu', () => {
 
     expect(await read()).toBe(false)
 
-    await db.insert(inventory).values({ userId, spell: 'VITALITY', obtainedAt: new Date() })
+    await db.insert(pocketSpells).values({ userId, spell: 'VITALITY', obtainedAt: new Date() })
     expect(await read()).toBe(true)
 
     // Lancé : plus rien en poche, le sort reste découvert.
-    await db.delete(inventory)
+    await db.delete(pocketSpells)
     await db.insert(activeEffects).values({
       userId,
       casterId: userId,

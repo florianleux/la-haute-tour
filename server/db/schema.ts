@@ -173,7 +173,7 @@ export const users = sqliteTable('users', {
    * le joueur n'en a ouvert aucun.
    *
    * Porté parce que rien d'autre ne le garde : la réservation ne tient qu'une
-   * question, et l'inventaire perd ses sorts lancés. Le Mimic n'attaque qu'après
+   * question, et un sort lancé quitte la poche. Le Mimic n'attaque qu'après
    * un sort — jamais sur le premier coffre, jamais deux fois d'affilée.
    * Voir specs/bonus.md#coffre-et-mimic.
    */
@@ -460,18 +460,18 @@ export const focusLosses = sqliteTable('focus_losses', {
  * exemplaire : les doublons sont illimités, et un lancer en consomme un seul.
  * Voir specs/bonus.md#sorts.
  */
-export const inventory = sqliteTable('inventory', {
+export const pocketSpells = sqliteTable('pocket_spells', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   spell: text('spell', { enum: SPELL_IDS }).notNull(),
   obtainedAt: integer('obtained_at', { mode: 'timestamp' }).notNull(),
-}, table => [index('inventory_user_idx').on(table.userId, table.obtainedAt)])
+}, table => [index('pocket_spells_user_idx').on(table.userId, table.obtainedAt)])
 
 /**
  * Un sort lancé, et ce qu'il attend pour agir. Une ligne par lancer : le sort
- * est consommé de l'inventaire, et ce qu'il devient vit ici.
+ * est consommé des sorts en poche, et ce qu'il devient vit ici.
  *
  * `anchoredAt` porte tout le cycle de vie, sans second champ qui pourrait le
  * contredire. Null, l'effet attend la prochaine tentative de sa cible. Posé, il
@@ -600,7 +600,7 @@ export type RecoveryQuestion = typeof recoveryQuestions.$inferSelect
 export type Dispute = typeof disputes.$inferSelect
 export type Attempt = typeof attempts.$inferSelect
 export type FocusLoss = typeof focusLosses.$inferSelect
-export type InventoryEntry = typeof inventory.$inferSelect
+export type PocketSpell = typeof pocketSpells.$inferSelect
 export type ActiveEffect = typeof activeEffects.$inferSelect
 export type Settings = typeof settings.$inferSelect
 export type Achievement = typeof achievements.$inferSelect

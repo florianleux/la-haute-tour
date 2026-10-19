@@ -27,7 +27,7 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Ce qu'un dialogue peut être, et ce qu'un geste y fait | [`utils/dialogue.ts`](utils/dialogue.ts) — la forme qui interdit un troisième interlocuteur, `dialogueLineup()`, `dialogueGesture()` et le défilé, sans DOM |
 | Le déroulé d'un dialogue | [`composables/useDialogue.ts`](composables/useDialogue.ts) — la réplique en cours, son défilé, le geste qui avance les deux |
 | Ce qu'un dialogue montre | [`components/DialogueScene.vue`](components/DialogueScene.vue) — décor, portraits, boîte ; elle rend la main par `end` et ne connaît aucune phase |
-| Ce que le joueur possède | [`server/utils/inventory.ts`](server/utils/inventory.ts) — l'inventaire, lisible au camp seulement ([`server/utils/camp.ts`](server/utils/camp.ts)) |
+| Ce que le joueur possède | [`server/utils/pocketSpells.ts`](server/utils/pocketSpells.ts) — les sorts en poche, lisibles au camp seulement ([`server/utils/camp.ts`](server/utils/camp.ts)) |
 | Ce qu'un sort lancé devient | [`server/utils/effects.ts`](server/utils/effects.ts) — lancer, ancrage sur la tentative suivante, journal, et le recalcul de l'attente qu'un Répit écourte |
 | Ce qu'un état de jeu prouve | [`server/utils/achievements.ts`](server/utils/achievements.ts) — les succès qu'un fait atteint, en seuils et jamais en franchissements, et leur écriture idempotente |
 | Le catalogue des succès | [`shared/utils/achievements.ts`](shared/utils/achievements.ts) — les identifiants et les paliers, dérivés les uns des autres pour qu'aucun seuil ne reste sans son succès |

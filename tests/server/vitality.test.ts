@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, inventory, missedPool, recoveryQuestions, users } from '../../server/db/schema'
+import { activeEffects, pocketSpells, missedPool, recoveryQuestions, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { castSpell } from '../../server/utils/effects'
 import { grantLife } from '../../server/utils/lives'
@@ -32,7 +32,7 @@ describe('Vitalité, du lancer à la tentative suivante', () => {
 
   /** Un exemplaire en poche, puis lancé sur soi pendant l'attente. */
   async function castVitality(): Promise<void> {
-    await db.insert(inventory).values({ userId: player.id, spell: 'VITALITY', obtainedAt: NOW })
+    await db.insert(pocketSpells).values({ userId: player.id, spell: 'VITALITY', obtainedAt: NOW })
     await castSpell(db, await reload(), 'VITALITY', 'self', NOW)
   }
 

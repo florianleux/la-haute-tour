@@ -6,7 +6,7 @@ import { requirePlayer, resetPlayer } from './players'
 import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
 import {
-  inventory,
+  pocketSpells,
   missedPool,
   questions,
   reservations,
@@ -102,11 +102,11 @@ export async function deleteTestPlayer(db: Database, testPlayer: User): Promise<
  * Voir specs/admin.md#réglages-dun-joueur-test.
  */
 
-/** Un exemplaire de plus à l'inventaire, comme un coffre en donne un. */
+/** Un exemplaire de plus en poche, comme un coffre en donne un. */
 export async function grantSpell(db: Database, testPlayer: User, spell: SpellId, now: Date): Promise<void> {
   assertTestPlayer(testPlayer)
 
-  await db.insert(inventory).values({ userId: testPlayer.id, spell, obtainedAt: now })
+  await db.insert(pocketSpells).values({ userId: testPlayer.id, spell, obtainedAt: now })
 }
 
 export interface AdvanceOptions {

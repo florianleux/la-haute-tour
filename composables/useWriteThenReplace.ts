@@ -16,7 +16,7 @@ export interface WriteThenReplace<T> {
 /**
  * Écrire, puis réafficher : la réponse **est** la nouvelle vue, on la pose telle
  * quelle. Aucune écriture ne devine son résultat — pas de vie retirée du côté
- * client, pas d'exemplaire ôté de l'inventaire en espérant que le serveur suive.
+ * client, pas d'exemplaire ôté de la poche en espérant que le serveur suive.
  *
  * Le jumeau de [`useWriteThenRead`](./useWriteThenRead.ts), pour les écritures
  * dont la réponse porte l'état : là-bas on relit, ici on remplace.

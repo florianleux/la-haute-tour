@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, inventory, missedPool, users } from '../../server/db/schema'
+import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { castSpell } from '../../server/utils/effects'
 import { openAttempt } from '../../server/utils/journey'
@@ -38,7 +38,7 @@ describe('Chronomancie, sur toute la tentative', () => {
 
   /** Lancée pendant l'attente, comme tout sort : elle attend la tentative suivante. */
   async function castChronomancy(): Promise<void> {
-    await db.insert(inventory).values({ userId: player.id, spell: 'CHRONOMANCY', obtainedAt: NOW })
+    await db.insert(pocketSpells).values({ userId: player.id, spell: 'CHRONOMANCY', obtainedAt: NOW })
     await castSpell(db, await reload(), 'CHRONOMANCY', 'self', NOW)
   }
 

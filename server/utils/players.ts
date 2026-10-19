@@ -6,7 +6,7 @@ import {
   attempts,
   deckFloors,
   disputes,
-  inventory,
+  pocketSpells,
   missedPool,
   recoveryQuestions,
   reservations,
@@ -150,7 +150,7 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
   await db.batch([
     db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
-    db.delete(inventory).where(eq(inventory.userId, player.id)),
+    db.delete(pocketSpells).where(eq(pocketSpells.userId, player.id)),
     db.delete(activeEffects).where(eq(activeEffects.userId, player.id)),
     db.delete(activeEffects).where(eq(activeEffects.casterId, player.id)),
     db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),

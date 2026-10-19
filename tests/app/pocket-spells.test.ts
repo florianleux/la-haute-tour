@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
-import type { InventoryView } from '../../server/utils/inventory'
+import type { PocketSpellsView } from '../../server/utils/pocketSpells'
 
 const { answerWith, breakNetwork, calls, reset, serve, signIn } = installAppGlobals()
 
-const { INVENTORY_KEY, useInventory } = await import('../../composables/useInventory')
+const { POCKET_SPELLS_KEY, usePocketSpells } = await import('../../composables/usePocketSpells')
 
-const owned: InventoryView = {
+const owned: PocketSpellsView = {
   entries: [{ spell: 'VITALITY', count: 2 }],
   discovered: ['VITALITY', 'PURGE'],
   log: [],
@@ -21,7 +21,7 @@ const owned: InventoryView = {
  * Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en
  * plus — et, ici, le joueur arrivé à son plafond d'effets positifs.
  */
-const afterCast: InventoryView = {
+const afterCast: PocketSpellsView = {
   entries: [{ spell: 'VITALITY', count: 1 }],
   discovered: ['VITALITY', 'PURGE'],
   log: [{ spell: 'VITALITY', face: 'boon', targetName: 'samsagace', castAt: '2026-09-06T09:00:00.000Z' }],
@@ -32,18 +32,18 @@ const afterCast: InventoryView = {
   canTargetFoe: false,
 }
 
-describe('inventaire du joueur', () => {
+describe('sorts en poche du joueur', () => {
   beforeEach(() => {
     reset()
     signIn(testUser)
   })
 
-  // Le lancer rend l'inventaire tel qu'il est ensuite : la page réaffiche cette
+  // Le lancer rend les sorts en poche tels qu'ils sont ensuite : la page réaffiche cette
   // réponse-là, elle ne retire pas l'exemplaire de son côté.
-  it('remplace l inventaire par celui que le lancer renvoie', async () => {
-    serve(INVENTORY_KEY, owned)
+  it('remplace les sorts en poche par ceux que le lancer renvoie', async () => {
+    serve(POCKET_SPELLS_KEY, owned)
     answerWith(afterCast)
-    const { entries, log, cast } = await useInventory()
+    const { entries, log, cast } = await usePocketSpells()
 
     await cast('VITALITY', 'self')
 
@@ -56,9 +56,9 @@ describe('inventaire du joueur', () => {
   // lancer comme à la lecture : la Purge lancée hier y reste, sans exemplaire.
   // Voir specs/ecrans.md#sorts.
   it('lit les sorts découverts que le serveur renvoie', async () => {
-    serve(INVENTORY_KEY, owned)
+    serve(POCKET_SPELLS_KEY, owned)
     answerWith(afterCast)
-    const { discovered, cast } = await useInventory()
+    const { discovered, cast } = await usePocketSpells()
 
     expect(discovered.value).toEqual(['VITALITY', 'PURGE'])
 
@@ -71,9 +71,9 @@ describe('inventaire du joueur', () => {
   // dessus, elle ne recompte pas ce que le joueur porte.
   // Voir specs/bonus.md#limite-deffets-positifs.
   it('suit ce que le serveur dit du sort sur soi', async () => {
-    serve(INVENTORY_KEY, owned)
+    serve(POCKET_SPELLS_KEY, owned)
     answerWith(afterCast)
-    const { canTargetSelf, cast } = await useInventory()
+    const { canTargetSelf, cast } = await usePocketSpells()
 
     expect(canTargetSelf.value).toBe(true)
 
@@ -86,9 +86,9 @@ describe('inventaire du joueur', () => {
   // éteint la catégorie sur ce que le serveur rend. Voir
   // specs/bonus.md#tirage-de-la-cible.
   it('suit ce que le serveur dit des alliés et des ennemis à portée', async () => {
-    serve(INVENTORY_KEY, owned)
+    serve(POCKET_SPELLS_KEY, owned)
     answerWith(afterCast)
-    const { canTargetAlly, canTargetFoe, cast } = await useInventory()
+    const { canTargetAlly, canTargetFoe, cast } = await usePocketSpells()
 
     expect([canTargetAlly.value, canTargetFoe.value]).toEqual([true, true])
 
@@ -101,9 +101,9 @@ describe('inventaire du joueur', () => {
   // au serveur, et c'est lui qui nomme la cible au retour.
   // Voir specs/bonus.md#tirage-de-la-cible.
   it('envoie la catégorie de cible et lit le nom qui revient', async () => {
-    serve(INVENTORY_KEY, owned)
+    serve(POCKET_SPELLS_KEY, owned)
     answerWith(afterCast)
-    const { log, received, canTargetOthers, cast } = await useInventory()
+    const { log, received, canTargetOthers, cast } = await usePocketSpells()
 
     expect(canTargetOthers.value).toBe(true)
     expect(received.value).toEqual([])
@@ -114,10 +114,10 @@ describe('inventaire du joueur', () => {
     expect(log.value[0]?.targetName).toBe('samsagace')
   })
 
-  it('signale un lancer refusé et laisse l inventaire intact', async () => {
-    serve(INVENTORY_KEY, owned)
+  it('signale un lancer refusé et laisse les sorts en poche intacts', async () => {
+    serve(POCKET_SPELLS_KEY, owned)
     breakNetwork()
-    const { entries, castFailed, casting, cast } = await useInventory()
+    const { entries, castFailed, casting, cast } = await usePocketSpells()
 
     await cast('VITALITY', 'self')
 

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { acceptedAnswers, activeEffects, inventory, missedPool, recoveryQuestions } from '../../server/db/schema'
+import { acceptedAnswers, activeEffects, pocketSpells, missedPool, recoveryQuestions } from '../../server/db/schema'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { castSpell } from '../../server/utils/effects'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -36,7 +36,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
   const reload = (): Promise<User> => loadPlayer(db, player.id)
 
   async function castIndulgence(): Promise<void> {
-    await db.insert(inventory).values({ userId: player.id, spell: 'INDULGENCE', obtainedAt: NOW })
+    await db.insert(pocketSpells).values({ userId: player.id, spell: 'INDULGENCE', obtainedAt: NOW })
     await castSpell(db, await reload(), 'INDULGENCE', 'self', NOW)
   }
 
@@ -120,7 +120,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
   // exige que tout soit juste. Voir specs/bonus.md#catalogue.
   describe('sa face noire', () => {
     async function curse(): Promise<void> {
-      await db.insert(inventory).values({ userId: player.id, spell: 'INDULGENCE', obtainedAt: NOW })
+      await db.insert(pocketSpells).values({ userId: player.id, spell: 'INDULGENCE', obtainedAt: NOW })
       await castSpell(db, await reload(), 'INDULGENCE', 'self', NOW)
       // La face suit la catégorie ; on grave la noire à la main, un joueur ne
       // pouvant pas se maudire lui-même. Voir shared/utils/spells.ts.

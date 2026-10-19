@@ -2,8 +2,8 @@
  * Simulation de consommation Turso — lignes lues, lignes écrites, stockage.
  *
  * Ne modélise rien : fait jouer le vrai code du jeu (serveNextQuestion,
- * submitAnswer, readGameState, openPlayerChest, readMissedPool, readInventory,
- * castFromInventory) sur une base SQLite en mémoire montée avec les vraies
+ * submitAnswer, readGameState, openPlayerChest, readMissedPool, readPocketSpells,
+ * castFromPocket) sur une base SQLite en mémoire montée avec les vraies
  * migrations, et compte ce que chaque instruction SQL réellement partie
  * coûterait chez Turso.
  *
@@ -20,7 +20,7 @@ import { drizzle } from 'drizzle-orm/libsql'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../server/db/schema'
 import { openPlayerChest, readGameState, readMissedPool, serveNextQuestion, submitAnswer } from '../server/utils/game'
-import { castFromInventory, readInventory } from '../server/utils/inventory'
+import { castFromPocket, readPocketSpells } from '../server/utils/pocketSpells'
 import { FLOOR_COUNT } from '../shared/utils/floors'
 import type { Database } from '../server/db/client'
 import type { User } from '../server/db/schema'
@@ -355,14 +355,14 @@ async function playerLoop(
 
       if (SPELLS) {
         try {
-          enter('GET /api/game/inventory')
-          const view = await readInventory(db, await authenticated(db, id), now)
+          enter('GET /api/game/pocket-spells')
+          const view = await readPocketSpells(db, await authenticated(db, id), now)
           const owned = view.entries.filter(entry => entry.count > 0)
           // Plus de budget par attente : le joueur lance un exemplaire de chaque
           // sort qu'il a en poche.
           for (const { spell } of owned) {
             enter('POST /api/game/cast')
-            await castFromInventory(
+            await castFromPocket(
               db,
               await authenticated(db, id),
               spell,

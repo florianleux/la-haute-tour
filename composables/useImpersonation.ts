@@ -37,7 +37,7 @@ export function useImpersonation(): Impersonation {
     // caches ne relance aucune lecture, et aller vers `/` depuis `/` ne fait
     // rien du tout : l'écran resterait celui du joueur qu'on vient de quitter,
     // vidé de son état. Un rechargement complet rebâtit tout — identité, état
-    // de jeu, inventaire — sous la nouvelle personne, sans énumérer ce qu'il
+    // de jeu, sorts en poche — sous la nouvelle personne, sans énumérer ce qu'il
     // faut jeter. Le jeu étant la page d'accueil, c'est là qu'on atterrit.
     //
     // `force` parce que Nuxt garde en sessionStorage le dernier rechargement et

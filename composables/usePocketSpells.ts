@@ -1,15 +1,15 @@
 import { useWriteThenReplace } from './useWriteThenReplace'
 import type { Ref } from 'vue'
-import type { InventoryEntryView, InventoryView } from '~~/server/utils/inventory'
+import type { PocketSpellEntryView, PocketSpellsView } from '~~/server/utils/pocketSpells'
 import type { CastView, ReceivedView } from '~~/server/utils/effects'
 import type { SpellId } from '~~/shared/utils/spells'
 import type { TargetKind } from '~~/shared/utils/teams'
 
-/** Cache key of the inventory read: one name, so nobody re-types the string. */
-export const INVENTORY_KEY = 'inventory'
+/** Cache key of the pocket spells read: one name, so nobody re-types the string. */
+export const POCKET_SPELLS_KEY = 'pocketSpells'
 
-export interface InventoryRead {
-  entries: Ref<InventoryEntryView[]>
+export interface PocketSpellsRead {
+  entries: Ref<PocketSpellEntryView[]>
   /** Les sorts obtenus au moins une fois, dans l'ordre du catalogue. */
   discovered: Ref<SpellId[]>
   /** Ce que le joueur a lancé, du plus récent au plus ancien. */
@@ -18,7 +18,7 @@ export interface InventoryRead {
   received: Ref<ReceivedView[]>
   /** Vrai quand le joueur a une équipe : sans elle, ni allié ni ennemi n'existe. */
   canTargetOthers: Ref<boolean>
-  /** Vrai quand la lecture a échoué : un inventaire vide n'est pas la même nouvelle. */
+  /** Vrai quand la lecture a échoué : une poche vide n'est pas la même nouvelle. */
   failed: Ref<boolean>
   /** Faux quand le joueur porte déjà son plafond d'effets positifs : plus de sort sur soi. */
   canTargetSelf: Ref<boolean>
@@ -31,7 +31,7 @@ export interface InventoryRead {
   /** Vrai quand le dernier lancer n'est pas parti. */
   castFailed: Ref<boolean>
   /**
-   * Lance un sort sur une catégorie de cible et réaffiche l'inventaire que le
+   * Lance un sort sur une catégorie de cible et réaffiche les sorts en poche que le
    * serveur renvoie — le journal y dit qui a été touché.
    */
   cast: (spell: SpellId, target: TargetKind) => Promise<void>
@@ -41,10 +41,10 @@ export interface InventoryRead {
  * Les sorts que le joueur possède, tels que le Grimoire les montre. Refusé par
  * le serveur hors du camp — le Grimoire ne s'ouvre que là. Voir specs/ecrans.md#sorts.
  */
-export async function useInventory(): Promise<InventoryRead> {
-  const { data, error } = await useAsyncData<InventoryView>(
-    INVENTORY_KEY,
-    () => $fetch<InventoryView>('/api/game/inventory', useApiFetchOptions()),
+export async function usePocketSpells(): Promise<PocketSpellsRead> {
+  const { data, error } = await useAsyncData<PocketSpellsView>(
+    POCKET_SPELLS_KEY,
+    () => $fetch<PocketSpellsView>('/api/game/pocket-spells', useApiFetchOptions()),
   )
 
   const { failed: castFailed, send } = useWriteThenReplace(data)
@@ -54,14 +54,14 @@ export async function useInventory(): Promise<InventoryRead> {
   const casting = ref<SpellId | null>(null)
 
   /**
-   * Le lancer rend l'inventaire tel qu'il est ensuite : on réaffiche ce que le
+   * Le lancer rend les sorts en poche tels qu'ils sont ensuite : on réaffiche ce que le
    * serveur renvoie plutôt que de retirer l'exemplaire de son côté. C'est aussi
    * par là que la cible tirée se révèle — le journal revient avec son nom.
    */
   async function cast(spell: SpellId, target: TargetKind): Promise<void> {
     casting.value = spell
 
-    await send(() => $fetch<InventoryView>('/api/game/cast', {
+    await send(() => $fetch<PocketSpellsView>('/api/game/cast', {
       method: 'POST',
       body: { spell, target },
       ...useApiFetchOptions(),
@@ -71,7 +71,7 @@ export async function useInventory(): Promise<InventoryRead> {
   }
 
   return {
-    entries: computed<InventoryEntryView[]>(() => data.value?.entries ?? []),
+    entries: computed<PocketSpellEntryView[]>(() => data.value?.entries ?? []),
     discovered: computed<SpellId[]>(() => data.value?.discovered ?? []),
     log: computed<CastView[]>(() => data.value?.log ?? []),
     received: computed<ReceivedView[]>(() => data.value?.received ?? []),

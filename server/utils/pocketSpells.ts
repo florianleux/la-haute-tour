@@ -8,7 +8,7 @@ import {
   toReceivedViews,
 } from './effects'
 import { candidatesQuery, targetableKinds } from './targets'
-import { activeEffects, inventory } from '../db/schema'
+import { activeEffects, pocketSpells } from '../db/schema'
 import { SPELL_IDS } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -16,14 +16,14 @@ import type { CastView, ReceivedView } from './effects'
 import type { SpellId } from '../../shared/utils/spells'
 import type { TargetKind } from '../../shared/utils/teams'
 
-export interface InventoryEntryView {
+export interface PocketSpellEntryView {
   spell: SpellId
   /** Le nombre d'exemplaires possédés : les doublons sont illimités. */
   count: number
 }
 
-export interface InventoryView {
-  entries: InventoryEntryView[]
+export interface PocketSpellsView {
+  entries: PocketSpellEntryView[]
   /**
    * Les sorts obtenus au moins une fois, dans l'ordre du catalogue : encore en
    * poche, ou déjà lancés. Le pentacle montre leur médaillon, même sans
@@ -66,17 +66,17 @@ export interface InventoryView {
 }
 
 /**
- * L'inventaire du joueur, un empilement par sort. Groupé plutôt que rendu ligne
+ * Les sorts en poche du joueur, un empilement par sort. Groupé plutôt que rendu ligne
  * à ligne : un exemplaire ne se distingue d'un autre par rien, et c'est le
  * nombre qui se lit. Trié par premier exemplaire obtenu, pour qu'un coffre qui
  * ajoute un doublon ne déplace pas la liste sous les yeux du joueur.
  *
- * Refusé hors du camp : le lancer n'existe que là, et l'inventaire ne se montre
- * qu'au camp. Refusé ici, pas seulement à l'écran : l'API se demande sans
- * passer par lui.
+ * Refusé hors du camp : le lancer n'existe que là, et les sorts en poche ne
+ * se montrent qu'au camp. Refusé ici, pas seulement à l'écran : l'API se
+ * demande sans passer par lui.
  * Voir specs/bonus.md#sorts et specs/ecrans.md#sorts.
  */
-export async function readInventory(db: Database, user: User, now: Date): Promise<InventoryView> {
+export async function readPocketSpells(db: Database, user: User, now: Date): Promise<PocketSpellsView> {
   await requireCamp(db, user, now)
 
   return readSpellPage(db, user, now)
@@ -90,13 +90,13 @@ export async function readInventory(db: Database, user: User, now: Date): Promis
  * d'effets positifs — ne fait rien et rend le même état : l'appel est en
  * retard, pas en faute. Voir specs/bonus.md#où-et-quand.
  */
-export async function castFromInventory(
+export async function castFromPocket(
   db: Database,
   user: User,
   spell: SpellId,
   kind: TargetKind,
   now: Date,
-): Promise<InventoryView> {
+): Promise<PocketSpellsView> {
   await requireCamp(db, user, now)
   await castSpell(db, user, spell, kind, now)
 
@@ -104,10 +104,10 @@ export async function castFromInventory(
 }
 
 /**
- * L'inventaire groupé, les sorts découverts et les deux journaux : ce que le
+ * Les sorts en poche groupés, les sorts découverts et les deux journaux : ce que le
  * Grimoire montre, après une lecture comme après un lancer.
  *
- * Un sort lancé quitte l'inventaire : ce que le joueur a découvert se lit donc
+ * Un sort lancé quitte la poche : ce que le joueur a découvert se lit donc
  * aussi dans ses lancers.
  *
  * Les quatre listes et les cibles possibles partent dans le même lot. Elles ne
@@ -118,17 +118,17 @@ export async function castFromInventory(
  * tirage, qui ne se met pas en lot.
  * Voir tests/server/query-budget.test.ts.
  */
-async function readSpellPage(db: Database, user: User, now: Date): Promise<InventoryView> {
+async function readSpellPage(db: Database, user: User, now: Date): Promise<PocketSpellsView> {
   const [stacks, castSpells, log, received, candidates] = await db.batch([
     db
       .select({
-        spell: inventory.spell,
+        spell: pocketSpells.spell,
         owned: count(),
       })
-      .from(inventory)
-      .where(eq(inventory.userId, user.id))
-      .groupBy(inventory.spell)
-      .orderBy(min(inventory.obtainedAt)),
+      .from(pocketSpells)
+      .where(eq(pocketSpells.userId, user.id))
+      .groupBy(pocketSpells.spell)
+      .orderBy(min(pocketSpells.obtainedAt)),
     db
       .selectDistinct({ spell: activeEffects.spell })
       .from(activeEffects)

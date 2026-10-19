@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { inventory } from '../../server/db/schema'
+import { pocketSpells } from '../../server/db/schema'
 import { readGameState, readMissedPool, readQuestionLog, serveNextQuestion, submitAnswer } from '../../server/utils/game'
-import { castFromInventory, readInventory } from '../../server/utils/inventory'
+import { castFromPocket, readPocketSpells } from '../../server/utils/pocketSpells'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -186,7 +186,7 @@ describe('budget de requêtes des chemins chauds', () => {
         })
       }
 
-      await db.insert(inventory).values([
+      await db.insert(pocketSpells).values([
         { userId: id, spell: 'VITALITY' as const, obtainedAt: NOW },
         { userId: id, spell: 'VITALITY' as const, obtainedAt: NOW },
       ])
@@ -198,7 +198,7 @@ describe('budget de requêtes des chemins chauds', () => {
       const player = await caster()
       queries()
 
-      await readInventory(db, player, NOW)
+      await readPocketSpells(db, player, NOW)
 
       expect(queries()).toBeLessThanOrEqual(3)
     })
@@ -207,9 +207,9 @@ describe('budget de requêtes des chemins chauds', () => {
       const player = await caster()
       queries()
 
-      await castFromInventory(db, player, 'VITALITY', 'ally', NOW)
+      await castFromPocket(db, player, 'VITALITY', 'ally', NOW)
 
-      // Phase, inventaire lu, exemplaire consommé, cible tirée, saturés écartés,
+      // Phase, sorts en poche lus, exemplaire consommé, cible tirée, saturés écartés,
       // effet posé, puis la page rendue. Une cible de plus dans l'équipe n'en
       // ajoute aucun.
       expect(queries()).toBeLessThanOrEqual(8)
@@ -223,7 +223,7 @@ describe('budget de requêtes des chemins chauds', () => {
       const player = await caster()
       queries()
 
-      await castFromInventory(db, player, 'VITALITY', 'foe', NOW)
+      await castFromPocket(db, player, 'VITALITY', 'foe', NOW)
 
       expect(queries()).toBeLessThanOrEqual(8)
     })

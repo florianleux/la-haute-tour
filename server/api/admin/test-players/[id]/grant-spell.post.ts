@@ -5,7 +5,7 @@ import { SPELL_IDS } from '~~/shared/utils/spells'
 
 const bodySchema = z.object({ spell: z.enum(SPELL_IDS) })
 
-/** Un exemplaire de plus à l'inventaire d'un joueur test, sans attendre un coffre. */
+/** Un exemplaire de plus dans la poche d'un joueur test, sans attendre un coffre. */
 export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   await requireAdmin(event)
   const { spell } = await readValidatedBody(event, bodySchema.parse)
