@@ -90,7 +90,7 @@ const state = ref(demoState({
   },
   floorSeen: 544,
   floorTotal: 1000,
-  streak: 12,
+  streak: 995,
   seenTotal: 1_204,
   spellDiscovered: true,
   lessonsDone: ['camp'],

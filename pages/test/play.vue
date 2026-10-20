@@ -74,8 +74,8 @@ const state = ref(demoState({
   // Palier 545, sur un étage qui en compte largement plus.
   floorSeen: 544,
   floorTotal: 1000,
-  // Série : question 995.
-  streak: 12,
+  // Série : 995 bonnes réponses d'affilée.
+  streak: 995,
   seenTotal: 1_204,
   spellDiscovered: true,
   lessonsDone: ['camp'],

@@ -53,8 +53,8 @@ const state = useState<GameState>('test-verdict-state', () => {
     // Palier 545, sur un étage qui en compte largement plus.
     floorSeen: 544,
     floorTotal: 1000,
-    // Série : question 995.
-    streak: 12,
+    // Série : 995 bonnes réponses d'affilée.
+    streak: 995,
     chest: randomChest(),
     effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('active')),
   })
