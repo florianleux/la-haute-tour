@@ -61,14 +61,23 @@
        naît, en ascension comme en rattrapage. Sur un faux en jeu, sa ligne est
        tenue dès l'arrivée du verdict, invisible tant que la liste des
        contestables relue après la réponse ne l'a pas confirmé (pages/index.vue) :
-       sinon elle pousse toute la carte une seconde plus tard. -->
+       sinon elle pousse toute la carte une seconde plus tard. Une fois la
+       contestation partie, la même ligne en accuse réception. -->
   <PlayText
-    v-if="disputable || disputeHeld"
+    v-if="sent"
+    role="receipt"
+    :class="shade"
+    class="text-emerald-700"
+  >
+    Contestation envoyée.
+  </PlayText>
+  <PlayText
+    v-else-if="canDispute || disputeHeld"
     role="link"
     as="button"
     type="button"
     :disabled="disputing"
-    :class="{ invisible: !disputable }"
+    :class="{ invisible: !canDispute }"
     class="cursor-pointer text-amber-700 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
     @click="$emit('dispute')"
   >
@@ -106,6 +115,15 @@ const props = defineProps<{
 }>()
 
 const shade = computed(() => (props.disputeLit ? LESSON_SHADE : ''))
+
+// Une réponse jugée juste ne se conteste pas, même quand la question reste
+// contestable ailleurs : au rattrapage, l'erreur d'origine est encore au pool.
+// Voir specs/validation.md#quand.
+const canDispute = computed(() => props.disputable && !props.verdict.correct)
+
+// Au Volumen, la fiche dit elle-même où en est la contestation.
+const { isSent } = useDisputes()
+const sent = computed(() => !props.review && isSent(props.verdict.questionId))
 
 // Seul un faux avec une saisie peut devenir contestable : un vide ne l'est
 // jamais (server/utils/disputes.ts). Au Volumen, rien n'arrive après coup.

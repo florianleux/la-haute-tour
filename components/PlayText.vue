@@ -41,6 +41,9 @@ type Role =
   | 'notice'
   // Un geste écrit en toutes lettres : contester.
   | 'link'
+  // Ce qui remplace un geste fait, à sa taille pour ne rien décaler : la
+  // contestation envoyée.
+  | 'receipt'
   // Le chrono dans le médaillon.
   | 'timer'
   // Le ✓ ou le ✗ dans le médaillon.
@@ -55,6 +58,7 @@ const ROLES: Record<Role, string> = {
   aside: 'text-[3.9cqw] sm:text-[2.7cqw]',
   notice: 'text-[3.6cqw] font-semibold sm:text-[2.5cqw]',
   link: 'text-[3.3cqw] font-semibold underline underline-offset-2 sm:text-[2.5cqw]',
+  receipt: 'text-[3.3cqw] font-semibold sm:text-[2.5cqw]',
   // Ces deux-là vivent dans le médaillon, dont chaque habillage fixe la taille
   // de texte (`medallionInk`, voir PlayFrame) : les deux dessins n'ont pas le
   // même disque, et c'est le disque qui doit porter le même chiffre. Le ✓/✗ se

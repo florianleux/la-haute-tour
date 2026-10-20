@@ -49,6 +49,25 @@ describe('contestation côté joueur', () => {
     expect(calls()).toEqual(['fetch POST /api/game/disputes', 'fetch GET /api/game/disputable-errors'])
   })
 
+  it('retient la contestation partie, pour en accuser réception', async () => {
+    const { sendDispute, isSent } = useDisputes()
+    expect(isSent('q1')).toBe(false)
+
+    await sendDispute('q1')
+
+    expect(isSent('q1')).toBe(true)
+    expect(isSent('q2')).toBe(false)
+  })
+
+  it('n accuse pas réception d une contestation refusée', async () => {
+    breakNetwork()
+    const { sendDispute, isSent } = useDisputes()
+
+    await sendDispute('q1')
+
+    expect(isSent('q1')).toBe(false)
+  })
+
   it('pose disputingId pendant l envoi puis le relâche', async () => {
     const { sendDispute, disputingId } = useDisputes()
 

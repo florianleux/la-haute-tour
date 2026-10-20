@@ -12,6 +12,12 @@ export interface Disputes {
   isDisputable: (questionId: string) => boolean
   /** Conteste une question. Rend false si le serveur a refusé. */
   sendDispute: (questionId: string) => Promise<boolean>
+  /**
+   * Une contestation est partie pour cette question pendant la visite : le
+   * verdict en accuse réception à la place du bouton. Le serveur ne la relit
+   * plus parmi les contestables, d'où cette mémoire côté écran.
+   */
+  isSent: (questionId: string) => boolean
   /** La question en cours de contestation, null quand aucune n'est en vol. */
   disputingId: Ref<string | null>
   failed: Ref<boolean>
@@ -32,6 +38,7 @@ export function useDisputes(): Disputes {
   const errors = useState<DisputableError[]>(DISPUTABLE_KEY, () => [])
   const disputingId = useState<string | null>('disputing-id', () => null)
   const failed = useState<boolean>('disputable-failed', () => false)
+  const sent = useState<string[]>('disputes-sent', () => [])
 
   async function refresh(): Promise<void> {
     try {
@@ -49,6 +56,7 @@ export function useDisputes(): Disputes {
 
     try {
       await $fetch('/api/game/disputes', { method: 'POST', body: { questionId } })
+      sent.value = [...sent.value, questionId]
       await refresh()
       return true
     }
@@ -64,6 +72,7 @@ export function useDisputes(): Disputes {
     errors,
     isDisputable: questionId => errors.value.some(error => error.questionId === questionId),
     sendDispute,
+    isSent: questionId => sent.value.includes(questionId),
     disputingId,
     failed,
     refresh,
