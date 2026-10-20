@@ -232,6 +232,13 @@
       "when": 1792439204498,
       "tag": "0032_melodic_gorilla_man",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1792494635523,
+      "tag": "0033_solid_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

@@ -27,7 +27,7 @@ import {
 import { floorSizeQuery, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
-import { isCooldownBound } from '../../shared/utils/spells'
+import { FIRST_SPELL, isCooldownBound } from '../../shared/utils/spells'
 import { lessonsDone } from './lessons'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
@@ -161,6 +161,12 @@ export interface GameState {
    */
   spellDiscovered: boolean
   /**
+   * Le premier sort attend d'être lancé : Vitalité en poche, et rien encore
+   * lancé. La leçon du Grimoire le fait lancer sur soi ; faux, elle explique
+   * sans faire lancer. Voir specs/ecrans.md#leçons-de-michel.
+   */
+  firstCastPending: boolean
+  /**
    * Les leçons de Michel que le joueur a déjà vues : une leçon absente se joue
    * à son moment. Voir specs/ecrans.md#leçons-de-michel.
    */
@@ -206,6 +212,8 @@ export interface PlayerSnapshot {
   floorTotal: number
   /** Au moins un sort en poche ou déjà lancé. Lu avec le joueur. */
   spellDiscovered: boolean
+  /** Le premier sort en poche, et rien encore lancé. Lu avec le joueur. */
+  firstCastPending: boolean
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
   effects: PlacedEffect[]
   reservation?: Reservation
@@ -280,6 +288,8 @@ function snapshotQueries(db: Database, userId: number) {
         // dessus, à chaque lecture d'état.
         spellDiscovered: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(eq(pocketSpells.userId, users.id)))}
           or ${exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))})`,
+        firstCastPending: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(and(eq(pocketSpells.userId, users.id), eq(pocketSpells.spell, FIRST_SPELL))))}
+          and not ${exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))})`,
       })
       .from(users)
       .where(eq(users.id, userId))
@@ -312,6 +322,7 @@ function toSnapshot([[row], [held], effects, recoveryRun]: BatchResponse<Snapsho
     effects: toEffectViews(effects, row.user),
     floorTotal: row.floorTotal,
     spellDiscovered: row.spellDiscovered === 1,
+    firstCastPending: row.firstCastPending === 1,
     gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
@@ -748,6 +759,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     attemptSeen: user.attemptSeen,
     seenTotal: user.seenTotal,
     spellDiscovered: snapshot.spellDiscovered,
+    firstCastPending: snapshot.firstCastPending,
     lessonsDone: lessonsDone(user),
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
@@ -1065,7 +1077,7 @@ export async function openPlayerChest(
     return stateFrom(snapshot, now)
   }
 
-  const outcome = rollChest(rules, random, snapshot.user.lastChest)
+  const outcome = rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered)
   const chest: ChestState = outcome.spell ?? 'mimic'
 
   // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures

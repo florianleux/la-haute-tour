@@ -15,7 +15,7 @@
 <script setup lang="ts">
 // Le nombre d'exemplaires d'un sort en poche, en pastille dorée, écrite dans
 // le brun des titres du Grimoire. Zéro se montre aussi, en gris : un sort
-// découvert peut ne plus avoir d'exemplaire. Voir components/SpellPentacle.vue.
+// découvert peut ne plus avoir d'exemplaire. Voir components/SpellPage.vue.
 
 defineProps<{ count: number }>()
 </script>

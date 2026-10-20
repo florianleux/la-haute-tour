@@ -52,7 +52,7 @@ describe('sorts en poche du joueur', () => {
     expect(log.value).toHaveLength(1)
   })
 
-  // Le pentacle lit les sorts découverts tels que le serveur les rend, au
+  // La page des sorts lit les sorts découverts tels que le serveur les rend, au
   // lancer comme à la lecture : la Purge lancée hier y reste, sans exemplaire.
   // Voir specs/ecrans.md#sorts.
   it('lit les sorts découverts que le serveur renvoie', async () => {

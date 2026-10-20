@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
 import { demoState } from '../../utils/demo'
 import { dueLesson, isAtRest } from '../../utils/phase'
-import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson } from '../../utils/lessons'
+import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson, spellbookLesson } from '../../utils/lessons'
 import type { GameState } from '../../server/utils/game'
 import type { Ref } from 'vue'
 import type { TeamId } from '../../shared/utils/teams'
@@ -11,7 +11,7 @@ import type { TeamId } from '../../shared/utils/teams'
 const { answerWith, breakNetwork, calls, reset } = installAppGlobals()
 
 // Les auto-imports dont le composable se sert, que Vitest ne pose pas.
-Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson, LESSON_PAUSE_MS })
+Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson, spellbookLesson, LESSON_PAUSE_MS })
 const { fetchItems } = await import('../../composables/useItems')
 Object.assign(globalThis, { fetchItems })
 
@@ -191,7 +191,7 @@ function fallen(overrides: Partial<GameState> = {}): GameState {
 /** Fait ce que la réplique attend — ouvrir ou refermer —, ou clique sa bulle. */
 function act(lesson: CampLesson): void {
   const awaits = lesson.line.value?.awaits
-  if (awaits === 'click' || awaits === 'close') {
+  if (awaits === 'click' || awaits === 'close' || awaits === 'cast') {
     lesson.done(awaits)
   }
   else {
@@ -289,6 +289,52 @@ describe('le déroulé de la leçon du rattrapage', () => {
     expect(lesson.line.value?.awaits).toBe('pause')
     await settle(LESSON_PAUSE_MS)
     expect(playThrough(lesson).some(text => text.startsWith('Six questions'))).toBe(true)
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Grimoire).
+describe('le déroulé de la leçon du Grimoire', () => {
+  /** Au camp au repos, le premier sort obtenu, encore à lancer. */
+  const SPELLBOOK_DUE = demoState({ spellDiscovered: true, firstCastPending: true, lessonsDone: ['camp'] })
+
+  /** Les gestes que la leçon a attendus, jouée jusqu'au bout. */
+  function gestures(lesson: CampLesson): string[] {
+    const asked: string[] = []
+    while (lesson.line.value) {
+      if (lesson.line.value.awaits) {
+        asked.push(lesson.line.value.awaits)
+      }
+      act(lesson)
+    }
+    return asked
+  }
+
+  it('fait choisir puis lancer Vitalité, tant que le premier lancer reste à faire', async () => {
+    const lesson = start(SPELLBOOK_DUE)
+    await settle(LESSON_PAUSE_MS)
+
+    expect(gestures(lesson)).toEqual(['click', 'click', 'cast', 'close'])
+  })
+
+  it('explique sans faire lancer quand le premier lancer est fait', async () => {
+    const lesson = start({ ...SPELLBOOK_DUE, firstCastPending: false })
+    await settle(LESSON_PAUSE_MS)
+
+    expect(gestures(lesson)).toEqual(['click', 'close'])
+  })
+
+  it('se date à sa dernière réplique', async () => {
+    const lesson = start(SPELLBOOK_DUE)
+    await settle(LESSON_PAUSE_MS)
+
+    playThrough(lesson)
+    await settle()
+
+    expect(calls()).toContain('fetch POST /api/profile/lessons')
+  })
+
+  it('ne se joue pas sans sort obtenu', () => {
+    expect(start(demoState({ spellDiscovered: false, lessonsDone: ['camp'] })).line.value).toBeNull()
   })
 })
 

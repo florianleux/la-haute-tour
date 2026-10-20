@@ -1,5 +1,5 @@
 <template>
-  <!-- Un cercle repassé au crayon gras, comme le pentacle sous lui. La place
+  <!-- Un cercle repassé au crayon gras, comme le dessin sous lui. La place
        et la taille viennent de l'appelant ; `overflow-visible` laisse dépasser
        les traits qui rayonnent. L'esquisse suit le survol de l'ancêtre `group`,
        ou son focus clavier.
@@ -51,9 +51,9 @@
 </template>
 
 <script setup lang="ts">
-// Le cercle qu'on repasse au crayon autour d'un rond du pentacle : esquissé
+// Le cercle qu'on repasse au crayon autour d'un rond de la page des sorts : esquissé
 // au survol, tracé en entier quand le rond est choisi, avec quelques traits
-// qui rayonnent. Voir components/SpellPentacle.vue.
+// qui rayonnent. Voir components/SpellPage.vue.
 
 defineProps<{
   /** Le cercle entier et ses rayons. Sinon rien, ou un bout d'arc au survol. */

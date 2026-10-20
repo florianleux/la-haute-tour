@@ -95,6 +95,25 @@ describe('la leçon due', () => {
     expect(dueLesson(state({ ...overdue, nextRecovery: null, lessonsDone: ['camp'] }))).toBeNull()
   })
 
+  it('est celle du Grimoire au camp, le premier sort obtenu', () => {
+    expect(dueLesson(state({ spellDiscovered: true, lessonsDone: ['camp'] }))).toBe('spellbook')
+    expect(dueLesson(state({ spellDiscovered: false, lessonsDone: ['camp'] }))).toBeNull()
+    expect(dueLesson(state({ spellDiscovered: true, lessonsDone: ['camp', 'spellbook'] }))).toBeNull()
+  })
+
+  it('passe le Grimoire après la chute et le rattrapage : une seule à la fois', () => {
+    expect(dueLesson(state({ ...inCooldown, spellDiscovered: true, lessonsDone: ['camp'] }))).toBe('fall')
+    expect(dueLesson(state({ ...inCooldown, spellDiscovered: true, lessonsDone: ['camp', 'fall'] }))).toBe('spellbook')
+    expect(dueLesson(state({ ...overdue, spellDiscovered: true, lessonsDone: ['camp', 'fall'] }))).toBe('recovery')
+    expect(dueLesson(state({ ...overdue, spellDiscovered: true, lessonsDone: ['camp', 'fall', 'recovery'] }))).toBe('spellbook')
+  })
+
+  it('ne joue pas le Grimoire hors du camp', () => {
+    const answering = { question: { id: 'q1', statement: 'Capitale ?', expiresAt: '2099-01-01T00:00:00.000Z', focusGraceMs: 1_000, lootQuestion: false } }
+
+    expect(dueLesson(state({ ...answering, spellDiscovered: true, lessonsDone: ['camp'] }))).toBeNull()
+  })
+
   // Le joueur ne lance pas un rattrapage qu'on ne lui a pas expliqué.
   it('retient « Commencer » tant que la chute ou le rattrapage reste à voir', () => {
     expect(playView(state({ ...overdue, lessonsDone: ['camp'] })).action).toBeNull()

@@ -17,15 +17,22 @@ export const LESSON_SHADE = 'brightness-[.35]'
  * - `click` : cliquer l'objet éclairé ;
  * - `use` : utiliser le Fromage depuis l'Inventaire — le donner à Michel ;
  * - `close` : refermer la boîte du camp où Michel parle ;
+ * - `cast` : lancer sur soi le sort qu'il montre, depuis le Grimoire ;
  * - `ascent` : le clic sur la bulle, qui finit la leçon et lance l'ascension.
  */
-export type LessonAwait = 'pause' | 'click' | 'use' | 'close' | 'ascent'
+export type LessonAwait = 'pause' | 'click' | 'use' | 'close' | 'cast' | 'ascent'
 
 /**
  * Ce que Michel éclaire sur l'écran de question, à la question d'essai : les
  * rubans, le médaillon du chrono, et « Contester » sur le verdict.
  */
 export type PlayTarget = 'ribbons' | 'timer' | 'dispute'
+
+/**
+ * Ce que Michel éclaire dans le Grimoire, à sa leçon : Vitalité à la page des sorts, et
+ * « Sur moi ».
+ */
+export type SpellbookTarget = 'spellPage' | 'castSelf'
 
 /**
  * Une réplique de Michel pendant une leçon. Voir specs/ecrans.md#leçons-de-michel.
@@ -37,7 +44,7 @@ export interface LessonLine {
    * éclaire ; le reste reste dans l'ombre. Null, rien n'est éclairé. Voir
    * specs/spec.md (glossaire, « Éclairage »).
    */
-  spotlight: CampObject | PlayTarget | null
+  spotlight: CampObject | PlayTarget | SpellbookTarget | null
   /** Ce que la réplique attend du joueur. Absent, la bulle avance au clic ou à Entrée. */
   awaits?: LessonAwait
   /** La boîte du camp d'où Michel parle, ouverte par la réplique d'avant. Absente, il parle sur le camp. */
@@ -135,6 +142,38 @@ export function practiceVerdictLesson({ correct }: { correct: boolean }): Lesson
 }
 
 /**
+ * La leçon du Grimoire, à la visite du camp qui suit le premier sort : Michel
+ * fait ouvrir le grimoire, choisir Vitalité, la lancer sur soi, puis refermer.
+ * Sans lancer possible (`guided` faux), les deux gestes deviennent des bulles :
+ * les mêmes répliques, au même rang — la leçon peut passer de l'une à l'autre
+ * en cours de route. Sans équipe, ni allié ni ennemi.
+ * Voir specs/ecrans.md#leçons-de-michel (Grimoire).
+ */
+export function spellbookLesson({ team, guided }: { team: TeamId | null, guided: boolean }): LessonLine[] {
+  // TODO(texte) : répliques provisoires, Flo les écrira.
+  const others: LessonLine = { text: 'Tu peux aussi lancer un sort sur un allié ou sur un ennemi : la cible est tirée au hasard, et tu sauras après qui tu as touché.', spotlight: null, overlay: 'spellbook' }
+  return [
+    ...MICHEL_ENTRANCE,
+    { text: 'Oh, tu as trouvé ton premier sort !', spotlight: 'michel' },
+    { text: 'Tes sorts se rangent dans ton grimoire. Ouvre-le !', spotlight: 'spellbook', awaits: 'click' },
+    { text: 'La page de gauche montre tes sorts. Comme tu le vois, il t\'en reste à découvrir.', spotlight: null, overlay: 'spellbook' },
+    { text: guided ? 'Choisis Vitalité.' : 'Voici Vitalité, ton premier sort.', spotlight: 'spellPage', overlay: 'spellbook', ...guided && { awaits: 'click' } },
+    {
+      text: team
+        ? 'Chaque sort a deux faces : sa magie blanche aide, sa magie noire nuit. Lancé sur toi ou sur un allié, c\'est la blanche ; sur un ennemi, la noire.'
+        : 'Chaque sort a deux faces : sa magie blanche aide, sa magie noire nuit. Lancé sur toi, c\'est la blanche.',
+      spotlight: null,
+      overlay: 'spellbook',
+    },
+    { text: guided ? 'Lance-la sur toi : clique sur « Sur moi » !' : '« Sur moi » la lance sur toi.', spotlight: 'castSelf', overlay: 'spellbook', ...guided && { awaits: 'cast' } },
+    { text: 'Vitalité te donne une vie de plus à ta prochaine tentative.', spotlight: null, overlay: 'spellbook' },
+    ...team ? [others] : [],
+    { text: 'Referme le Grimoire quand tu as fini.', spotlight: null, overlay: 'spellbook', awaits: 'close' },
+    { text: 'À toi de jouer, et bonne chance !', spotlight: 'michel' },
+  ]
+}
+
+/**
  * Un nombre en toutes lettres, au féminin — questions et réponses le sont.
  * Assez loin pour deux Indulgences blanches ; au-delà, en chiffres.
  */
@@ -211,6 +250,15 @@ export interface Spotlit {
 }
 
 /**
+ * La réplique demande un geste sur cette cible — la cliquer, ou y lancer le
+ * sort sur soi : elle seule répond, et elle pulse pour le dire. Une seule règle
+ * pour le camp et pour le Grimoire.
+ */
+export function asks(line: LessonLine | null | undefined, target: NonNullable<LessonLine['spotlight']>): boolean {
+  return line?.spotlight === target && (line.awaits === 'click' || line.awaits === 'cast')
+}
+
+/**
  * Hors leçon, rien ne change. En leçon, seul l'objet que la réplique éclaire
  * échappe à l'ombre ; seul celui qu'elle demande de cliquer se clique, et il
  * pulse pour le dire.
@@ -220,6 +268,6 @@ export function spotlightOn(line: LessonLine | null | undefined, object: CampObj
     return { dimmed: false, clickable: true, pulses: false }
   }
 
-  const asked = line.spotlight === object && line.awaits === 'click'
+  const asked = asks(line, object)
   return { dimmed: lessonDims(line) && line.spotlight !== object, clickable: asked, pulses: asked }
 }

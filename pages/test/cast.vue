@@ -6,7 +6,7 @@
       class="pointer-events-none absolute inset-0 size-full select-none"
     >
 
-    <SpellPentacle
+    <SpellPage
       v-model="selected"
       :discovered="[...SPELL_IDS]"
       :counts="COUNTS"
@@ -55,7 +55,7 @@ import type { TargetKind } from '~~/shared/utils/teams'
 
 definePageMeta({ admin: true })
 
-/** Trois exemplaires de chaque, pour les pastilles du pentacle. */
+/** Trois exemplaires de chaque, pour les pastilles de la page des sorts. */
 const COUNTS = Object.fromEntries(SPELL_IDS.map(spell => [spell, 3]))
 
 const selected = ref<SpellId | null>('VITALITY')

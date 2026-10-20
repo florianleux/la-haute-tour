@@ -83,6 +83,8 @@ export const users = sqliteTable('users', {
   fallLessonAt: integer('fall_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon du rattrapage, la première attente échue. Comme campLessonAt. */
   recoveryLessonAt: integer('recovery_lesson_at', { mode: 'timestamp' }),
+  /** Quand le joueur a vu la leçon du Grimoire, la visite du camp qui suit son premier sort. Comme campLessonAt. */
+  spellbookLessonAt: integer('spellbook_lesson_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /** When the cooldown ends. Null outside a cooldown. The phase derives from it. */

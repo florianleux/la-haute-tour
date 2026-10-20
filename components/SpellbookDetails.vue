@@ -40,7 +40,7 @@
               class="absolute -translate-x-1/2 -translate-y-1/2 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.35))]"
               :class="{ 'motion-safe:animate-fade-in': round.face !== 'mixed' }"
               :style="{ left: round.left, top: round.top, width: round.width }"
-              fallback-class="border-2 border-pentacle/60 text-[11cqw] text-pentacle"
+              fallback-class="border-2 border-spell-page/60 text-[11cqw] text-spell-page"
             />
           </template>
         </div>

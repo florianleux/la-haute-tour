@@ -1,6 +1,6 @@
 import { isAnswerAccepted } from '../../shared/utils/answers'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { isCooldownBound, SPELL_IDS } from '../../shared/utils/spells'
+import { FIRST_SPELL, isCooldownBound, SPELL_IDS } from '../../shared/utils/spells'
 import { rulesForFloor } from './rules'
 import type { FloorRules } from './rules'
 import type { SpellId } from '../../shared/utils/spells'
@@ -312,10 +312,20 @@ export interface ChestOutcome {
  *
  * Le Mimic n'attaque qu'après un sort : jamais sur le premier coffre ouvert
  * (`lastChest` null), jamais deux fois d'affilée. Son dé est jeté quand même :
- * le sort se tire toujours sur le second.
+ * le sort se tire toujours sur le second. Sans sort découvert, aucun dé :
+ * c'est Vitalité.
  * Voir specs/bonus.md#coffre-et-mimic.
  */
-export function rollChest(rules: FloorRules, random: () => number, lastChest: User['lastChest']): ChestOutcome {
+export function rollChest(
+  rules: FloorRules,
+  random: () => number,
+  lastChest: User['lastChest'],
+  spellDiscovered: boolean,
+): ChestOutcome {
+  if (!spellDiscovered) {
+    return { mimic: false, spell: FIRST_SPELL }
+  }
+
   const mimicRoll = random()
 
   if (lastChest === 'spell' && mimicRoll < rules.mimicChance) {

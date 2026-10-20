@@ -15,8 +15,8 @@ export interface CampLesson {
   next: () => void
   /**
    * Le joueur vient de faire ce geste (cliquer un objet, utiliser le Fromage,
-   * refermer une boîte) : la leçon passe à la suite si c'est ce que la
-   * réplique attendait, et ne bouge pas sinon.
+   * refermer une boîte, lancer un sort sur soi) : la leçon passe à la suite si
+   * c'est ce que la réplique attendait, et ne bouge pas sinon.
    */
   done: (performed: Exclude<LessonAwait, 'pause' | 'ascent'>) => void
   /** Michel, cliqué hors leçon, propose de rejouer une leçon déjà vue. */
@@ -28,16 +28,13 @@ export interface CampLesson {
 }
 
 /** Comment Michel nomme chaque leçon quand il propose de la rejouer. */
-const LESSON_NAMES: Record<LessonId, string> = { camp: 'Le camp', fall: 'La chute', recovery: 'Le rattrapage' }
+const LESSON_NAMES: Record<LessonId, string> = { camp: 'Le camp', fall: 'La chute', recovery: 'Le rattrapage', spellbook: 'Le Grimoire' }
 
 /**
- * Michel au camp : chaque leçon jouée d'elle-même à son moment, une à la fois,
- * et rejouée à la demande. La leçon du camp, à la première arrivée au repos — la
- * sortie de l'introduction ; celle de la chute, au premier retour sans vies,
- * tant que le rattrapage n'a pas commencé ; celle du rattrapage, l'attente
- * échue, juste après celle de la chute s'il le faut (dueLesson). Tout ce qui
- * compte se lit dans l'état servi : les leçons vues, les chiffres du
- * rattrapage, et le Fromage encore dans le sac, qui dit où la leçon du camp
+ * Michel au camp : chaque leçon jouée d'elle-même à son moment (dueLesson), une
+ * à la fois, et rejouée à la demande. Tout ce qui compte se lit dans l'état
+ * servi : les leçons vues, les chiffres du rattrapage, le premier lancer encore
+ * à faire, et le Fromage encore dans le sac, qui dit où la leçon du camp
  * reprend. Une leçon datée relit l'état (`refresh`) : la suivante en part.
  * Voir specs/ecrans.md#leçons-de-michel.
  */
@@ -65,6 +62,7 @@ export function useCampLesson(
     camp: () => campLesson({ team: team.value }),
     fall: fallLesson,
     recovery: () => state.value?.nextRecovery ? recoveryLesson(state.value.nextRecovery) : null,
+    spellbook: () => spellbookLesson({ team: team.value, guided: state.value?.firstCastPending ?? false }),
   }
 
   function play(played: LessonLine[], from = 0): void {

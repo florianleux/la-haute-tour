@@ -1,12 +1,14 @@
 <template>
   <!-- Posé sur toute la boîte du livre : les ronds se placent en % de lui, sur
-       ceux du pentacle dessiné dans public/images/spellbook.webp. -->
+       ceux du dessin de public/images/spellbook.webp. -->
   <div class="pointer-events-none absolute inset-0">
     <div
       v-for="spell in SPELL_IDS"
       :key="spell"
       class="@container group pointer-events-auto absolute aspect-square w-[6.6%] -translate-x-1/2 -translate-y-1/2"
+      :class="only === spell && 'motion-safe:animate-nudge'"
       :style="{ left: ROUNDS[spell].left, top: ROUNDS[spell].top }"
+      :inert="(only !== undefined && spell !== only) || undefined"
     >
       <!-- Découvert : son médaillon, et tout le rond qui le choisit. Le
            choix se dit au crayon, comme tout le dessin de la page : un bout
@@ -35,7 +37,7 @@
           :key="replays[spell]"
           :drawn="selected === spell"
           :facing="ROUNDS[spell].facing"
-          class="absolute -left-[30%] -top-[30%] size-[160%] text-pentacle"
+          class="absolute -left-[30%] -top-[30%] size-[160%] text-spell-page"
         />
         <div
           :key="replays[spell]"
@@ -53,7 +55,7 @@
             :spell="spell"
             face="mixed"
             class="size-full"
-            fallback-class="border-2 border-pentacle/60 text-[50cqw] text-pentacle"
+            fallback-class="border-2 border-spell-page/60 text-[50cqw] text-spell-page"
           />
           <SpellCountBadge :count="counts[spell] ?? 0" />
         </div>
@@ -66,20 +68,20 @@
       </template>
 
       <!-- Pas encore obtenu : un point d'interrogation, et rien à choisir.
-           Provisoire, tracé au texte dans le rouge du pentacle ; un dessin le
+           Provisoire, tracé au texte dans le rouge de la page des sorts ; un dessin le
            remplacera. -->
       <span
         v-else
         role="img"
         aria-label="Sort pas encore découvert"
-        class="flex size-full -rotate-6 select-none items-center justify-center text-[70cqw] font-bold leading-none text-pentacle/85"
+        class="flex size-full -rotate-6 select-none items-center justify-center text-[70cqw] font-bold leading-none text-spell-page/85"
       >?</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// Le pentacle du Grimoire : un rond par sort du catalogue. Voir
+// La page des sorts du Grimoire : un rond par sort du catalogue. Voir
 // specs/ecrans.md#sorts.
 import { SPELL_IDS } from '~~/shared/utils/spells'
 import type { SpellId } from '~~/shared/utils/spells'
@@ -89,6 +91,11 @@ defineProps<{
   discovered: SpellId[]
   /** Les exemplaires en poche, par sort : la pastille de chaque médaillon. Absent, zéro. */
   counts: Partial<Record<SpellId, number>>
+  /**
+   * À la leçon du Grimoire, le seul sort qui se choisit : celui que Michel
+   * demande, qui pulse — ou aucun, null. Absent, hors leçon, tous se choisissent.
+   */
+  only?: SpellId | null
 }>()
 
 /** Le sort que la page droite montre, null tant que rien n'est choisi. */

@@ -52,6 +52,12 @@ describe('une leçon de Michel vue', () => {
     expect(await loadPlayer(db, playerId)).toMatchObject({ fallLessonAt: expect.any(Date), campLessonAt: null })
   })
 
+  it('date la leçon du Grimoire', async () => {
+    await markLesson(lessonRequest({ lesson: 'spellbook' }, await sessionCookieFor(playerId)))
+
+    expect((await loadPlayer(db, playerId)).spellbookLessonAt).toBeInstanceOf(Date)
+  })
+
   it('date la leçon du rattrapage', async () => {
     await markLesson(lessonRequest({ lesson: 'recovery' }, await sessionCookieFor(playerId)))
 

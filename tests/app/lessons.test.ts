@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, replayedLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, replayedLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
 
 // Voir specs/ecrans.md#leçons-de-michel (Chute).
 describe('la leçon de la chute', () => {
@@ -222,5 +222,64 @@ describe('l éclairage de l écran de question', () => {
 
   it('n assombrit rien quand Michel s est tu', () => {
     expect(spotlightOn(null, 'ribbons').dimmed).toBe(false)
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Grimoire).
+describe('la leçon du Grimoire', () => {
+  const guided = spellbookLesson({ team: 'MIDI', guided: true })
+
+  it('s ouvre sur la même entrée que les autres leçons', () => {
+    expect(guided.slice(0, 2)).toEqual(campLesson({ team: null }).slice(0, 2))
+  })
+
+  it('fait ouvrir le grimoire, choisir Vitalité, la lancer sur soi, puis refermer', () => {
+    expect(guided.filter(line => line.awaits && line.awaits !== 'pause').map(line => [line.spotlight, line.awaits])).toEqual([
+      ['spellbook', 'click'],
+      ['spellPage', 'click'],
+      ['castSelf', 'cast'],
+      [null, 'close'],
+    ])
+  })
+
+  it('parle depuis le Grimoire, de son ouverture à sa fermeture', () => {
+    const opened = guided.findIndex(line => line.spotlight === 'spellbook') + 1
+    const closed = guided.findIndex(line => line.awaits === 'close')
+
+    expect(guided.slice(opened, closed + 1).every(line => line.overlay === 'spellbook')).toBe(true)
+  })
+
+  it('explique sans faire lancer quand le lancer guidé n est pas possible', () => {
+    const fallback = spellbookLesson({ team: 'MIDI', guided: false })
+
+    expect(fallback).toHaveLength(guided.length)
+    expect(fallback.map(line => line.awaits).filter(Boolean)).toEqual(['pause', 'click', 'close'])
+    expect(fallback.map(line => line.spotlight)).toEqual(guided.map(line => line.spotlight))
+  })
+
+  it('ne parle d allié ni d ennemi sans équipe', () => {
+    const texts = spellbookLesson({ team: null, guided: true }).map(line => line.text).join(' ')
+
+    expect(texts).not.toMatch(/allié|ennemi/)
+    expect(guided.map(line => line.text).join(' ')).toMatch(/allié/)
+  })
+
+  it('finit sur un au revoir au camp, qui avance au clic', () => {
+    expect(guided.at(-1)).toMatchObject({ spotlight: 'michel' })
+    expect(guided.at(-1)?.awaits).toBeUndefined()
+    expect(guided.at(-1)?.overlay).toBeUndefined()
+  })
+})
+
+describe('le geste demandé', () => {
+  it('est celui que la réplique attend, sur ce qu elle éclaire', () => {
+    expect(asks({ text: '', spotlight: 'spellPage', awaits: 'click' }, 'spellPage')).toBe(true)
+    expect(asks({ text: '', spotlight: 'castSelf', awaits: 'cast' }, 'castSelf')).toBe(true)
+  })
+
+  it('n est rien quand la réplique montre sans rien demander, ou montre autre chose', () => {
+    expect(asks({ text: '', spotlight: 'spellPage' }, 'spellPage')).toBe(false)
+    expect(asks({ text: '', spotlight: 'castSelf', awaits: 'cast' }, 'spellPage')).toBe(false)
+    expect(asks(null, 'spellPage')).toBe(false)
   })
 })

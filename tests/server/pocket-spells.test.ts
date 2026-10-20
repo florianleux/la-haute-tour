@@ -245,7 +245,7 @@ describe('sorts en poche', () => {
     expect((await loadPlayer(db, userId)).lives).toBe(rulesForFloor(1).lives)
   })
 
-  // Le pentacle montre le médaillon d'un sort déjà obtenu, même sans exemplaire
+  // La page des sorts montre le médaillon d'un sort déjà obtenu, même sans exemplaire
   // en poche : un sort lancé quitte la poche, pas la mémoire du joueur.
   // Voir specs/ecrans.md#sorts.
   describe('sorts découverts', () => {

@@ -362,6 +362,10 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
   ouvert par le joueur, jamais deux fois d'affilée. Ces coffres-là donnent
   toujours un Sort. Le dernier résultat est porté par le joueur (`lastChest`),
   et la remise à zéro d'un joueur rend son prochain coffre à nouveau sûr.
+- **Le premier Sort est toujours Vitalité** : tant que le joueur n'a découvert
+  aucun sort depuis sa dernière remise à zéro, son coffre donne Vitalité, sans
+  tirage. La leçon du Grimoire lui apprend à la lancer sur lui (voir
+  [`ecrans.md`](./ecrans.md#leçons-de-michel)).
 - **Exception, à partir de 50 % de l'étage parcouru et tant que le joueur n'a
   pas sa clé de boss** : le tirage 95/5 ne s'applique plus, le coffre est
   **forcé** de donner la clé — ni Sort, ni Mimic. Voir
@@ -404,7 +408,7 @@ Une contestation acceptée **répare le joueur, elle ne rembobine pas les Sorts.
 
 ## Écrans
 
-- **Le Grimoire**, l'écran des Sorts, ouvert par-dessus le camp : pentacle, lancer, journaux — voir
+- **Le Grimoire**, l'écran des Sorts, ouvert par-dessus le camp : page des sorts, lancer, journaux — voir
   [`ecrans.md`](./ecrans.md#sorts). Le lancer et le nombre d'exemplaires sont
   absents tant que #76 n'est pas livré. Accessible au camp uniquement.
   Les sorts en poche ne sont donc pas consultables hors du camp — le joueur voit passer son

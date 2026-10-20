@@ -26,7 +26,7 @@ export interface PocketSpellsView {
   entries: PocketSpellEntryView[]
   /**
    * Les sorts obtenus au moins une fois, dans l'ordre du catalogue : encore en
-   * poche, ou déjà lancés. Le pentacle montre leur médaillon, même sans
+   * poche, ou déjà lancés. La page des sorts montre leur médaillon, même sans
    * exemplaire ; les autres y gardent un point d'interrogation.
    * Voir specs/ecrans.md#sorts.
    */

@@ -1,19 +1,21 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDatabase } from '~~/server/db/client'
-import { items, users } from '~~/server/db/schema'
+import { items, pocketSpells, users } from '~~/server/db/schema'
 import { serveNextQuestion, submitAnswer } from '~~/server/utils/game'
 import { LESSON_COLUMNS } from '~~/server/utils/lessons'
 import { skipCooldown } from '~~/server/utils/lives'
 import { requirePlayer, resetPlayer } from '~~/server/utils/players'
 import { LESSON_IDS } from '~~/shared/utils/lessons'
+import { FIRST_SPELL } from '~~/shared/utils/spells'
 import { TEAM_IDS } from '~~/shared/utils/teams'
 
-// La guilde à donner au joueur pour ce passage : sans équipe, la leçon
-// sauterait la bannière et les Haut-faits. La leçon à revoir : celle du camp
-// par défaut, celle de la chute ou celle du rattrapage.
+// La guilde à donner au joueur pour ce passage, ou aucune : sans équipe, la
+// leçon du camp saute la bannière et les Haut-faits, celle du Grimoire les
+// alliés et les ennemis. La leçon à revoir : celle du camp par défaut, celle
+// de la chute, du rattrapage ou du Grimoire.
 const bodySchema = z.object({
-  team: z.enum(TEAM_IDS),
+  team: z.enum(TEAM_IDS).nullable(),
   lesson: z.enum(LESSON_IDS).default('camp'),
 })
 
@@ -32,6 +34,9 @@ const bodySchema = z.object({
  * Pour la leçon du rattrapage, la même chute, leçon de la chute vue, puis
  * l'attente passée : le joueur arrive au camp l'attente échue, avant
  * « Commencer ».
+ *
+ * Pour la leçon du Grimoire, partie neuve, leçon du camp vue, et la Vitalité
+ * que donne le premier coffre en poche : le joueur est au camp au repos.
  *
  * Admin seulement. Le joueur servi est le joueur test incarné : hors
  * développement, la partie d'un vrai compte, celui de l'admin compris, ne se
@@ -61,6 +66,11 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
 
   if (lesson === 'camp') {
     await db.insert(items).values({ userId: player.id, item: 'CHEESE', obtainedAt: now })
+    return { ok: true }
+  }
+
+  if (lesson === 'spellbook') {
+    await db.insert(pocketSpells).values({ userId: player.id, spell: FIRST_SPELL, obtainedAt: now })
     return { ok: true }
   }
 

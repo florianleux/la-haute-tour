@@ -68,6 +68,32 @@ describe('endpoints de jeu', () => {
     })
   })
 
+  // La leçon du Grimoire fait lancer Vitalité tant que c'est possible : en
+  // poche, et rien encore lancé. Voir specs/ecrans.md#leçons-de-michel.
+  it('dit le premier lancer à faire, Vitalité en poche, jusqu au premier lancer', async () => {
+    const userId = await createPlayer(db, { discordId: 'apprenti', username: 'apprenti' })
+    const read = async (): Promise<boolean> =>
+      (await (await state(apiRequest('http://test/state', await sessionCookieFor(userId)))).json()).firstCastPending
+
+    expect(await read()).toBe(false)
+
+    await db.insert(pocketSpells).values({ userId, spell: 'RESPITE', obtainedAt: new Date() })
+    expect(await read()).toBe(false)
+
+    await db.insert(pocketSpells).values({ userId, spell: 'VITALITY', obtainedAt: new Date() })
+    expect(await read()).toBe(true)
+
+    await db.insert(activeEffects).values({
+      userId,
+      casterId: userId,
+      spell: 'RESPITE',
+      face: 'boon',
+      castAt: new Date(),
+      castCooldownStartedAt: new Date(),
+    })
+    expect(await read()).toBe(false)
+  })
+
   it('pose le grimoire au premier sort obtenu, et le garde une fois lancé', async () => {
     const userId = await createPlayer(db, { discordId: 'sorcier', username: 'sorcier' })
     const read = async (): Promise<boolean> =>

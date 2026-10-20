@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { achievements, missedPool, settings, users } from '../../server/db/schema'
+import { achievements, missedPool, pocketSpells, settings, users } from '../../server/db/schema'
 import { STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { unlock } from '../../server/utils/achievements'
@@ -321,8 +321,9 @@ describe('les succès en jeu', () => {
 
   describe('au coffre', () => {
     it('compte le Mimic comme une mort, et lui casse la série', async () => {
-      // Un sort déjà sorti d'un coffre : le Mimic peut attaquer.
+      // Un sort déjà sorti d'un coffre, toujours en poche : le Mimic peut attaquer.
       await db.update(users).set({ streak: 12, lastChest: 'spell' }).where(eq(users.id, player.id))
+      await db.insert(pocketSpells).values({ userId: player.id, spell: 'RESPITE', obtainedAt: NOW })
 
       // Une de plus que le seuil : la dernière question restante de l étage ne
       // porte jamais de coffre, un Mimic y opposerait le palier à l attente.

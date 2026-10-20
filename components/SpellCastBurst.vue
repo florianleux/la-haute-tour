@@ -85,7 +85,7 @@
             :spell="cast.spell"
             :face="cast.face"
             class="size-full [filter:drop-shadow(0_4px_6px_rgb(0_0_0/0.45))_drop-shadow(0_0_10px_var(--cast-glow))]"
-            fallback-class="border-2 border-pentacle/60 bg-amber-50 text-[60cqw] text-pentacle"
+            fallback-class="border-2 border-spell-page/60 bg-amber-50 text-[60cqw] text-spell-page"
           />
         </div>
       </div>

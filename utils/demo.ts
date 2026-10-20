@@ -94,6 +94,7 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     attemptSeen: 0,
     seenTotal: 0,
     spellDiscovered: false,
+    firstCastPending: false,
     lessonsDone: ['camp'],
     chest: null,
     maintenance: false,

@@ -87,6 +87,16 @@ describe('coffre de loot', () => {
       expect(await stock()).toEqual([{ spell: SPELL_IDS[0] }])
     })
 
+    // Voir specs/bonus.md#coffre-et-mimic : la leçon du Grimoire apprend à le lancer.
+    it('donne Vitalité au premier coffre d un joueur sans sort découvert', async () => {
+      await playLootQuestion('Bordeaux')
+
+      const state = await openPlayerChest(db, await reload(), NOW, rolls(0.999, 0.999))
+
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: 'VITALITY' })
+      expect(await stock()).toEqual([{ spell: 'VITALITY' }])
+    })
+
     it('rend le tirage déjà fait plutôt que d en refaire un', async () => {
       await playLootQuestion('Bordeaux')
       await openPlayerChest(db, await reload(), NOW, givesSpell())
@@ -137,9 +147,10 @@ describe('coffre de loot', () => {
   })
 
   describe('mimic', () => {
-    // Un sort déjà sorti d'un coffre : le Mimic peut attaquer.
+    // Un sort déjà sorti d'un coffre, et toujours en poche : le Mimic peut attaquer.
     beforeEach(async () => {
       await db.update(users).set({ lastChest: 'spell' }).where(eq(users.id, player.id))
+      await db.insert(pocketSpells).values({ userId: player.id, spell: 'RESPITE', obtainedAt: NOW })
     })
 
     it('ne donne rien et vide la tentative d un coup', async () => {
@@ -148,7 +159,7 @@ describe('coffre de loot', () => {
       const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
 
       expect(state.chest).toEqual({ opened: true, mimic: true, spell: null })
-      expect(await stock()).toHaveLength(0)
+      expect(await stock()).toEqual([{ spell: 'RESPITE' }])
       expect(state.lives).toBe(0)
     })
 

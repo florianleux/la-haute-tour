@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { items, missedPool, users } from '../../server/db/schema'
+import { items, missedPool, pocketSpells, users } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -13,8 +13,8 @@ const { default: benchHandler } = await import('../../server/api/admin/camp-less
 
 const replayCamp = mountHandler('/camp-lesson', benchHandler)
 
-function benchRequest(cookie?: string, lesson?: LessonId): Request {
-  return jsonRequest('http://test/camp-lesson', 'POST', { team: 'MIDI', lesson }, cookie)
+function benchRequest(cookie?: string, lesson?: LessonId, team: string | null = 'MIDI'): Request {
+  return jsonRequest('http://test/camp-lesson', 'POST', { team, lesson }, cookie)
 }
 
 let db: Database
@@ -102,5 +102,24 @@ describe('le banc de la leçon de la chute', () => {
     expect(tester.cooldownUntil?.getTime()).toBeLessThanOrEqual(Date.now())
     expect(tester.fallLessonAt).toBeInstanceOf(Date)
     expect(await db.select().from(missedPool).where(eq(missedPool.userId, testerId))).toHaveLength(3)
+  })
+
+  // La leçon sans équipe ne parle que du lancer sur soi : elle doit se voir.
+  it('peut remettre le joueur sans équipe', async () => {
+    const response = await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'spellbook', null))
+
+    expect(response.status).toBe(200)
+    expect((await loadPlayer(db, testerId)).team).toBeNull()
+  })
+
+  it('remet le joueur au camp au repos, Vitalité en poche, leçon du Grimoire à voir', async () => {
+    await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'spellbook'))
+
+    const tester = await loadPlayer(db, testerId)
+    expect(tester).toMatchObject({ spellbookLessonAt: null, cooldownUntil: null })
+    expect(tester.campLessonAt).toBeInstanceOf(Date)
+    expect(tester.lives).toBeGreaterThan(0)
+    expect(await db.select({ spell: pocketSpells.spell }).from(pocketSpells).where(eq(pocketSpells.userId, testerId)))
+      .toEqual([{ spell: 'VITALITY' }])
   })
 })

@@ -37,15 +37,17 @@ export interface PocketSpellsRead {
   cast: (spell: SpellId, target: TargetKind) => Promise<void>
 }
 
+/** Les sorts en poche du joueur, tels que le serveur les sert. Refusé hors du camp. */
+export function fetchPocketSpells(): Promise<PocketSpellsView> {
+  return $fetch<PocketSpellsView>('/api/game/pocket-spells', useApiFetchOptions())
+}
+
 /**
  * Les sorts que le joueur possède, tels que le Grimoire les montre. Refusé par
  * le serveur hors du camp — le Grimoire ne s'ouvre que là. Voir specs/ecrans.md#sorts.
  */
 export async function usePocketSpells(): Promise<PocketSpellsRead> {
-  const { data, error } = await useAsyncData<PocketSpellsView>(
-    POCKET_SPELLS_KEY,
-    () => $fetch<PocketSpellsView>('/api/game/pocket-spells', useApiFetchOptions()),
-  )
+  const { data, error } = await useAsyncData<PocketSpellsView>(POCKET_SPELLS_KEY, fetchPocketSpells)
 
   const { failed: castFailed, send } = useWriteThenReplace(data)
 

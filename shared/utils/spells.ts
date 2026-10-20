@@ -14,6 +14,13 @@ export const SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY', 'INDULGENCE', 'P
 export type SpellId = typeof SPELL_IDS[number]
 
 /**
+ * Le premier sort de tout joueur : le coffre le donne sans tirage tant qu'aucun
+ * sort n'est découvert, et la leçon du Grimoire apprend à le lancer sur soi.
+ * Voir specs/bonus.md#coffre-et-mimic.
+ */
+export const FIRST_SPELL: SpellId = 'VITALITY'
+
+/**
  * Les sorts dont l'effet existe, et qui se lancent donc pour de bon. Un coffre
  * peut déjà donner les autres — ils rejoignent la poche et attendent leur
  * ticket. Lancer un sort qui ne fait rien coûterait un exemplaire pour rien,

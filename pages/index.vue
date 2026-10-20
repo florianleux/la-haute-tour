@@ -157,6 +157,8 @@
       @close="closeCampOverlay"
       @next="lesson.next"
       @used="lesson.done('use')"
+      @chosen="lesson.done('click')"
+      @cast="lesson.done('cast')"
     />
   </div>
 </template>

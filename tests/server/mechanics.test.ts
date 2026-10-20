@@ -273,23 +273,29 @@ describe('contenu d un coffre', () => {
   it('rend un Mimic sous le taux', () => {
     const roll = rules.mimicChance - 0.001
 
-    expect(rollChest(rules, rolls(roll), 'spell')).toEqual({ mimic: true, spell: null })
+    expect(rollChest(rules, rolls(roll), 'spell', true)).toEqual({ mimic: true, spell: null })
   })
 
   it('épargne le premier coffre et celui qui suit un Mimic', () => {
-    expect(rollChest(rules, rolls(0, 0), null)).toEqual({ mimic: false, spell: SPELL_IDS[0] })
-    expect(rollChest(rules, rolls(0, 0), 'mimic')).toEqual({ mimic: false, spell: SPELL_IDS[0] })
+    expect(rollChest(rules, rolls(0, 0), null, true)).toEqual({ mimic: false, spell: SPELL_IDS[0] })
+    expect(rollChest(rules, rolls(0, 0), 'mimic', true)).toEqual({ mimic: false, spell: SPELL_IDS[0] })
   })
 
   it('rend un sort au taux pile', () => {
-    expect(rollChest(rules, rolls(rules.mimicChance, 0), 'spell')).toEqual({
+    expect(rollChest(rules, rolls(rules.mimicChance, 0), 'spell', true)).toEqual({
       mimic: false,
       spell: SPELL_IDS[0],
     })
   })
 
+  // Voir specs/bonus.md#coffre-et-mimic : la leçon du Grimoire apprend à le lancer.
+  it('donne Vitalité tant qu aucun sort n est découvert, quel que soit le tirage', () => {
+    expect(rollChest(rules, rolls(0, 0.999), null, false)).toEqual({ mimic: false, spell: 'VITALITY' })
+    expect(rollChest(rules, rolls(0.999, 0.5), null, false)).toEqual({ mimic: false, spell: 'VITALITY' })
+  })
+
   it('tire dans tout le catalogue, jusqu au dernier', () => {
-    expect(rollChest(rules, rolls(0.5, 0.999), 'spell')).toEqual({
+    expect(rollChest(rules, rolls(0.5, 0.999), 'spell', true)).toEqual({
       mimic: false,
       spell: SPELL_IDS[SPELL_IDS.length - 1],
     })

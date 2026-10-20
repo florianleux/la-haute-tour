@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Grimoire" close-label="Fermer le Grimoire" @close="$emit('close')">
+  <CampOverlay v-slot="{ closing, close }" label="Grimoire" close-label="Fermer le Grimoire" :lesson="lesson" @close="$emit('close')" @next="$emit('next')">
     <!-- Par-dessus le camp (CampOverlay), comme le Volumen. Clic à côté du
          livre = fermer.
 
@@ -20,10 +20,13 @@
     >
       <!-- La page gauche : un rond par sort, médaillon une fois découvert. Le
            rond choisi dit quel sort la page droite montre. -->
-      <SpellPentacle
+      <!-- En leçon, le livre se regarde sans se toucher : seul répond ce que
+           Michel demande — Vitalité à la page des sorts, puis « Sur moi ». -->
+      <SpellPage
         v-model="selected"
         :discovered="discovered"
         :counts="counts"
+        :only="lesson ? (pickAsked ? FIRST_SPELL : null) : undefined"
         v-bind="fadeLayer(closing, '0.5s')"
       />
 
@@ -55,7 +58,7 @@
             v-if="!selected"
             class="flex flex-1 items-center justify-center text-center italic text-amber-900/60"
           >
-            Choisis un sort dans le pentacle.
+            Choisis un sort sur la page de gauche.
           </p>
 
           <template v-else>
@@ -73,8 +76,9 @@
                   v-for="kind in offeredTargets(canTargetOthers)"
                   :key="kind"
                   variant="parchment"
-                  :disabled="!count || casting !== null || castScene !== null || !targetable[kind]"
+                  :disabled="!count || casting !== null || castScene !== null || !targetable[kind] || lessonHolds(kind)"
                   :loading="casting === selected && castingOn === kind"
+                  :class="castSelfAsked(kind) && 'motion-safe:animate-nudge'"
                   @click="castOn(selected, kind)"
                 >
                   {{ targetKindLabel(kind) }}
@@ -142,17 +146,45 @@
 </template>
 
 <script setup lang="ts">
-// Le Grimoire : le pentacle des sorts, le lancer du sort choisi et son
+// Le Grimoire : la page des sorts, le lancer du sort choisi et son
 // historique — au camp et là seulement, ouvert par-dessus lui. Le lancer vise une
 // catégorie, jamais une personne : soi, ou un allié ou un ennemi que le serveur
 // tire et ne nomme qu'après. Voir specs/ecrans.md#sorts.
 import { GAME_STATE_KEY } from '~/composables/useGameState'
-import { faceFor } from '~~/shared/utils/spells'
+import { faceFor, FIRST_SPELL } from '~~/shared/utils/spells'
 import type { SpellId } from '~~/shared/utils/spells'
 import type { TargetKind } from '~~/shared/utils/teams'
+import type { LessonLine } from '~~/utils/lessons'
 import type { Tone } from '~~/utils/tone'
 
-defineEmits<{ close: [] }>()
+const props = defineProps<{
+  /** La réplique de Michel quand il parle depuis le Grimoire, à sa leçon. Voir CampOverlay. */
+  lesson?: LessonLine
+}>()
+
+const emit = defineEmits<{
+  close: []
+  next: []
+  /** Vitalité choisie à la page des sorts, comme Michel le demandait. */
+  chosen: []
+  /** Vitalité lancée sur soi, comme Michel le demandait. */
+  cast: []
+}>()
+
+/** Michel demande de choisir Vitalité à la page des sorts. */
+const pickAsked = computed(() => asks(props.lesson, 'spellPage'))
+
+/** Michel demande de la lancer sur soi. */
+const castAsked = computed(() => asks(props.lesson, 'castSelf'))
+
+function castSelfAsked(kind: TargetKind): boolean {
+  return castAsked.value && kind === 'self'
+}
+
+/** En leçon, une catégorie reste éteinte, sauf « Sur moi » quand Michel le demande. */
+function lessonHolds(kind: TargetKind): boolean {
+  return Boolean(props.lesson) && !castSelfAsked(kind)
+}
 
 const {
   entries,
@@ -168,7 +200,7 @@ const {
   cast,
 } = await usePocketSpells()
 
-/** Le sort choisi au pentacle : rien à l'ouverture. */
+/** Le sort choisi à la page des sorts : rien à l'ouverture. */
 const selected = ref<SpellId | null>(null)
 
 /** Les catégories qui ont encore quelqu'un à toucher : le serveur le dit, la page éteint les autres. */
@@ -197,7 +229,7 @@ const now = useClockTick()
 // côté serveur.
 const history = computed(() => log.value.filter(entry => entry.spell === selected.value).slice(0, 5))
 
-/** Les exemplaires en poche, par sort : les pastilles du pentacle. */
+/** Les exemplaires en poche, par sort : les pastilles de la page des sorts. */
 const counts = computed<Partial<Record<SpellId, number>>>(() =>
   Object.fromEntries(entries.value.map(entry => [entry.spell, entry.count])))
 
@@ -211,9 +243,31 @@ const castingOn = ref<TargetKind | null>(null)
 /** Ce que le dernier lancer a donné, pour le sort choisi seulement. */
 const outcome = ref<{ text: string, tone: Tone } | null>(null)
 
-watch(selected, () => {
+watch(selected, (spell) => {
   outcome.value = null
+  if (pickAsked.value && spell === FIRST_SPELL) {
+    emit('chosen')
+  }
 })
+
+// « Sur moi » éteint — le joueur porte déjà deux magies blanches, qu'on a pu
+// lui lancer avant sa première visite — : le lancer ne se peut pas, et la
+// leçon, qui ne se referme pas avant la fin, passe sans lui. L'état servi ne
+// le sait pas : le dire coûterait une requête de plus à chaque lecture.
+watch(castAsked, (asked) => {
+  if (asked && !canTargetSelf.value) {
+    emit('cast')
+  }
+}, { immediate: true })
+
+// Sans lancer guidé, Michel ouvre lui-même Vitalité pour la montrer : le joueur
+// ne choisit rien, le livre étant inerte.
+watch(() => props.lesson, (line) => {
+  const showing = line?.spotlight === 'spellPage' || line?.spotlight === 'castSelf'
+  if (showing && !line?.awaits && discovered.value.includes(FIRST_SPELL)) {
+    selected.value = FIRST_SPELL
+  }
+}, { immediate: true })
 
 // L'animation du lancer, sur le médaillon du sort : la requête part pendant
 // qu'il se charge, et le résultat ne s'écrit qu'une fois qu'il s'est envolé.
@@ -239,6 +293,11 @@ async function castOn(spell: SpellId, kind: TargetKind): Promise<void> {
       : { text: castOutcome(spell, kind, targetName), tone: kind === 'self' || targetName ? 'success' : 'warning' }
   }
   castingOn.value = null
+
+  // Le lancer que Michel demandait : la leçon passe au résultat.
+  if (castSelfAsked(kind) && !castFailed.value) {
+    emit('cast')
+  }
 
   // Le minuteur du camp, dessous, qu'un Répit fait reculer.
   await refreshNuxtData(GAME_STATE_KEY)

@@ -3,11 +3,11 @@
 @theme {
   --font-sans: 'Platypi', ui-sans-serif, system-ui, sans-serif;
 
-  /* Le rouge du pentacle du Grimoire, choisi à l'œil pour aller avec le
+  /* Le rouge de la page des sorts du Grimoire, choisi à l'œil pour aller avec le
      crayon de public/images/spellbook.webp : ce qui s'y ajoute par-dessus le
      dessin (cercle repassé, point d'interrogation) le reprend. Voir
-     components/SpellPentacle.vue. */
-  --color-pentacle: #dc1f5f;
+     components/SpellPage.vue. */
+  --color-spell-page: #dc1f5f;
 
   /* Le coffre fermé qui remue, comme si quelque chose bougeait dedans :
      0,6 s de secousses, puis 0,3 s de repos, pour que ça reste un indice et
@@ -252,10 +252,10 @@
     100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(180deg); }
   }
 
-  /* Le médaillon choisi au pentacle du Grimoire : un petit rebond sur son
+  /* Le médaillon choisi à la page des sorts du Grimoire : un petit rebond sur son
      centre, pendant que le crayon trace son cercle. Il se ramasse sans
      jamais dépasser sa taille : au-delà de 1, l'image déjà rastérisée
-     s'étirerait et sortirait floue. Voir components/SpellPentacle.vue. */
+     s'étirerait et sortirait floue. Voir components/SpellPage.vue. */
   --animate-spell-pick: spell-pick 0.5s ease-out;
 
   @keyframes spell-pick {
@@ -1414,7 +1414,7 @@
   }
 }
 
-/* L'angle déjà passé au crayon autour d'un rond du pentacle. Déclaré pour
+/* L'angle déjà passé au crayon autour d'un rond de la page des sorts. Déclaré pour
    être un angle, pas un texte : il peut alors s'animer. Voir
    components/CrayonRing.vue. */
 @property --crayon-sweep {
@@ -1423,10 +1423,10 @@
   initial-value: 0deg;
 }
 
-/* Un rond du pentacle qu'on désigne : survolé, ou son bouton au focus
+/* Un rond de la page des sorts qu'on désigne : survolé, ou son bouton au focus
    clavier. Le survol se lit sur l'ancêtre `group`, comme `group-hover`, et
    seulement là où un pointeur survole vraiment. Voir
-   components/SpellPentacle.vue. */
+   components/SpellPage.vue. */
 @custom-variant group-hover-or-focus {
   @media (hover: hover) {
     &:is(:where(.group):hover *) {
