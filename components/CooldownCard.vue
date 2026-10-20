@@ -75,7 +75,7 @@
        bouton, qu'ils ne recouvrent donc jamais, quel que soit le format. Le tout
        sous le sélecteur d'incarnation (z-20), que le poster ne doit pas masquer. -->
   <div
-    class="fixed z-10 bg-[url(/images/cooldown-poster.webp)] bg-contain bg-center bg-no-repeat"
+    class="pointer-events-none fixed z-10 bg-[url(/images/cooldown-poster.webp)] bg-contain bg-center bg-no-repeat"
     :class="[POSTER_BOX, shade]"
   />
   <!-- La bannière du poster, quand Michel la montre : la même image, découpée
