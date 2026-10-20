@@ -62,14 +62,15 @@
        tenue dès l'arrivée du verdict, invisible tant que la liste des
        contestables relue après la réponse ne l'a pas confirmé (pages/index.vue) :
        sinon elle pousse toute la carte une seconde plus tard. Une fois la
-       contestation partie, la même ligne en accuse réception. -->
+       contestation partie, la même ligne en accuse réception, et jaillit
+       comme le « Correct ! » : le geste a porté. -->
   <PlayText
     v-if="sent"
     role="receipt"
     :class="shade"
-    class="text-emerald-700"
+    class="text-emerald-700 motion-safe:animate-cheer"
   >
-    Contestation envoyée.
+    Contestation envoyée&nbsp;!
   </PlayText>
   <PlayText
     v-else-if="canDispute || disputeHeld"

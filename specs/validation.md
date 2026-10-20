@@ -59,7 +59,7 @@ Une réponse vide n'est **pas contestable** : accepter une telle contestation aj
 - Deux endroits : sur l'écran de **verdict**, au moment où le désaccord naît — le joueur vient de lire « faux » et la bonne réponse — et dans le **Volumen**, au camp, filet pour qui est passé trop vite à la question suivante.
 - L'écran de verdict n'est pas chronométré : contester n'ouvre aucune brèche.
 - **Bouton seul**, pas de message libre.
-- Sur l'écran de verdict, le bouton ne paraît que sur un verdict **faux** : un rattrapage réussi sur une question encore contestable ne se conteste pas. Une fois la contestation envoyée, « Contestation envoyée. » s'affiche à la place du bouton.
+- Sur l'écran de verdict, le bouton ne paraît que sur un verdict **faux** : un rattrapage réussi sur une question encore contestable ne se conteste pas. Une fois la contestation envoyée, « Contestation envoyée ! » jaillit à la place du bouton.
 
 ### Effet sur le joueur
 
