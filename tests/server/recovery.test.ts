@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { attempts, missedPool, recoveryQuestions, seenQuestions } from '../../server/db/schema'
+import { attempts, missedPool, recoveryQuestions, reservations, seenQuestions } from '../../server/db/schema'
+import { requireCamp } from '../../server/utils/camp'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -73,6 +74,29 @@ describe('attente et rattrapage', () => {
       // inscrite pour le parcours. Voir specs/ecrans.md#profil.
       expect(await db.select().from(attempts))
         .toMatchObject([{ seen: rules.poolSizeForRecovery - 1 }])
+    })
+
+    it('reprend au repos, sans le verdict de la chute déjà lu, quand le pool est trop maigre', async () => {
+      const [fatal] = await fillPool(rules.poolSizeForRecovery - 1)
+      // La question de la chute, déjà résolue et lue avant de redescendre.
+      await db.insert(reservations).values({
+        userId: player.id,
+        questionId: fatal ?? '',
+        mode: 'ascent',
+        expiresAt: NOW,
+        createdAt: NOW,
+        resolvedAt: NOW,
+        correct: false,
+        submittedAnswer: 'nawak',
+      })
+
+      const state = await readGameState(db, player, afterCooldown)
+
+      expect(state.phase).toBe('ascent')
+      expect(state.verdict).toBeNull()
+      expect(state.question).toBeNull()
+      // Au repos, le camp s'ouvre : Grimoire, Volumen et Sorts.
+      await expect(requireCamp(db, await reload(), afterCooldown)).resolves.toBeUndefined()
     })
 
     it('passe au rattrapage quand le pool est assez fourni', async () => {

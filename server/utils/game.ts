@@ -944,6 +944,11 @@ async function resumeIfPoolTooSmall(
     return
   }
 
+  // Le verdict de la chute a été lu avant de redescendre : le laisser en place
+  // ramènerait le joueur dessus au lieu du camp au repos. Voir
+  // specs/ecrans.md#camp-au-repos.
+  await db.delete(reservations).where(eq(reservations.userId, user.id))
+
   // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
   // contestable. Voir specs/validation.md#contestation.
   await closeAttempt(db, user, now)
