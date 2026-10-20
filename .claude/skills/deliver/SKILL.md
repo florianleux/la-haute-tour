@@ -97,6 +97,8 @@ Load and follow the `simplify` skill on the code implemented in step 4 (the diff
 
 **Gate 7**: Present proposed simplifications for approval. After applying, run typecheck and tests to verify no regressions.
 
+**Re-review after simplify**: if the simplifications changed any code, run step 5 again (both axes) on the simplify diff only — the changes made since Gate 6, not the whole issue diff. A simplification can break a convention or a spec behaviour that the first review already cleared. Present the results under `## Standards` and `## Spec` as in step 5; any finding goes back through the loop. If simplify changed nothing, skip this pass and say so.
+
 ### 8. Spec verification
 
 Re-read the original GitHub issue and any linked file under `specs/`. Go through each acceptance criterion:
@@ -154,6 +156,7 @@ Steps 4 → 5 → 6 → 7 → 8 form a loop. If any review, grilling, simplify, 
 - Note the specific issues
 - Return to step 4 to implement fixes for those specific issues
 - Re-run steps 5-8 on the fixes only (not the entire diff from scratch)
+- Code changed by simplify (step 7) always gets its own review pass before step 8 — see "Re-review after simplify"
 - Continue until all gates pass
 
 ## Scope boundaries
