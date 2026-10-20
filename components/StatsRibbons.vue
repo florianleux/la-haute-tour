@@ -75,30 +75,40 @@
         class="absolute left-[71%] top-[75%] w-[24%] text-center text-[3.4cqw] font-bold uppercase tracking-widest text-rose-950/70 sm:left-[83%] sm:top-[8%] sm:w-[14%] sm:text-left sm:text-[1.1cqw]">
         Vies
       </p>
-      <p
-        class="absolute left-[71%] top-[77.5%] w-[24%] text-center text-[5cqw] sm:text-[4cqw] leading-none sm:left-[82.6%] sm:top-[12%] sm:w-[14%] sm:text-left sm:text-[4cqw]">
-        <span
-          v-for="n in 3"
-          :key="n"
-          :class="[n <= state.lives ? 'text-rose-950' : 'text-rose-950/30', n === lostHeart && 'relative inline-block']"
-        >♥<template v-if="n === lostHeart">
-          <!-- Le cœur plein, posé sur le cœur éteint, qui tremble et éclate. -->
+      <!-- Trois cœurs d'ordinaire, jusqu'à cinq avec Vitalité : plus petits à
+           quatre, en quinconce sur deux lignes à cinq (trois puis deux). -->
+      <div
+        class="absolute left-[71%] top-[77.5%] flex w-[24%] flex-col items-center leading-none sm:left-[82.6%] sm:top-[12%] sm:w-[14%] sm:items-start"
+        :class="HEART_SIZES[heartCount]"
+      >
+        <p
+          v-for="(row, index) in heartRows"
+          :key="index"
+          :class="{ 'sm:pl-[0.45em]': index > 0 }"
+        >
           <span
-            class="absolute inset-0 text-rose-950 opacity-0 motion-safe:animate-heart-break"
-            :style="{ '--enter-delay': `${TICKS.lives}ms` }"
-          >♥</span>
-          <SparkleSpray
-            :sparks="HEART_SPRAY"
-            class="drop-shadow-[0_0_3px_#e11d48]"
-          />
-          <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
+            v-for="n in row"
+            :key="n"
+            :class="[n <= state.lives ? 'text-rose-950' : 'text-rose-950/30', n === lostHeart && 'relative inline-block']"
+          >♥<template v-if="n === lostHeart">
+            <!-- Le cœur plein, posé sur le cœur éteint, qui tremble et éclate. -->
             <span
-              class="whitespace-nowrap text-[9cqw] font-black text-white opacity-0 [text-shadow:0_2px_3px_rgb(76_5_25/0.9),0_0_0.4em_rgb(225_29_72/0.9)] motion-safe:animate-float-away sm:text-[3.6cqw]"
-              :style="{ '--enter-delay': `${TICKS.lives + BURST_MS}ms` }"
-            >-1</span>
-          </span>
-        </template></span>
-      </p>
+              class="absolute inset-0 text-rose-950 opacity-0 motion-safe:animate-heart-break"
+              :style="{ '--enter-delay': `${TICKS.lives}ms` }"
+            >♥</span>
+            <SparkleSpray
+              :sparks="HEART_SPRAY"
+              class="drop-shadow-[0_0_3px_#e11d48]"
+            />
+            <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
+              <span
+                class="whitespace-nowrap text-[9cqw] font-black text-white opacity-0 [text-shadow:0_2px_3px_rgb(76_5_25/0.9),0_0_0.4em_rgb(225_29_72/0.9)] motion-safe:animate-float-away sm:text-[3.6cqw]"
+                :style="{ '--enter-delay': `${TICKS.lives + BURST_MS}ms` }"
+              >-1</span>
+            </span>
+          </template></span>
+        </p>
+      </div>
     </div>
     <div :class="RIGHT" class="sm:[--enter-delay:0.37s]">
       <div :class="DESK_SLICE" class="sm:[clip-path:inset(32%_0_40%_82.2%)]" />
@@ -172,6 +182,26 @@ const props = defineProps<{
   /** La question qui vient d'être jouée a coûté une vie : son cœur éclate. */
   lifeLost?: boolean
 }>()
+
+/**
+ * Les cœurs du ruban, en lignes : trois au moins, le cœur éteint d'une
+ * Vitalité noire compris ; autant que la tentative en compte au-delà, cinq au
+ * plus. À cinq, trois puis deux, en quinconce. Voir specs/bonus.md (Vitalité).
+ */
+const heartCount = computed(() => Math.min(5, Math.max(3, props.state.maxLives, props.state.lives)))
+
+const heartRows = computed((): number[][] => {
+  const hearts = Array.from({ length: heartCount.value }, (_, index) => index + 1)
+
+  return heartCount.value === 5 ? [hearts.slice(0, 3), hearts.slice(3)] : [hearts]
+})
+
+/** Plus il y a de cœurs, plus ils rapetissent, pour tenir dans le ruban. */
+const HEART_SIZES: Record<number, string> = {
+  3: 'text-[5cqw] sm:text-[4cqw]',
+  4: 'text-[4.2cqw] sm:text-[3.2cqw]',
+  5: 'text-[3.2cqw] sm:text-[2.9cqw]',
+}
 
 /** Le cœur qui vient de s'éteindre : le premier après ceux qui restent. */
 const lostHeart = computed(() => (props.lifeLost ? props.state.lives + 1 : null))

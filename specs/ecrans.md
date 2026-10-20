@@ -78,6 +78,8 @@ L'ascension **au repos** (voir [`spec.md`](./spec.md#glossaire)) s'affiche au ca
 
 Étage et vies, l'énoncé, un champ de réponse libre, et le **compte à rebours**. Le décompte n'est qu'un affichage de l'échéance fixée par le serveur ; le modifier ne change rien à l'arbitrage.
 
+Les **vies** se comptent en cœurs : trois d'ordinaire, autant que la tentative en compte au-delà (Vitalité), **cinq au plus**. Ils rapetissent à quatre ; à cinq, ils passent sur deux lignes en quinconce, trois puis deux.
+
 Une **icône par effet actif**, sur les questions concernées. Un joueur dont le timer démarre à 30 s trois jours après avoir lu l'avertissement doit pouvoir comprendre pourquoi plutôt que de croire à un bug. C'est un état, comme les vies — pas une action.
 
 Un **indicateur de question loot** avant de répondre, quand le passage en est une.

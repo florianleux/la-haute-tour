@@ -67,10 +67,14 @@ const effects = useState<EffectView[]>('test-play-effects', () => [
   ...Array.from({ length: 1 + Math.floor(Math.random() * 2) }, () => randomEffect('active', 'curse')),
 ])
 
+// En ascension, jamais zéro : à zéro vie, le joueur est en attente, pas en
+// train de répondre. Voir server/utils/mechanics.ts. `?vies=4` ou `?vies=5`
+// montre le ruban d'une tentative gonflée par Vitalité.
+const lives = useState('test-play-lives', () => Number(useRoute().query.vies) || 1 + Math.floor(Math.random() * 3))
+
 const state = ref(demoState({
-  // En ascension, jamais zéro : à zéro vie, le joueur est en attente, pas en
-  // train de répondre. Voir server/utils/mechanics.ts.
-  lives: 1 + Math.floor(Math.random() * 3),
+  lives: lives.value,
+  maxLives: Math.max(3, lives.value),
   // Palier 545, sur un étage qui en compte largement plus.
   floorSeen: 544,
   floorTotal: 1000,
