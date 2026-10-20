@@ -1,6 +1,7 @@
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { useDatabase } from '~~/server/db/client'
 import { items, users } from '~~/server/db/schema'
+import { introUnfinished } from '~~/server/utils/intro'
 import type { ItemId } from '~~/shared/utils/items'
 
 /**
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   const user = await requireAuth(event)
   const db = useDatabase()
   const now = new Date()
-  const unfinished = and(eq(users.id, user.id), isNull(users.introDoneAt))
+  const unfinished = introUnfinished(user.id)
 
   await db.batch([
     // Un INSERT … SELECT plutôt qu'un INSERT … VALUES : c'est lui qui porte

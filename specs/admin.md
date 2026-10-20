@@ -40,11 +40,11 @@
 
 ## Gestion des joueurs
 
-- **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
+- **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son nom d'aventurier s'il s'est nommé, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
 - **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
 - **Trois gestes** : *passer l'attente*, *rendre une vie*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
-- **Repartir de zéro** efface la partie du joueur (étage, vies, sorts en poche, Objets, genre, leçons de Michel, questions vues et ratées, effets, contestations n'y survivent pas) et le remet à l'étage 1, vies pleines, devant l'introduction à rejouer — c'est elle qui redonne le Fromage — même geste que pour un joueur test (voir plus bas), sans le monde scellé qui les sépare : celui-ci touche un vrai compte. Pensé pour un joueur bloqué ou testé en solo, pas pour un usage courant en partie live.
+- **Repartir de zéro** efface la partie du joueur (étage, vies, sorts en poche, Objets, nom d'aventurier, genre, leçons de Michel, questions vues et ratées, effets, contestations n'y survivent pas) et le remet à l'étage 1, vies pleines, devant l'introduction à rejouer — c'est elle qui redonne le Fromage — même geste que pour un joueur test (voir plus bas), sans le monde scellé qui les sépare : celui-ci touche un vrai compte. Pensé pour un joueur bloqué ou testé en solo, pas pour un usage courant en partie live.
   - Les effets effacés sont ceux qu'il subit **et** les sorts qu'il a lancés sur d'autres joueurs : ceux-là perdent les effets qu'il leur avait posés.
   - Les contestations effacées le sont toutes, en cours comme tranchées : gardée, une contestation tranchée interdirait de recontester une question ratée de nouveau. Les réponses qu'elle a fait accepter restent sur la question.
   - Ses compteurs repartent de zéro et ses succès restent, sauf pour un joueur test qui les perd : voir [`succes.md`](./succes.md#remise-à-zéro).

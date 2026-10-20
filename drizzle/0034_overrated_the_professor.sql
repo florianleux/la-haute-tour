@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `adventurer_name` text;

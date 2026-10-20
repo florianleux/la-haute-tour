@@ -40,6 +40,8 @@ describe('identité du joueur', () => {
       user: {
         id: userId,
         username: 'gandalf',
+        // Le joueur ne s'est pas encore nommé : son pseudo Discord en tient lieu.
+        displayName: 'gandalf',
         isAdmin: false,
         team: null,
         createdAt: '2026-09-01T10:00:00.000Z',
@@ -50,6 +52,14 @@ describe('identité du joueur', () => {
       impersonator: null,
       testPlayers: [],
     })
+  })
+
+  it('le montre sous le nom qu il s est donné, pseudo Discord gardé', async () => {
+    const userId = await createPlayer(db, { adventurerName: 'Bilbon' })
+
+    const response = await me(meRequest(await sessionCookieFor(userId)))
+
+    expect((await response.json()).user).toMatchObject({ username: 'gandalf', displayName: 'Bilbon' })
   })
 
   it('ne porte aucun état de jeu : il vient de l endpoint d état de jeu', async () => {

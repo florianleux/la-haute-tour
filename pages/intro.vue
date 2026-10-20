@@ -25,9 +25,11 @@
 // bannière : le joueur ne la choisit pas, l'admin l'a décidée en l'invitant
 // (voir specs/equipes.md).
 //
-// Le nom ne part nulle part : aucun compte, aucune API — le nommer pour de bon
-// est l'issue #53. Le genre, lui, est gardé sur le compte du joueur servi.
+// Le nom et le genre sont gardés sur le compte du joueur servi : le nom est
+// celui sous lequel le jeu le montrera ensuite (voir specs/spec.md, glossaire,
+// « Nom d'aventurier »).
 import type { Dialogue, DialogueLine, Speaker } from '~~/utils/dialogue'
+import { ADVENTURER_NAME_MAX_LENGTH } from '~~/shared/utils/adventurerName'
 import type { Gender } from '~~/shared/utils/genders'
 import { TEAM_IDS } from '~~/shared/utils/teams'
 import type { TeamId } from '~~/shared/utils/teams'
@@ -74,7 +76,7 @@ const GREETING_LINES: [DuoLine, ...DuoLine[]] = [
   {
     place: 'right',
     text: 'Donne-moi ton nom. Qu\'on sache au moins quoi raconter après.',
-    prompt: { label: 'Ton nom', minLength: 1, maxLength: 15 },
+    prompt: { label: 'Ton nom', minLength: 1, maxLength: ADVENTURER_NAME_MAX_LENGTH },
   },
 ]
 
@@ -391,6 +393,9 @@ async function end(): Promise<void> {
   switch (now.scene) {
     case 'greeting':
       step.value = { scene: 'question' }
+      // L'étape suivante est déjà posée : comme pour le genre plus bas, l'écriture
+      // ne retient pas le dialogue, et un échec se lit en console.
+      await $fetch('/api/profile/name', { method: 'PUT', body: { name: name.value } })
       break
     case 'question': {
       const reply = REPLIES[picked]

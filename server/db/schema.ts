@@ -69,6 +69,11 @@ export const users = sqliteTable('users', {
    */
   gender: text('gender', { enum: GENDERS }),
   /**
+   * Le nom que le joueur se donne à l'introduction, null tant qu'il ne l'a pas
+   * donné. Voir server/utils/names.ts.
+   */
+  adventurerName: text('adventurer_name'),
+  /**
    * Quand le joueur a fini l'introduction. Null tant qu'il ne l'a pas finie :
    * elle lui est alors rejouée à chaque connexion. Voir specs/spec.md
    * (glossaire, « Introduction »).

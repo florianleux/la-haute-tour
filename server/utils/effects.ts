@@ -1,5 +1,6 @@
-import { and, desc, eq, isNull, ne } from 'drizzle-orm'
+import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm'
 import { isBorneBy } from './mechanics'
+import { displayNameColumn } from './names'
 import { rulesForFloor } from './rules'
 import { rulesWithEffects, SPELLS } from './spellbook'
 import type { SpellLifetime, StakeRule } from './spellbook'
@@ -202,7 +203,7 @@ function buildEffectsQuery(db: Database, userId: number) {
     .select({
       spell: activeEffects.spell,
       face: activeEffects.face,
-      casterName: users.username,
+      casterName: displayNameColumn,
       anchoredAt: activeEffects.anchoredAt,
       targetCooldownStartedAt: activeEffects.targetCooldownStartedAt,
     })
@@ -265,7 +266,8 @@ function buildCastLogQuery(db: Database, casterId: number, limit: number) {
     .select({
       spell: activeEffects.spell,
       face: activeEffects.face,
-      targetName: users.username,
+      // Nullable ici : la jointure ouverte laisse un lancer sans cible.
+      targetName: sql<string | null>`${displayNameColumn}`,
       castAt: activeEffects.castAt,
     })
     .from(activeEffects)
@@ -313,7 +315,7 @@ function buildReceivedLogQuery(db: Database, userId: number, limit: number) {
     .select({
       spell: activeEffects.spell,
       face: activeEffects.face,
-      casterName: users.username,
+      casterName: displayNameColumn,
       castAt: activeEffects.castAt,
     })
     .from(activeEffects)

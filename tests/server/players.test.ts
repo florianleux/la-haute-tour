@@ -37,6 +37,7 @@ describe('fiches joueurs', () => {
     expect(await playerRoster(db, NOW)).toEqual([{
       userId,
       username: 'gandalf',
+      adventurerName: null,
       discordId: '123456789',
       avatar: null,
       floor: 1,
@@ -153,16 +154,16 @@ describe('repartir de zéro', () => {
     })
   })
 
-  // L'introduction rejouée redonne le Fromage et redemande le genre.
+  // L'introduction rejouée redonne le Fromage, redemande le nom et le genre.
   // Voir specs/admin.md#gestion-des-joueurs.
-  it('efface les Objets et le genre, et renvoie à l introduction', async () => {
-    await db.update(users).set({ introDoneAt: NOW, gender: 'FEMALE' }).where(eq(users.id, userId))
+  it('efface les Objets, le nom et le genre, et renvoie à l introduction', async () => {
+    await db.update(users).set({ introDoneAt: NOW, adventurerName: 'Bilbon', gender: 'FEMALE' }).where(eq(users.id, userId))
     await db.insert(items).values({ userId, item: 'CHEESE', obtainedAt: NOW })
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
 
     expect(await db.select().from(items).where(eq(items.userId, userId))).toEqual([])
-    expect(await loadPlayer(db, userId)).toMatchObject({ introDoneAt: null, gender: null })
+    expect(await loadPlayer(db, userId)).toMatchObject({ introDoneAt: null, adventurerName: null, gender: null })
   })
 
   // Michel redonne ses leçons à la partie neuve. Voir specs/admin.md#gestion-des-joueurs.

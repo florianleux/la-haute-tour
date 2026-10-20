@@ -193,6 +193,17 @@ describe('lancer et ancrage des effets', () => {
     ])
   })
 
+  // Le jeu montre le joueur sous le nom qu'il s'est donné, pas sous son pseudo
+  // Discord. Voir specs/spec.md (glossaire, « Nom d'aventurier »).
+  it('nomme lanceur et cible par leur nom d aventurier', async () => {
+    await db.update(users).set({ adventurerName: 'Bilbon' }).where(eq(users.id, userId))
+    await own('VITALITY')
+    await cast('VITALITY')
+
+    expect(await readEffects(userId)).toMatchObject([{ casterName: 'Bilbon' }])
+    expect(await readCastLog(db, await loadPlayer(db, userId))).toMatchObject([{ targetName: 'Bilbon' }])
+  })
+
   it('garde au journal un sort dont l effet est déjà mort', async () => {
     await own('VITALITY')
     await cast('VITALITY')

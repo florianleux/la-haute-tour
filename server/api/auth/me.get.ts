@@ -1,5 +1,6 @@
 import { useDatabase } from '~~/server/db/client'
 import { listTestPlayers } from '~~/server/utils/testPlayers'
+import { displayName } from '~~/server/utils/names'
 import type { User } from '~~/server/db/schema'
 
 /**
@@ -7,6 +8,8 @@ import type { User } from '~~/server/db/schema'
  * definition of where the player stands. See specs/architecture.md.
  */
 export type SessionUser = Pick<User, 'id' | 'username' | 'isAdmin' | 'team'> & {
+  /** Le nom que le jeu montre. Voir server/utils/names.ts. */
+  displayName: string
   /** ISO 8601: a `Date` doesn't survive the trip to the client. */
   createdAt: string
   /** Il a fini l'introduction : sans ça, toute page l'y ramène. */
@@ -53,6 +56,7 @@ function sessionUser(user: User): SessionUser {
   return {
     id: user.id,
     username: user.username,
+    displayName: displayName(user),
     isAdmin: user.isAdmin,
     team: user.team,
     createdAt: user.createdAt.toISOString(),

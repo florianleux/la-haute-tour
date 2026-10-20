@@ -6,6 +6,9 @@
         <p class="truncate font-semibold text-slate-100">
           {{ player.username }}
         </p>
+        <BaseHint v-if="player.adventurerName">
+          En jeu : {{ player.adventurerName }}
+        </BaseHint>
         <BaseHint>
           Étage {{ player.floor }} — {{ player.floorSeen }}/{{ player.floorTotal }} vues
         </BaseHint>

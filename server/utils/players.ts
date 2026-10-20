@@ -35,6 +35,8 @@ import type { TeamId } from '../../shared/utils/teams'
 export interface PlayerCard {
   userId: number
   username: string
+  /** Montré à côté du pseudo Discord. Voir server/utils/names.ts. */
+  adventurerName: string | null
   discordId: string
   /** Hash d'avatar Discord, null tant que le joueur ne s'est pas reconnecté. */
   avatar: string | null
@@ -121,6 +123,7 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
   return rows.map(row => ({
     userId: row.user.id,
     username: row.user.username,
+    adventurerName: row.user.adventurerName,
     discordId: row.user.discordId,
     avatar: row.user.avatar,
     floor: row.user.currentFloor,
@@ -182,8 +185,9 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         // Le premier coffre de la partie neuve est à nouveau à l'abri du Mimic.
         lastChest: null,
         // L'introduction se rejoue : elle redonne le Fromage et redemande le
-        // genre. Voir specs/admin.md#gestion-des-joueurs.
+        // nom et le genre. Voir specs/admin.md#gestion-des-joueurs.
         introDoneAt: null,
+        adventurerName: null,
         gender: null,
         // Michel redonne ses leçons à la partie neuve.
         campLessonAt: null,

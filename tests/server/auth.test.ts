@@ -54,6 +54,18 @@ describe('loginWithDiscord', () => {
     expect(result).toMatchObject({ status: 'ok', user: { username: 'mithrandir' } })
   })
 
+  // Le nom d'aventurier prime sur le pseudo à l'affichage : la connexion ne
+  // l'écrase pas. Voir specs/spec.md (glossaire, « Nom d'aventurier »).
+  it('ne touche jamais au nom d aventurier', async () => {
+    await db.insert(whitelist).values({ discordId: profile.discordId })
+    await loginWithDiscord(db, profile)
+    await db.update(users).set({ adventurerName: 'Bilbon' }).where(eq(users.discordId, profile.discordId))
+
+    const result = await loginWithDiscord(db, { ...profile, username: 'mithrandir' })
+
+    expect(result).toMatchObject({ status: 'ok', user: { username: 'mithrandir', adventurerName: 'Bilbon' } })
+  })
+
   it('préserve l état de jeu au re-login', async () => {
     await db.insert(whitelist).values({ discordId: profile.discordId })
     await loginWithDiscord(db, profile)

@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { and, eq, isNull } from 'drizzle-orm'
 import { useDatabase } from '~~/server/db/client'
 import { users } from '~~/server/db/schema'
+import { introUnfinished } from '~~/server/utils/intro'
 import { GENDERS } from '~~/shared/utils/genders'
 
 const bodySchema = z.object({
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   await useDatabase()
     .update(users)
     .set({ gender })
-    .where(and(eq(users.id, user.id), isNull(users.introDoneAt)))
+    .where(introUnfinished(user.id))
 
   return { ok: true }
 })

@@ -11,6 +11,7 @@ const { ADMIN_PLAYERS_KEY, useAdminPlayers } = await import('../../composables/u
 const card: PlayerCard = {
   userId: 7,
   username: 'gandalf',
+  adventurerName: null,
   discordId: '123456789012345678',
   avatar: 'a1b2c3',
   floor: 3,

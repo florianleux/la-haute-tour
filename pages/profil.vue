@@ -1,7 +1,7 @@
 <template>
   <BaseCard v-if="user" wide title="Profil">
     <template #lead>
-      {{ user.username }} — membre depuis le {{ memberSince }}.
+      {{ user.displayName }} — membre depuis le {{ memberSince }}.
     </template>
 
     <BaseNotice v-if="journeyFailed">

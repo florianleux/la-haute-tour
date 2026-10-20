@@ -40,7 +40,7 @@ Toute page non listée comme ouverte redirige vers la connexion.
 
 ## Profil
 
-Pseudo Discord, date d'inscription, **parcours**, bouton de déconnexion.
+Nom d'aventurier (pseudo Discord tant qu'il ne s'est pas nommé), date d'inscription, **parcours**, bouton de déconnexion.
 
 Le parcours dit le chemin déjà fait, jamais l'état de l'instant :
 

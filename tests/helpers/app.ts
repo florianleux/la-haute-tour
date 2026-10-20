@@ -45,13 +45,14 @@ export interface FakeNuxt {
 export const testUser: SessionUser = {
   id: 1,
   username: 'gandalf',
+  displayName: 'gandalf',
   isAdmin: false,
   team: null,
   createdAt: '2026-09-01T10:00:00.000Z',
   introDone: true,
 }
 
-export const testAdmin: SessionUser = { ...testUser, id: 2, username: 'saruman', isAdmin: true }
+export const testAdmin: SessionUser = { ...testUser, id: 2, username: 'saruman', displayName: 'saruman', isAdmin: true }
 
 /** La fenêtre pendant laquelle Nuxt refuse de recharger deux fois le même chemin. */
 const RELOAD_GUARD_MS = 10_000
