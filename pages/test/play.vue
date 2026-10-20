@@ -75,7 +75,7 @@ const state = ref(demoState({
   floorSeen: 544,
   floorTotal: 1000,
   // Série : question 995.
-  attemptSeen: 995,
+  streak: 12,
   seenTotal: 1_204,
   spellDiscovered: true,
   lessonsDone: ['camp'],

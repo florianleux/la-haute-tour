@@ -55,10 +55,10 @@
       <p
         class="absolute left-[5%] top-[88%] w-[24%] text-center text-[7cqw] font-bold text-emerald-950 sm:left-[3%] sm:top-[69%]  sm:w-[14%] sm:text-right sm:text-[3.3cqw]">
         <span
-          :class="counted && BUMPED"
-          :style="{ '--enter-delay': `${TICKS.attemptSeen}ms` }"
-        >{{ state.attemptSeen - (ticked.attemptSeen ? 0 : 1) }}<span
-          v-if="counted"
+          :class="streakGained && BUMPED"
+          :style="{ '--enter-delay': `${TICKS.streak}ms` }"
+        >{{ state.streak - (ticked.streak ? 0 : 1) }}<span
+          v-if="streakGained"
           :class="PLUS_ONE"
         >+1</span></span>
       </p>
@@ -164,8 +164,9 @@ const props = defineProps<{
   state: GameState
   effects: EffectView[]
   /**
-   * La question qui vient d'être jouée a compté : Palier et Série viennent de
-   * prendre un, et le disent — le chiffre gonfle, un « +1 » s'en échappe.
+   * La question qui vient d'être jouée a compté : Palier vient de prendre un,
+   * et Série aussi si la réponse était juste — le chiffre gonfle, un « +1 »
+   * s'en échappe. Une faute remet la Série à zéro, sans fanfare.
    */
   counted?: boolean
   /** La question qui vient d'être jouée a coûté une vie : son cœur éclate. */
@@ -188,7 +189,7 @@ const PLUS_ONE = 'pointer-events-none absolute left-full top-0 whitespace-nowrap
  * après le « Correct ! », décalés de 0,1 s l'un de l'autre. Le délai des
  * animations et le changement de chiffre lisent la même valeur.
  */
-const TICKS = { floorSeen: 450, attemptSeen: 550, lives: 450 } as const
+const TICKS = { floorSeen: 450, streak: 550, lives: 450 } as const
 
 /**
  * Le cœur perdu éclate à 55 % de `animate-heart-break` (0,7 s) : c'est là que
@@ -211,16 +212,18 @@ const HEART_SPRAY = Array.from({ length: 6 }, (_, index) => {
 // en même temps que le « +1 » éclot : sinon le « +1 » s'ajoute à un chiffre
 // déjà compté. Ce n'est qu'un retard d'affichage — la valeur montrée reste
 // celle de l'état, moins le un qui n'a pas encore été dit.
-const ticked = reactive({ floorSeen: !props.counted, attemptSeen: !props.counted })
+// La Série ne prend son un que sur une réponse juste. Voir specs/spec.md#glossaire.
+const streakGained = computed(() => props.counted && props.state.verdict?.correct === true)
+
+const ticked = reactive({ floorSeen: !props.counted, streak: !streakGained.value })
 
 onMounted(() => {
-  if (!props.counted) {
-    return
-  }
-  for (const key of ['floorSeen', 'attemptSeen'] as const) {
-    setTimeout(() => {
-      ticked[key] = true
-    }, TICKS[key])
+  for (const key of ['floorSeen', 'streak'] as const) {
+    if (!ticked[key]) {
+      setTimeout(() => {
+        ticked[key] = true
+      }, TICKS[key])
+    }
   }
 })
 

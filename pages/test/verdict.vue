@@ -54,7 +54,7 @@ const state = useState<GameState>('test-verdict-state', () => {
     floorSeen: 544,
     floorTotal: 1000,
     // Série : question 995.
-    attemptSeen: 995,
+    streak: 12,
     chest: randomChest(),
     effects: Array.from({ length: Math.floor(Math.random() * 4) }, () => randomEffect('active')),
   })

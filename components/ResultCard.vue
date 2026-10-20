@@ -6,9 +6,9 @@
     :lesson="lesson"
   >
     <template #ribbons>
-      <!-- Palier et Série prennent un sur tout verdict d'ascension, juste ou
-           faux (le rattrapage n'arrive pas ici, voir RecoveryCard), sauf
-           quand l'appelant dit le contraire (`uncounted`). -->
+      <!-- Palier prend un sur tout verdict d'ascension, juste ou faux, et
+           Série sur un juste (le rattrapage n'arrive pas ici, voir
+           RecoveryCard), sauf quand l'appelant dit le contraire (`uncounted`). -->
       <StatsRibbons
         :state="state"
         :effects="effects"

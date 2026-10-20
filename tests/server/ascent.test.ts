@@ -118,6 +118,19 @@ describe('boucle d ascension', () => {
       ])
     })
 
+    it('rend la Série : un de plus sur une bonne réponse, zéro sur une faute', async () => {
+      await db.update(users).set({ streak: 2 }).where(eq(users.id, player.id))
+      const at = new Date(NOW.getTime() + 3_000)
+
+      const right = await submitAnswer(db, await reload(), 'Bordeaux', at)
+      expect(right.streak).toBe(3)
+
+      await createQuestion(db, { statement: 'Autre', accepted: ['Lyon'] })
+      await serveNextQuestion(db, await reload(), at)
+      const wrong = await submitAnswer(db, await reload(), 'Toulouse', at)
+      expect(wrong.streak).toBe(0)
+    })
+
     it('compte la question comme vue, juste ou fausse', async () => {
       await submitAnswer(db, player, 'Toulouse', new Date(NOW.getTime() + 3_000))
 

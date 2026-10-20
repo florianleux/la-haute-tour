@@ -41,7 +41,7 @@ const state = computed(() => demoState({
   lives: chest.value.mimic ? 0 : 2,
   floorSeen: 49,
   floorTotal: 166,
-  attemptSeen: 12,
+  streak: 12,
   seenTotal: 1_204,
   spellDiscovered: true,
   lessonsDone: ['camp'],

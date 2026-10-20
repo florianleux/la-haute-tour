@@ -146,8 +146,8 @@ export interface GameState {
   floorSeen: number
   /** Questions que l'étage courant contient. */
   floorTotal: number
-  /** Questions vues depuis le début de la tentative en cours. */
-  attemptSeen: number
+  /** Bonnes réponses d'affilée dans la tentative en cours : le ruban « Série ». */
+  streak: number
   /**
    * Questions vues depuis la dernière remise à zéro : ce que relit l'onglet
    * Toutes du Volumen. À zéro, le camp ne montre pas son parchemin.
@@ -760,7 +760,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
       : null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
-    attemptSeen: user.attemptSeen,
+    streak: user.streak,
     seenTotal: user.seenTotal,
     spellDiscovered: snapshot.spellDiscovered,
     firstCastPending: snapshot.firstCastPending,

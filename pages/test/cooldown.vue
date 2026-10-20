@@ -54,7 +54,7 @@ const state = ref(demoState({
   cooldownUntil: atRest ? null : new Date(Date.now() + 252_000).toISOString(),
   floorSeen: 544,
   floorTotal: 1000,
-  attemptSeen: 995,
+  streak: 12,
   seenTotal: 1_204,
   spellDiscovered: true,
   lessonsDone: ['camp'],

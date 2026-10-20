@@ -91,7 +91,7 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     nextRecovery: null,
     floorSeen: 0,
     floorTotal: 0,
-    attemptSeen: 0,
+    streak: 0,
     seenTotal: 0,
     spellDiscovered: false,
     firstCastPending: false,
