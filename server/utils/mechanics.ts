@@ -21,7 +21,7 @@ import type { MissedPoolEntry, Reservation, User } from '../db/schema'
 export type AnswerSource = 'player' | 'focusLoss'
 
 /** Voir specs/mecanique.md#machine-à-états — la seule définition de « où en est le joueur ». */
-export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'gameOver'
+export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'deckEnd' | 'gameOver'
 
 export interface PhaseInput {
   user: Pick<User, 'lives' | 'currentFloor' | 'cooldownUntil'>
@@ -34,6 +34,8 @@ export interface PhaseInput {
   seen: number
   /** Questions que l'étage courant contient. */
   floorTotal: number
+  /** Questions que l'étage d'au-dessus contient : zéro, il n'y a rien vers où monter. */
+  nextFloorTotal: number
 }
 
 /**
@@ -41,13 +43,18 @@ export interface PhaseInput {
  * réservation, de la fin d'attente et du décompte des questions vues.
  */
 export function phaseOf(input: PhaseInput, now: Date): Phase {
-  const { user, hasLiveReservation, seen, floorTotal } = input
+  const { user, hasLiveReservation, seen, floorTotal, nextFloorTotal } = input
 
   // L'étage épuisé prime sur les vies : le Pool Échecs de cet étage est sur le
   // point d'être abandonné, donc il n'y a plus rien à y rattraper — et un joueur
   // qui n'a plus rien à monter n'a plus de vies à récupérer.
   if (!hasLiveReservation && seen >= floorTotal) {
-    return user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'floorEnd'
+    if (user.currentFloor >= FLOOR_COUNT) {
+      return 'gameOver'
+    }
+    // Un deck réduit, importé sur un seul étage : le palier mènerait à un étage
+    // vide. Voir specs/spec.md#glossaire (Fin du deck).
+    return nextFloorTotal > 0 ? 'floorEnd' : 'deckEnd'
   }
 
   if (user.lives <= 0) {

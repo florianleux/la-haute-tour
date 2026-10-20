@@ -75,6 +75,8 @@ describe('fiches joueurs', () => {
 
   it('annonce le palier quand l étage est épuisé', async () => {
     const questionIds = await seedFloor(db, 1, 2)
+    // Le palier mène quelque part : sans question au-dessus, c'est la fin du deck.
+    await seedFloor(db, 2, 1)
     const userId = await createPlayer(db, { currentFloor: 1 })
     await markSeen(db, userId, questionIds, { floor: 1, seenAt: NOW })
 

@@ -24,7 +24,7 @@ import {
   playedToday,
   unlock,
 } from './achievements'
-import { floorSizeQuery, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
+import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { FIRST_SPELL, isCooldownBound } from '../../shared/utils/spells'
@@ -210,6 +210,8 @@ export interface PlayerSnapshot {
   gameClosed: boolean
   /** Questions the current floor holds. */
   floorTotal: number
+  /** Questions que l'étage d'au-dessus contient : zéro, c'est la fin du deck. */
+  nextFloorTotal: number
   /** Au moins un sort en poche ou déjà lancé. Lu avec le joueur. */
   spellDiscovered: boolean
   /** Le premier sort en poche, et rien encore lancé. Lu avec le joueur. */
@@ -234,6 +236,7 @@ function phaseOfSnapshot(snapshot: PlayerSnapshot, hasLiveReservation: boolean, 
     hasLiveReservation,
     seen: snapshot.user.floorSeen,
     floorTotal: snapshot.floorTotal,
+    nextFloorTotal: snapshot.nextFloorTotal,
   }, now)
 }
 
@@ -288,6 +291,7 @@ function snapshotQueries(db: Database, userId: number) {
         // lue. Voir server/utils/deck.ts.
         floorTotal: sql<number>`coalesce((select ${deckFloors.total} from ${deckFloors}
           where ${deckFloors.floor} = ${users.currentFloor}), 0)`,
+        nextFloorTotal,
         // Lu avec le joueur, pour la même raison : le camp pose son grimoire
         // dessus, à chaque lecture d'état.
         spellDiscovered: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(eq(pocketSpells.userId, users.id)))}
@@ -325,6 +329,7 @@ function toSnapshot([[row], [held], effects, recoveryRun]: BatchResponse<Snapsho
     user: row.user,
     effects: toEffectViews(effects, row.user),
     floorTotal: row.floorTotal,
+    nextFloorTotal: row.nextFloorTotal,
     spellDiscovered: row.spellDiscovered === 1,
     firstCastPending: row.firstCastPending === 1,
     gameClosed: row.gameClosed === 1,
@@ -858,18 +863,19 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * Grimoire faisait, c'est l'acter **une seconde fois, ailleurs**, sans que rien
  * ne l'annonce. Voir server/utils/pocketSpells.ts.
  *
- * Un seul aller-retour, et deux lignes lues : le joueur porte déjà son décompte
- * de questions vues, il ne reste qu'à savoir s'il tient une question et ce que
- * son étage contient. Voir server/utils/deck.ts.
+ * Un seul aller-retour, et trois lignes lues : le joueur porte déjà son décompte
+ * de questions vues, il ne reste qu'à savoir s'il tient une question, ce que
+ * son étage contient et si celui d'au-dessus en contient. Voir server/utils/deck.ts.
  */
 export async function readPhase(db: Database, user: User, now: Date): Promise<Phase> {
-  const [holding, deckFloor] = await db.batch([
+  const [holding, deckFloor, nextDeckFloor] = await db.batch([
     db
       .select({ userId: reservations.userId })
       .from(reservations)
       .where(and(eq(reservations.userId, user.id), isNull(reservations.resolvedAt)))
       .limit(1),
     floorSizeQuery(db, user.currentFloor),
+    floorSizeQuery(db, user.currentFloor + 1),
   ])
 
   return phaseOf({
@@ -877,6 +883,7 @@ export async function readPhase(db: Database, user: User, now: Date): Promise<Ph
     hasLiveReservation: holding.length > 0,
     seen: user.floorSeen,
     floorTotal: sizeOf(deckFloor),
+    nextFloorTotal: sizeOf(nextDeckFloor),
   }, now)
 }
 
@@ -1013,7 +1020,9 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // débloquer non plus — la fin du jeu s'est gagnée sur la question qui l'a
   // atteinte, parce que cet écran-ci n'a aucune action et que personne n'y
   // repasse. Voir specs/succes.md#progression.
-  if (phase === 'gameOver') {
+  // La fin du deck aussi : rien à tirer, et surtout pas de palier vers un étage
+  // vide. Voir specs/spec.md#glossaire (Fin du deck).
+  if (phase === 'gameOver' || phase === 'deckEnd') {
     return withUnlocked(stateFrom(current, now), unlocked)
   }
 

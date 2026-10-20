@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
 import { activeEffects, deckFloors, reservations, users } from '../db/schema'
+import { nextFloorTotal } from './deck'
 import { countsTowardMaxBoons, drawByRank, hasStarted, isBorneBy, phaseOf } from './mechanics'
 import { rulesForFloor } from './rules'
 import { faceFor, SPELL_FACES } from '../../shared/utils/spells'
@@ -65,6 +66,7 @@ function buildCandidatesQuery(db: Database, caster: User, kind?: DrawnTargetKind
       // Ce que l'étage du candidat contient, pour savoir s'il a fini sa partie.
       // Lu au deck en une ligne jointe, comme les fiches de l'administration.
       floorTotal: deckFloors.total,
+      nextFloorTotal,
       // La question qu'il tient peut-être. Jointe plutôt que comptée : un joueur
       // n'a jamais qu'une réservation, et elle porte son identifiant en clé —
       // la jointure lit donc une ligne, là où un `count(*)` en parcourrait.
@@ -209,7 +211,7 @@ async function unsaturatedPools(db: Database, pools: Partial<Record<SpellFace, U
   return { boon: open('boon'), curse: open('curse') }
 }
 
-type Candidate = { user: User, floorTotal: number | null, heldQuestion: string | null }
+type Candidate = { user: User, floorTotal: number | null, nextFloorTotal: number, heldQuestion: string | null }
 
 /**
  * Un joueur que le tirage garde. Sont écartés ceux qui ont fini leur partie —
@@ -219,7 +221,7 @@ type Candidate = { user: User, floorTotal: number | null, heldQuestion: string |
  * Le filtre passe **avant** le classement : un joueur retiré du pool ne pèse
  * plus dans la distribution. Voir specs/bonus.md#tirage-de-la-cible.
  */
-function isEligible({ user, floorTotal, heldQuestion }: Candidate, now: Date): boolean {
+function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion }: Candidate, now: Date): boolean {
   const hasLiveReservation = heldQuestion !== null
 
   const phase = phaseOf({
@@ -227,7 +229,10 @@ function isEligible({ user, floorTotal, heldQuestion }: Candidate, now: Date): b
     hasLiveReservation,
     seen: user.floorSeen,
     floorTotal: floorTotal ?? 0,
+    nextFloorTotal,
   }, now)
 
+  // ponytail: la fin du deck reste ciblable — un état de beta, sans prochaine
+  // tentative non plus. À écarter aussi si un deck réduit sert au-delà d'une beta.
   return phase !== 'gameOver' && hasStarted(user, hasLiveReservation)
 }

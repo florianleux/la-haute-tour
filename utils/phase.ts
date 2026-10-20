@@ -17,6 +17,8 @@ export function phaseLabel(phase: Phase): string {
       return "En rattrapage";
     case "floorEnd":
       return "Au palier";
+    case "deckEnd":
+      return "Deck épuisé";
     case "gameOver":
       return "Partie terminée";
   }
@@ -325,11 +327,12 @@ export function playView(
     };
   }
 
-  // La fin de partie n'a plus aucune action. Voir specs/ecrans.md#principes.
+  // La fin de partie n'a plus aucune action, la fin du deck non plus.
+  // Voir specs/ecrans.md#principes.
   return {
     screen,
     card: "result",
-    action: state.phase === "gameOver" ? null : next,
+    action: state.phase === "gameOver" || state.phase === "deckEnd" ? null : next,
   };
 }
 

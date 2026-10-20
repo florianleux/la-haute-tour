@@ -80,6 +80,22 @@
       </PlayText>
     </template>
 
+    <!-- Voir specs/spec.md#glossaire (Fin du deck). -->
+    <template v-else-if="screen.phase === 'deckEnd'">
+      <PlayText
+        role="headline"
+        class="text-emerald-700"
+      >
+        Tu as vu toutes les questions de la beta.
+      </PlayText>
+      <PlayText
+        role="aside"
+        class="text-amber-800/80"
+      >
+        Merci d'avoir joué. La suite arrive avec la vraie tour.
+      </PlayText>
+    </template>
+
     <template #action>
       <!-- Le libellé et le geste se décident dans utils/phase.ts (playView) :
            entrer dans le coffre, redescendre au poster, ou la suite. -->

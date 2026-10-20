@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { addQuestion, removeQuestion } from '../../server/utils/questions'
 import { floorSize } from '../../server/utils/deck'
-import { serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
@@ -96,6 +96,8 @@ describe('tirage d une question', () => {
     for (let i = 0; i < wanted; i++) {
       await createQuestion(db, { statement: `Question ${i} ?` })
     }
+    // Le palier mène quelque part : sans question au-dessus, c'est la fin du deck.
+    await createQuestion(db, { floor: 2 })
 
     const served: string[] = []
     for (let i = 0; i < wanted; i++) {
@@ -109,8 +111,9 @@ describe('tirage d une question', () => {
     // doublon ni trou, et s'arrêter pile au palier.
     expect(new Set(served).size).toBe(wanted)
 
-    const end = await serveNextQuestion(db, await loadPlayer(db, player.id), NOW)
-    expect(end.phase).toBe('floorEnd')
+    // Lu plutôt que cliqué : le clic suivant franchirait le palier.
+    const end = await readGameState(db, await loadPlayer(db, player.id), NOW)
+    expect(end).toMatchObject({ phase: 'floorEnd', floor: 1 })
   })
 
   it('sert la même séquence à tous les joueurs', async () => {

@@ -144,6 +144,29 @@ describe('palier et fin de partie', () => {
     })
   })
 
+  // Un deck réduit, importé sur le seul premier étage : au bout, pas de palier
+  // vers un étage vide. Voir specs/spec.md#glossaire (Fin du deck).
+  describe('fin du deck', () => {
+    beforeEach(async () => {
+      await seeQuestion(1)
+    })
+
+    it('annonce la fin du deck quand l étage d au-dessus est vide', async () => {
+      const state = await readGameState(db, player, NOW)
+
+      expect(state).toMatchObject({ phase: 'deckEnd', floor: 1 })
+    })
+
+    it('ne franchit rien : le joueur reste à son étage, sans question', async () => {
+      const state = await serveNextQuestion(db, player, NOW)
+
+      expect(state).toMatchObject({ phase: 'deckEnd', floor: 1 })
+      expect(state.question).toBeNull()
+      expect((await reload()).currentFloor).toBe(1)
+      expect(await db.select().from(reservations)).toHaveLength(0)
+    })
+  })
+
   describe('fin de partie', () => {
     beforeEach(async () => {
       await standOn(FLOOR_COUNT)

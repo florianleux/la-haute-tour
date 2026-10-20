@@ -14,6 +14,7 @@ import {
   seenQuestions,
   users,
 } from '../db/schema'
+import { nextFloorTotal } from './deck'
 import { phaseOf, startOfGame } from './mechanics'
 import { numericRouteId } from './routes'
 import type { H3Event } from 'h3'
@@ -101,6 +102,7 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
       // sous-requête, il coûtait tout l'étage **par joueur listé** : mille
       // lignes fois vingt fiches pour ouvrir l'onglet. Voir server/utils/deck.ts.
       floorTotal: deckFloors.total,
+      nextFloorTotal,
       liveReservations: sql<number>`(select count(*) from ${reservations}
         where ${reservations.userId} = ${users.id}
           and ${reservations.resolvedAt} is null)`,
@@ -128,6 +130,7 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
       hasLiveReservation: row.liveReservations > 0,
       seen: row.user.floorSeen,
       floorTotal: row.floorTotal ?? 0,
+      nextFloorTotal: row.nextFloorTotal,
     }, now),
     floorSeen: row.user.floorSeen,
     floorTotal: row.floorTotal ?? 0,

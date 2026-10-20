@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { parseArgs } from 'node:util'
 import { z } from 'zod'
 import { createDatabase, type Database } from '../server/db/client'
 import { CATEGORY_LABELS, type CategoryCode } from '../shared/utils/categories'
@@ -80,7 +81,11 @@ function shuffle<T>(values: T[], random: () => number): void {
  *
  * `random` est injectable pour que la répartition puisse se rejouer sous test.
  */
-export function parseQuestions(raw: unknown, random: () => number = Math.random): ParseResult {
+export function parseQuestions(
+  raw: unknown,
+  random: () => number = Math.random,
+  floors: number = FLOOR_COUNT,
+): ParseResult {
   if (!Array.isArray(raw)) {
     throw new Error('Le fichier doit contenir un tableau de questions')
   }
@@ -111,7 +116,7 @@ export function parseQuestions(raw: unknown, random: () => number = Math.random)
 
   const parsed = kept.map((question, position) => ({
     ...question,
-    floor: (position % FLOOR_COUNT) + 1,
+    floor: (position % floors) + 1,
   }))
 
   return { parsed, total: raw.length, skipped }
@@ -221,14 +226,20 @@ export async function importQuestions(
 }
 
 async function main(): Promise<void> {
-  const [filePath] = process.argv.slice(2)
-  if (!filePath) {
-    console.error('Usage : pnpm db:import <fichier.json>')
+  const { values, positionals: [filePath] } = parseArgs({
+    allowPositionals: true,
+    options: { floors: { type: 'string', default: String(FLOOR_COUNT) } },
+  })
+  // `--floors 1` : un deck réduit sur le seul premier étage, qui finit sur la
+  // fin du deck plutôt que sur un palier. Voir specs/spec.md#glossaire.
+  const floors = Number(values.floors)
+  if (!filePath || !Number.isInteger(floors) || floors < 1 || floors > FLOOR_COUNT) {
+    console.error(`Usage : pnpm db:import <fichier.json> [--floors 1..${FLOOR_COUNT}]`)
     process.exit(1)
   }
 
   const raw: unknown = JSON.parse(await readFile(filePath, 'utf8'))
-  const { parsed, total, skipped } = parseQuestions(raw)
+  const { parsed, total, skipped } = parseQuestions(raw, Math.random, floors)
 
   const db = await createDatabase()
   const counts = await importQuestions(db, parsed)
@@ -246,7 +257,7 @@ async function main(): Promise<void> {
   console.log('\n  par étage')
   for (let floor = 1; floor <= FLOOR_COUNT; floor += 1) {
     const count = counts.byFloor.get(floor) ?? 0
-    console.log(`    étage ${floor}  ${count}${count === 0 ? '  ⚠ vide' : ''}`)
+    console.log(`    étage ${floor}  ${count}${count === 0 && floor <= floors ? '  ⚠ vide' : ''}`)
   }
   console.log()
 }

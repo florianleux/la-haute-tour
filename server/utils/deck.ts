@@ -51,6 +51,14 @@ export function sizeOf(rows: { total: number }[]): number {
 }
 
 /**
+ * Ce que contient l'étage au-dessus de celui du joueur, lu dans la requête qui
+ * lit le joueur : une ligne d'index, pas d'aller-retour. Zéro, c'est la fin du
+ * deck. Voir specs/spec.md#glossaire (Fin du deck).
+ */
+export const nextFloorTotal = sql<number>`coalesce((select ${deckFloors.total} from ${deckFloors}
+  where ${deckFloors.floor} = ${users.currentFloor} + 1), 0)`
+
+/**
  * Les questions que le joueur n'a pas encore rencontrées à son étage, dans
  * l'ordre du deck : celles dont le rang dépasse son curseur d'étage. Un saut
  * dans l'index, `limit` lignes lues, quel que soit le nombre de questions que

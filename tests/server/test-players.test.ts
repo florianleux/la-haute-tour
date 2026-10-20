@@ -217,6 +217,8 @@ describe('gestes sur un joueur test', () => {
     })
 
     it('mène au palier quand tout l étage a été vu', async () => {
+      // Le palier mène quelque part : sans question au-dessus, c'est la fin du deck.
+      await createQuestion(db, { floor: 2 })
       await advanceTestPlayer(db, await reload(), { count: 12, correct: true }, NOW)
 
       expect((await readGameState(db, await reload(), NOW)).phase).toBe('floorEnd')

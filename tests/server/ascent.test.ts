@@ -249,6 +249,8 @@ describe('boucle d ascension', () => {
     it('atteint le palier quand toutes les questions de l étage sont vues', async () => {
       const questionId = await createQuestion(db)
       await markSeen(db, player.id, questionId, { floor: 1 })
+      // Le palier mène quelque part : sans question au-dessus, c'est la fin du deck.
+      await createQuestion(db, { floor: 2 })
 
       const state = await readGameState(db, player, NOW)
 
