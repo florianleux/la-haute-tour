@@ -26,7 +26,7 @@
         v-model="selected"
         :discovered="discovered"
         :counts="counts"
-        :only="lesson ? (pickAsked ? FIRST_SPELL : null) : undefined"
+        :only="pickOnly"
         v-bind="fadeLayer(closing, '0.5s')"
       />
 
@@ -174,6 +174,14 @@ const emit = defineEmits<{
 /** Michel demande de choisir Vitalité à la page des sorts. */
 const pickAsked = computed(() => asks(props.lesson, 'spellPage'))
 
+/** Le seul sort qui se choisit sur la page : en leçon, celui que Michel demande, ou aucun ; hors leçon, tous. */
+const pickOnly = computed(() => {
+  if (!props.lesson) {
+    return undefined
+  }
+  return pickAsked.value ? FIRST_SPELL : null
+})
+
 /** Michel demande de la lancer sur soi. */
 const castAsked = computed(() => asks(props.lesson, 'castSelf'))
 
@@ -250,12 +258,20 @@ watch(selected, (spell) => {
   }
 })
 
-// « Sur moi » éteint — le joueur porte déjà deux magies blanches, qu'on a pu
-// lui lancer avant sa première visite — : le lancer ne se peut pas, et la
-// leçon, qui ne se referme pas avant la fin, passe sans lui. L'état servi ne
-// le sait pas : le dire coûterait une requête de plus à chaque lecture.
+// Un geste que le livre ne peut pas faire ne bloque pas la leçon, qui ne se
+// referme pas avant la fin : Vitalité absente de ce qu'il a lu — sa lecture a
+// échoué —, et le choix passe ; plus d'exemplaire ou « Sur moi » éteint — le
+// joueur porte déjà deux magies blanches, qu'on a pu lui lancer avant sa
+// première visite —, et le lancer passe. L'état servi ne sait pas « Sur moi » :
+// le dire coûterait une requête de plus à chaque lecture.
+watch(pickAsked, (asked) => {
+  if (asked && !discovered.value.includes(FIRST_SPELL)) {
+    emit('chosen')
+  }
+}, { immediate: true })
+
 watch(castAsked, (asked) => {
-  if (asked && !canTargetSelf.value) {
+  if (asked && (!count.value || !canTargetSelf.value)) {
     emit('cast')
   }
 }, { immediate: true })

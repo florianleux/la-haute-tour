@@ -144,9 +144,8 @@ export function practiceVerdictLesson({ correct }: { correct: boolean }): Lesson
 /**
  * La leçon du Grimoire, à la visite du camp qui suit le premier sort : Michel
  * fait ouvrir le grimoire, choisir Vitalité, la lancer sur soi, puis refermer.
- * Sans lancer possible (`guided` faux), les deux gestes deviennent des bulles :
- * les mêmes répliques, au même rang — la leçon peut passer de l'une à l'autre
- * en cours de route. Sans équipe, ni allié ni ennemi.
+ * Sans lancer possible (`guided` faux), les deux gestes deviennent des bulles,
+ * sur les mêmes répliques. Sans équipe, ni allié ni ennemi.
  * Voir specs/ecrans.md#leçons-de-michel (Grimoire).
  */
 export function spellbookLesson({ team, guided }: { team: TeamId | null, guided: boolean }): LessonLine[] {

@@ -271,6 +271,10 @@ function holdsQuestion(snapshot: PlayerSnapshot): boolean {
  * Voir tests/server/query-budget.test.ts.
  */
 function snapshotQueries(db: Database, userId: number) {
+  // Le joueur a déjà lancé un sort : lu deux fois, par le sort découvert et le
+  // premier lancer.
+  const hasCast = exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))
+
   return [
     db
       .select({
@@ -287,9 +291,9 @@ function snapshotQueries(db: Database, userId: number) {
         // Lu avec le joueur, pour la même raison : le camp pose son grimoire
         // dessus, à chaque lecture d'état.
         spellDiscovered: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(eq(pocketSpells.userId, users.id)))}
-          or ${exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))})`,
+          or ${hasCast})`,
         firstCastPending: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(and(eq(pocketSpells.userId, users.id), eq(pocketSpells.spell, FIRST_SPELL))))}
-          and not ${exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))})`,
+          and not ${hasCast})`,
       })
       .from(users)
       .where(eq(users.id, userId))
