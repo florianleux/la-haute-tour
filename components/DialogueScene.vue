@@ -8,7 +8,7 @@
        En desktop, la largeur manque plutôt que la hauteur, et le centre
        reprend. -->
   <div
-    class="fixed inset-0 z-0 bg-cover bg-bottom sm:bg-center"
+    class="fixed inset-0 z-0 bg-cover bg-bottom wide:bg-center"
     :style="{ backgroundImage: `url('${dialogue.background}')` }"
   />
 
@@ -21,14 +21,14 @@
            pour que deux personnages et un texte se recouvrent sans se gêner :
            la carte se lit de haut en bas, la réplique d'abord, les personnages
            debout sur son bord bas ensuite.
-         — en desktop (`sm:`), tout l'écran. La largeur y suffit, et les
+         — en desktop (`wide:`), tout l'écran. La largeur y suffit, et les
            personnages retrouvent les bords de la fenêtre.
 
          `@container` dans les deux cas : c'est lui qui donne à la carte son
          unité `cqw`, si bien que sa composition tient à toute largeur d'écran
          au lieu de se régler téléphone par téléphone. -->
     <div
-      class="absolute inset-x-[3%] top-1/2 -translate-y-1/2 overflow-hidden rounded-3xl bg-stone-100/95 shadow-2xl ring-1 ring-black/10 @container sm:inset-0 sm:translate-y-0 sm:rounded-none sm:bg-transparent sm:shadow-none sm:ring-0"
+      class="absolute inset-x-[3%] top-1/2 -translate-y-1/2 overflow-hidden rounded-3xl bg-stone-100/95 shadow-2xl ring-1 ring-black/10 @container wide:inset-0 wide:translate-y-0 wide:rounded-none wide:bg-transparent wide:shadow-none wide:ring-0"
     >
       <!-- Les personnages : pieds sur le bord bas de la carte en mobile, sur
            celui de la fenêtre en desktop — c'est le même `bottom-0`, la scène
@@ -48,11 +48,11 @@
         @choose="choose"
       />
 
-      <!-- La rangée des personnages, sous la réplique en mobile. `sm:contents`
+      <!-- La rangée des personnages, sous la réplique en mobile. `wide:contents`
            la fait disparaître en desktop : les portraits y reprennent leur
            ancrage absolu sur la scène, sans qu'un cadre intermédiaire s'y
            interpose. -->
-      <div class="flex items-end justify-center gap-[4cqw] sm:contents">
+      <div class="flex items-end justify-center gap-[4cqw] wide:contents">
         <DialoguePortrait
           v-for="member in lineup"
           :key="member.place"

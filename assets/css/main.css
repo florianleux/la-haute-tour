@@ -1423,6 +1423,13 @@
   initial-value: 0deg;
 }
 
+/* La scène de dialogue en plein écran (DialogueScene) : assez large, et
+   nettement plus large que haute. En deçà de 4/3 — tablette debout, fenêtre de
+   bureau resserrée —, les portraits, plafonnés en largeur, tombent au bas de
+   l'écran, et la boîte de dialogue leur couvre le visage : la carte du mobile
+   les range sous la réplique. */
+@custom-variant wide (@media (width >= 40rem) and (min-aspect-ratio: 4/3));
+
 /* Un rond de la page des sorts qu'on désigne : survolé, ou son bouton au focus
    clavier. Le survol se lit sur l'ancêtre `group`, comme `group-hover`, et
    seulement là où un pointeur survole vraiment. Voir

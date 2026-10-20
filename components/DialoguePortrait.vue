@@ -6,7 +6,7 @@
        c'est lui qui donne sa hauteur à la carte, qui s'arrête donc à ses pieds
        au lieu de laisser un vide.
 
-       En desktop (`sm:`) il s'ancre au bas de la fenêtre, qui le rogne : cadré
+       En desktop (`wide:`) il s'ancre au bas de la fenêtre, qui le rogne : cadré
        à mi-corps, il sort par le bas du cadre plutôt que d'y flotter entier, et
        la boîte (z-20) lui passe devant.
 
@@ -21,7 +21,7 @@
   <img
     :src="speaker.portrait"
     alt=""
-    class="pointer-events-none h-[34.5svh] w-auto max-w-[53%] origin-bottom object-contain object-bottom transition duration-300 sm:absolute sm:bottom-0 sm:h-[90%] sm:max-w-[42.5%]"
+    class="pointer-events-none h-[34.5svh] w-auto max-w-[53%] origin-bottom object-contain object-bottom transition duration-300 wide:absolute wide:bottom-0 wide:h-[90%] wide:max-w-[42.5%]"
     :class="[
       PLACES[place],
       { 'z-10': speaking },
@@ -51,9 +51,9 @@ import type { SpeakerPlace, Speaker } from '~~/utils/dialogue'
 // Les places ne valent qu'en desktop : en mobile les portraits sont côte à côte
 // dans le flux, et c'est leur ordre qui les range.
 const PLACES: Record<SpeakerPlace, string> = {
-  left: 'sm:left-0',
-  right: 'sm:right-0',
-  center: 'sm:left-1/2 sm:-translate-x-1/2',
+  left: 'wide:left-0',
+  right: 'wide:right-0',
+  center: 'wide:left-1/2 wide:-translate-x-1/2',
 }
 
 defineProps<{

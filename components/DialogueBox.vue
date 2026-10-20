@@ -4,7 +4,7 @@
        — en mobile, le haut de la carte. Pas de fond ni d'ombre à elle : la
          carte en porte déjà, et une boîte dans la boîte n'ajouterait qu'un
          cadre. Le texte se lit au-dessus des personnages, rien ne se recouvre.
-       — en desktop (`sm:`), une boîte posée sur le bas de l'écran, par-dessus
+       — en desktop (`wide:`), une boîte posée sur le bas de l'écran, par-dessus
          les portraits — le cadrage du genre, où le texte coupe les jambes des
          personnages.
 
@@ -12,7 +12,7 @@
        tenir d'un téléphone à l'autre ; en rem en desktop, où la scène occupe
        toute la fenêtre et où un `cqw` gonflerait le texte avec l'écran. -->
   <div
-    class="relative z-20 flex flex-col gap-[2cqw] px-[5cqw] py-[4cqw] sm:absolute sm:bottom-[5%] sm:left-1/2 sm:block sm:w-[60%] sm:max-w-5xl sm:-translate-x-1/2 sm:rounded-3xl sm:bg-stone-100/95 sm:px-8 sm:py-6 sm:shadow-2xl sm:ring-1 sm:ring-black/10"
+    class="relative z-20 flex flex-col gap-[2cqw] px-[5cqw] py-[4cqw] wide:absolute wide:bottom-[5%] wide:left-1/2 wide:block wide:w-[60%] wide:max-w-5xl wide:-translate-x-1/2 wide:rounded-3xl wide:bg-stone-100/95 wide:px-8 wide:py-6 wide:shadow-2xl wide:ring-1 wide:ring-black/10"
   >
     <!-- L'étiquette du nom, rangée du côté de celui qui parle : c'est ce qui
          dit lequel des deux portraits a la parole, sans avoir à lire le nom.
@@ -20,7 +20,7 @@
          de sa propre hauteur — `-translate-y-full` et non un décalage chiffré,
          qui se serait désaccordé au premier réglage de la taille du texte. -->
     <p
-      class="rounded-xl bg-stone-800 px-[3cqw] py-[1.2cqw] text-[4cqw] font-bold text-stone-100 sm:absolute sm:top-0 sm:-translate-y-full sm:rounded-b-none sm:px-4 sm:py-1.5 sm:text-2xl sm:ring-1 sm:ring-black/10"
+      class="rounded-xl bg-stone-800 px-[3cqw] py-[1.2cqw] text-[4cqw] font-bold text-stone-100 wide:absolute wide:top-0 wide:-translate-y-full wide:rounded-b-none wide:px-4 wide:py-1.5 wide:text-2xl wide:ring-1 wide:ring-black/10"
       :class="SIDES[place]"
     >
       {{ name }}
@@ -48,8 +48,12 @@
          texte y perd sa hauteur figée, la réserve passe au cadre qui l'entoure
          — en `min-h`, pour que des réponses qui ne tiennent pas poussent la
          boîte plutôt que d'en sortir. La taille du texte est portée par ce
-         cadre : les réponses la reprennent, et `lh` y vaut la même ligne. -->
-    <div class="min-h-[5lh] text-[4cqw] leading-relaxed text-stone-800 sm:text-2xl">
+         cadre : les réponses la reprennent, et `lh` y vaut la même ligne.
+
+         Plus petit sous `lg` : la boîte a une hauteur fixe, les portraits
+         rapetissent avec la fenêtre, et à pleine taille elle leur couvrirait
+         le menton. -->
+    <div class="min-h-[5lh] text-[4cqw] leading-relaxed text-stone-800 wide:text-lg lg:wide:text-2xl">
       <p :class="[choices ? '' : 'h-[5lh]', color ? TEXT_COLORS[color] : '']">
         {{ text }}
       </p>
@@ -83,7 +87,7 @@
          chaque réplique. -->
     <span
       aria-hidden="true"
-      class="self-end text-[3.4cqw] text-stone-500 sm:absolute sm:bottom-3 sm:right-6 sm:text-xl"
+      class="self-end text-[3.4cqw] text-stone-500 wide:absolute wide:bottom-3 wide:right-6 wide:text-xl"
       :class="revealed && !awaiting ? 'animate-pulse' : 'invisible'"
     >▼</span>
   </div>
@@ -105,9 +109,9 @@ import type { DialogueChoices, DialoguePrompt, SpeakerColor, SpeakerPlace } from
 // dans la colonne en mobile, le bord de la boîte en desktop, où elle est en
 // position absolue.
 const SIDES: Record<SpeakerPlace, string> = {
-  left: 'self-start sm:left-6',
-  right: 'self-end sm:right-6',
-  center: 'self-center sm:left-1/2 sm:-translate-x-1/2',
+  left: 'self-start wide:left-6',
+  right: 'self-end wide:right-6',
+  center: 'self-center wide:left-1/2 wide:-translate-x-1/2',
 }
 
 const TEXT_COLORS: Record<SpeakerColor, string> = {
