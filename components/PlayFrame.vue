@@ -278,7 +278,22 @@ const VIGNETTES: Partial<Record<keyof typeof REACTIONS, string>> = {
   mauled: 'bg-[radial-gradient(ellipse_at_center,transparent_20%,rgb(220_38_38/0.5)_55%,rgb(127_29_29/0.95)_100%)] motion-safe:animate-vignette-hold',
 }
 
-const arriving = leaving !== props.skin
+// L'arrivée ne se joue qu'une fois : l'attribut tombe quand elle est finie.
+// Le rattrapage garde son cadre de la question au verdict ; sans ça, la fin du
+// jugement rendait au médaillon (et au cadre) leur animation d'arrivée, qui
+// repartait de zéro — le chrono disparaissait, puis retombait.
+// ponytail: durée fixe, plus longue que toutes les entrées (la plus longue,
+// le bouton, 1,35 s) ; à lire sur animationend si une entrée s'allonge.
+const ARRIVAL_MS = 2000
+const arriving = ref(leaving !== props.skin)
+
+onMounted(() => {
+  if (arriving.value) {
+    setTimeout(() => {
+      arriving.value = false
+    }, ARRIVAL_MS)
+  }
+})
 
 // Retombe à l'arrivée s'il prend la suite d'un cadre soulevé (la question
 // d'ascension remplacée par son verdict), ou sur place quand le jugement

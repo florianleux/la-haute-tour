@@ -4,12 +4,12 @@
     :action="view.action"
     :model-value="typed"
     :seconds-left="secondsLeft"
-    :submitting="false"
+    :submitting="submitting"
     :disputable="disputable"
     :disputing="false"
     :advancing="false"
     @update:model-value="typed = $event"
-    @submit="() => {}"
+    @submit="judge"
     @dispute="() => {}"
     @advance="() => {}"
   />
@@ -26,6 +26,16 @@ import { playView } from '~~/utils/phase'
 definePageMeta({ admin: true })
 
 const typed = ref('')
+
+// Valider joue le jugement deux secondes, sans verdict au bout : de quoi
+// regarder le médaillon trembler.
+const submitting = ref(false)
+function judge(): void {
+  submitting.value = true
+  setTimeout(() => {
+    submitting.value = false
+  }, 2000)
+}
 
 // De 60 à 0 puis on reboucle : jamais de perte, jamais de soumission
 // automatique, juste de quoi voir le médaillon vivre. Comme pages/test/play.vue.
