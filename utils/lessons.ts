@@ -82,7 +82,7 @@ export function campLesson({ team }: { team: TeamId | null }): LessonLine[] {
     ...team
       ? [
           { text: `Je vois que tu fais partie des ${teamLabel(team)} ! Clique sur ta bannière.`, spotlight: 'banner', awaits: 'click' },
-          { text: 'C\'est ici que tu verras tes Haut-faits, toutes tes actions d\'éclat. Certains sont même secrets : à toi de les découvrir !', spotlight: null, overlay: 'achievements' },
+          { text: 'C\'est ici que tu verras tes Haut-faits, toutes tes actions d\'éclat. Ils sont tous secrets : à toi de les découvrir !', spotlight: null, overlay: 'achievements' },
           { text: 'Referme la bannière quand tu as fini.', spotlight: null, overlay: 'achievements', awaits: 'close' },
         ] satisfies LessonLine[]
       : [],

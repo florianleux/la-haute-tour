@@ -54,6 +54,8 @@ export const REACHED_FLOORS = FLOORS.filter((floor): floor is ReachedFloor => fl
  * identifiant, rien à dériver.
  */
 const SINGULAR_IDS = [
+  // En tête du mur : le premier qu'on gagne, au camp, avant toute question.
+  'CHEESE_GIVEN',
   'FIRST_CORRECT',
   'FIRST_WRONG',
   'FIRST_DEATH',
@@ -104,8 +106,8 @@ export function flawlessFloorAchievement(floor: Floor): FlawlessFloorAchievement
 }
 
 /**
- * Tout le catalogue, dérivé des paliers plutôt que retapé. Écrire les cinquante
- * identifiants à la main laisserait exister un palier sans son succès, ou
+ * Tout le catalogue, dérivé des paliers plutôt que retapé. Écrire chaque
+ * identifiant à la main laisserait exister un palier sans son succès, ou
  * l'inverse ; ici les deux ne peuvent pas diverger.
  *
  * L'assertion ne dit qu'une chose que le tableau ne sait pas prouver de lui-même :

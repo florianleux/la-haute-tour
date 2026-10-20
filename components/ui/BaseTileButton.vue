@@ -1,26 +1,38 @@
 <template>
-  <button
-    type="button"
-    class="group relative cursor-pointer rounded-xl border border-slate-800 bg-slate-900/60 p-2 transition-colors hover:border-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-    :aria-label="label"
-    @click="$emit('click')"
-  >
-    <slot />
+  <!-- La tuile et sa bulle, côte à côte : la bulle n'est pas dans le bouton, qui
+       n'accepte que du contenu en ligne. -->
+  <div>
+    <button
+      type="button"
+      class="group relative w-full cursor-pointer rounded-lg p-[6%] transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+      :aria-label="label"
+      @click="$emit('click')"
+      @mouseenter="anchor = $event.currentTarget as HTMLElement"
+      @mouseleave="anchor = null"
+      @wheel.passive="anchor = null"
+    >
+      <slot />
+    </button>
 
     <!--
-      L'infobulle n'existe que là où le survol existe : Tailwind garde déjà
-      `group-hover` derrière `@media (hover: hover)`, donc un écran tactile ne la
-      montre jamais. Sur un tap elle resterait collée par-dessus la grille, sans
-      rien pour la fermer — c'est au clic de mener ailleurs.
+      Dans la couche du dessus (BaseTopLayer) : hors de la grille qui défile
+      (elle la couperait au premier rang) et par-dessus la boîte de dialogue qui
+      porte les tuiles. La bulle elle-même est celle des sorts, et ce qu'elle
+      dit vient de l'appelant (`#tip`). Elle n'existe que là où le survol
+      existe — sur un tap elle resterait collée par-dessus la grille, sans rien
+      pour la fermer. Le défilement la ferme : la tuile part sous la souris.
     -->
-    <span
-      class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden w-48 -translate-x-1/2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-left group-hover:block"
+    <BaseTopLayer
+      v-if="anchor"
+      class="pointer-events-none fixed inset-auto hidden w-72 -translate-x-1/2 -translate-y-full [@media(hover:hover)]:block"
+      :style="placeAbove(anchor)"
       role="presentation"
     >
-      <span class="block text-xs font-semibold text-slate-100">{{ label }}</span>
-      <span class="mt-1 block text-xs text-slate-400">{{ hint }}</span>
-    </span>
-  </button>
+      <BaseTooltip>
+        <slot name="tip" />
+      </BaseTooltip>
+    </BaseTopLayer>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -28,11 +40,20 @@
 // qu'elle est. Ce qu'elle montre vient du slot — elle ne connaît ni image ni
 // domaine.
 defineProps<{
-  /** Ce que la bulle titre, et ce qu'une synthèse vocale lit. */
+  /** Ce qu'une synthèse vocale lit de la tuile. */
   label: string
-  /** La ligne d'explication sous le titre. */
-  hint: string
 }>()
 
 defineEmits<{ click: [] }>()
+
+/** La tuile survolée ; null quand rien ne l'est. */
+const anchor = ref<HTMLElement | null>(null)
+
+// Au-dessus de la tuile, centrée sur elle, à 8 px. Lu au survol : la tuile ne
+// bouge pas tant que la souris est dessus.
+function placeAbove(tile: HTMLElement): Record<string, string> {
+  const rect = tile.getBoundingClientRect()
+
+  return { left: `${rect.left + rect.width / 2}px`, top: `${rect.top - 8}px` }
+}
 </script>

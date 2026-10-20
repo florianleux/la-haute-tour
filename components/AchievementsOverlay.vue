@@ -4,7 +4,7 @@
          Clic à côté de la bannière = fermer.
 
          La bannière garde ses proportions (public/images/achievements-banner-*.webp,
-         1292×1849, rognée par scripts/img-trim-webp.sh) : jamais étirée, au
+         1394×1996, rognée par scripts/img-trim-webp.sh) : jamais étirée, au
          plus haut qui tienne. Son haut est coupé au ras de l'image : elle pend
          du bord de l'écran, accrochée hors champ. Pivot en haut, à son point
          d'accroche. Les positions en % sont relevées sur l'image. L'étoffe
@@ -16,30 +16,35 @@
       enter="motion-safe:animate-banner-drop"
       leave="motion-safe:animate-banner-lift"
       :hits="['inset-x-[3%] top-0 h-[70%]']"
-      class="aspect-[1292/1849] h-[min(92dvh,calc(96vw*1849/1292))] origin-top"
+      class="aspect-[1394/1996] h-[min(92dvh,calc(96vw*1996/1394))] origin-top"
       @close="close"
     >
-      <!-- Le titre et le compteur, posés sur l'étoffe, en haut, dans l'éclat
-           des noms du camp. Ils jaillissent pendant que la bannière rebondit.
-           Le compteur passe dessous, plus petit : sur une seule ligne, il
-           débordait de l'étoffe. -->
-      <CampOverlayTitle :closing="closing" delay="0.35s" class="top-[21%]">
+      <!-- Le titre, posé sur l'étoffe, en haut, dans l'éclat des noms du camp.
+           Il jaillit pendant que la bannière rebondit. Le compteur passe
+           dessous, en petit. -->
+      <CampOverlayTitle :closing="closing" delay="0.35s" class="top-[15.5%]">
         Haut-faits
-        <span class="block text-[0.4em]">{{ unlockedCount }} / {{ catalogue.length }}</span>
       </CampOverlayTitle>
 
       <div class="pointer-events-none absolute inset-0" v-bind="fadeLayer(closing, '0.6s')">
-        <BaseNotice v-if="failed" class="pointer-events-auto absolute inset-x-[12%] top-[21.5%]">
+        <!-- Sans lecture, pas de compteur : « 0 » mentirait. -->
+        <p v-if="!failed" class="absolute inset-x-0 top-[13.5%] text-center text-[max(0.875rem,2.2dvh)] leading-none">
+          <BaseGlowLabel tone="plain">
+            {{ unlockedAt.size }} / {{ catalogue.length }}
+          </BaseGlowLabel>
+        </p>
+
+        <BaseNotice v-if="failed" class="pointer-events-auto absolute inset-x-[12%] top-[19.5%]">
           Tes succès n'ont pas pu être lus. Recharge la page.
         </BaseNotice>
 
-        <!-- Le mur, entre les coutures, du titre jusqu'au-dessus des
-             emblèmes. Dix colonnes à toutes les tailles : les tuiles suivent
-             la bannière, et les cinquante tiennent sans défiler — une boîte
-             qui défile couperait les infobulles du premier rang. -->
+        <!-- Le mur, entre les coutures, du titre jusqu'au-dessus de la
+             devise. Dix colonnes à toutes les tailles : les tuiles suivent
+             la bannière. Le catalogue dépasse ce qui tient sur l'étoffe, la
+             grille défile ; les infobulles en sortent (BaseTileButton). -->
         <div
           v-else
-          class="pointer-events-auto absolute inset-x-[12%] bottom-[51%] top-[21.5%] grid grid-cols-10 content-center gap-[0.5%]"
+          class="pointer-events-auto absolute inset-x-[12%] bottom-[54%] top-[19.5%] grid grid-cols-10 content-start gap-[0.5%] overflow-y-auto pr-[1%] [scrollbar-color:rgb(255_255_255/0.4)_transparent] [scrollbar-width:thin]"
         >
           <AchievementTile
             v-for="id in catalogue"
@@ -47,6 +52,19 @@
             :key="id"
             :unlocked-at="unlockedAt.get(id) ?? null"
           />
+        </div>
+
+        <!-- Le nom de la guilde et sa devise, brodés juste au-dessus des
+             emblèmes (étoiles, fauteuils). -->
+        <div class="absolute inset-x-[12%] bottom-[41%] top-[45%] flex flex-col items-center justify-center text-center">
+          <p class="text-[max(1.125rem,3dvh)] leading-none">
+            <BaseGlowLabel tone="plain">
+              {{ teamLabel(team) }}
+            </BaseGlowLabel>
+          </p>
+          <p class="mt-[0.4em] text-[max(0.75rem,1.6dvh)] italic text-white/90">
+            {{ teamMotto(team) }}
+          </p>
         </div>
       </div>
     </CampOverlayFrame>
@@ -85,8 +103,7 @@ const team = computed(() => user.value!.team!)
 
 const { unlockedAt, failed } = await useAchievements()
 
-// Le mur suit l'ordre du catalogue : les premières fois d'abord, puis ce qui se
+// Le mur suit l'ordre du catalogue : « HÉ ! » puis les premières fois, puis ce qui se
 // gagne en montant, et les curiosités à la fin.
 const catalogue = ACHIEVEMENT_IDS
-const unlockedCount = computed(() => unlockedAt.value.size)
 </script>

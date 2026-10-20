@@ -12,14 +12,14 @@
          défilent pas), une infobulle posée dedans y serait coupée. Desktop
          seulement — le survol n'existe pas au doigt. -->
     <Teleport to="body">
-      <div
+      <BaseTooltip
         v-if="anchor"
-        class="pointer-events-none fixed z-50 hidden w-72 rounded-md border-2 border-amber-500 bg-amber-50 p-3 text-left text-sm leading-snug text-amber-950 shadow-[inset_2px_2px_0_rgb(255_255_255/0.8),inset_-2px_-2px_0_rgb(120_53_15/0.35),0_10px_24px_rgb(0_0_0/0.45)] sm:block"
+        class="pointer-events-none fixed z-50 hidden w-72 sm:block"
         :style="position"
         role="tooltip"
       >
         <SpellDetails :subject="subject" />
-      </div>
+      </BaseTooltip>
     </Teleport>
   </span>
 </template>

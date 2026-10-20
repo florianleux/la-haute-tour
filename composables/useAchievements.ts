@@ -16,7 +16,7 @@ export interface Achievements {
  * tout se débloque en jouant. Voir specs/succes.md.
  *
  * Rendus en table plutôt qu'en liste : la grille pose la question dans ce sens —
- * « celui-là, il l'a ? » — cinquante fois de suite.
+ * « celui-là, il l'a ? » — une fois par tuile du mur.
  */
 export async function useAchievements(): Promise<Achievements> {
   const { data, error } = await useAsyncData<AchievementsResponse>(

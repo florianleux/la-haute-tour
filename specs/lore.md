@@ -19,6 +19,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 - Les deux guildes = les deux équipes (`team`) d'`equipes.md`.
 - Noms : les **Méridiens** (`MIDI`) et les **Fauteuillistes** (`TLM`).
 - Chacune défend une émission dont elle veut le retour : les Méridiens, *Les 12 coups de midi* ; les Fauteuillistes, *Tout le monde veut prendre sa place*.
+- Chacune a sa devise, en latin de cuisine, brodée au bas de sa bannière : *In nomine Ioannis-Lucae* pour les Méridiens (« au nom de Jean-Luc », l'*In nomine Patris*), *Sedeo, ergo sum* pour les Fauteuillistes (« je suis assis, donc je suis »).
 - Elles sont **rivales** : c'est à qui atteindra le premier le sommet de la Tour.
 - Le joueur ne choisit pas sa guilde : il la porte déjà, sur sa bannière, quand il arrive. L'Inconnu la lui lit à l'introduction (voir [`equipes.md`](./equipes.md)).
 

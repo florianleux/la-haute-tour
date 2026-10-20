@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { items, recoveryQuestions, users } from '../../server/db/schema'
+import { achievements, items, recoveryQuestions, users } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -51,8 +51,21 @@ describe('utiliser un Objet', () => {
     const response = await useItem(useRequest({ item: 'CHEESE' }, await sessionCookieFor(playerId)))
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ items: [] })
+    expect(await response.json()).toEqual({ items: [], unlocked: ['CHEESE_GIVEN'] })
     expect(await itemsOf(db, playerId)).toEqual([])
+  })
+
+  // « HÉ ! » : gagné au don, une fois. Voir specs/succes.md#michel--1.
+  it('débloque HÉ ! au don du Fromage, une seule fois', async () => {
+    await db.insert(items).values({ userId: playerId, item: 'CHEESE', obtainedAt: new Date(2_000) })
+    const cookie = await sessionCookieFor(playerId)
+
+    await useItem(useRequest({ item: 'CHEESE' }, cookie))
+    const again = await useItem(useRequest({ item: 'CHEESE' }, cookie))
+
+    expect((await again.json()).unlocked).toEqual([])
+    const rows = await db.select().from(achievements).where(eq(achievements.userId, playerId))
+    expect(rows.map(row => row.achievement)).toEqual(['CHEESE_GIVEN'])
   })
 
   it('refuse un Objet absent du sac', async () => {

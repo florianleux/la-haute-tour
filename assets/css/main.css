@@ -1412,6 +1412,45 @@
   @keyframes fade-in {
     from { opacity: 0; }
   }
+
+  /* Le ruban d'un succès débloqué : il entre par la droite, dépasse, revient
+     et se pose ; il repart par où il est venu. Le dépassement (1,25rem) reste
+     plus court que ce que le ruban garde hors de l'écran (2rem, son -mr-8) :
+     son bord coupé ne se voit jamais. Voir components/AchievementToasts.vue. */
+  --animate-toast-in: toast-in 0.9s linear both;
+  --animate-toast-out: toast-out 0.45s linear both;
+
+  @keyframes toast-in {
+    0% {
+      transform: translateX(110%);
+      animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+    }
+    55% {
+      transform: translateX(-1.25rem);
+      animation-timing-function: ease-in-out;
+    }
+    75% {
+      transform: translateX(0.4rem);
+      animation-timing-function: ease-in-out;
+    }
+    90% {
+      transform: translateX(-0.15rem);
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: none; }
+  }
+
+  @keyframes toast-out {
+    0% {
+      transform: none;
+      animation-timing-function: ease-out;
+    }
+    25% {
+      transform: translateX(-0.75rem);
+      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    100% { transform: translateX(110%); }
+  }
 }
 
 /* L'angle déjà passé au crayon autour d'un rond de la page des sorts. Déclaré pour

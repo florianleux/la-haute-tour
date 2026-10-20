@@ -5,7 +5,7 @@
         :spell="spell"
         :face="effect?.face ?? 'mixed'"
         class="w-[3.75rem] shrink-0 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.4))]"
-        fallback-class="border-2 border-amber-900/40 text-xl text-amber-900"
+        fallback-class="border-2 border-current/40 text-xl"
       />
 
       <div class="min-w-0">
@@ -17,7 +17,7 @@
           class="mt-1 flex flex-wrap gap-1 text-xs"
         >
           <SpellFaceTag :face="effect.face" />
-          <span class="rounded border border-amber-900/30 bg-amber-900/5 px-1.5 py-px">
+          <span class="rounded border border-current/30 bg-current/5 px-1.5 py-px">
             Lancé par {{ effect.casterName }}
           </span>
         </p>
@@ -53,14 +53,14 @@
       <!-- La valeur réelle, tous effets cumulés. -->
       <p
         v-if="stake"
-        class="mt-2 border-t border-amber-900/20 pt-2"
+        class="mt-2 border-t border-current/20 pt-2"
       >
-        {{ stake.label }} : <span class="text-amber-900/60">{{ stake.before }}</span> → <strong>{{ stake.after }}</strong>
+        {{ stake.label }} : <span class="text-current/60">{{ stake.before }}</span> → <strong>{{ stake.after }}</strong>
       </p>
 
       <p
         v-if="effect && state"
-        class="mt-2 italic text-amber-900/70"
+        class="mt-2 italic text-current/70"
       >
         {{ spellLifetime(effect, state) }}
       </p>

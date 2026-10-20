@@ -91,7 +91,7 @@
 // L'Inventaire : le sac du camp (CooldownCamp), ouvert par-dessus lui. Au camp
 // seulement. Il montre les Objets du joueur, jamais ses sorts, qui vivent au
 // Grimoire. Voir specs/ecrans.md#inventaire.
-import type { ItemsView } from '~~/server/api/game/items.get'
+import type { ItemUseView } from '~~/server/api/game/items/use.post'
 import type { ItemId } from '~~/shared/utils/items'
 import type { LessonLine } from '~~/utils/lessons'
 
@@ -115,6 +115,7 @@ const emit = defineEmits<{
 const SLOTS = 5 * 20
 
 const { items, failed, replace } = await useItems()
+const announce = useAchievementAnnouncer()
 
 /** L'Objet montré par la page de détail. Aucun tant que le joueur n'a pas cliqué. */
 const selected = ref<ItemId | null>(null)
@@ -129,15 +130,19 @@ const useFailed = ref(false)
 /**
  * Utilise le Fromage — le donne à Michel —, puis referme le sac : la leçon
  * reprend au camp. Le sac servi en retour remplace celui qu'on avait lu.
+ *
+ * Le succès gagné au don (« HÉ ! ») s'annonce ici : le don ne rend pas d'état
+ * de jeu, où les toasts écoutent d'habitude.
  */
 async function submitUse(close: () => void): Promise<void> {
   using.value = true
-  const bag = await $fetch<ItemsView>('/api/game/items/use', { method: 'POST', body: { item: 'CHEESE' } })
+  const bag = await $fetch<ItemUseView>('/api/game/items/use', { method: 'POST', body: { item: 'CHEESE' } })
     .catch(bagAfterRefusal)
   using.value = false
   useFailed.value = bag === null
   if (bag) {
     replace(bag)
+    announce(bag.unlocked)
     emit('used')
     // La réplique suivante n'attend plus rien du sac : la boîte se laisse fermer.
     await nextTick()
@@ -150,9 +155,9 @@ async function submitUse(close: () => void): Promise<void> {
  * ou par une réponse perdue en route. Le sac relu tranche : sans Fromage, la
  * leçon suit son cours au lieu de bloquer le joueur sur un don impossible.
  */
-async function bagAfterRefusal(): Promise<ItemsView | null> {
+async function bagAfterRefusal(): Promise<ItemUseView | null> {
   const bag = await fetchItems().catch(() => null)
-  return bag && !bag.items.includes('CHEESE') ? bag : null
+  return bag && !bag.items.includes('CHEESE') ? { ...bag, unlocked: [] } : null
 }
 
 /** Ce que la page de détail dit de l'Objet choisi. */

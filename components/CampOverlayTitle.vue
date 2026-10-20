@@ -9,7 +9,7 @@
     :class="closing ? 'motion-safe:animate-fade-out' : 'motion-safe:animate-cheer'"
     :style="{ '--enter-delay': closing ? '0s' : delay }"
   >
-    <BaseGlowLabel soft>
+    <BaseGlowLabel tone="soft">
       <slot />
     </BaseGlowLabel>
   </h1>

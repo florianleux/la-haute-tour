@@ -4,9 +4,7 @@
        large, garde l'éclat. -->
   <span
     class="inline-block whitespace-nowrap text-center font-semibold tracking-wide text-white"
-    :class="soft
-      ? '[text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_12px_var(--glow,rgb(191_219_254/0.6))]'
-      : '[text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6),0_0_14px_var(--glow,rgb(191_219_254/0.7))]'"
+    :class="SHADOWS[tone]"
     :style="color ? { color, '--glow': color } : undefined"
   >
     <!-- Une boîte à soi, positionnée, pour les étincelles : la racine reste
@@ -14,6 +12,7 @@
     <span class="relative block">
       <slot />
       <SparkleField
+        v-if="tone !== 'plain'"
         :sparks="SPARKS"
         class="drop-shadow-[0_0_3px_#fff]"
       />
@@ -27,15 +26,25 @@
 // éclat partout. La position et
 // la taille viennent de l'appelant, par `class`.
 
-defineProps<{
-  /**
-   * Ombre allégée, pour un grand titre sur un fond déjà sombre ou flouté : à
-   * cette taille, l'ombre des noms du camp l'alourdit.
-   */
-  soft?: boolean
+withDefaults(defineProps<{
+  /** L'éclat, voir SHADOWS. */
+  tone?: GlowTone
   /** La couleur du nom et de son halo, au lieu du blanc bleuté : le titre d'un lancer prend celle de sa magie. */
   color?: string
-}>()
+}>(), { tone: 'bright', color: undefined })
+
+type GlowTone = 'bright' | 'soft' | 'plain'
+
+const SHADOWS: Record<GlowTone, string> = {
+  // Les noms du camp : l'ombre sombre au plus près les détache d'un décor clair.
+  bright: '[text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6),0_0_14px_var(--glow,rgb(191_219_254/0.7))]',
+  // Un grand titre sur un fond déjà sombre ou flouté : à cette taille, l'ombre
+  // des noms du camp l'alourdit.
+  soft: '[text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_12px_var(--glow,rgb(191_219_254/0.6))]',
+  // Un nom posé sous un autre qui a déjà l'éclat (la guilde, sous « Haut-faits ») :
+  // halo léger, et pas d'étincelles.
+  plain: '[text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_6px_var(--glow,rgb(191_219_254/0.3))]',
+}
 
 /**
  * Les étincelles, en % de la boîte du nom : surtout au-dessus du mot, quelques

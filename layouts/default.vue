@@ -24,6 +24,10 @@
 // La maintenance ferme toutes les pages d'un coup : un joueur qui la subit ne
 // doit rien pouvoir atteindre à côté. Voir specs/admin.md#maintenance.
 const { user } = await useCurrentUser()
+
+// Sur la racine et non sur `main` : une infobulle téléportée dans `body` doit
+// en hériter aussi.
+useHead({ htmlAttrs: { style: computed(() => teamColorVars(displayTeam(user.value?.team ?? null))) } })
 const game = user.value ? (await useGameState()).state : ref(null)
 
 const route = useRoute()

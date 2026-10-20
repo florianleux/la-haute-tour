@@ -53,12 +53,12 @@ const LABELS: Record<AchievementId, string> = {
   TWO_DAYS_IN_A_ROW: 'Deux jours de suite',
   FIRST_ASCENT: 'Premier en haut',
   EMPTY_ANSWER: 'Sans voix',
+  CHEESE_GIVEN: 'HÉ !',
 }
 
 /**
- * Ce qu'il faut faire, dit au joueur — y compris sur un succès qu'il n'a pas :
- * le catalogue se lit en entier, condition comprise. On doit pouvoir savoir ce
- * qui reste à faire, pas seulement admirer ce qui est fait.
+ * Ce qu'il a fallu faire, dit au joueur une fois le succès obtenu : avant, la
+ * tuile ne dit rien (MASKED_TEXT).
  */
 const CONDITIONS: Record<AchievementId, string> = {
   ...fromTiers(
@@ -91,7 +91,14 @@ const CONDITIONS: Record<AchievementId, string> = {
   TWO_DAYS_IN_A_ROW: 'Jouer deux jours qui se suivent.',
   FIRST_ASCENT: 'Être le premier du serveur à quitter l\'étage 1.',
   EMPTY_ANSWER: 'Laisser une réponse vide.',
+  CHEESE_GIVEN: 'Donner du fromage à Michel.',
 }
+
+/**
+ * Ce qu'un succès pas encore obtenu montre à la place de son nom et de sa
+ * condition : tous sont secrets, à découvrir. Voir specs/succes.md#affichage.
+ */
+export const MASKED_TEXT = '???'
 
 export function achievementLabel(id: AchievementId): string {
   return LABELS[id]
@@ -105,16 +112,3 @@ export function achievementCondition(id: AchievementId): string {
 export function achievementImage(id: AchievementId): string {
   return `/images/achievements/${achievementSlug(id)}.webp`
 }
-
-/**
- * La tuile de secours, tant qu'un succès n'a pas son dessin. Dessinée ici plutôt
- * que déposée dans `public/` : il n'y a rien à produire ni à committer, et elle
- * s'efface d'elle-même dès que le fichier attendu existe.
- */
-export const ACHIEVEMENT_FALLBACK_IMAGE = `data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-     <rect width="64" height="64" rx="10" fill="#1e293b"/>
-     <path d="M32 14 L44 22 V42 L32 50 L20 42 V22 Z" fill="none" stroke="#475569" stroke-width="3"/>
-   </svg>`,
-)}`
-

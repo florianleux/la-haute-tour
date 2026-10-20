@@ -2,6 +2,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import { items } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
+import type { AchievementId } from '../../shared/utils/achievements'
 import type { ItemId } from '../../shared/utils/items'
 
 /**
@@ -10,11 +11,16 @@ import type { ItemId } from '../../shared/utils/items'
  * un Objet de plus ajoute son entrée, pas une route.
  *
  * Le Fromage n'a pas d'autre effet que de quitter le sac : il se donne à
- * Michel, à la leçon du camp, et à elle seule.
+ * Michel, à la leçon du camp, et à elle seule. Le donner vaut « HÉ ! ».
+ * Voir specs/succes.md#michel--1.
  * Voir specs/spec.md (glossaire, « Utiliser », « Fromage »).
  */
-export const ITEM_USES: Record<ItemId, { usableBy: (user: User) => boolean }> = {
-  CHEESE: { usableBy: user => user.campLessonAt === null },
+export const ITEM_USES: Record<ItemId, {
+  usableBy: (user: User) => boolean
+  /** Les succès que l'utiliser débloque. */
+  earns: AchievementId[]
+}> = {
+  CHEESE: { usableBy: user => user.campLessonAt === null, earns: ['CHEESE_GIVEN'] },
 }
 
 /** Les Objets du joueur, dans l'ordre où il les a reçus. */

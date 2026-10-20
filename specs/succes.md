@@ -23,7 +23,7 @@ ne partagent que le mot français — en code, l'une est `achievement`, l'autre
 
 ## Catalogue
 
-**Cinquante succès**, répartis en neuf familles.
+**Cinquante et un succès**, répartis en onze familles.
 
 ### Premières fois — 4
 
@@ -142,6 +142,17 @@ Ne rien répondre. Se déclenche sur toute réponse vide, quelle qu'en soit la c
 délai écoulé, perte de focus, ou champ soumis vide volontairement. Le système ne
 distingue pas ces cas, et n'a pas à le faire.
 
+### Michel — 1
+
+**HÉ !** — donner le Fromage à Michel, à la leçon du camp. Gagné au don, quand le
+Fromage quitte le sac. C'est le premier succès du mur, en haut à gauche : le
+premier qu'on gagne, avant toute question.
+
+Le Fromage ne se donne qu'une fois par partie. Après une remise à zéro, le
+redonner ne redébloque rien, le succès est déjà acquis — sauf pour un joueur
+test, dont les succès s'effacent avec le reste (voir
+[Remise à zéro](#remise-à-zéro)) : lui le regagne.
+
 ## Ce qui porte les succès
 
 Rien ne se recompte au moment de décider : le joueur porte ses compteurs, comme il
@@ -158,14 +169,16 @@ porte déjà ses questions vues. Voir
 
 ## Affichage
 
-- **La page Succès** — un mur de tuiles, une par succès, avec un compteur global
-  en tête. Les succès non obtenus y sont présents et grisés : le catalogue complet
-  est visible, condition comprise. On doit pouvoir lire ce qui reste à faire, pas
-  seulement admirer ce qui est fait.
+- **La page Succès** — un mur de tuiles, une par succès, avec sous le titre le
+  compteur des succès obtenus sur le catalogue. Le mur défile quand il dépasse l'étoffe.
   La page est une bannière aux couleurs de la guilde du joueur, ouverte
   par-dessus le camp. Voir [`ecrans.md`](./ecrans.md#haut-faits).
-- **Le nom et la condition** se lisent au survol. Un clic sur une tuile ne fait
-  rien.
+- **Tous les succès sont secrets.** Chacun a sa tuile sur le mur, obtenu ou
+  non — on voit combien il en reste. Mais tant qu'il n'est pas obtenu, sa tuile
+  ne montre qu'un point d'interrogation, et son nom comme sa condition se lisent
+  « ??? ». On découvre ce qu'il fallait faire en le faisant.
+- **Le nom et la condition** d'un succès obtenu se lisent au survol, avec son
+  dessin. Un clic sur une tuile ne fait rien.
 - **Le toast** — au moment du déblocage, pendant la partie.
 - **Accès** : au camp seulement, et avec une équipe, par la bannière du camp :
   les Haut-faits sont la bannière de la guilde, posée au camp.
@@ -174,6 +187,9 @@ Deux familles n'ont pas de toast : les **contestations** et l'**assiduité** hor
 jeu. Une contestation s'arbitre des heures après avoir été demandée, souvent
 pendant que le joueur n'est pas là ; un toast surgirait alors sans rapport avec ce
 qu'il est en train de faire. Ces succès se découvrent sur la page.
+
+« HÉ ! » a son toast, bien que gagné au camp : il tombe au geste même du joueur,
+le don du Fromage.
 
 ## Contestation
 

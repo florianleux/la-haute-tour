@@ -12,7 +12,7 @@ export interface AchievementsResponse {
  *
  * Seul l'acquis voyage. Le catalogue complet vit côté écran, où sont déjà les
  * libellés et les conditions : l'envoyer à chaque lecture ferait traverser
- * cinquante lignes qui ne changent jamais. Voir specs/succes.md#affichage.
+ * tout le catalogue, qui ne change jamais. Voir specs/succes.md#affichage.
  */
 export default defineEventHandler(async (event): Promise<AchievementsResponse> => {
   const user = await requireAuth(event)

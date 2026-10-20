@@ -179,8 +179,8 @@ une **relique** — objet cosmétique, sans effet, une par boss (6 au total).
 
 **Même patron que les Succès** (`succes.md`) : catalogue fixe écrit dans le
 code, jamais administrable, débloqué en jouant, acquis à vie. Page dédiée
-listant les 6 reliques, obtenues et à obtenir — le mur de tuiles grisées qui
-fait déjà ses preuves pour les Succès. Contenu exact des tuiles (nom, image,
+listant les 6 reliques, obtenues et à obtenir — le mur de tuiles qui fait
+déjà ses preuves pour les Succès. Contenu exact des tuiles (nom, image,
 flaveur) à écrire au moment de l'intégration, comme le catalogue des Succès
 l'a été.
 
