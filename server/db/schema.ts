@@ -16,8 +16,10 @@ export const whitelist = sqliteTable('whitelist', {
   discordId: text('discord_id').primaryKey(),
   /**
    * L'équipe que le joueur aura en arrivant. Choisie au moment où l'admin
-   * autorise l'ID : c'est le seul instant où l'on sait pourquoi on l'invite, et
-   * décider là évite d'avoir à y repenser à sa première connexion.
+   * autorise l'ID, obligatoirement (l'API la refuse absente) : c'est le seul
+   * instant où l'on sait pourquoi on l'invite, et décider là évite d'avoir à y
+   * repenser à sa première connexion. La colonne reste nullable pour les
+   * invitations d'avant la règle, que la remise à zéro emportera.
    *
    * Elle ne sert qu'une fois, à la création du compte. Ensuite c'est la fiche
    * joueur qui fait foi : rééditer la whitelist ne déplace personne, sinon elle

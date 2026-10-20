@@ -11,7 +11,7 @@ export interface AdminWhitelist {
   /** True when the list could not be read: an empty list would be a lie. */
   failed: Ref<boolean>
   /** Ajoute un Discord ID avec son équipe d'arrivée ; dit si la liste le porte. */
-  add: (discordId: string, team: TeamId | null) => Promise<boolean>
+  add: (discordId: string, team: TeamId) => Promise<boolean>
   /** True from the moment the ID is sent until the list has been read back. */
   adding: Ref<boolean>
   /** Désinvite un Discord ID ; dit si la liste l'a bien lâché. */

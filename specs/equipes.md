@@ -12,20 +12,25 @@ la magie noire et la porte du boss dépendent, et rien de plus.
 - **Deux équipes fixes**, et deux seulement. Pas de troisième, pas de création
   d'équipe : le catalogue des Sorts ne connaît que « les miens » et « les
   autres », et une troisième équipe n'ajouterait aucune catégorie de cible.
-- **L'équipe se choisit en invitant.** C'est au moment où l'admin ajoute un
-  Discord ID à la whitelist qu'il dit dans quelle équipe ce joueur arrivera :
-  c'est le seul instant où l'on sait pourquoi on l'invite. Le compte créé à sa
-  première connexion la reprend.
+- **L'équipe se choisit en invitant, et obligatoirement.** C'est au moment où
+  l'admin ajoute un Discord ID à la whitelist qu'il dit dans quelle équipe ce
+  joueur arrivera : c'est le seul instant où l'on sait pourquoi on l'invite. Pas
+  d'invitation sans équipe. Le compte créé à sa première connexion la reprend.
+- **Le joueur ne la choisit pas, il la découvre.** À l'introduction, dès que le
+  joueur a dit son nom et ce qu'il est, et avant ses questions, L'Inconnu lit
+  sa bannière : il nomme sa guilde et la
+  rivale ; leur course au sommet vient quand le joueur demande ce qu'est la Tour
+  (voir [`lore.md`](./lore.md#guildes)). Rien à
+  choisir, rien à recevoir.
 - **Elle se change ensuite depuis la fiche joueur**, à tout moment. Rééditer la
   whitelist ne déplace personne : la fiche fait foi une fois le compte créé,
   sinon un ancien choix défarait en silence une décision plus récente.
 - Pas de tirage automatique, pas d'équilibrage des effectifs : à cette échelle,
   le jugement d'un humain qui connaît les joueurs vaut mieux qu'une règle.
-- **L'appartenance est facultative.** On peut inviter sans trancher, et l'admin
-  lui-même n'a pas d'équipe.
-- Les joueurs déjà inscrits avant cette règle ont été **répartis au hasard, une
-  fois**, par migration : ils n'avaient jamais été invités avec une équipe, et
-  rien ne permettait de deviner laquelle. Les admins sont restés hors équipe.
+- **Seuls l'admin et les joueurs test peuvent être sans équipe.** L'admin n'en
+  a pas ; un joueur test se place, ou non, depuis son banc. Un joueur invité en
+  a toujours une : la base a été remise à zéro au moment où l'équipe est devenue
+  obligatoire, si bien qu'aucun joueur n'est resté sans.
 
 Les deux équipes sont les deux guildes de [`lore.md`](./lore.md) :
 
@@ -76,8 +81,9 @@ progression que ce coéquipier n'a pas choisi de montrer. Voir
 
 ## Le joueur sans équipe
 
-Il existe : c'est le cas de l'admin, et de tout joueur que l'administration n'a
-pas encore placé. Sa situation est **symétrique** — il ne touche personne, et
+Il existe : c'est le cas de l'admin, et des joueurs test que l'administration
+n'a pas placés. Un joueur invité arrive toujours avec une équipe ; il ne la perd
+que si l'admin la lui retire depuis sa fiche. Sa situation est **symétrique** — il ne touche personne, et
 personne ne le touche.
 
 - **Il ne lance que sur Soi.** Les catégories Allié et Ennemi ne lui sont pas
@@ -88,7 +94,7 @@ personne ne le touche.
 
 C'est assumé et c'est même le but pour l'admin : il arbitre les parties, il n'a
 pas à y peser. Un joueur sans équipe n'est donc pas un joueur diminué, c'est un
-joueur que le PvP ne concerne pas encore.
+joueur que le PvP ne concerne pas.
 
 ## Changer d'équipe en cours de partie
 

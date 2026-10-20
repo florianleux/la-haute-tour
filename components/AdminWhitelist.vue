@@ -12,9 +12,10 @@
         class="flex-1"
       />
       <!-- L'équipe se décide en invitant : c'est le seul moment où l'on sait
-           pourquoi on invite. Voir specs/equipes.md. -->
+           pourquoi on invite, et un joueur invité en a toujours une. Voir
+           specs/equipes.md. -->
       <BaseSelect v-model="team" label="Équipe" :options="teamOptions" />
-      <BaseButton :disabled="!discordId.trim()" :loading="adding" @click="submit">
+      <BaseButton :disabled="!ready" :loading="adding" @click="submit">
         Ajouter
       </BaseButton>
     </form>
@@ -66,14 +67,15 @@ const { entries, failed, add, adding, remove, removing, loading } = await useWhi
 
 const discordId = ref('')
 
-// « Sans équipe » est un choix : l'appartenance reste facultative, et l'admin
-// peut inviter sans trancher tout de suite.
-const NO_TEAM = 'none'
-const team = ref<string>(NO_TEAM)
+// Aucune équipe présélectionnée : l'admin la choisit à chaque invitation, au
+// lieu d'envoyer par mégarde tout le monde dans la première.
+const NOT_CHOSEN = ''
+const team = ref<string>(NOT_CHOSEN)
 const teamOptions = [
-  { value: NO_TEAM, label: teamLabel(null) },
+  { value: NOT_CHOSEN, label: 'Choisir…' },
   ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
 ]
+const ready = computed(() => discordId.value.trim() !== '' && team.value !== NOT_CHOSEN)
 const addFailed = ref(false)
 const removeFailed = ref(false)
 
@@ -84,15 +86,16 @@ const emptyMessage = computed(
 )
 
 async function submit(): Promise<void> {
-  if (!discordId.value.trim()) {
+  if (!ready.value) {
     return
   }
 
-  const added = await add(discordId.value, team.value === NO_TEAM ? null : (team.value as TeamId))
+  const added = await add(discordId.value, team.value as TeamId)
 
   addFailed.value = !added
   if (added) {
     discordId.value = ''
+    team.value = NOT_CHOSEN
   }
 }
 

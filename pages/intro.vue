@@ -21,10 +21,16 @@
 // d'avance ce qu'on y choisira. C'est aussi la réponse du joueur qui lui donne
 // son portrait : silhouette jusque-là.
 //
+// Le joueur nommé, et avant ses questions, L'Inconnu lit sa guilde sur sa
+// bannière : le joueur ne la choisit pas, l'admin l'a décidée en l'invitant
+// (voir specs/equipes.md).
+//
 // Le nom ne part nulle part : aucun compte, aucune API — le nommer pour de bon
 // est l'issue #53. Le genre, lui, est gardé sur le compte du joueur servi.
 import type { Dialogue, DialogueLine, Speaker } from '~~/utils/dialogue'
 import type { Gender } from '~~/shared/utils/genders'
+import { TEAM_IDS } from '~~/shared/utils/teams'
+import type { TeamId } from '~~/shared/utils/teams'
 
 // Le décor flou de l'attente en attendant le sien, cf. components/PlayFrame.vue.
 const BACKGROUND = '/images/blurry-cooldown-bg.webp'
@@ -158,6 +164,10 @@ const ANSWERS: Record<Topic, DuoLine[]> = {
       place: 'right',
       text: 'Six étages, à gravir l\'un après l\'autre.',
     },
+    {
+      place: 'right',
+      text: 'Les deux guildes se la disputent : c\'est à qui en atteindra le premier le sommet.',
+    },
   ],
   'Qu\'est-ce qu\'il y a, tout en haut ?': [
     {
@@ -238,6 +248,41 @@ const FAREWELL: [DuoLine, ...DuoLine[]] = [
   },
 ]
 
+/** Ce que défend chaque guilde : l'émission dont elle veut le retour. */
+const CREED_OF: Record<TeamId, string> = {
+  MIDI: 'Les 12 coups de midi',
+  TLM: 'Tout le monde veut prendre sa place',
+}
+
+/**
+ * L'Inconnu lit la bannière du joueur : sa guilde, et la rivale (voir
+ * specs/lore.md#guildes). Leur course au sommet attend que le joueur demande ce
+ * qu'est la Tour. Rien à choisir, rien à recevoir : le joueur porte déjà ses
+ * couleurs. Rien à lire sans équipe — l'admin qui relit
+ * l'introduction.
+ */
+function guild(team: TeamId | null): DuoLine[] {
+  if (team === null) {
+    return []
+  }
+
+
+  const rival = TEAM_IDS.find(id => id !== team) ?? team
+
+  return [
+    {
+      place: 'right',
+      text: `Je vois à ta bannière que tu es des ${teamLabel(team)}. `
+        + `Tu défends donc « ${CREED_OF[team]} ».`,
+    },
+    {
+      place: 'right',
+      text: `Alors tu es en concurrence avec les ${teamLabel(rival)}, `
+        + `qui défendent « ${CREED_OF[rival]} ».`,
+    },
+  ]
+}
+
 /**
  * Le don, au moment de partir : il rappelle le joueur et lui tend le Fromage,
  * sans dire pourquoi — c'est lui qui attirera Michel au camp (voir
@@ -260,7 +305,7 @@ type Step =
   | { scene: 'reaction', reply: Reply }
   | { scene: 'topic', topic: Topic }
 
-const { refresh: refreshUser } = await useCurrentUser()
+const { user, refresh: refreshUser } = await useCurrentUser()
 
 const step = ref<Step>({ scene: 'greeting' })
 const name = ref('')
@@ -326,6 +371,7 @@ const dialogue = computed<Dialogue>(() => {
           text: 'Personne d\'important. Quelqu\'un qui a vu monter beaucoup de monde. '
             + 'Et redescendre à peu près autant.',
         },
+        ...guild(user.value?.team ?? null),
         menu('Tu as des questions, je suppose. Ils en ont tous.'),
       ])
     case 'menu':

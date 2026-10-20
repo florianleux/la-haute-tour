@@ -7,8 +7,11 @@ import { TEAM_IDS } from '~~/shared/utils/teams'
 // or a pasted @username out of a list that would silently never match.
 const bodySchema = z.object({
   discordId: z.string().trim().regex(/^\d+$/),
-  /** L'équipe d'arrivée, ou null pour laisser le joueur sans équipe. */
-  team: z.enum(TEAM_IDS).nullable().default(null),
+  /**
+   * L'équipe d'arrivée, obligatoire : un joueur invité a toujours une guilde,
+   * que L'Inconnu lui révèle à l'introduction. Voir specs/equipes.md.
+   */
+  team: z.enum(TEAM_IDS),
 })
 
 export default defineEventHandler(async (event): Promise<{ ok: true }> => {

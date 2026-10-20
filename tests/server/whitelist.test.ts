@@ -103,37 +103,44 @@ describe('whitelist admin', () => {
   })
 
   it('refuse l ajout à un joueur sans le flag admin', async () => {
-    const response = await add(addRequest({ discordId: '111' }, await playerCookie()))
+    const response = await add(addRequest({ discordId: '111', team: 'MIDI' }, await playerCookie()))
 
     expect(response.status).toBe(403)
     expect(await invited()).toEqual([])
   })
 
   it('ajoute un Discord ID', async () => {
-    const response = await add(addRequest({ discordId: '111' }, adminCookie))
+    const response = await add(addRequest({ discordId: '111', team: 'MIDI' }, adminCookie))
 
     expect(response.status).toBe(200)
     expect(await invited()).toEqual(['111'])
   })
 
   it('ne crée pas de doublon pour un ID déjà présent', async () => {
-    await add(addRequest({ discordId: '111' }, adminCookie))
+    await add(addRequest({ discordId: '111', team: 'MIDI' }, adminCookie))
 
-    const response = await add(addRequest({ discordId: '111' }, adminCookie))
+    const response = await add(addRequest({ discordId: '111', team: 'MIDI' }, adminCookie))
 
     expect(response.status).toBe(200)
     expect(await invited()).toEqual(['111'])
   })
 
   it('rejette un Discord ID vide', async () => {
-    const response = await add(addRequest({ discordId: '  ' }, adminCookie))
+    const response = await add(addRequest({ discordId: '  ', team: 'MIDI' }, adminCookie))
+
+    expect(response.status).toBe(400)
+    expect(await invited()).toEqual([])
+  })
+
+  it('rejette un ajout sans équipe : un joueur invité a toujours sa guilde', async () => {
+    const response = await add(addRequest({ discordId: '111' }, adminCookie))
 
     expect(response.status).toBe(400)
     expect(await invited()).toEqual([])
   })
 
   it('rejette ce qui n est pas un Discord ID : un pseudo n aurait jamais matché', async () => {
-    const response = await add(addRequest({ discordId: '@gandalf' }, adminCookie))
+    const response = await add(addRequest({ discordId: '@gandalf', team: 'MIDI' }, adminCookie))
 
     expect(response.status).toBe(400)
     expect(await invited()).toEqual([])
@@ -141,7 +148,7 @@ describe('whitelist admin', () => {
 
   describe('retrait', () => {
     it('reste fermé sans session, et à un joueur ordinaire', async () => {
-      await add(addRequest({ discordId: '111' }, adminCookie))
+      await add(addRequest({ discordId: '111', team: 'MIDI' }, adminCookie))
 
       expect((await drop(dropRequest('111'))).status).toBe(401)
       expect((await drop(dropRequest('111', await playerCookie()))).status).toBe(403)
@@ -149,7 +156,7 @@ describe('whitelist admin', () => {
     })
 
     it('retire un Discord ID de la liste', async () => {
-      await add(addRequest({ discordId: '111' }, adminCookie))
+      await add(addRequest({ discordId: '111', team: 'MIDI' }, adminCookie))
 
       const response = await drop(dropRequest('111', adminCookie))
 

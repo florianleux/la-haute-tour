@@ -18,7 +18,9 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 - Le joueur incarne un **aventurier**, membre d'une des deux guildes.
 - Les deux guildes = les deux équipes (`team`) d'`equipes.md`.
 - Noms : les **Méridiens** (`MIDI`) et les **Fauteuillistes** (`TLM`).
-- Elles sont **rivales** : chacune veut gravir la Tour en premier. (Raison de la rivalité hors-scope — pas à développer.)
+- Chacune défend une émission dont elle veut le retour : les Méridiens, *Les 12 coups de midi* ; les Fauteuillistes, *Tout le monde veut prendre sa place*.
+- Elles sont **rivales** : c'est à qui atteindra le premier le sommet de la Tour.
+- Le joueur ne choisit pas sa guilde : il la porte déjà, sur sa bannière, quand il arrive. L'Inconnu la lui lit à l'introduction (voir [`equipes.md`](./equipes.md)).
 
 ## Étages
 
@@ -42,6 +44,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 - Personnage mystérieux, encapuchonné. C'est lui qui accueille le joueur à sa première connexion : l'introduction (`/intro`) est sa rencontre.
 - Donne au joueur des informations sur la prophétie, la Tour, etc.
 - À l'introduction, il révèle, à la demande du joueur : le Grand Événement, le déclin de la culture, la Tour et ses six étages (sans leurs noms), la prophétie — et les règles de base (questions, temps, vies, attente, rattrapage). La magie n'y est qu'évoquée. Texte : `pages/intro.vue`.
+- Dès que le joueur a dit son nom et ce qu'il est, et avant ses questions, il lit la bannière du joueur : sa guilde, ce qu'elle défend, la guilde rivale et ce qu'elle défend. La course des deux guildes au sommet, il la raconte avec la Tour, quand le joueur la demande. Sautée pour qui n'a pas d'équipe (l'admin).
 - À la fin de l'introduction, il donne au joueur un bout de **fromage**, sans dire pourquoi. C'est ce fromage qui attire Michel au camp.
 - Aide le joueur par condescendance, pas par bonté : il pense, comme pour tous les aventuriers avant lui, qu'il échouera — donc lui donner des infos ne représente aucun risque à ses yeux.
 - **Twist final** : L'Inconnu est en réalité **Samuel Étienne** (référence au vrai présentateur de *Questions pour un champion*). C'est lui, le boss final, **Le Présentateur**.
@@ -64,7 +67,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 ## Points encore à spécifier
 
 - Détails du déclin de la culture (volontairement laissé flou).
-- Raison de la rivalité entre les deux guildes (volontairement laissé flou).
+- Raison profonde de la rivalité entre les deux guildes, au-delà de la course au sommet (volontairement laissé flou).
 - Le super boss final (Le Présentateur) : lieu narratif propre pour le combat, ou "hors lieu" (après l'Univers, sans étage associé) ? Design du combat non fait.
 - Comment et quand le twist (L'Inconnu = Samuel Étienne) se révèle en jeu.
 - Tout flavor text par écran (intro, palier, gameOver, etc.).
