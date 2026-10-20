@@ -3,7 +3,7 @@
        moindre rebond de scroll le fait glisser sous le cadre. -->
   <div
     class="fixed inset-0 z-0 bg-cover bg-center"
-    :class="SKINS[skin].background"
+    :class="[SKINS[skin].background, shade(null)]"
     :data-arriving="arriving || undefined"
   />
 
@@ -15,9 +15,12 @@
     :class="VIGNETTES[reaction]"
   />
 
+  <!-- Pendant que Michel parle (question d'essai), rien ne se clique : sa
+       bulle, hors du cadre, est la seule à répondre. -->
   <div
     class="relative z-10 mx-auto w-full"
     :class="[SKINS[skin].wrapper, reaction && REACTIONS[reaction]]"
+    :inert="shaded || undefined"
   >
     <!-- container-type (@container) fait de la largeur du cadre l'unité `cqw`
          de tout ce qu'il porte : le texte rétrécit avec l'illustration au lieu
@@ -35,8 +38,14 @@
     >
       <!-- Les rubans, quand l'illustration en dessine (l'ascension oui, le
            parchemin du rattrapage non). Sous l'illustration : ils sortent de
-           derrière elle. -->
-      <slot name="ribbons" />
+           derrière elle. Dans un calque plein cadre : c'est lui que l'ombre
+           de Michel assombrit, les rubans gardent leurs positions. -->
+      <div
+        class="pointer-events-none absolute inset-0"
+        :class="shade('ribbons')"
+      >
+        <slot name="ribbons" />
+      </div>
 
       <!-- L'illustration, rognée à son cadre seul (`art`) : les rubans qu'elle
            dessine aussi sont redessinés, mobiles, par StatsRibbons — sans le
@@ -44,7 +53,7 @@
            sortent. -->
       <div
         class="pointer-events-none absolute inset-0 bg-contain bg-center bg-no-repeat"
-        :class="SKINS[skin].art"
+        :class="[SKINS[skin].art, shade(null)]"
       />
 
       <!-- Le médaillon, à cheval sur le bord haut : chrono pendant la question,
@@ -54,7 +63,7 @@
       <div
         v-if="$slots.medallion"
         class="absolute left-1/2 z-20 origin-bottom -translate-x-1/2 -translate-y-1/2 @container bg-contain bg-center bg-no-repeat group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
-        :class="[SKINS[skin].medallion, motion && MOTIONS[motion].medallion]"
+        :class="[SKINS[skin].medallion, motion && MOTIONS[motion].medallion, shade('timer')]"
         :style="{ aspectRatio: SKINS[skin].medallionRatio }"
       >
         <!-- Le chiffre au centre du disque, dont la hauteur n'est pas la même
@@ -82,17 +91,26 @@
            mesure de hauteur de clavier, juste l'état du focus. -->
       <div
         class="absolute flex flex-col items-center justify-center gap-[0.7cqw] overflow-hidden @container text-center transition-all"
-        :class="[SKINS[skin].panel, motion && MOTIONS[motion].panel]"
+        :class="[SKINS[skin].panel, motion && MOTIONS[motion].panel, shade('dispute')]"
       >
         <slot />
       </div>
 
-      <slot name="action" />
+      <!-- Le calque de l'ombre, plein cadre comme celui des rubans : un filtre
+           sur une boîte sans position déplacerait le bouton, qui s'ancre au cadre. -->
+      <div
+        class="pointer-events-none absolute inset-0 *:pointer-events-auto"
+        :class="shade(null)"
+      >
+        <slot name="action" />
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import type { LessonLine, PlayTarget } from '~~/utils/lessons'
+
 // L'habillage du dernier cadre démonté, le temps du patch en cours. Chaque card
 // monte son propre PlayFrame : passer de la question au verdict démonte l'un
 // (onBeforeUnmount, synchrone) et monte l'autre dans le même patch. Un cadre
@@ -223,7 +241,21 @@ const props = defineProps<{
    * Voir specs/ecrans.md.
    */
   motion?: 'judging' | 'leaving'
+  /**
+   * La réplique de Michel, à la question d'essai : ce qu'elle éclaire échappe
+   * à l'ombre, le reste s'assombrit. Le panneau s'éclaire avec « Contester »,
+   * qu'il porte : c'est VerdictLines qui assombrit le reste du verdict.
+   * Voir specs/spec.md (glossaire, « Éclairage »).
+   */
+  lesson?: LessonLine | null
 }>()
+
+const shaded = computed(() => lessonDims(props.lesson))
+
+/** L'ombre d'une partie du cadre, levée seulement quand la réplique la montre. Null : le reste du cadre. */
+function shade(part: PlayTarget | null): string {
+  return (part ? spotlightOn(props.lesson, part).dimmed : shaded.value) ? LESSON_SHADE : ''
+}
 
 // Chaque attente décrite d'un seul endroit, panneau et médaillon ensemble.
 const MOTIONS = {

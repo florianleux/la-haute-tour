@@ -22,15 +22,22 @@ export const LESSON_SHADE = 'brightness-[.35]'
 export type LessonAwait = 'pause' | 'click' | 'use' | 'close' | 'ascent'
 
 /**
+ * Ce que Michel éclaire sur l'écran de question, à la question d'essai : les
+ * rubans, le médaillon du chrono, et « Contester » sur le verdict.
+ */
+export type PlayTarget = 'ribbons' | 'timer' | 'dispute'
+
+/**
  * Une réplique de Michel pendant une leçon. Voir specs/ecrans.md#leçons-de-michel.
  */
 export interface LessonLine {
   text: string
   /**
-   * L'objet du camp que la réplique éclaire ; le reste reste dans l'ombre.
-   * Null, rien n'est éclairé. Voir specs/spec.md (glossaire, « Éclairage »).
+   * L'objet du camp — ou la partie de l'écran de question — que la réplique
+   * éclaire ; le reste reste dans l'ombre. Null, rien n'est éclairé. Voir
+   * specs/spec.md (glossaire, « Éclairage »).
    */
-  spotlight: CampObject | null
+  spotlight: CampObject | PlayTarget | null
   /** Ce que la réplique attend du joueur. Absent, la bulle avance au clic ou à Entrée. */
   awaits?: LessonAwait
   /** La boîte du camp d'où Michel parle, ouverte par la réplique d'avant. Absente, il parle sur le camp. */
@@ -92,6 +99,38 @@ export function fallLesson(): LessonLine[] {
     { text: 'Le Volumen garde toutes les questions que tu as vues. Tes erreurs t\'attendent dans « À revoir ».', spotlight: null, overlay: 'questionLog' },
     { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
     { text: 'On se voit une fois ton attente finie pour la suite !', spotlight: 'michel' },
+  ]
+}
+
+/**
+ * La question d'essai, après l'au revoir de la leçon du camp : Michel montre
+ * les rubans et le chrono, figé tant qu'il parle. Sa dernière bulle passée, il
+ * se tait et le joueur répond. Voir specs/ecrans.md#leçons-de-michel (Camp, 5).
+ */
+export function practiceLesson(): LessonLine[] {
+  // TODO(texte) : répliques provisoires, Flo les écrira.
+  return [
+    { text: 'Avant d\'y aller, une question pour t\'entraîner : elle ne compte pas !', spotlight: null },
+    { text: 'Tes rubans : l\'étage où tu es, les questions vues, ta série de bonnes réponses, et tes vies.', spotlight: 'ribbons' },
+    { text: 'À côté de tes vies, tes bonus et tes malus : ce qui t\'aide ou te gêne pendant l\'ascension. On en reparlera !', spotlight: 'ribbons' },
+    { text: 'Le chrono : il ne bouge pas tant que je parle, mais ensuite, il file !', spotlight: 'timer' },
+  ]
+}
+
+/**
+ * Le verdict de la question d'essai, montré comme un vrai : « Contester » sur
+ * un faux seulement — c'est là qu'il apparaît —, puis ce qu'une erreur coûte.
+ * « Suivant » se clique après. Voir specs/ecrans.md#leçons-de-michel (Camp, 6).
+ */
+export function practiceVerdictLesson({ correct }: { correct: boolean }): LessonLine[] {
+  // TODO(texte) : répliques provisoires, Flo les écrira.
+  return [
+    { text: correct ? 'Bien joué !' : 'Raté !', spotlight: null },
+    ...correct
+      ? []
+      : [{ text: 'Si ta réponse était bonne, conteste-la : un admin la relira. Ici, ça ne fait rien.', spotlight: 'dispute' } satisfies LessonLine],
+    { text: 'Sur une vraie question, une erreur te coûte une vie.', spotlight: 'ribbons' },
+    { text: 'Clique sur « Suivant » pour ta première vraie question. Bonne chance !', spotlight: null },
   ]
 }
 
@@ -159,11 +198,11 @@ export function locksOverlay(line: LessonLine | undefined): boolean {
  * Seule la pause qui le précède le laisse tel quel : Michel ne s'est pas
  * encore manifesté.
  */
-export function lessonDims(line: LessonLine | null): boolean {
-  return line !== null && line.awaits !== 'pause'
+export function lessonDims(line: LessonLine | null | undefined): boolean {
+  return Boolean(line) && line?.awaits !== 'pause'
 }
 
-/** Ce qu'une réplique fait d'un objet du camp. */
+/** Ce qu'une réplique fait d'un objet du camp, ou d'une partie de l'écran de question. */
 export interface Spotlit {
   dimmed: boolean
   clickable: boolean
@@ -176,7 +215,7 @@ export interface Spotlit {
  * échappe à l'ombre ; seul celui qu'elle demande de cliquer se clique, et il
  * pulse pour le dire.
  */
-export function spotlightOn(line: LessonLine | null, object: CampObject): Spotlit {
+export function spotlightOn(line: LessonLine | null | undefined, object: CampObject | PlayTarget): Spotlit {
   if (!line) {
     return { dimmed: false, clickable: true, pulses: false }
   }

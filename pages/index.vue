@@ -4,20 +4,52 @@
          page — les cartes restent les enfants directs du <main> du gabarit. -->
     <!-- Au-dessus de toute carte, dans la bande des succès : une action refusée
          doit se lire quel que soit l'écran en cours. -->
-    <BaseToastStack v-if="disputeFailed || actionFailed">
+    <BaseToastStack v-if="disputeFailed || actionFailed || practice.failed.value">
       <BaseToast v-if="disputeFailed">
         La contestation n'est pas partie. Réessaie.
       </BaseToast>
-      <BaseToast v-if="actionFailed">
+      <BaseToast v-if="actionFailed || practice.failed.value">
         L'action a échoué. Réessaie.
       </BaseToast>
     </BaseToastStack>
+
+    <!-- La question d'essai de la leçon du camp, puis son verdict : l'écran
+         d'une question d'ascension, que l'état servi ne connaît pas — rien
+         de la partie n'en dépend. Voir usePracticeQuestion. -->
+    <QuestionCard
+      v-if="practice.question.value && !practice.verdict.value && state && practiceScreen"
+      :state="state"
+      :question="practice.question.value"
+      :model-value="practice.typed.value"
+      :seconds-left="practice.secondsLeft.value"
+      :submitting="practice.submitting.value"
+      :effects="practiceScreen.activeEffects"
+      :lesson="practice.line.value"
+      @update:model-value="practice.typed.value = $event"
+      @submit="practice.submit"
+    />
+
+    <!-- « Contester » s'y montre sur un faux, sans rien contester : Michel
+         l'explique, c'est tout. -->
+    <ResultCard
+      v-else-if="practice.verdict.value && state && practiceScreen"
+      :state="state"
+      :screen="practiceScreen"
+      :effects="practiceScreen.activeEffects"
+      :action="{ label: 'Suivant', move: 'advance' }"
+      :disputable="!practice.verdict.value.correct"
+      :disputing="false"
+      :advancing="isRunning('advance')"
+      uncounted
+      :lesson="practice.line.value"
+      @advance="practice.leave"
+    />
 
     <!-- `submitting` lit `pending` tout court : pendant une question, rien
          d'autre qu'une réponse ne peut être en vol, et celle que le chrono ou
          la perte de focus envoie se joue comme celle du bouton. -->
     <RecoveryCard
-      v-if="view?.card === 'recovery'"
+      v-else-if="view?.card === 'recovery'"
       :screen="view.screen"
       :action="view.action"
       :model-value="typed"
@@ -98,12 +130,19 @@
          de la question. Quand une boîte du camp est ouverte, c'est
          elle qui le porte (l'Inventaire) : une boîte modale passerait devant. -->
     <MichelLesson
-      v-if="view?.card === 'cooldown' && lesson.line.value && lesson.line.value.awaits !== 'pause' && !lesson.line.value.overlay && !campOverlay"
+      v-if="view?.card === 'cooldown' && !practice.question.value && lesson.line.value && lesson.line.value.awaits !== 'pause' && !lesson.line.value.overlay && !campOverlay"
       :line="lesson.line.value"
       :choices="lesson.choices.value ?? undefined"
       @next="lesson.next"
       @choose="lesson.choose"
       @ascent="leaveForAscent"
+    />
+
+    <!-- Michel à la question d'essai : il se tait pendant que le joueur répond. -->
+    <MichelLesson
+      v-if="practice.line.value"
+      :line="practice.line.value"
+      @next="practice.next"
     />
 
     <!-- Les boîtes du camp — le Grimoire, le Volumen, les Haut-faits et
@@ -132,6 +171,7 @@ import type { CampOverlayId } from '~~/utils/phase'
 // Le temps, les envois et les relectures vivent dans useQuestionRun().
 const {
   state,
+  now,
   typed,
   secondsLeft,
   cooldownRemaining,
@@ -272,10 +312,29 @@ function advanceFromCamp(): void {
   }
 }
 
-/** Le clic sur l'au revoir de Michel : la leçon du camp est vue, l'ascension part. */
+// La question d'essai, que la leçon du camp pose après l'au revoir de Michel.
+// « Suivant » tire la première vraie question : tirée quand l'état en sert une.
+// Voir specs/ecrans.md#leçons-de-michel.
+const practice = usePracticeQuestion({
+  now,
+  advance: async () => {
+    await goNext()
+    return Boolean(state.value?.question)
+  },
+})
+
+/** L'écran de l'essai : la partie telle qu'elle est, et le verdict de l'essai. */
+const practiceScreen = computed(() => view.value && { ...view.value.screen, verdict: practice.verdict.value })
+
+/**
+ * Le clic sur l'au revoir de Michel : la question d'essai se lit d'abord, puis
+ * la leçon du camp est vue. Dans cet ordre, Michel et son ombre tiennent le
+ * camp jusqu'à ce que l'essai le remplace : ni la corde ni Entrée ne tirent la
+ * vraie question entre les deux.
+ */
 async function leaveForAscent(): Promise<void> {
+  await practice.start()
   await lesson.finish()
-  await goNext()
 }
 
 // Entrée enchaîne : la même touche qui envoie une réponse fait passer au verdict
@@ -284,7 +343,10 @@ async function leaveForAscent(): Promise<void> {
 // Ni quand une boîte du camp est ouverte : Entrée y lirait, pas remonter. Ni
 // pendant que Michel parle : Entrée fait avancer sa bulle, et une leçon ne se
 // passe pas.
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campOverlay.value === null && !lesson.line.value)
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campOverlay.value === null && !lesson.line.value && !practice.question.value)
+
+// Au verdict de la question d'essai, Entrée fait « Suivant » — une fois Michel tu.
+useAdvanceOnEnter(practice.leave, () => Boolean(practice.verdict.value) && !practice.line.value)
 
 // Le seul point d'entrée pour « avancer », bouton comme Entrée : le geste vient
 // de playView, la page l'exécute.

@@ -7,6 +7,7 @@
     :class="[
       verdict.correct ? 'relative text-emerald-700' : 'text-rose-700',
       review ? '' : verdict.correct ? 'motion-safe:animate-cheer [--enter-delay:0.1s]' : 'motion-safe:animate-shake [--enter-delay:0.1s]',
+      shade,
     ]"
   >
     {{ headline }}
@@ -19,6 +20,7 @@
 
   <PlayText
     role="recall"
+    :class="shade"
     class="text-amber-800"
   >
     {{ withNonBreakingSpaces(verdict.statement) }}
@@ -26,6 +28,7 @@
 
   <PlayText
     role="answer"
+    :class="shade"
     class="text-amber-800"
   >
     {{ verdict.answerLabel }}
@@ -35,6 +38,7 @@
   <PlayText
     v-if="!(review && verdict.correct)"
     role="aside"
+    :class="shade"
     class="text-amber-800/80"
   >
     Ta réponse : {{ verdict.submittedAnswer || '(rien)' }}
@@ -47,6 +51,7 @@
   <PlayText
     v-if="verdict.lifeLost"
     role="notice"
+    :class="shade"
     class="text-rose-700"
   >
     {{ lastLife ? "C'était ta dernière vie ! Cette tentative s'arrête là !" : 'Tu perds une vie !' }}
@@ -89,7 +94,14 @@ const props = defineProps<{
    * animation, et la saisie d'une question connue tue. Voir specs/ecrans.md#volumen.
    */
   review?: boolean
+  /**
+   * Michel montre « Contester », à la question d'essai : tout le verdict
+   * s'assombrit, sauf lui. Voir specs/ecrans.md#leçons-de-michel.
+   */
+  disputeLit?: boolean
 }>()
+
+const shade = computed(() => (props.disputeLit ? LESSON_SHADE : ''))
 
 const headline = computed(() => {
   if (props.review) {

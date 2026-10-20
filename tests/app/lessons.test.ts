@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, campLesson, fallLesson, lessonDims, recoveryLesson, lessonStart, locksOverlay, replayedLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, replayedLesson, spotlightOn } from '../../utils/lessons'
 
 // Voir specs/ecrans.md#leçons-de-michel (Chute).
 describe('la leçon de la chute', () => {
@@ -183,5 +183,44 @@ describe('ce que la réplique attend', () => {
     expect(locksOverlay(undefined)).toBe(false)
     expect(locksOverlay({ text: '', spotlight: null, overlay: 'inventory', awaits: 'use' })).toBe(true)
     expect(locksOverlay({ text: '', spotlight: null, overlay: 'achievements', awaits: 'close' })).toBe(false)
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Camp, 5 et 6).
+describe('la question d essai', () => {
+  it('montre les rubans puis le chrono, chaque bulle avançant au clic', () => {
+    const lines = practiceLesson()
+    const shown = lines.map(line => line.spotlight).filter(Boolean)
+
+    expect([...new Set(shown)]).toEqual(['ribbons', 'timer'])
+    expect(lines.every(line => !line.awaits)).toBe(true)
+  })
+
+  it('montre « Contester » sur un verdict faux, puis ce qu une erreur coûte', () => {
+    const shown = practiceVerdictLesson({ correct: false }).map(line => line.spotlight).filter(Boolean)
+
+    expect([...new Set(shown)]).toEqual(['dispute', 'ribbons'])
+  })
+
+  it('ne montre pas « Contester » sur un verdict juste', () => {
+    const shown = practiceVerdictLesson({ correct: true }).map(line => line.spotlight)
+
+    expect(shown).not.toContain('dispute')
+    expect(shown).toContain('ribbons')
+  })
+
+  it('avance au clic jusqu au bout du verdict : « Suivant » vient après', () => {
+    expect(practiceVerdictLesson({ correct: false }).every(advancesOnBubble)).toBe(true)
+  })
+})
+
+describe('l éclairage de l écran de question', () => {
+  it('éclaire la cible que la réplique montre, et assombrit les autres', () => {
+    expect(spotlightOn({ text: '', spotlight: 'timer' }, 'timer').dimmed).toBe(false)
+    expect(spotlightOn({ text: '', spotlight: 'timer' }, 'ribbons').dimmed).toBe(true)
+  })
+
+  it('n assombrit rien quand Michel s est tu', () => {
+    expect(spotlightOn(null, 'ribbons').dimmed).toBe(false)
   })
 })

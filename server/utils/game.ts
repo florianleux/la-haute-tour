@@ -77,6 +77,9 @@ export interface ServedQuestion {
   lootQuestion: boolean
 }
 
+/** Ce qu'un écran de question montre de la question, qu'elle soit servie ou d'essai. */
+export type ShownQuestion = Pick<ServedQuestion, 'id' | 'statement' | 'lootQuestion'>
+
 export interface Verdict {
   /** La question jugée — c'est elle que le joueur conteste, s'il conteste. */
   questionId: string

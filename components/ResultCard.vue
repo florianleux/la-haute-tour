@@ -3,14 +3,16 @@
     skin="ascent"
     :reaction="reaction"
     :motion="advancing ? 'leaving' : undefined"
+    :lesson="lesson"
   >
     <template #ribbons>
       <!-- Palier et Série prennent un sur tout verdict d'ascension, juste ou
-           faux (le rattrapage n'arrive pas ici, voir RecoveryCard). -->
+           faux (le rattrapage n'arrive pas ici, voir RecoveryCard), sauf
+           quand l'appelant dit le contraire (`uncounted`). -->
       <StatsRibbons
         :state="state"
         :effects="effects"
-        :counted="Boolean(screen.verdict)"
+        :counted="Boolean(screen.verdict) && !uncounted"
         :life-lost="screen.verdict?.lifeLost"
       />
     </template>
@@ -31,6 +33,7 @@
         :disputable="disputable"
         :disputing="disputing"
         :last-life="state.lives <= 0"
+        :dispute-lit="lessonDims(lesson) && !spotlightOn(lesson, 'dispute').dimmed"
         @dispute="$emit('dispute')"
       />
 
@@ -102,6 +105,7 @@
 import type { GameState } from '~~/server/utils/game'
 import type { GameScreen, PlayAction } from '~~/utils/phase'
 import type { EffectView } from '~~/server/utils/effects'
+import type { LessonLine } from '~~/utils/lessons'
 
 const props = defineProps<{
   state: GameState
@@ -112,6 +116,10 @@ const props = defineProps<{
   disputable: boolean
   disputing: boolean
   advancing: boolean
+  /** Le verdict ne compte pas, celui de la question d'essai : les rubans ne prennent pas un. */
+  uncounted?: boolean
+  /** La réplique de Michel sur ce verdict, null une fois qu'il s'est tu. Voir PlayFrame. */
+  lesson?: LessonLine | null
 }>()
 
 defineEmits<{ dispute: [], advance: [] }>()

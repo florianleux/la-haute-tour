@@ -2,6 +2,7 @@
   <PlayFrame
     skin="ascent"
     :motion="submitting ? 'judging' : undefined"
+    :lesson="lesson"
   >
     <template #ribbons>
       <StatsRibbons
@@ -38,8 +39,10 @@
     </PlayText>
 
     <!-- Le même champ qu'en rattrapage (RecoveryCard) : on répond pareil des
-         deux côtés. -->
+         deux côtés. Remonté quand Michel se tait, à la question d'essai : il
+         prend le focus à son montage, qu'un cadre inerte lui refusait. -->
     <BaseParchmentInput
+      :key="lessonDims(lesson) ? 'held' : 'free'"
       :model-value="modelValue"
       @update:model-value="$emit('update:modelValue', $event)"
       @submit="send('enter')"
@@ -66,18 +69,22 @@
 // Écrit à part de BaseButton/BaseInput, dont les classes portent le thème
 // sombre : les reprendre ici les recouvrirait en ligne, ce que CLAUDE.md
 // interdit — plus simple de sortir du système Base* pour les écrans reskinés.
-import type { GameState, ServedQuestion } from '~~/server/utils/game'
+import type { GameState, ShownQuestion } from '~~/server/utils/game'
 import type { EffectView } from '~~/server/utils/effects'
+import type { LessonLine } from '~~/utils/lessons'
 import type { SendMethod } from '~/composables/useEmptyAnswerHold'
 
 const props = defineProps<{
   state: GameState
-  question: ServedQuestion
+  /** La question d'essai n'a ni échéance ni tolérance de focus : l'écran ne les lit pas. */
+  question: ShownQuestion
   modelValue: string
   secondsLeft: number | null
   /** Une réponse est en vol, envoyée au clic comme à la fin du chrono : la carte le joue. */
   submitting: boolean
   effects: EffectView[]
+  /** La réplique de Michel, à la question d'essai. Voir PlayFrame. */
+  lesson?: LessonLine | null
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [string], submit: [] }>()

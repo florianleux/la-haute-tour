@@ -1,3 +1,4 @@
+import { useClockTick } from './useClockTick'
 import { useGameState } from './useGameState'
 import { usePlay } from './usePlay'
 import { formatCountdown } from '../utils/date'
@@ -9,6 +10,8 @@ import type { GameState } from '~~/server/utils/game'
 export interface QuestionRun {
   /** L'état de jeu tel que le serveur l'a rendu. La page ne fait que l'afficher. */
   state: Ref<GameState | null>
+  /** L'horloge du chrono, en millisecondes : la question d'essai bat sur la même. */
+  now: Ref<number>
   /** Ce que le joueur a tapé, conservé tant que la réponse n'est pas partie. */
   typed: Ref<string>
   /** Secondes restantes sur la question en cours, null hors question. */
@@ -64,11 +67,11 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   // Un composable Nuxt appelé après l'await lève « called outside of setup ».
   const owner = getCurrentScope()
   const { next, answer, skipCooldown, openChest, failed: actionFailed, pending } = usePlay()
+  const now = options.now ?? useClockTick(TICK_MS)
 
   const { state, failed: readFailed, loading, refresh } = await useGameState()
 
   const typed = ref('')
-  const now = options.now ?? ref(Date.now())
   const visible = options.visible ?? ref(true)
 
   const secondsLeft = computed<number | null>(() => {
@@ -120,14 +123,6 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
 
   /** Les effets, créés dans la portée de l'appelant pour être libérés avec elle. */
   function watchTheClock(): void {
-    if (!options.now && import.meta.client) {
-      const ticker = setInterval(() => {
-        now.value = Date.now()
-      }, TICK_MS)
-
-      onScopeDispose(() => clearInterval(ticker))
-    }
-
     // À zéro, on envoie ce qui est saisi : le serveur tranchera de toute façon
     // que c'est hors délai. Sans ça l'écran resterait figé sur une question
     // morte — y compris à l'arrivée sur une question déjà expirée, d'où
@@ -226,6 +221,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
 
   return {
     state,
+    now,
     typed,
     secondsLeft,
     cooldownRemaining,
