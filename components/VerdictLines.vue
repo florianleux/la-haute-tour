@@ -58,13 +58,17 @@
   </PlayText>
 
   <!-- Voir specs/validation.md : la contestation se propose là où le désaccord
-       naît, en ascension comme en rattrapage. -->
+       naît, en ascension comme en rattrapage. Sur un faux en jeu, sa ligne est
+       tenue dès l'arrivée du verdict, invisible tant que la liste des
+       contestables relue après la réponse ne l'a pas confirmé (pages/index.vue) :
+       sinon elle pousse toute la carte une seconde plus tard. -->
   <PlayText
-    v-if="disputable"
+    v-if="disputable || disputeHeld"
     role="link"
     as="button"
     type="button"
     :disabled="disputing"
+    :class="{ invisible: !disputable }"
     class="cursor-pointer text-amber-700 transition hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
     @click="$emit('dispute')"
   >
@@ -102,6 +106,12 @@ const props = defineProps<{
 }>()
 
 const shade = computed(() => (props.disputeLit ? LESSON_SHADE : ''))
+
+// Seul un faux avec une saisie peut devenir contestable : un vide ne l'est
+// jamais (server/utils/disputes.ts). Au Volumen, rien n'arrive après coup.
+const disputeHeld = computed(() =>
+  !props.review && !props.verdict.correct && props.verdict.submittedAnswer !== '',
+)
 
 const headline = computed(() => {
   if (props.review) {
