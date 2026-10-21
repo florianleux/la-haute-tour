@@ -21,3 +21,6 @@ tmp/
 # le poste qui développe, pas le projet — ils n'ont pas à voyager avec lui.
 .mcp.json
 .codegraph/
+
+# Sauvegardes de la prod (deck complet, dump SQL) : données réelles, jamais dans git.
+backups/
