@@ -207,17 +207,6 @@ export function lessonStart(lines: LessonLine[], cheeseHeld: boolean): number {
   return cheeseHeld ? 0 : lines.findIndex(line => line.awaits === 'use') + 1
 }
 
-/**
- * Une leçon déjà vue, rejouée au clic sur Michel : mêmes répliques, même
- * éclairage, mais rien à faire ni à attendre — chaque réplique avance au clic,
- * sur le camp. Rien ne s'ouvre, rien ne se donne, rien ne se lance.
- */
-export function replayedLesson(lines: LessonLine[]): LessonLine[] {
-  return lines
-    .filter(line => line.awaits !== 'pause')
-    .map(({ awaits: _, overlay: __, ...line }) => line)
-}
-
 /** La bulle avance au clic, à Entrée ou aux flèches : la réplique n'attend rien d'autre. */
 export function advancesOnBubble(line: LessonLine): boolean {
   return !line.awaits || line.awaits === 'ascent'

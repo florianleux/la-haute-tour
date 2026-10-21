@@ -53,7 +53,7 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 
 ### Michel
 
-- Une petite **souris**, qui vit au camp : on le voit déjà dans le décor avant qu'il ne parle.
+- Une petite **souris**, qui vit au camp.
 - Absent de l'introduction. Il arrive à la première visite du camp, attiré par l'odeur du fromage de L'Inconnu, et se le fait donner.
 - Compagnon de voyage du joueur : c'est lui qui lui explique le camp et ses objets, chacun au moment où il apparaît (voir [`ecrans.md`](./ecrans.md#leçons-de-michel)). L'Inconnu, lui, garde les règles de base.
 - Ses répliques restent à écrire. Michel se dit au masculin, bien que souris.

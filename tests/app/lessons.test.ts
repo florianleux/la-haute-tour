@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, replayedLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, spellbookLesson, spotlightOn } from '../../utils/lessons'
 
 // Voir specs/ecrans.md#leçons-de-michel (Chute).
 describe('la leçon de la chute', () => {
@@ -118,20 +118,6 @@ describe('la reprise de la leçon du camp', () => {
     const start = lessonStart(lines, false)
 
     expect(lines[start - 1].awaits).toBe('use')
-  })
-})
-
-// Rejouée, la leçon ne fait rien faire : rien ne s'ouvre, rien ne se donne.
-describe('une leçon rejouée', () => {
-  it('avance au clic à chaque réplique, sur le camp', () => {
-    expect(replayedLesson(campLesson({ team: 'MIDI' })).every(line => !line.awaits && !line.overlay)).toBe(true)
-  })
-
-  it('garde ses répliques et ce qu elle éclaire, sans l attente', () => {
-    const lines = campLesson({ team: 'MIDI' })
-    const spoken = lines.filter(line => line.awaits !== 'pause')
-
-    expect(replayedLesson(lines).map(line => [line.text, line.spotlight])).toEqual(spoken.map(line => [line.text, line.spotlight]))
   })
 })
 

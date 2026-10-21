@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
 import { demoState } from '../../utils/demo'
 import { dueLesson, isAtRest } from '../../utils/phase'
-import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson, spellbookLesson } from '../../utils/lessons'
+import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, recoveryLesson, spellbookLesson } from '../../utils/lessons'
 import type { GameState } from '../../server/utils/game'
 import type { Ref } from 'vue'
 import type { TeamId } from '../../shared/utils/teams'
@@ -11,7 +11,7 @@ import type { TeamId } from '../../shared/utils/teams'
 const { answerWith, breakNetwork, calls, reset } = installAppGlobals()
 
 // Les auto-imports dont le composable se sert, que Vitest ne pose pas.
-Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, recoveryLesson, replayedLesson, spellbookLesson, LESSON_PAUSE_MS })
+Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
 const { fetchItems } = await import('../../composables/useItems')
 Object.assign(globalThis, { fetchItems })
 
@@ -335,70 +335,5 @@ describe('le déroulé de la leçon du Grimoire', () => {
 
   it('ne se joue pas sans sort obtenu', () => {
     expect(start(demoState({ spellDiscovered: false, lessonsDone: ['camp'] })).line.value).toBeNull()
-  })
-})
-
-// Hors leçon, Michel propose de rejouer une leçon déjà vue.
-describe('le rejeu d une leçon', () => {
-  it('propose les leçons vues, et de refuser', () => {
-    const lesson = start(demoState({ lessonsDone: ['camp'] }))
-
-    lesson.offer()
-
-    expect(lesson.choices.value).toEqual(['Le camp', 'Non merci'])
-  })
-
-  it('ne propose rien sans leçon vue', () => {
-    const lesson = start(demoState({ lessonsDone: [], phase: 'cooldown', cooldownUntil: new Date(Date.now() + 60_000).toISOString() }))
-
-    lesson.offer()
-
-    expect(lesson.line.value).toBeNull()
-  })
-
-  it('rejoue la leçon sans rien attendre, et sans rien dater', () => {
-    const lesson = start(demoState({ lessonsDone: ['camp'] }))
-    lesson.offer()
-
-    lesson.choose(0)
-    let spoken = 0
-    while (lesson.line.value) {
-      expect(lesson.line.value.awaits).toBeUndefined()
-      lesson.next()
-      spoken += 1
-    }
-
-    expect(spoken).toBeGreaterThan(5)
-    expect(calls()).not.toContain('fetch POST /api/profile/lessons')
-  })
-
-  it('rejoue la leçon de la chute, sur le camp, sans rien faire ouvrir', () => {
-    const lesson = start(demoState({ lessonsDone: ['camp', 'fall'] }))
-    lesson.offer()
-
-    lesson.choose(1)
-
-    expect(lesson.line.value?.text).toBe('HÉ !')
-    const spoken = playThrough(lesson)
-    expect(spoken.at(-1)).toBe('On se voit une fois ton attente finie pour la suite !')
-    expect(calls()).not.toContain('fetch POST /api/profile/lessons')
-  })
-
-  it('ne rejoue pas le rattrapage sans ses chiffres', () => {
-    const lesson = start(demoState({ lessonsDone: ['camp', 'fall', 'recovery'] }))
-    lesson.offer()
-
-    lesson.choose(2)
-
-    expect(lesson.line.value).toBeNull()
-  })
-
-  it('se tait sur « Non merci »', () => {
-    const lesson = start(demoState({ lessonsDone: ['camp'] }))
-    lesson.offer()
-
-    lesson.choose(1)
-
-    expect(lesson.line.value).toBeNull()
   })
 })

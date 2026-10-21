@@ -72,7 +72,6 @@ L'ascension **au repos** (voir [`spec.md`](./spec.md#glossaire)) s'affiche au ca
 | La bannière (Haut-faits) | toujours, pour un joueur qui a une équipe |
 | Le parchemin (Volumen) | dès la première question vue — en pratique, au retour de la première chute |
 | Le grimoire (Sorts) | dès le premier sort obtenu, même une fois tous lancés |
-| Michel | dès sa première arrivée, à la leçon du camp |
 
 ### `ascent` — question
 
@@ -104,7 +103,7 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 - L'accès au **Volumen**, par le parchemin du camp : c'est là que se relisent les erreurs de l'étage, et que se contestent celles qui peuvent l'être. Voir [Volumen](#volumen).
 - Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur au survol — et ceux qui frappent l'attente elle-même (Répit, Indulgence et Purge agissent dès le lancer). Le joueur a tout lu avant de reprendre. Chaque sort s'écrit en toutes lettres et ouvre son infobulle, voir [`bonus.md`](./bonus.md#linfobulle-dun-sort).
 - L'accès au **Grimoire**, par le grimoire du camp.
-- Le **camp** lui-même, posé sur le décor : la corde (« Ascension »), roulée pendant l'attente, déroulée quand elle est échue — un clic lance alors la suite, comme le bouton « Commencer » ; la bannière de la guilde du joueur, qui mène aux Haut-faits (pas de bannière sans équipe, voir [`equipes.md`](./equipes.md)) ; le parchemin du Volumen ; le grimoire ; le sac de l'Inventaire ; Michel. Chaque objet dit son nom au survol, et n'est là qu'une fois apparu (voir [Camp au repos](#camp-au-repos)).
+- Le **camp** lui-même, posé sur le décor : la corde (« Ascension »), roulée pendant l'attente, déroulée quand elle est échue — un clic lance alors la suite, comme le bouton « Commencer » ; la bannière de la guilde du joueur, qui mène aux Haut-faits (pas de bannière sans équipe, voir [`equipes.md`](./equipes.md)) ; le parchemin du Volumen ; le grimoire ; le sac de l'Inventaire. Chaque objet dit son nom au survol, et n'est là qu'une fois apparu (voir [Camp au repos](#camp-au-repos)).
 
 ### `recovery` — rattrapage
 
@@ -141,7 +140,7 @@ Message de félicitations, précédé du verdict de la dernière question. Phase
 
 ## Leçons de Michel
 
-Michel, la souris du camp (voir [`lore.md`](./lore.md#michel)), explique l'interface au moment où le joueur la découvre. Une **leçon** se joue une fois, ne se passe pas, et chaque réplique avance au clic, à Entrée ou aux flèches bas et droite. Sa forme : le buste de Michel monte du coin bas-droit de l'écran, au camp comme ailleurs, et une **bulle** sort de lui ; ce dont il parle **s'éclaire** et le reste s'assombrit ; quand il demande un geste, seul ce qu'il montre se clique. Quand une boîte du camp est ouverte (l'Inventaire, à la leçon du camp), il parle depuis la boîte. Hors leçon, il reste dans le décor, sur son rocher, et un clic sur lui propose de rejouer une leçon déjà vue : rejouée, elle garde ses répliques et son éclairage, mais chaque geste demandé devient un clic pour avancer — rien ne s'ouvre, rien ne se donne.
+Michel, la souris du camp (voir [`lore.md`](./lore.md#michel)), explique l'interface au moment où le joueur la découvre. Une **leçon** se joue une fois, ne se passe pas, et chaque réplique avance au clic, à Entrée ou aux flèches bas et droite. Sa forme : le buste de Michel monte du coin bas-droit de l'écran, au camp comme ailleurs, et une **bulle** sort de lui ; ce dont il parle **s'éclaire** et le reste s'assombrit ; quand il demande un geste, seul ce qu'il montre se clique. Quand une boîte du camp est ouverte (l'Inventaire, à la leçon du camp), il parle depuis la boîte. Hors leçon, il n'est pas à l'écran, et une leçon vue ne se revoit pas.
 
 Chaque leçon jouée d'elle-même s'ouvre sur la même entrée, comique de répétition : Michel se fait attendre (2 s, le camp ne répond pas), puis une bulle seule, qui éclot en tremblant comme un cri, l'annonce (« HÉ ! ») — le camp s'assombrit dès ce cri — avant qu'il ne surgisse.
 

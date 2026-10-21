@@ -94,19 +94,13 @@ const props = defineProps<{
   lesson: LessonLine | null
 }>()
 
-const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId], michel: [] }>()
+const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId] }>()
 
-/**
- * Ce que fait un clic sur l'objet : ouvrir une boîte du camp, lancer la suite,
- * ou demander à Michel de rejouer une leçon.
- */
-type CampClick = { open: CampOverlayId } | 'advance' | 'michel'
+/** Ce que fait un clic sur l'objet : ouvrir une boîte du camp, ou lancer la suite. */
+type CampClick = { open: CampOverlayId } | 'advance'
 
 function onClick(click: CampClick): void {
-  if (click === 'michel') {
-    emit('michel')
-  }
-  else if (click !== 'advance') {
+  if (click !== 'advance') {
     emit('open', click.open)
   }
   else if (!props.advancing) {
@@ -223,9 +217,6 @@ const layers = computed((): ShownLayer[] => {
         // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
         // devant eux, comme sur l'illustration.
         { object: 'spellbook', src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } },
-        // TODO(image) : Michel, sur le rocher du bord droit (vers 1822×949 du
-        // calque), revient ici avec le sprite du décor que Flo fournit — un
-        // clic sur lui propose alors de rejouer une leçon (`click: 'michel'`).
       ],
     },
   ]

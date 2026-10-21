@@ -91,7 +91,6 @@
       @skip-cooldown="run('skipCooldown', skipCooldown)"
       @advance="advanceFromCamp"
       @open="openCampOverlay"
-      @michel="lesson.offer"
     />
 
     <ChestCard
@@ -132,9 +131,7 @@
     <MichelLesson
       v-if="view?.card === 'cooldown' && !practice.question.value && lesson.line.value && lesson.line.value.awaits !== 'pause' && !lesson.line.value.overlay && !campOverlay"
       :line="lesson.line.value"
-      :choices="lesson.choices.value ?? undefined"
       @next="lesson.next"
-      @choose="lesson.choose"
       @ascent="leaveForAscent"
     />
 
@@ -285,7 +282,7 @@ const CAMP_OVERLAYS: Record<CampOverlayId, Component> = {
   inventory: InventoryOverlay,
 }
 
-// Michel au camp : chaque leçon à son moment, rejouée à la demande. Une leçon
+// Michel au camp : chaque leçon à son moment, une fois. Une leçon
 // datée relit l'état, qui dit la suivante. Voir specs/ecrans.md#leçons-de-michel.
 const lesson = useCampLesson(state, computed(() => user.value?.team ?? null), refresh)
 

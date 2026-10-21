@@ -43,13 +43,7 @@
         {{ line.text }}
       </p>
 
-      <DialogueChoiceList
-        v-if="choices"
-        :choices="choices"
-        class="relative z-40 mt-2"
-        @choose="$emit('choose', $event)"
-      />
-      <template v-else-if="onBubble">
+      <template v-if="onBubble">
         <p class="mt-1 text-right text-[0.6em] italic text-stone-500">
           Clique pour continuer
         </p>
@@ -60,25 +54,20 @@
 </template>
 
 <script setup lang="ts">
-// La bulle de Michel pendant une leçon, ou quand il propose d'en rejouer une.
+// La bulle de Michel pendant une leçon.
 // Une réplique avance au clic, à Entrée ou aux flèches bas et droite ; quand
 // Michel attend un geste (cliquer ce qu'il montre, utiliser le Fromage, refermer
 // une boîte), seul ce geste fait passer à la suite. Le clic sur sa dernière
 // réplique lance l'ascension (`ascent`). Voir specs/ecrans.md#leçons-de-michel.
 import { DIALOGUE_KEYS } from '~~/utils/keyboard'
-import type { DialogueChoices } from '~~/utils/dialogue'
 import type { LessonLine } from '~~/utils/lessons'
 
-const props = defineProps<{
-  line: LessonLine
-  /** Les réponses proposées sous la réplique, à la place du clic pour avancer. */
-  choices?: DialogueChoices
-}>()
+const props = defineProps<{ line: LessonLine }>()
 
-const emit = defineEmits<{ next: [], choose: [number], ascent: [] }>()
+const emit = defineEmits<{ next: [], ascent: [] }>()
 
 /** La bulle elle-même fait avancer : la réplique n'attend aucun autre geste. */
-const onBubble = computed(() => !props.choices && advancesOnBubble(props.line))
+const onBubble = computed(() => advancesOnBubble(props.line))
 
 // La bulle saute à chaque réplique : le dialogue garde du rythme. Michel, lui,
 // ne bouge pas. Pas à son arrivée : la bulle y est remontée (`key`), et c'est

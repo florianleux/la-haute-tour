@@ -17,7 +17,6 @@
     :lesson="lesson"
     @advance="$emit('advance')"
     @open="$emit('open', $event)"
-    @michel="$emit('michel')"
   />
 
   <!-- Le poster est presque carré (918×980) là où le cadre de l'ascension est en
@@ -227,7 +226,7 @@ const props = defineProps<{
   lesson: LessonLine | null
 }>()
 
-defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId], michel: [] }>()
+defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId] }>()
 
 /**
  * En leçon, le décor et le poster restent dans l'ombre : Michel ne les montre
