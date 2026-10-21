@@ -37,13 +37,14 @@ describe('magie noire, sur un ennemi', () => {
     caster = await loadPlayer(db, id)
   })
 
-  /** Un joueur de l'équipe adverse, en pleine ascension sauf mention contraire. */
+  /** Un joueur de l'équipe adverse, en pleine ascension et sa première tentative finie, sauf mention contraire. */
   async function enemy(state: Parameters<typeof createPlayer>[1] = {}): Promise<User> {
     const id = await createPlayer(db, {
       discordId: 'enemy',
       username: 'saroumane',
       team: 'MIDI',
       floorSeen: 1,
+      pastFirstAttempt: true,
       ...state,
     })
 
@@ -172,7 +173,7 @@ describe('magie noire, sur un ennemi', () => {
   // lancers touchent. Voir specs/bonus.md#où-et-quand.
   it('lance autant de sorts qu il en a dans la même attente', async () => {
     await enemy()
-    await createPlayer(db, { discordId: 'enemy-2', username: 'sauron', team: 'MIDI', floorSeen: 1 })
+    await createPlayer(db, { discordId: 'enemy-2', username: 'sauron', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true })
 
     await strike('VITALITY')
     await strike('VITALITY')

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
 import { drawTarget } from '../../server/utils/targets'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { closeFirstAttempt, createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import { rolls } from '../helpers/random'
 import type { Database } from '../../server/db/client'
@@ -21,6 +21,7 @@ interface AllySeed {
   currentFloor?: number
   floorSeen?: number
   createdAt?: Date
+  pastFirstAttempt?: boolean
 }
 
 describe('tirage de la cible', () => {
@@ -48,7 +49,7 @@ describe('tirage de la cible', () => {
     })
   })
 
-  /** Un joueur du monde réel, à mi-étage sauf mention contraire. */
+  /** Un joueur du monde réel, à mi-étage et sa première tentative finie, sauf mention contraire. */
   async function player(name: string, seed: AllySeed = {}): Promise<number> {
     nextId += 1
 
@@ -58,6 +59,7 @@ describe('tirage de la cible', () => {
       team: 'TLM',
       currentFloor: 1,
       floorSeen: 1,
+      pastFirstAttempt: true,
       ...seed,
     })
   }
@@ -105,10 +107,21 @@ describe('tirage de la cible', () => {
     expect(await draw(0.5)).toBeNull()
   })
 
-  it('écarte un joueur qui n a jamais commencé', async () => {
-    await player('nouveau', { floorSeen: 0 })
+  // Un nouveau venu apprend le jeu avant d'en subir les sorts : ni allié ni
+  // ennemi ne le tire tant que ses vies ne sont pas revenues une première fois.
+  // Voir specs/bonus.md#tirage-de-la-cible.
+  it('écarte un joueur encore à sa première tentative', async () => {
+    await player('nouveau', { pastFirstAttempt: false })
 
     expect(await draw(0.5)).toBeNull()
+  })
+
+  it('le tire une fois sa deuxième tentative ouverte', async () => {
+    const id = await player('revenu', { pastFirstAttempt: false })
+
+    await closeFirstAttempt(db, id)
+
+    expect(await draw(0.5)).toBe('revenu')
   })
 
   // On soutient le plus faible : le moins avancé porte le plus gros poids.

@@ -1,7 +1,7 @@
-import { and, asc, eq, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
-import { activeEffects, deckFloors, reservations, users } from '../db/schema'
+import { and, asc, eq, exists, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
+import { activeEffects, attempts, deckFloors, reservations, users } from '../db/schema'
 import { nextFloorTotal } from './deck'
-import { countsTowardMaxBoons, drawByRank, hasStarted, isBorneBy, phaseOf } from './mechanics'
+import { countsTowardMaxBoons, drawByRank, isBorneBy, phaseOf } from './mechanics'
 import { rulesForFloor } from './rules'
 import { faceFor, SPELL_FACES } from '../../shared/utils/spells'
 import { bondBetween } from '../../shared/utils/teams'
@@ -71,6 +71,9 @@ function buildCandidatesQuery(db: Database, caster: User, kind?: DrawnTargetKind
       // n'a jamais qu'une réservation, et elle porte son identifiant en clé —
       // la jointure lit donc une ligne, là où un `count(*)` en parcourrait.
       heldQuestion: reservations.questionId,
+      // Sa première tentative finie : une tentative ne s'inscrit qu'à
+      // l'ouverture de la suivante. L'index sur le joueur en lit une ligne.
+      pastFirstAttempt: exists(db.select({ one: sql`1` }).from(attempts).where(eq(attempts.userId, users.id))).mapWith(Boolean),
     })
     .from(users)
     .leftJoin(deckFloors, eq(deckFloors.floor, users.currentFloor))
@@ -211,22 +214,22 @@ async function unsaturatedPools(db: Database, pools: Partial<Record<SpellFace, U
   return { boon: open('boon'), curse: open('curse') }
 }
 
-type Candidate = { user: User, floorTotal: number | null, nextFloorTotal: number, heldQuestion: string | null }
+type Candidate = { user: User, floorTotal: number | null, nextFloorTotal: number, heldQuestion: string | null, pastFirstAttempt: boolean }
 
 /**
  * Un joueur que le tirage garde. Sont écartés ceux qui ont fini leur partie —
  * ils n'auront jamais de prochaine tentative, l'effet serait mort-né — et ceux
- * qui n'ont jamais commencé.
+ * qui n'ont pas fini leur première : un nouveau venu apprend le jeu avant d'en
+ * subir les sorts. Lui se lance un sort à lui-même, ce filtre ne tire que les
+ * autres.
  *
  * Le filtre passe **avant** le classement : un joueur retiré du pool ne pèse
  * plus dans la distribution. Voir specs/bonus.md#tirage-de-la-cible.
  */
-function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion }: Candidate, now: Date): boolean {
-  const hasLiveReservation = heldQuestion !== null
-
+function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion, pastFirstAttempt }: Candidate, now: Date): boolean {
   const phase = phaseOf({
     user,
-    hasLiveReservation,
+    hasLiveReservation: heldQuestion !== null,
     seen: user.floorSeen,
     floorTotal: floorTotal ?? 0,
     nextFloorTotal,
@@ -234,5 +237,5 @@ function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion }: Candidat
 
   // ponytail: la fin du deck reste ciblable — un état de beta, sans prochaine
   // tentative non plus. À écarter aussi si un deck réduit sert au-delà d'une beta.
-  return phase !== 'gameOver' && hasStarted(user, hasLiveReservation)
+  return phase !== 'gameOver' && pastFirstAttempt
 }

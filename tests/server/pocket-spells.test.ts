@@ -94,20 +94,20 @@ describe('sorts en poche', () => {
       await createQuestion(db)
     })
 
-    async function page(userId: number): Promise<{ canTargetAlly: boolean, canTargetFoe: boolean }> {
+    async function page(userId: number): Promise<{ canTargetSelf: boolean, canTargetAlly: boolean, canTargetFoe: boolean }> {
       return (await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))).json()
     }
 
     it('ouvre un côté dès qu il y a quelqu un à toucher, et lui seul', async () => {
       const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
-      await createPlayer(db, { discordId: 'mate', username: 'samsagace', team: 'TLM', floorSeen: 1 })
+      await createPlayer(db, { discordId: 'mate', username: 'samsagace', team: 'TLM', floorSeen: 1, pastFirstAttempt: true })
 
       expect(await page(caster)).toMatchObject({ canTargetAlly: true, canTargetFoe: false })
     })
 
     it('ferme le côté dont tous les joueurs sont saturés', async () => {
       const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
-      const foe = await createPlayer(db, { discordId: 'foe', username: 'saroumane', team: 'MIDI', floorSeen: 1 })
+      const foe = await createPlayer(db, { discordId: 'foe', username: 'saroumane', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true })
       await db.insert(activeEffects).values(Array.from({ length: rulesForFloor(1).maxCurses }, () => ({
         userId: foe,
         casterId: caster,
@@ -119,21 +119,24 @@ describe('sorts en poche', () => {
 
       expect((await page(caster)).canTargetFoe).toBe(false)
 
-      await createPlayer(db, { discordId: 'foe-2', username: 'gollum', team: 'MIDI', floorSeen: 1 })
+      await createPlayer(db, { discordId: 'foe-2', username: 'gollum', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true })
 
       expect((await page(caster)).canTargetFoe).toBe(true)
     })
 
-    it('ne compte pas le joueur qui n a jamais commencé', async () => {
+    // Le nouveau venu n'est la cible de personne, mais se lance un sort à
+    // lui-même : la leçon du Grimoire le lui fait faire, parfois avant son
+    // premier rattrapage. Voir specs/bonus.md#tirage-de-la-cible.
+    it('ne compte pas l allié encore à sa première tentative, et laisse « Sur moi » ouvert', async () => {
       const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
-      await createPlayer(db, { discordId: 'mate', username: 'novice', team: 'TLM', floorSeen: 0 })
+      await createPlayer(db, { discordId: 'mate', username: 'novice', team: 'TLM', floorSeen: 1 })
 
-      expect((await page(caster)).canTargetAlly).toBe(false)
+      expect(await page(caster)).toMatchObject({ canTargetSelf: true, canTargetAlly: false })
     })
 
     it('n ouvre aucun côté au joueur sans équipe', async () => {
       const alone = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'alone' })
-      await createPlayer(db, { discordId: 'mate', team: 'TLM', floorSeen: 1 })
+      await createPlayer(db, { discordId: 'mate', team: 'TLM', floorSeen: 1, pastFirstAttempt: true })
 
       expect(await page(alone)).toMatchObject({ canTargetAlly: false, canTargetFoe: false })
     })
@@ -405,6 +408,7 @@ describe('sorts en poche', () => {
         username: 'saroumane',
         team: 'MIDI',
         floorSeen: 1,
+        pastFirstAttempt: true,
       })
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')
@@ -428,6 +432,7 @@ describe('sorts en poche', () => {
         team: 'TLM',
         floorSeen: 1,
         ...IN_COOLDOWN,
+        pastFirstAttempt: true,
       })
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')

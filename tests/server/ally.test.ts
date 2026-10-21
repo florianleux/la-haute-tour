@@ -43,13 +43,14 @@ describe('lancer sur un allié', () => {
     caster = await loadPlayer(db, id)
   })
 
-  /** Un coéquipier, en pleine ascension sauf mention contraire. */
+  /** Un coéquipier, en pleine ascension et sa première tentative finie, sauf mention contraire. */
   async function ally(name: string, state: Parameters<typeof createPlayer>[1] = {}): Promise<User> {
     const id = await createPlayer(db, {
       discordId: `ally-${name}`,
       username: name,
       team: 'TLM',
       floorSeen: 1,
+      pastFirstAttempt: true,
       ...state,
     })
 

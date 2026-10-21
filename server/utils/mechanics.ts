@@ -65,22 +65,6 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
   return 'ascent'
 }
 
-/**
- * Le joueur a-t-il vu ne serait-ce qu'une question ? Un compte créé et jamais
- * ouvert se reconnaît à ça : premier étage, rien de vu, rien en main.
- *
- * Il n'existe pas de phase pour le dire — un joueur qui n'a jamais commencé est
- * en `ascent` comme les autres, l'écran de jeu l'y invite. C'est pourtant une
- * cible que rien n'atteindrait : le tirage l'écarte.
- * Voir specs/bonus.md#tirage-de-la-cible.
- */
-export function hasStarted(
-  user: Pick<User, 'currentFloor' | 'floorSeen'>,
-  hasLiveReservation: boolean,
-): boolean {
-  return hasLiveReservation || user.currentFloor > 1 || user.floorSeen > 0
-}
-
 /** Ce qu'il faut d'un effet pour dire s'il est encore porté. */
 export interface BorneEffect {
   spell: SpellId

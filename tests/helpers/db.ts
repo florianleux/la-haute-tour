@@ -54,7 +54,14 @@ export async function createQuestion(db: Database, seed: QuestionSeed = {}): Pro
   return question.id
 }
 
-type PlayerState = Partial<typeof schema.users.$inferInsert>
+type PlayerState = Partial<typeof schema.users.$inferInsert> & {
+  /**
+   * Sa première tentative finie : une ligne de tentative close, comme le jeu
+   * l'écrit à l'ouverture de la suivante. C'est ce qui le rend tirable par un
+   * allié ou un ennemi. Voir server/utils/targets.ts.
+   */
+  pastFirstAttempt?: boolean
+}
 
 /**
  * Ce que porte l'attente demandée, en plus de son échéance : son début et sa
@@ -74,8 +81,19 @@ function cooldownAround(state: PlayerState): Pick<PlayerState, 'cooldownStartedA
   return { cooldownStartedAt: new Date(until.getTime() - cooldownMs), cooldownBaseMs: cooldownMs }
 }
 
+/** La première tentative du joueur, close : sa deuxième s'est ouverte. Voir `pastFirstAttempt`. */
+export async function closeFirstAttempt(db: Database, userId: number): Promise<void> {
+  await db.insert(schema.attempts).values({
+    userId,
+    startedAt: new Date(0),
+    endedAt: new Date(0),
+    seen: 1,
+    floor: 1,
+  })
+}
+
 /** A player in the database, spelling out only what the test looks at. */
-export async function createPlayer(db: Database, state: PlayerState = {}): Promise<number> {
+export async function createPlayer(db: Database, { pastFirstAttempt = false, ...state }: PlayerState = {}): Promise<number> {
   const [user] = await db
     .insert(schema.users)
     .values({
@@ -101,6 +119,10 @@ export async function createPlayer(db: Database, state: PlayerState = {}): Promi
       .insert(schema.whitelist)
       .values({ discordId: user.discordId })
       .onConflictDoNothing()
+  }
+
+  if (pastFirstAttempt) {
+    await closeFirstAttempt(db, user.id)
   }
 
   return user.id
