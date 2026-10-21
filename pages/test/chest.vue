@@ -39,7 +39,8 @@ const chest = ref<ChestView>(CLOSED)
 const state = computed(() => demoState({
   // Le Mimic les prend toutes, comme en vrai.
   lives: chest.value.mimic ? 0 : 2,
-  floorSeen: 49,
+  // La question servie est la 25e : `questionsPerChest` de server/utils/rules.ts.
+  floorSeen: 24,
   floorTotal: 166,
   streak: 12,
   seenTotal: 1_204,

@@ -115,7 +115,7 @@ Valeurs par défaut, identiques aux 6 étages :
 | Attente après un rattrapage manqué | 4 h |
 | Tolérance de perte de focus | 1 s |
 | Lancers de sorts par attente | 2 |
-| Questions résolues entre deux coffres | 50 |
+| Questions résolues entre deux coffres | 25 |
 | Chance de Mimic à l'ouverture d'un coffre | 5 % |
 | Effets négatifs simultanés par joueur | 2 |
 | Vitalité — vies ajoutées ou retirées | 1 |

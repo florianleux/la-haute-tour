@@ -111,7 +111,9 @@ const teamOptions = [
   { value: NO_TEAM, label: teamLabel(null) },
   ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
 ]
-const stepOptions = [1, 5, 10, 25, 49].map(count => ({ value: String(count), label: `${count}` }))
+// 24 et 49 posent le joueur juste avant le 1er et le 2e coffre : à recaler si
+// `questionsPerChest` change (server/utils/rules.ts).
+const stepOptions = [1, 5, 10, 24, 49].map(count => ({ value: String(count), label: `${count}` }))
 
 const stepsValue = computed({
   get: () => String(steps.value),
