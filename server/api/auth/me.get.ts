@@ -7,7 +7,7 @@ import type { User } from '~~/server/db/schema'
  * Identity only — floor and lives come from `/api/game/state`, the single
  * definition of where the player stands. See specs/architecture.md.
  */
-export type SessionUser = Pick<User, 'id' | 'username' | 'isAdmin' | 'team'> & {
+export type SessionUser = Pick<User, 'id' | 'username' | 'isAdmin' | 'team' | 'gender'> & {
   /** Le nom que le jeu montre. Voir server/utils/names.ts. */
   displayName: string
   /** ISO 8601: a `Date` doesn't survive the trip to the client. */
@@ -59,6 +59,7 @@ function sessionUser(user: User): SessionUser {
     displayName: displayName(user),
     isAdmin: user.isAdmin,
     team: user.team,
+    gender: user.gender,
     createdAt: user.createdAt.toISOString(),
     introDone: user.introDoneAt !== null,
   }

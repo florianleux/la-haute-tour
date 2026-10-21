@@ -55,13 +55,6 @@ function faceless(name: string): Speaker {
   return { name, portrait: SILHOUETTE, retreats: false, color: 'orange' }
 }
 
-/** Le portrait du joueur, une fois qu'il a dit ce qu'il est. */
-const PORTRAIT_OF: Record<Gender, string> = {
-  MALE: '/images/intro-player-male.webp',
-  FEMALE: '/images/intro-player-female.webp',
-  NEUTRAL: '/images/intro-player-neutral.webp',
-}
-
 /**
  * La rencontre : il salue, jauge, puis demande le nom. Condescendant — il aide
  * parce qu'il croit l'aventurier perdu d'avance (voir specs/lore.md).
@@ -328,7 +321,7 @@ function pick(rank: number): void {
 
 const player = computed<Speaker>(() => (gender.value === null
   ? faceless(name.value || '???')
-  : { name: name.value, portrait: PORTRAIT_OF[gender.value], color: 'orange' }))
+  : { name: name.value, portrait: playerPortrait(gender.value), color: 'orange' }))
 
 /** Un dialogue de l'introduction : toujours le joueur face à L'Inconnu. */
 function stage(lines: Extract<Dialogue, { left: Speaker }>['lines']): Dialogue {
