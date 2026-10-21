@@ -65,6 +65,16 @@ Document de travail. Bribes posées par Flo, mises en forme et développées par
 - Séquence complète de fin de jeu : étage 6 (Amas de la Vierge), toutes ses questions vues (`floorEnd`) → Porte de l'Univers (`bossDoor`) → boss de l'étage 6 → super boss final → sortie de la Tour (`gameOver`). Le super boss est **à venir** : d'ici là, `gameOver` suit le boss de l'étage 6 (voir [`mecanique.md`](./mecanique.md#fin-de-partie)).
 - Design du super boss final non fait — pas le même combat que les 6 boss d'étage, à spécifier séparément.
 
+### Étage 1 — Julien Le Perse
+
+- Le boss de l'étage 1 (Terre), derrière la **Porte de la Lune**. Son nom joue sur Julien Lepers, l'animateur, et la Perse.
+- **Ancien animateur déchu.** Aucun lien montré avec Le Présentateur : celui-ci n'est connu qu'à la fin (voir le twist, section Personnages).
+- **Aigri**, il bloque la montée : il refuse que quiconque monte plus haut que lui.
+- **Allure** : la tête de Julien Lepers sur le corps du Xerxès du film *300*. Illustrations fournies par Flo.
+- **Répliques** : ses tics de langage (« Oui oui oui !! », « C'est non ! », « Je suis, je suis… ») mêlés à des délires de grandeur à la Xerxès. Textes à écrire.
+- **Relique** (voir [`boss.md`](./boss.md#récompense)) : ses **fiches** d'animateur.
+- Pas encore fixés : le décor de la Porte de la Lune (avec les illustrations), et pourquoi ses épreuves sont des drapeaux.
+
 ## Points encore à spécifier
 
 - Détails du déclin de la culture (volontairement laissé flou).
