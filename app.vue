@@ -2,9 +2,14 @@
   <!-- Barre de progression pendant qu'une page charge ses données : les lectures
        se font avant que la nouvelle page s'affiche, sans ça rien ne bouge. -->
   <NuxtLoadingIndicator color="#818cf8" />
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <!-- Le format décide en CSS, avant tout script : rendu côté serveur, le jeu
+       ne passe jamais devant le mur. Voir specs/ecrans.md#mur-mobile. -->
+  <MobileWall />
+  <div class="mobile:hidden">
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </div>
 </template>
 
 <script setup lang="ts">

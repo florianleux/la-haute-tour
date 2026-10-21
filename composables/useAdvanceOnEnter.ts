@@ -1,5 +1,6 @@
 import { advancesOnEnter } from '../utils/keyboard'
 import type { EnterTarget } from '../utils/keyboard'
+import { behindMobileWall } from '../utils/mobileWall'
 import type { MaybeRefOrGetter } from 'vue'
 
 /**
@@ -30,6 +31,12 @@ export function useAdvanceOnEnter(
   }
 
   function onKeydown(event: KeyboardEvent): void {
+    // Derrière le mur mobile, le jeu est caché mais monté : sans ça, Entrée y
+    // lancerait une question que personne ne voit, et son chrono la soumettrait.
+    if (behindMobileWall()) {
+      return
+    }
+
     const press = {
       key: event.key,
       repeat: event.repeat,

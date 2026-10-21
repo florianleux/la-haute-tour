@@ -31,6 +31,8 @@
 
 Toute page non listée comme ouverte redirige vers la connexion.
 
+Sur une fenêtre au format mobile, aucune de ces pages ne s'affiche : le [mur mobile](#mur-mobile) les remplace toutes.
+
 **Une URL inconnue ne montre pas d'erreur** : elle ramène au jeu. Il n'y a pas d'écran 404 — se tromper d'adresse renvoie là où l'on joue, et un visiteur non connecté y trouve la connexion comme partout ailleurs.
 
 ## Connexion et accès refusé
@@ -209,6 +211,34 @@ n'offre rien d'autre : ni question, ni attente, ni pool.
 
 Il ne remplace pas une question en cours ni le verdict qui la suit — voir
 [`admin.md`](./admin.md#maintenance). Il prend leur place au clic suivant.
+
+## Mur mobile
+
+Le jeu n'est pas encore pensé pour le mobile : plutôt qu'une version qu'on ne
+garantit pas — vies perdues sur un clavier virtuel, focus perdu à la première
+notification —, un écran le dit franchement. Sur le décor flou du camp, sans
+cadre, un texte qui flotte : « La Haute Tour n'est malheureusement pas encore
+disponible sur mobile ! », et l'invitation à revenir sur un ordinateur. Michel
+surgit au coin bas-droit, comme en leçon. Rien d'autre à faire.
+
+- **Ce qui décide, c'est le format de la fenêtre**, pas l'appareil : le site n'est
+  pas responsive. Le mur s'affiche en portrait, ou sous 500 px de haut. Un
+  téléphone est donc bloqué dans les deux sens, une tablette debout aussi ; une
+  tablette couchée passe. Une fenêtre de bureau plus haute que large est bloquée
+  comme un téléphone.
+- **Il couvre tout le site**, connexion et administration comprises, sans
+  exception pour l'admin ni les joueurs test.
+- **Il se décide en CSS**, avant tout script : le premier affichage est déjà le
+  bon, le jeu ne passe jamais devant. Tourner l'appareil le fait apparaître ou
+  disparaître sur-le-champ. La page reste chargée derrière, invisible et
+  inatteignable : Entrée, qui fait passer à la suite sans viser d'élément, n'y
+  fait rien. L'**écran de chargement** n'y télécharge rien non plus : un
+  téléphone ne reçoit pas les images d'un jeu qu'il ne montre pas. Il part dès
+  que le mur se lève.
+- **Une question en cours n'est pas suspendue.** Basculer au format mobile en
+  pleine question — tablette qu'on redresse, fenêtre qu'on étire — ne la met pas
+  en pause : son chrono court derrière le mur, et elle part en l'état s'il
+  s'achève. Revenir au bon format à temps la rend.
 
 ## Écrans d'administration
 

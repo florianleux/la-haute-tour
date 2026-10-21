@@ -1,3 +1,4 @@
+import { behindMobileWall } from '../utils/mobileWall'
 import type { ComputedRef, Ref } from 'vue'
 
 /** Au plus combien de temps l'écran de chargement tient, depuis `start()`. */
@@ -48,6 +49,13 @@ export function useAssetsLoadingScreen(): AssetsLoadingScreen {
 
   function start(): void {
     if (started) {
+      return
+    }
+
+    // Derrière le mur mobile, le jeu ne s'affichera pas : pas ses images sur un
+    // téléphone. Une rotation peut lever le mur, d'où le nouvel essai.
+    if (behindMobileWall()) {
+      window.addEventListener('resize', start, { once: true })
       return
     }
     started = true

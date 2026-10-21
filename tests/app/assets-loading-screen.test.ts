@@ -118,6 +118,22 @@ describe('le préchargement', () => {
 
     expect(FakeImage.created).toHaveLength(1)
   })
+
+  /** Un téléphone ne télécharge pas un jeu qu'il ne peut pas montrer. */
+  it('attend que le mur mobile s en aille', async () => {
+    const wall = { offsetParent: {} as object | null }
+    const listeners: (() => void)[] = []
+    vi.stubGlobal('document', { getElementById: (id: string) => (id === 'mobile-wall' ? wall : null) })
+    vi.stubGlobal('window', { addEventListener: (_: string, listener: () => void) => listeners.push(listener) })
+    const { screen } = await screenFor(['/a.webp'])
+
+    screen.start()
+    expect(FakeImage.created).toHaveLength(0)
+
+    wall.offsetParent = null
+    listeners.forEach(listener => listener())
+    expect(FakeImage.created).toHaveLength(1)
+  })
 })
 
 describe('les pages qui passent par l écran de chargement', () => {

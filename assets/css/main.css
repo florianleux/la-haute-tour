@@ -1469,6 +1469,22 @@
    les range sous la réplique. */
 @custom-variant wide (@media (width >= 40rem) and (min-aspect-ratio: 4/3));
 
+/* Le format que le jeu ne tient pas encore : en portrait, ou trop bas — un
+   téléphone dans les deux sens, une tablette debout. Le format et non
+   l'appareil : le site n'est pas responsive. Voir specs/ecrans.md#mur-mobile.
+   Le JS lit le résultat sur le mur, sans reposer la question :
+   utils/mobileWall.ts. */
+@custom-variant mobile {
+  /* Deux blocs : en forme courte, Tailwind ne garde que la première requête
+     d'une liste séparée par des virgules. */
+  @media (orientation: portrait) {
+    @slot;
+  }
+  @media (height < 500px) {
+    @slot;
+  }
+}
+
 /* Un rond de la page des sorts qu'on désigne : survolé, ou son bouton au focus
    clavier. Le survol se lit sur l'ancêtre `group`, comme `group-hover`, et
    seulement là où un pointeur survole vraiment. Voir
