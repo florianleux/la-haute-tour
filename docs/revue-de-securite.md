@@ -89,10 +89,7 @@ Les quatre failles qui bloquaient #103 (#124 à #127) sont corrigées par les co
 
 - `.env`, `local.db`, `backups/` et `.mcp.json` sont ignorés ; seul `.env.example` est suivi. L'historique ne contient qu'une constante de test (`TEST_SESSION_PASSWORD`).
 - Les secrets vivent dans le `runtimeConfig` privé, lus au démarrage depuis `NUXT_*`. Le `runtimeConfig.public` ne porte que la liste des images de l'écran de chargement. Aucun nom de secret dans `.output/public`.
-- **Variables Netlify** : non vérifiables sans accès au tableau de bord. À vérifier par Flo :
-  - `NUXT_SESSION_PASSWORD` aléatoire, 32 caractères ou plus, propre à la prod.
-  - `TURSO_AUTH_TOKEN` limité à la base de prod.
-  - Les variables de prod restreintes au contexte *Production* si des deploy previews servent : sinon une preview tourne contre la base de prod.
+- **Variables Netlify** : vérifiées par Flo le 22 octobre 2026, la revue n'ayant pas accès au tableau de bord. Les variables de prod sont restreintes au contexte *Production* : une deploy preview ne tourne pas contre la base de prod. Le secret de session est fort.
 - **Dépendances runtime (#127)** : drizzle-orm 0.44.7 (injection par identifiants, GHSA-gpj5-g38j-94v9, non exploitable ici) passe en 0.45.4 ; devalue 5.9.2 (quatre advisories hautes) passe en 5.9.4.
 
 ### `pnpm audit`
@@ -124,5 +121,5 @@ Impact limité : un site qui encadre le jeu n'emporte pas le cookie (`Lax` ne pa
 
 ## Hors périmètre
 
-- Le tableau de bord Netlify, le portail développeur Discord (redirect URIs déclarées) et la portée des jetons Turso : pas d'accès.
+- Le portail développeur Discord (redirect URIs déclarées) et la portée du jeton Turso côté Turso : pas d'accès. Le tableau de bord Netlify, lui, a été vérifié par Flo (voir plus haut).
 - Le déni de service : aucune limite de débit. Accepté pour un jeu sur invitation, derrière Netlify.
