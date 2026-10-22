@@ -104,11 +104,12 @@
 
 <script setup lang="ts">
 // Banc du combat contre le boss de l'étage 1 : le boss à gauche, le joueur à
-// droite, les drapeaux au milieu. Tout se joue dans la page, sans serveur ni
-// partie réelle — le combat n'existe pas encore côté serveur (#34 à #44). Les
-// drapeaux sont ceux du premier combat (scripts/flags.json), mélangés.
+// droite, les drapeaux au milieu. Tout se joue dans la page, sans partie
+// réelle — le combat n'existe pas encore côté serveur (#34 à #44). Les
+// drapeaux sont ceux du premier combat, mélangés, lus à l'API admin et jamais
+// importés : un import partirait dans le JS public, réponses comprises.
 // Admin seulement. Voir specs/boss.md et specs/boss-etage1-drapeaux.md.
-import flags from '~~/scripts/flags.json'
+import type { BossFlag, BossFlagsResponse } from '~~/server/api/admin/boss-flags.get'
 // Le juge du jeu, partagé : même tolérance qu'une question d'ascension.
 import { isAnswerAccepted } from '~~/shared/utils/answers'
 // Le jeu de règles, seul à connaître les vies. Un module pur, sans base ni
@@ -116,8 +117,6 @@ import { isAnswerAccepted } from '~~/shared/utils/answers'
 import { rulesForFloor } from '~~/server/utils/rules'
 
 definePageMeta({ admin: true })
-
-type Flag = typeof flags[number]
 
 const rules = rulesForFloor(1)
 // ponytail: les PV du boss et le chrono d'une épreuve ne sont pas encore dans
@@ -128,10 +127,13 @@ const SECONDS = 30
 /** Le temps d'un coup encaissé : la secousse (`animate-hit`) et le halo. */
 const HURT_MS = 900
 
-const FIRST_FIGHT = flags.filter(entry => entry.bossAttemptNumber === 1)
+const { data: fight } = await useAsyncData(
+  'boss-bench-flags',
+  () => $fetch<BossFlagsResponse>('/api/admin/boss-flags', useApiFetchOptions()),
+)
 
-function shuffled(): Flag[] {
-  return FIRST_FIGHT
+function shuffled(): BossFlag[] {
+  return (fight.value?.flags ?? [])
     .map(entry => ({ entry, key: Math.random() }))
     .sort((a, b) => a.key - b.key)
     .map(({ entry }) => entry)
