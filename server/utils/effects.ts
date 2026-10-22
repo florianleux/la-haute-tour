@@ -341,22 +341,20 @@ export function toReceivedViews(rows: Awaited<ReceivedLogQuery>): ReceivedView[]
 }
 
 /**
- * Ancrer ce qui attendait sur la tentative qui s'ouvre, et rendre les règles
- * qu'elle jouera. Appelée par openAttempt() et par elle seule : l'ancre et le
- * début de tentative doivent porter le même instant, et c'est là-bas que les
- * deux s'écrivent. Voir server/utils/journey.ts.
- *
- * L'ancre porte l'instant d'ouverture, celui-là même que le joueur gardera en
- * `attemptStartedAt` : c'est cette égalité qui dit ensuite si un effet court
- * encore. Voir specs/bonus.md#ancrage-et-durée-de-vie.
+ * Ce qui attend la prochaine tentative de ce joueur, et les règles qu'elle
+ * jouera avec. Lu par openAttempt() et par elle seule, avant toute écriture :
+ * les vies de la tentative en dépendent, et elles partent dans le même lot que
+ * l'ancre de ces effets. Voir server/utils/journey.ts.
  */
-export async function anchorEffects(db: Database, user: User, startedAt: Date): Promise<FloorRules> {
+export async function pendingEffects(db: Database, user: User): Promise<{ ids: number[], rules: FloorRules }> {
   const pending = await db
-    .update(activeEffects)
-    .set({ anchoredAt: startedAt })
+    .select({ id: activeEffects.id, spell: activeEffects.spell, face: activeEffects.face })
+    .from(activeEffects)
     .where(and(eq(activeEffects.userId, user.id), isNull(activeEffects.anchoredAt)))
-    .returning({ spell: activeEffects.spell, face: activeEffects.face })
 
-  return rulesWithEffects(rulesForFloor(user.currentFloor), pending)
+  return {
+    ids: pending.map(effect => effect.id),
+    rules: rulesWithEffects(rulesForFloor(user.currentFloor), pending),
+  }
 }
 

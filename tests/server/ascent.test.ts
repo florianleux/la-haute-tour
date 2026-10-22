@@ -267,4 +267,45 @@ describe('boucle d ascension', () => {
       expect(state.phase).toBe('gameOver')
     })
   })
+
+  // Un double envoi — double clic, deux onglets, une console : les deux requêtes
+  // lisent la question encore en main avant que l'une n'écrive. Une seule doit
+  // compter. Voir server/utils/game.ts#resolve.
+  describe('réponses parties ensemble', () => {
+    beforeEach(async () => {
+      // Deux questions : une seule vue ne doit pas finir l'étage.
+      await createQuestion(db)
+      await createQuestion(db, { statement: 'Autre' })
+      await serveNextQuestion(db, player, NOW)
+    })
+
+    it('ne compte la question vue qu une fois', async () => {
+      const holding = await reload()
+
+      await Promise.all([
+        submitAnswer(db, holding, 'Bordeaux', NOW),
+        submitAnswer(db, holding, 'Bordeaux', NOW),
+      ])
+
+      expect(await reload()).toMatchObject({ floorSeen: 1, attemptSeen: 1, seenTotal: 1, streak: 1 })
+      expect((await readGameState(db, await reload(), NOW)).phase).toBe('ascent')
+    })
+
+    it('garde le verdict de la première et le rend aux deux', async () => {
+      const holding = await reload()
+
+      const [first, second] = await Promise.all([
+        submitAnswer(db, holding, 'Toulouse', NOW),
+        submitAnswer(db, holding, 'Bordeaux', NOW),
+      ])
+
+      expect(first.verdict).toMatchObject({ correct: false, submittedAnswer: 'Toulouse', lifeLost: true })
+      expect(second.verdict).toEqual(first.verdict)
+      expect(second.lives).toBe(rules.lives - 1)
+      expect(await reload()).toMatchObject({ lives: rules.lives - 1, floorSeen: 1, streak: 0 })
+      expect(await db.select().from(missedPool)).toHaveLength(1)
+      // La bonne réponse n'a pas compté : rien ne se grave sur elle.
+      expect((await reload()).achievementsHeld).not.toContain('FIRST_CORRECT')
+    })
+  })
 })

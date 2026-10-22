@@ -1,8 +1,9 @@
 import { and, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
-import { anchorEffects, castSpell, effectsQuery, toEffectViews } from '../../server/utils/effects'
+import { castSpell, effectsQuery, toEffectViews } from '../../server/utils/effects'
 import { readGameState } from '../../server/utils/game'
+import { openAttempt } from '../../server/utils/journey'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
@@ -76,8 +77,8 @@ describe('magie noire, sur un ennemi', () => {
 
     await strike('VITALITY')
 
-    const opened = await anchorEffects(db, await loadPlayer(db, target.id), NOW)
-    expect(opened.lives).toBe(rules.lives - 1)
+    const opened = await openAttempt(db, await loadPlayer(db, target.id), NOW)
+    expect(opened?.lives).toBe(rules.lives - 1)
   })
 
   // Répit noir : l'attente en cours de la cible, rallongée du même facteur que

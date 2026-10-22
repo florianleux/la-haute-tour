@@ -1,6 +1,6 @@
-import { asc, count, eq, max, min, sql } from 'drizzle-orm'
-import { anchorEffects } from './effects'
-import { attempts, disputes, questions, seenQuestions, users } from '../db/schema'
+import { and, asc, count, eq, exists, inArray, max, min, sql } from 'drizzle-orm'
+import { pendingEffects } from './effects'
+import { activeEffects, attempts, disputes, questions, seenQuestions, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -16,33 +16,54 @@ import type { User } from '../db/schema'
  * attendait s'y ancre. Appelée aux deux endroits où une tentative commence, et
  * nulle part ailleurs — une vie rendue par une contestation poursuit celle en
  * cours et ne réveille donc aucun effet. Voir specs/validation.md#contestation.
+ *
+ * Rend null quand une autre requête vient de l'ouvrir. Deux requêtes parties
+ * ensemble — deux « Reprendre », deux onglets qui relisent l'état au bout de
+ * l'attente — partent de la même tentative finie. Sans garde, la seconde ne
+ * trouverait plus rien à ancrer et rendrait des vies sans les effets — une
+ * Vitalité noire s'effacerait ainsi —, et son instant d'ouverture ne serait plus
+ * celui des ancres, qui mourraient avec. Le lot se garde donc sur la tentative
+ * qui s'achève, et l'écriture qui la remplace part en dernier : seule la
+ * première la trouve encore en place. Qui reçoit null n'a plus rien à écrire.
  */
-export async function openAttempt(db: Database, user: User, now: Date): Promise<FloorRules> {
-  // Les effets en attente s'ancrent sur cette tentative-ci, et les règles
-  // qu'elle jouera en tiennent compte : c'est le même instant qui sert d'ancre
-  // et de début de tentative, et les deux s'écrivent ici pour qu'aucun appelant
-  // ne puisse les désaccorder. Voir specs/bonus.md#ancrage-et-durée-de-vie.
-  const rules = await anchorEffects(db, user, now)
+export async function openAttempt(db: Database, user: User, now: Date): Promise<FloorRules | null> {
+  // Les vies de la tentative dépendent de ce qui l'attend : lu d'abord, puis
+  // ancré dans le même lot que les vies.
+  const { ids, rules } = await pendingEffects(db, user)
+  const unchanged = and(eq(users.id, user.id), eq(users.attemptStartedAt, user.attemptStartedAt))
 
-  await db
-    .update(users)
-    // Tentative neuve : son décompte de questions vues repart de zéro, dans la
-    // même écriture que son instant d'ouverture — les deux disent la même chose,
-    // ils ne peuvent pas se désaccorder. Voir server/db/schema.ts.
-    .set({
-      lives: rules.lives,
-      cooldownUntil: null,
-      cooldownStartedAt: null,
-      attemptStartedAt: now,
-      attemptSeen: 0,
-      // La série ne traverse pas les tentatives : « sans faute » veut dire d'une
-      // seule traite, et une tentative neuve est justement ce qui coupe la traite.
-      // Voir specs/succes.md#série-sans-faute.
-      streak: 0,
-    })
-    .where(eq(users.id, user.id))
+  const [, opened] = await db.batch([
+    // Les effets en attente s'ancrent sur cette tentative-ci : c'est le même
+    // instant qui sert d'ancre et de début de tentative, et les deux s'écrivent
+    // ici pour qu'aucun appelant ne puisse les désaccorder.
+    // Voir specs/bonus.md#ancrage-et-durée-de-vie.
+    db
+      .update(activeEffects)
+      .set({ anchoredAt: now })
+      .where(and(
+        inArray(activeEffects.id, ids),
+        exists(db.select({ one: sql`1` }).from(users).where(unchanged)),
+      )),
+    db
+      .update(users)
+      // Tentative neuve : son décompte de questions vues repart de zéro, dans la
+      // même écriture que son instant d'ouverture — les deux disent la même chose,
+      // ils ne peuvent pas se désaccorder. Voir server/db/schema.ts.
+      .set({
+        lives: rules.lives,
+        cooldownUntil: null,
+        cooldownStartedAt: null,
+        attemptStartedAt: now,
+        attemptSeen: 0,
+        // La série ne traverse pas les tentatives : « sans faute » veut dire d'une
+        // seule traite, et une tentative neuve est justement ce qui coupe la traite.
+        // Voir specs/succes.md#série-sans-faute.
+        streak: 0,
+      })
+      .where(unchanged),
+  ])
 
-  return rules
+  return opened.rowsAffected > 0 ? rules : null
 }
 
 /**

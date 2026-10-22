@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { activeEffects, pocketSpells, users } from '../../server/db/schema'
-import { anchorEffects, castSpell, effectsQuery, readCastLog, toEffectViews } from '../../server/utils/effects'
+import { castSpell, effectsQuery, readCastLog, toEffectViews } from '../../server/utils/effects'
+import { openAttempt } from '../../server/utils/journey'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
@@ -110,7 +111,7 @@ describe('lancer et ancrage des effets', () => {
     // La tentative s'ouvre et ancre les deux Vitalité, puis le joueur meurt :
     // une nouvelle attente commence, la tentative court encore jusqu'à la
     // suivante.
-    const opened = await anchorEffects(db, await loadPlayer(db, userId), NOW)
+    const opened = await openAttempt(db, await loadPlayer(db, userId), NOW)
     const nextStart = new Date(COOLDOWN_UNTIL.getTime() + 60_000)
     await db
       .update(users)
@@ -121,7 +122,7 @@ describe('lancer et ancrage des effets', () => {
         cooldownUntil: new Date(nextStart.getTime() + rules.cooldownMs),
       })
       .where(eq(users.id, userId))
-    expect(opened.lives).toBe(rules.lives + 2)
+    expect(opened?.lives).toBe(rules.lives + 2)
 
     await cast('VITALITY', nextStart)
 
@@ -149,10 +150,9 @@ describe('lancer et ancrage des effets', () => {
     await own('VITALITY')
     await cast('VITALITY')
 
-    const opened = await anchorEffects(db, await loadPlayer(db, userId), NOW)
+    const opened = await openAttempt(db, await loadPlayer(db, userId), NOW)
 
-    expect(opened.lives).toBe(rules.lives + 1)
-    await db.update(users).set({ attemptStartedAt: NOW, lives: opened.lives }).where(eq(users.id, userId))
+    expect(opened?.lives).toBe(rules.lives + 1)
     expect(await readEffects(userId)).toEqual([
       { spell: 'VITALITY', face: 'boon', casterName: 'gandalf', state: 'active', lifetime: 'attempt' },
     ])
@@ -166,21 +166,19 @@ describe('lancer et ancrage des effets', () => {
       { userId, casterId: other, spell: 'VITALITY', face: 'boon', castAt: NOW, castCooldownStartedAt: COOLDOWN_UNTIL },
     ])
 
-    expect((await anchorEffects(db, await loadPlayer(db, userId), NOW)).lives).toBe(rules.lives + 2)
+    expect((await openAttempt(db, await loadPlayer(db, userId), NOW))?.lives).toBe(rules.lives + 2)
   })
 
   it('laisse mourir un effet avec la tentative sur laquelle il s est ancré', async () => {
     await own('VITALITY')
     await cast('VITALITY')
-    await anchorEffects(db, await loadPlayer(db, userId), NOW)
-    await db.update(users).set({ attemptStartedAt: NOW }).where(eq(users.id, userId))
+    await openAttempt(db, await loadPlayer(db, userId), NOW)
 
     // La tentative suivante s'ouvre : l'effet d'avant ne la suit pas.
     const later = new Date(NOW.getTime() + 60_000)
-    const reopened = await anchorEffects(db, await loadPlayer(db, userId), later)
-    await db.update(users).set({ attemptStartedAt: later }).where(eq(users.id, userId))
+    const reopened = await openAttempt(db, await loadPlayer(db, userId), later)
 
-    expect(reopened.lives).toBe(rules.lives)
+    expect(reopened?.lives).toBe(rules.lives)
     expect(await readEffects(userId)).toEqual([])
   })
 
@@ -207,7 +205,7 @@ describe('lancer et ancrage des effets', () => {
   it('garde au journal un sort dont l effet est déjà mort', async () => {
     await own('VITALITY')
     await cast('VITALITY')
-    await anchorEffects(db, await loadPlayer(db, userId), NOW)
+    await openAttempt(db, await loadPlayer(db, userId), NOW)
     await db.update(users).set({ attemptStartedAt: new Date(NOW.getTime() + 60_000) }).where(eq(users.id, userId))
 
     expect(await readCastLog(db, await loadPlayer(db, userId))).toHaveLength(1)

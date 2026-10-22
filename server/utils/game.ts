@@ -1,6 +1,7 @@
-import { and, asc, count, desc, eq, exists, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, exists, inArray, isNotNull, isNull, notExists, sql } from 'drizzle-orm'
 import type { BatchItem, BatchResponse } from 'drizzle-orm/batch'
 import type { RunnableQuery } from 'drizzle-orm/runnable-query'
+import type { SQL } from 'drizzle-orm'
 import {
   canDrawRecovery,
   cooldownFields,
@@ -436,7 +437,8 @@ function recoveryProgress(drawn: RecoveryQuestion[], rules: FloorRules): Recover
  *
  * Rend les écritures plutôt que de les jouer : elles partent dans le lot de la
  * résolution, et un rattrapage interrompu ne laisse pas une question jouée dont
- * le compteur n'a pas bougé.
+ * le compteur n'a pas bougé. Chacune se garde sur `whileOpen`, comme tout ce
+ * lot : voir `resolve`.
  */
 function recoveryWrites(
   db: Database,
@@ -444,15 +446,17 @@ function recoveryWrites(
   questionId: string,
   correct: boolean,
   poolEntry: MissedPoolEntry | undefined,
+  whileOpen: SQL,
   now: Date,
-): { writes: BatchItem<'sqlite'>[], leavesPool: boolean } {
-  const writes: BatchItem<'sqlite'>[] = [
+): { writes: [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]], leavesPool: boolean } {
+  const writes: [BatchItem<'sqlite'>, ...BatchItem<'sqlite'>[]] = [
     db
       .update(recoveryQuestions)
       .set({ correct })
       .where(and(
         eq(recoveryQuestions.userId, user.id),
         eq(recoveryQuestions.questionId, questionId),
+        whileOpen,
       )),
   ]
 
@@ -463,6 +467,7 @@ function recoveryWrites(
   const membership = and(
     eq(missedPool.userId, user.id),
     eq(missedPool.questionId, questionId),
+    whileOpen,
   )
   const move = movePoolCounter(poolEntry, correct, rulesForFloor(user.currentFloor), now)
 
@@ -538,10 +543,20 @@ async function resolve(
   // Voir specs/bonus.md#contestation.
   const chest: ChestState | null = correct && servesLoot(snapshot, reservation, rules) ? 'closed' : null
 
+  // Une question ne se résout qu'une fois. Deux réponses parties ensemble — un
+  // double clic, deux onglets — lisent toutes deux la réservation encore
+  // ouverte : sans garde, la seconde compterait la question vue une fois de plus
+  // et réécrirait le verdict par-dessus le premier. Le lot est une transaction ;
+  // chaque écriture s'y garde sur la réservation encore ouverte, et celle qui la
+  // ferme part en dernier. La seconde ne trouve plus rien d'ouvert et n'écrit
+  // rien — la question vue s'en dispense, sa clé refuse déjà le doublon.
+  const stillOpen = and(eq(reservations.userId, user.id), isNull(reservations.resolvedAt))
+  const whileOpen = exists(db.select({ one: sql`1` }).from(reservations).where(stillOpen))
+
   const resolveReservation = db
     .update(reservations)
     .set({ resolvedAt: now, correct, submittedAnswer: answer, chest })
-    .where(eq(reservations.userId, user.id))
+    .where(stillOpen)
 
   const resolved: Reservation = {
     ...reservation,
@@ -568,14 +583,18 @@ async function resolve(
       .from(missedPool)
       .where(and(eq(missedPool.userId, user.id), eq(missedPool.questionId, reservation.questionId)))
       .limit(1)
-    const { writes, leavesPool } = recoveryWrites(db, user, reservation.questionId, correct, poolEntry, now)
+    const { writes, leavesPool } = recoveryWrites(db, user, reservation.questionId, correct, poolEntry, whileOpen, now)
     const recovering: User = { ...user, ...played }
 
-    await db.batch([
-      resolveReservation,
+    const outcome = await db.batch([
       ...writes,
-      ...played ? [db.update(users).set(played).where(eq(users.id, user.id))] : [],
+      ...played ? [db.update(users).set(played).where(and(eq(users.id, user.id), whileOpen))] : [],
+      resolveReservation,
     ])
+
+    if (!closedByBatch(outcome)) {
+      return { snapshot: await loadSnapshot(db, user.id), unlocked: [] }
+    }
 
     const earned = [
       ...answeredAchievements(recovering, correct, answer === '', false),
@@ -636,7 +655,7 @@ async function resolve(
       floorSeen: sql`${users.floorSeen} + ${seenDelta}`,
       attemptSeen: sql`${users.attemptSeen} + ${seenDelta}`,
     })
-    .where(eq(users.id, user.id))
+    .where(and(eq(users.id, user.id), whileOpen))
 
   const fresh: User = {
     ...user,
@@ -662,18 +681,25 @@ async function resolve(
       : [],
   ]
 
-  await db.batch([
-    resolveReservation,
+  const outcome = await db.batch([
     markSeen,
     ...entersPool
       ? [db
           .insert(missedPool)
-          .values({
-            userId: user.id,
-            questionId: reservation.questionId,
-            floor: user.currentFloor,
-            lastFailedAt: now,
-          })
+          // Un INSERT … SELECT plutôt qu'un INSERT … VALUES : c'est lui qui porte
+          // la garde. Drizzle veut toutes les colonnes, dans l'ordre du schéma,
+          // et la date en secondes, comme `mode: 'timestamp'`. Voir
+          // server/api/profile/intro.post.ts.
+          .select(db
+            .select({
+              userId: reservations.userId,
+              questionId: reservations.questionId,
+              floor: sql<number>`${user.currentFloor}`.as('floor'),
+              poolSuccesses: sql<number>`0`.as('pool_successes'),
+              lastFailedAt: sql<Date>`${Math.floor(now.getTime() / 1000)}`.as('last_failed_at'),
+            })
+            .from(reservations)
+            .where(stillOpen))
           // Already missed on this floor: the counter goes back to zero and the date moves up.
           .onConflictDoUpdate({
             target: [missedPool.userId, missedPool.questionId],
@@ -681,12 +707,26 @@ async function resolve(
           })]
       : [],
     advance,
+    resolveReservation,
   ])
+
+  if (!closedByBatch(outcome)) {
+    return { snapshot: await loadSnapshot(db, user.id), unlocked: [] }
+  }
 
   return {
     snapshot: { ...snapshot, user: fresh, reservation: resolved },
     unlocked: await unlock(db, snapshot.user, earned, now),
   }
+}
+
+/**
+ * Le lot d'une résolution a-t-il fermé la réservation ? Sa dernière écriture est
+ * celle qui la ferme, gardée sur la réservation encore ouverte : n'avoir rien
+ * fermé, c'est être arrivé second. Voir `resolve`.
+ */
+function closedByBatch(outcome: readonly { rowsAffected: number }[]): boolean {
+  return (outcome.at(-1)?.rowsAffected ?? 0) > 0
 }
 
 function servedQuestion(
@@ -951,15 +991,19 @@ async function resumeIfPoolTooSmall(
     return
   }
 
+  // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
+  // contestable. Voir specs/validation.md#contestation. Ouverte avant tout le
+  // reste : si une autre requête vient de le faire, il n'y a plus rien à écrire.
+  if (!await openAttempt(db, user, now)) {
+    return
+  }
+
   // Le verdict de la chute a été lu avant de redescendre : le laisser en place
   // ramènerait le joueur dessus au lieu du camp au repos. Voir
-  // specs/ecrans.md#camp-au-repos.
-  await db.delete(reservations).where(eq(reservations.userId, user.id))
-
-  // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
-  // contestable. Voir specs/validation.md#contestation.
+  // specs/ecrans.md#camp-au-repos. Le verdict seul : une question qu'une autre
+  // requête aurait servie entre-temps, vies rendues, reste en main.
+  await db.delete(reservations).where(and(eq(reservations.userId, user.id), isNotNull(reservations.resolvedAt)))
   await closeAttempt(db, user, now)
-  await openAttempt(db, user, now)
 }
 
 /**
@@ -1294,29 +1338,48 @@ async function advanceRecovery(
   let run = snapshot.recoveryRun
 
   if (!run.length) {
-    const drawn = await db
-      .select()
-      .from(missedPool)
-      .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor)))
-      .orderBy(sql`RANDOM()`)
-      .limit(rules.recoveryQuestions)
-
     // Le seuil se lit dans les règles de l'étage, jamais dans les règles
     // modulées : une Indulgence double le tirage, elle ne relève pas la barre
     // d'entrée — sinon elle empêcherait le rattrapage qu'elle rallonge.
-    if (!canDrawRecovery(drawn.length, rulesForFloor(user.currentFloor))) {
+    if (!canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
       // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
       await resumeIfPoolTooSmall(db, user, false, now)
       return buildState(db, user.id, now)
     }
 
-    run = drawn.map((entry, position) => ({
-      userId: user.id,
-      questionId: entry.questionId,
-      position,
-      correct: null,
-    }))
-    await db.insert(recoveryQuestions).values(run)
+    // Tiré et posé en une seule instruction, qui ne pose rien quand un tirage
+    // existe déjà : deux « Commencer » partis ensemble tiraient chacun le leur,
+    // et le rattrapage comptait autant de questions de plus — autant de chances
+    // de reprendre. La seconde ne pose rien, et rend ce que la première a tiré.
+    const drawn = db
+      .select({ userId: missedPool.userId, questionId: missedPool.questionId })
+      .from(missedPool)
+      .where(and(
+        eq(missedPool.userId, user.id),
+        eq(missedPool.floor, user.currentFloor),
+        notExists(db.select({ one: sql`1` }).from(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))),
+      ))
+      .orderBy(sql`RANDOM()`)
+      .limit(rules.recoveryQuestions)
+      .as('drawn')
+
+    const posed = await db
+      .insert(recoveryQuestions)
+      .select(db
+        .select({
+          userId: drawn.userId,
+          questionId: drawn.questionId,
+          position: sql<number>`row_number() over () - 1`.as('position'),
+          correct: sql<boolean | null>`null`.as('correct'),
+        })
+        .from(drawn))
+      .returning()
+
+    if (!posed.length) {
+      return buildState(db, user.id, now)
+    }
+
+    run = posed.sort((a, b) => a.position - b.position)
 
     // Le tirage posé, le rattrapage commence : c'est l'entrée en phase, et le seul
     // instant où elle se produit. Un pool trop maigre rend les vies sans jamais
@@ -1391,20 +1454,27 @@ async function finishRecovery(
   ] as const
 
   if (verdict.resumes) {
-    await db.batch(cleared)
-
     // La tentative ne se clôt qu'au moment où la suivante s'ouvre : une attente
     // de plus prolonge celle qui court. Les vies rendues sont celles de la
     // tentative qui s'ouvre, effets compris — d'où openAttempt plutôt que le
-    // décompte du verdict, qui ne connaît que les règles de l'étage.
-    await closeAttempt(db, user, now)
+    // décompte du verdict, qui ne connaît que les règles de l'étage. Ouverte
+    // avant tout le reste : si une autre requête vient de le faire, c'est elle
+    // qui sert la suite.
     const attemptRules = await openAttempt(db, user, now)
+
+    if (!attemptRules) {
+      return withUnlocked(await buildState(db, user.id, now), unlocked)
+    }
+
+    await db.batch(cleared)
+    await closeAttempt(db, user, now)
 
     // Le rattrapage réussi enchaîne directement sur l'ascension : plus d'écran
     // intermédiaire. drawAndReserve ne lit que currentFloor et floorCursor,
-    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit. La
-    // question est celle de la tentative qui s'ouvre : ses effets fraîchement
-    // ancrés jouent dès elle.
+    // qu'openAttempt n'a pas touchés — le user périmé (lives: 0) suffit, et son
+    // curseur périmé ressert la question qu'une requête arrivée entre-temps
+    // aurait déjà réservée, au lieu de la sauter. La question est celle de la
+    // tentative qui s'ouvre : ses effets fraîchement ancrés jouent dès elle.
     await drawAndReserve(db, user, attemptRules, now)
 
     return withUnlocked(await buildState(db, user.id, now), unlocked)
