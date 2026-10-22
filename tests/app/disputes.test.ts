@@ -7,12 +7,7 @@ const { serve, answerWith, breakNetwork, signIn, calls, refresh, reset } = insta
 const { useDisputes } = await import('../../composables/useDisputes')
 const { ADMIN_DISPUTES_KEY, useAdminDisputes } = await import('../../composables/useAdminDisputes')
 
-const ERROR: DisputableError = {
-  questionId: 'q1',
-  statement: 'Capitale de la Gironde ?',
-  answerLabel: 'BORDEAUX',
-  submittedAnswer: 'Bordo',
-}
+const ERROR: DisputableError = { questionId: 'q1' }
 
 const PENDING: PendingDispute = {
   id: 7,

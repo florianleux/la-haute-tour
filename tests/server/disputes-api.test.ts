@@ -75,7 +75,7 @@ describe('contestation par l API', () => {
 
     expect(response.status).toBe(200)
     const { errors } = await response.json()
-    expect(errors).toMatchObject([{ questionId, submittedAnswer: 'Bordo' }])
+    expect(errors).toEqual([{ questionId }])
   })
 
   it('ouvre une contestation, puis refuse la seconde', async () => {

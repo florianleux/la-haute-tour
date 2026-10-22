@@ -55,12 +55,14 @@ describe('contestation', () => {
       await createQuestion(db, { statement: 'Autre ?', accepted: ['Bordeaux'] })
     })
 
-    it('rend les erreurs de la tentative, avec ce que le joueur avait répondu', async () => {
+    // L'identifiant seul : le rattrapage tire dans ces erreurs-là, leurs
+    // réponses ne sortent pas d'ici. Voir server/utils/disputes.ts.
+    it('rend les erreurs de la tentative, sans leur énoncé ni leur réponse', async () => {
       const questionId = await play('Toulouse')
 
       const errors = await disputableErrors(db, await reload())
 
-      expect(errors).toMatchObject([{ questionId, submittedAnswer: 'Toulouse' }])
+      expect(errors).toEqual([{ questionId }])
     })
 
     it('ne rend jamais une bonne réponse', async () => {

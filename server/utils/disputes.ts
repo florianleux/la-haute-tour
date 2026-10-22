@@ -20,12 +20,14 @@ import type { User } from '../db/schema'
  * change ; l'arbitrage lui-même est humain. Voir specs/validation.md#contestation.
  */
 
+/**
+ * Une erreur contestable, telle que l'écran la connaît : son identifiant, et
+ * rien d'autre. Ni l'énoncé ni la réponse — cette lecture reste ouverte pendant
+ * le rattrapage, qui tire ses questions parmi ces erreurs-là, et en lire les
+ * réponses y serait tricher, comme au Volumen. Voir server/utils/camp.ts.
+ */
 export interface DisputableError {
   questionId: string
-  statement: string
-  /** La réponse affichée de la question — celle que le joueur a lue sur son échec. */
-  answerLabel: string
-  submittedAnswer: string
 }
 
 /**
@@ -53,15 +55,10 @@ export async function disputableErrors(db: Database, user: User): Promise<Disput
       eq(focusLosses.lostAt, seenQuestions.seenAt),
     ))
 
-  const rows = await db
-    .select({
-      questionId: missedPool.questionId,
-      statement: questions.statement,
-      answerLabel: questions.answerLabel,
-      submittedAnswer: seenQuestions.submittedAnswer,
-    })
+  // `<> ''` écarte aussi une réponse absente : comparé à null, rien n'est vrai.
+  return db
+    .select({ questionId: missedPool.questionId })
     .from(missedPool)
-    .innerJoin(questions, eq(questions.id, missedPool.questionId))
     .leftJoin(seenQuestions, and(
       eq(seenQuestions.userId, missedPool.userId),
       eq(seenQuestions.questionId, missedPool.questionId),
@@ -74,9 +71,6 @@ export async function disputableErrors(db: Database, user: User): Promise<Disput
       notExists(lostFocus),
     ))
     .orderBy(asc(missedPool.lastFailedAt))
-
-  return rows
-    .filter((row): row is DisputableError => row.submittedAnswer !== null)
 }
 
 /**
