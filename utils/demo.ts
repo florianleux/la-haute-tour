@@ -103,3 +103,77 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     ...overrides,
   }
 }
+
+/** Une question des bancs de l'écran de jeu, avec de quoi la juger et la rater. */
+export interface BenchQuestion {
+  statement: string
+  answerLabel: string
+  acceptedAnswers: string[]
+  /** La saisie fausse que montre le banc du verdict. */
+  wrongAnswer: string
+}
+
+/**
+ * Les extrêmes du deck release, pour les bancs de l'écran de jeu
+ * (pages/test/play.vue, pages/test/verdict.vue) : les trois énoncés les plus
+ * courts, les trois plus longs, les trois bonnes réponses les plus longues, et
+ * le plus long énoncé encore rappelé à sa taille normale sous le verdict (juste
+ * sous le seuil de l'énoncé, `LONG_CHARS` dans utils/typography.ts). Si ceux-là
+ * tiennent dans le cadre, tout le deck tient.
+ *
+ * Les saisies fausses varient pour que le verdict montre ses cas : vide (« (rien) »),
+ * courte, ou à la longueur maximale (ANSWER_MAX_LENGTH) sur les énoncés les plus
+ * serrés — le pire cas du verdict.
+ */
+export const BENCH_QUESTIONS: readonly BenchQuestion[] = [
+  { statement: 'Que signifie TNT ?', answerLabel: 'TRINITROTOLUÈNE', acceptedAnswers: ['Trinitrotoluène'], wrongAnswer: 'Dynamite' },
+  { statement: 'Qui a écrit "Kim" ?', answerLabel: 'KIPLING (Rudyard)', acceptedAnswers: ['Kipling', 'Rudyard Kipling', 'Kipling Rudyard'], wrongAnswer: 'Stevenson' },
+  { statement: 'Qui a écrit "Jumanji" ?', answerLabel: 'VAN ALLSBURG (Chris)', acceptedAnswers: ['Van Allsburg', 'Chris Van Allsburg', 'Van Allsburg Chris'], wrongAnswer: '' },
+  {
+    statement: 'Quelle grande harpiste française d\'origine russe a enregistré avec Jean-Pierre Rampal une version "Concerto pour flûte et harpe de Mozart" qui est le disque classique le plus vendu de l\'histoire phonographique française ?',
+    answerLabel: 'LASKINE (Lily)',
+    acceptedAnswers: ['Laskine', 'Lily Laskine', 'Laskine Lily'],
+    wrongAnswer: 'Marie-Claire Jamet, ou peut-être Nadia Boulanger, ou Ravel ?',
+  },
+  {
+    statement: 'Durant quelle bataille de la deuxième guerre punique, ayant eu lieu en 216 av. J.-C., l\'armée d\'Hannibal a-t-elle vaincu l\'armée romaine en utilisant une des manœuvres tactiques les plus réussies de l\'histoire militaire ?',
+    answerLabel: 'BATAILLE DE CANNES',
+    acceptedAnswers: ['Cannes', 'Bataille de Cannes'],
+    wrongAnswer: 'Bataille de Zama',
+  },
+  {
+    statement: 'Quel officier français est principalement resté dans l’histoire pour avoir tenu une unité de 3700 militaires lors de la bataille de Bir-Hakeim face aux attaques répétées d’une Afrika Korps dirigée par Erwin Rommel ?',
+    answerLabel: 'KŒNIG (Pierre)',
+    acceptedAnswers: ['Kœnig', 'Koenig', 'Pierre Kœnig', 'Kœnig Pierre'],
+    wrongAnswer: 'Leclerc',
+  },
+  {
+    statement: 'Quelle femme de lettres suisse née à Vevey fut la protectrice et maîtresse de Jean-Jacques Rousseau ?',
+    answerLabel: 'MADAME DE WARENS (Louise-Françoise-Éléonore de la Tour du Pil)',
+    acceptedAnswers: ['Warens', 'Madame de Warens'],
+    wrongAnswer: 'Madame de Staël',
+  },
+  {
+    statement: 'Dans "Les Trois Mousquetaires", comment se nomme le capitaine des Mousquetaires du Roi ?',
+    answerLabel: 'TRÉVILLE (Jean Armand du Peyrer, comte de Trois-Villes, dit)',
+    acceptedAnswers: ['Tréville'],
+    wrongAnswer: 'Athos',
+  },
+  {
+    statement: 'Quel livre de 1997 de Philippe DELERM raconte les petits bonheurs quotidiens fut un immense succès commercial ?',
+    answerLabel: 'La Première Gorgée de bière et autres plaisirs minuscules',
+    acceptedAnswers: ['La Première Gorgée de bière et autres plaisirs minuscules', 'La Première Gorgée de bière'],
+    wrongAnswer: 'Les Petits Bonheurs',
+  },
+  {
+    statement: 'Quel prince français, petit-fils de Charles X et dernier prétendant légitime au trône de France, jura serment au drapeau blanc au lieu du tricolore ?',
+    answerLabel: 'COMTE DE CHAMBORD (Henri d\'Artois)',
+    acceptedAnswers: ['Chambord', 'Comte de Chambord', 'Henri d\'Artois', 'Henri d\'Artois Chambord', 'Chambord Henri d\'Artois'],
+    wrongAnswer: 'Le duc d\'Orléans, ou peut-être Louis-Philippe, ou Napoléon ?',
+  },
+]
+
+/** Une question des bancs au hasard. */
+export function randomBenchQuestion(): BenchQuestion {
+  return pick(BENCH_QUESTIONS)
+}

@@ -50,6 +50,12 @@ describe('la question d essai', () => {
     })
   })
 
+  // Le verdict réaffiche la saisie, dans un cadre qui ne défile pas.
+  it('refuse une saisie de plus de 60 caractères, comme une vraie réponse', async () => {
+    expect((await answer('a'.repeat(61))).status).toBe(400)
+    expect((await answer('a'.repeat(60))).status).toBe(200)
+  })
+
   it('tolère une faute de frappe, comme une vraie question', async () => {
     expect(await (await answer('blamc')).json()).toMatchObject({ correct: true, submittedAnswer: 'blamc' })
   })

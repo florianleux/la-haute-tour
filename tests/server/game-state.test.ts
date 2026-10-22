@@ -167,6 +167,15 @@ describe('endpoints de jeu', () => {
     expect(response.status).toBe(400)
   })
 
+  // Le verdict réaffiche la saisie, dans un cadre qui ne défile pas.
+  it('rejette une réponse de plus de 60 caractères', async () => {
+    await next(post('/next', {}, cookie))
+
+    const response = await answer(post('/answer', { answer: 'a'.repeat(61) }, cookie))
+
+    expect(response.status).toBe(400)
+  })
+
   it('ouvre le coffre par son propre endpoint, sans rien avancer d autre', async () => {
     // Sans coffre à ouvrir, l'appel est ignoré : il rend l'état courant, comme
     // toute action périmée. Voir specs/architecture.md.

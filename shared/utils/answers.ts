@@ -1,3 +1,12 @@
+/**
+ * La saisie la plus longue qu'un joueur peut envoyer. Le verdict la réaffiche
+ * dans un panneau qui ne défile pas (voir PlayFrame) ; la plus longue bonne
+ * réponse à taper du deck fait 57 caractères, ce plafond ne gêne donc personne.
+ * Au-delà de 60, « Ta réponse : … » passe sur deux lignes et le verdict faux
+ * déborde.
+ */
+export const ANSWER_MAX_LENGTH = 60
+
 /** Articles dropped before matching: they carry no answer. */
 const ARTICLES = new Set(['le', 'la', 'les', 'un', 'une', 'des', 'du', 'de', 'l', 'd'])
 

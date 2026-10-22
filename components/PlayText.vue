@@ -1,13 +1,15 @@
 <template>
   <component
     :is="as"
-    :class="ROLES[role]"
+    :class="(long && LONG_ROLES[role]) || ROLES[role]"
   >
     <slot />
   </component>
 </template>
 
 <script setup lang="ts">
+import type { LONG_CHARS } from '~~/utils/typography'
+
 // Une ligne du panneau de jeu. Le rôle dit la taille, jamais l'écran : la même
 // question se lit à la même échelle en ascension et en rattrapage, et régler
 // l'une règle l'autre. C'est le partage que BaseCardButton fait déjà pour les
@@ -67,9 +69,22 @@ const ROLES: Record<Role, string> = {
   mark: 'text-[1.5em] font-bold',
 }
 
+// Les tailles réduites, pour un texte trop long pour tenir à la sienne : le
+// panneau ne défile pas. L'appelant dit si c'est le cas (`long`), avec les
+// seuils de LONG_CHARS (utils/typography.ts), mesurés contre ces tailles : une
+// taille sans seuil ou un seuil sans taille ne compile pas. Desktop seulement :
+// chaque entrée recopie le reste de son rôle dans ROLES, à garder en phase.
+const LONG_ROLES: Partial<Record<Role, string>> = {
+  statement: 'text-[7.1cqw] leading-relaxed sm:text-[3.8cqw]',
+  recall: 'text-[6.2cqw] sm:text-[2.7cqw]',
+  answer: 'text-[4.5cqw] font-bold uppercase sm:text-[3.4cqw]',
+} satisfies Record<keyof typeof LONG_CHARS, string>
+
 withDefaults(defineProps<{
   role: Role
   /** La balise rendue : un paragraphe sauf quand la ligne est un geste. */
   as?: 'p' | 'span' | 'button'
+  /** Trop long pour la taille du rôle : la taille réduite, s'il en a une. */
+  long?: boolean
 }>(), { as: 'p' })
 </script>

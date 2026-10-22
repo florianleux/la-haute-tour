@@ -20,6 +20,7 @@
 
   <PlayText
     role="recall"
+    :long="isLong('recall', verdict.statement)"
     :class="shade"
     class="text-amber-800"
   >
@@ -28,6 +29,7 @@
 
   <PlayText
     role="answer"
+    :long="isLong('answer', verdict.answerLabel)"
     :class="shade"
     class="text-amber-800"
   >

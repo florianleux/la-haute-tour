@@ -39,6 +39,7 @@
 
       <PlayText
         role="statement"
+        :long="isLong('statement', statement)"
         class="text-amber-800"
       >
         {{ statement }}

@@ -26,17 +26,17 @@
 
 <script setup lang="ts">
 // Banc de design de l'écran de question et de son verdict : mêmes composants
-// qu'en jeu, mais une question tirée au hasard du deck et des chiffres
+// qu'en jeu, mais une question tirée au hasard des extrêmes du deck
+// (BENCH_QUESTIONS, utils/demo.ts) et des chiffres
 // arbitraires à la place d'une vraie partie — pour régler le visuel sans
 // dépendre d'une tentative réelle. On répond, le verdict s'affiche, « Suivant »
 // tire une autre question. Les vies ne bougent jamais : rien ne se perd ici.
 // Admin seulement. Voir components/QuestionCard.vue et components/ResultCard.vue.
 import type { EffectView } from '~~/server/utils/effects'
-import type { AdminQuestionsResponse } from '~~/server/api/admin/questions/index.get'
-import type { AdminQuestion } from '~~/server/utils/questions'
 // Le juge du jeu, partagé : rien ne s'écrit, l'admin a déjà les réponses
 // acceptées sous les yeux, et un juge recopié finirait par diverger.
 import { isAnswerAccepted } from '~~/shared/utils/answers'
+import type { BenchQuestion } from '~~/utils/demo'
 import { playView } from '~~/utils/phase'
 
 definePageMeta({ admin: true })
@@ -90,41 +90,21 @@ provideGameState(state)
 const view = computed(() => playView(state.value))
 
 /** La question posée, réponses acceptées comprises : c'est le banc qui juge. */
-const picked = ref<AdminQuestion | null>(null)
+const picked = ref<BenchQuestion | null>(null)
 
-// Le nombre de questions du premier étage, lu une fois : chaque tirage n'a plus
-// qu'une page à demander.
-const { data: deck } = await useAsyncData(
-  'test-play-question-total',
-  () => $fetch<AdminQuestionsResponse>('/api/admin/questions', {
-    ...useApiFetchOptions(),
-    query: { floor: 1, limit: 1, page: 1 },
-  }),
-)
+/** Le même identifiant pour la question posée et son verdict. */
+const QUESTION_ID = 'test-play'
 
-/** Une question au hasard du premier étage, posée à la place du verdict. */
-async function drawQuestion(): Promise<void> {
-  const total = deck.value?.total
-  if (!total) {
-    return
-  }
-
-  const { questions } = await $fetch<AdminQuestionsResponse>('/api/admin/questions', {
-    ...useApiFetchOptions(),
-    query: { floor: 1, limit: 1, page: 1 + Math.floor(Math.random() * total) },
-  })
-  const question = questions[0]
-  if (!question) {
-    return
-  }
-
+/** Une question au hasard du banc, posée à la place du verdict. */
+function drawQuestion(): void {
+  const question = randomBenchQuestion()
   picked.value = question
   typed.value = ''
   secondsLeft.value = 60
   state.value = {
     ...state.value,
     question: {
-      id: question.id,
+      id: QUESTION_ID,
       statement: question.statement,
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
       focusGraceMs: 1000,
@@ -153,7 +133,7 @@ function submit(): void {
     ...state.value,
     question: null,
     verdict: {
-      questionId: question.id,
+      questionId: QUESTION_ID,
       statement: question.statement,
       correct,
       answerLabel: question.answerLabel,

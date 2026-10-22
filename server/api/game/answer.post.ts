@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ANSWER_MAX_LENGTH } from '~~/shared/utils/answers'
 import { useDatabase } from '~~/server/db/client'
 import { submitAnswer } from '~~/server/utils/game'
 import type { GameState } from '~~/server/utils/game'
@@ -8,7 +9,7 @@ import type { GameState } from '~~/server/utils/game'
 // boundary: an answer made of spaces is an empty one for everything downstream,
 // disputes and achievements included.
 const bodySchema = z.object({
-  answer: z.string().trim(),
+  answer: z.string().trim().max(ANSWER_MAX_LENGTH),
   /**
    * Qui envoie : le joueur, ou son départ de la page. Le client le dit ; le
    * serveur en fait un flag d'administration, pas une sanction supplémentaire.

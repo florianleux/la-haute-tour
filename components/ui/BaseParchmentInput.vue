@@ -6,6 +6,7 @@
     placeholder="Ta réponse..."
     type="text"
     autocomplete="off"
+    :maxlength="ANSWER_MAX_LENGTH"
     class="w-[88%] rounded border border-[#d2860070] bg-white px-[2.9cqw] py-[2.35cqw] text-center text-[7.1cqw] text-amber-800 placeholder:italic placeholder:text-[#ecd6b3] focus:border-amber-0 focus:outline-none sm:w-[76%] sm:text-[3.5cqw]"
     @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     @keydown.enter.prevent="$emit('submit')"
@@ -28,6 +29,8 @@
 // que PlayFrame guette (`group-has-[#answer:focus]`) pour remonter le panneau
 // quand le clavier virtuel s'ouvre. Un seul champ à l'écran à la fois, jamais
 // deux cartes montées ensemble.
+import { ANSWER_MAX_LENGTH } from '~~/shared/utils/answers'
+
 defineProps<{ modelValue: string }>()
 
 defineEmits<{ 'update:modelValue': [string], submit: [] }>()
