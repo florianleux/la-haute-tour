@@ -27,7 +27,7 @@ Les quatre failles qui bloquaient #103 (#124 à #127) sont corrigées par les co
 - **Retour `?error=`** : il vide toute la session sans regarder le `state`. Un lien suffit à déconnecter un joueur. Nuisance seulement → #130.
 - **Scope `identify email`** : l'email est stocké à chaque connexion et jamais lu → #129.
 - **Cookie `lht_session`** : session h3 scellée (iron, `Fe26.2`). En prod : `HttpOnly; Secure; SameSite=Lax; Max-Age=31536000`. h3 pose `HttpOnly` et `Secure` par défaut, le code ajoute `Lax` et la durée, en config **et** dans le cookie : h3 refuse de desceller au-delà d'un an.
-- **Pas de révocation côté serveur** : la déconnexion efface le cookie du navigateur, pas les copies. Un cookie volé vaut jusqu'à un an. La whitelist et le drapeau admin sont relus en base à chaque requête (`loadUser`), ce qui borne la casse. Levier d'urgence : changer `NUXT_SESSION_PASSWORD` invalide toutes les sessions. Risque accepté.
+- **Pas de révocation côté serveur** : la déconnexion efface le cookie du navigateur, pas les copies. Un cookie volé vaut jusqu'à un an. La whitelist et le drapeau admin sont relus en base à chaque requête (`loadUser`), ce qui borne la casse. Levier d'urgence : changer `NUXT_SESSION_PASSWORD` invalide toutes les sessions. Risque accepté pour le lancement, ticket #132.
 - **Secret de session** : `check-config.ts` refuse la valeur d'exemple et moins de 32 caractères au démarrage.
 - **`/api/auth/dev`** : la branche qui connecte est sous `import.meta.dev`, éliminée au build. La prod répond 404, et la chaîne `dev-local-admin` est absente du bundle serveur.
 
@@ -57,7 +57,7 @@ Les quatre failles qui bloquaient #103 (#124 à #127) sont corrigées par les co
 
 - Chaque body et chaque query passe par un schéma Zod. Les identifiants de route numériques passent par `numericRouteId` (entier positif) ; les autres ne servent qu'en valeur dans `eq()`.
 - Tout le SQL passe par Drizzle. Les `sql\`…\`` interpolent des valeurs paramétrées ; le seul `sql.raw` (`server/db/schema.ts`) injecte une constante, `FLOOR_COUNT`, dans une contrainte CHECK. Le seul identifiant dynamique, `LESSON_COLUMNS[lesson]`, sort d'un enum Zod.
-- La recherche admin (`LIKE '%…%'`) n'échappe pas `%` et `_` : admin seulement, sans effet.
+- La recherche admin (`LIKE '%…%'`) n'échappe pas `%` et `_` : admin seulement, sans effet. Ticket #135.
 - Aucun `v-html` ni `innerHTML` : Vue échappe tout ce qu'un joueur écrit (nom d'aventurier, réponses).
 
 ## Triche
@@ -70,7 +70,7 @@ Les quatre failles qui bloquaient #103 (#124 à #127) sont corrigées par les co
 - **Faille, corrigée (#124)** : sans transaction interactive, deux requêtes simultanées lisaient le même état et écrivaient deux fois. Une réponse envoyée deux fois comptait la question vue deux fois — étage fini à moitié joué. Une tentative ouverte deux fois effaçait une Vitalité noire, et pouvait sauter une question au point de bloquer l'étage. Un rattrapage tiré deux fois doublait ses questions. Chaque lot se garde désormais sur l'état qu'il a lu, et l'écriture qui le change part en dernier.
 - **Limites connues, acceptées** :
   - La perte de focus est déclarée par le client : un client modifié peut se taire. C'est un drapeau d'administration, pas une protection (`specs/anti-triche.md`).
-  - Le plafond d'effets positifs sur soi se lit avant l'écriture : deux lancers simultanés depuis deux onglets peuvent le dépasser d'un. Déjà assumé dans `server/utils/effects.ts`.
+  - Le plafond d'effets positifs sur soi se lit avant l'écriture : deux lancers simultanés depuis deux onglets peuvent le dépasser d'un. Déjà assumé dans `server/utils/effects.ts`. Ticket #134.
 
 ## Données exposées
 
@@ -122,4 +122,4 @@ Impact limité : un site qui encadre le jeu n'emporte pas le cookie (`Lax` ne pa
 ## Hors périmètre
 
 - Le portail développeur Discord (redirect URIs déclarées) et la portée du jeton Turso côté Turso : pas d'accès. Le tableau de bord Netlify, lui, a été vérifié par Flo (voir plus haut).
-- Le déni de service : aucune limite de débit. Accepté pour un jeu sur invitation, derrière Netlify.
+- Le déni de service : aucune limite de débit. Accepté pour un jeu sur invitation, derrière Netlify. Ticket #133.
