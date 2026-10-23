@@ -550,7 +550,14 @@ async function resolve(
   // chaque écriture s'y garde sur la réservation encore ouverte, et celle qui la
   // ferme part en dernier. La seconde ne trouve plus rien d'ouvert et n'écrit
   // rien — la question vue s'en dispense, sa clé refuse déjà le doublon.
-  const stillOpen = and(eq(reservations.userId, user.id), isNull(reservations.resolvedAt))
+  // La garde vise la réservation lue, pas n'importe laquelle : une réponse en
+  // retard sur une question déjà close et remplacée ne doit pas fermer la suivante.
+  const stillOpen = and(
+    eq(reservations.userId, user.id),
+    eq(reservations.questionId, reservation.questionId),
+    eq(reservations.createdAt, reservation.createdAt),
+    isNull(reservations.resolvedAt),
+  )
   const whileOpen = exists(db.select({ one: sql`1` }).from(reservations).where(stillOpen))
 
   const resolveReservation = db

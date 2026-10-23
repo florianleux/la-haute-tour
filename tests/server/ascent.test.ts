@@ -307,5 +307,34 @@ describe('boucle d ascension', () => {
       // La bonne réponse n'a pas compté : rien ne se grave sur elle.
       expect((await reload()).achievementsHeld).not.toContain('FIRST_CORRECT')
     })
+
+    it('ne ferme pas la question suivante avec une réponse en retard', async () => {
+      // La réponse en retard lit la première réservation, puis attend : l'autre
+      // onglet répond et sert la suivante avant qu'elle n'écrive.
+      let release!: () => void
+      const held = new Promise<void>(resolve => { release = resolve })
+      let paused = false
+      const late: Database = Object.assign(Object.create(db), {
+        batch: async (queries: Parameters<Database['batch']>[0]) => {
+          const result = await db.batch(queries)
+          if (!paused) {
+            paused = true
+            await held
+          }
+          return result
+        },
+      })
+
+      const pending = submitAnswer(late, await reload(), 'Toulouse', NOW)
+      await submitAnswer(db, await reload(), 'Bordeaux', NOW)
+      const next = await serveNextQuestion(db, await reload(), NOW)
+      release()
+      await pending
+
+      const [open] = await db.select().from(reservations)
+      expect(open).toMatchObject({ questionId: next.question?.id, resolvedAt: null })
+      expect(await reload()).toMatchObject({ lives: rules.lives, seenTotal: 1 })
+      expect(await db.select().from(missedPool)).toHaveLength(0)
+    })
   })
 })

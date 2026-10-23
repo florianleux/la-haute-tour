@@ -2,7 +2,7 @@
 
 Ticket #112, 22 octobre 2026. Revue de **tout** le code au commit `1ecb0b2`, et de la prod (`https://la-haute-tour.netlify.app`) interrogée de l'extérieur, sans compte.
 
-Ce qui a été fait : lecture des 55 handlers de `server/api/**`, des utilitaires serveur qu'ils appellent, du middleware et de la config Nuxt/Netlify ; requêtes `curl` sur la prod (en-têtes, cookie, route de dev, chunks JS) ; `pnpm audit` ; recherche de secrets dans tout l'historique git.
+Ce qui a été fait : lecture des 54 handlers de `server/api/**`, des utilitaires serveur qu'ils appellent, du middleware et de la config Nuxt/Netlify ; requêtes `curl` sur la prod (en-têtes, cookie, route de dev, chunks JS) ; `pnpm audit` ; recherche de secrets dans tout l'historique git.
 
 ## Synthèse
 
@@ -33,7 +33,7 @@ Les quatre failles qui bloquaient #103 (#124 à #127) sont corrigées par les co
 
 ## Autorisations
 
-**Regardé** : la première instruction de chacun des 55 handlers, `requireAuth`, `requireAdmin`, `getCurrentUser`, `server/utils/testPlayers.ts`.
+**Regardé** : la première instruction de chacun des 54 handlers, `requireAuth`, `requireAdmin`, `getCurrentUser`, `server/utils/testPlayers.ts`.
 
 - Chaque handler commence par `requireAuth` ou `requireAdmin`. Exceptions voulues : `auth/discord` et son retour, `auth/me` (rend `null` sans session), `auth/logout`, `auth/dev` (404 hors dev), l'attrape-tout `api/[...]` (404).
 - Les droits se lisent sur le compte connecté (`getSessionUser`), jamais sur l'identité incarnée. Aucun endpoint n'accorde le drapeau admin.
@@ -56,7 +56,7 @@ Les quatre failles qui bloquaient #103 (#124 à #127) sont corrigées par les co
 **Regardé** : chaque `readValidatedBody`, `getValidatedQuery`, `getRouterParam`, chaque `sql\`…\``, les sorties Vue.
 
 - Chaque body et chaque query passe par un schéma Zod. Les identifiants de route numériques passent par `numericRouteId` (entier positif) ; les autres ne servent qu'en valeur dans `eq()`.
-- Tout le SQL passe par Drizzle. Les `sql\`…\`` interpolent des valeurs paramétrées ; aucun `sql.raw`. Le seul identifiant dynamique, `LESSON_COLUMNS[lesson]`, sort d'un enum Zod.
+- Tout le SQL passe par Drizzle. Les `sql\`…\`` interpolent des valeurs paramétrées ; le seul `sql.raw` (`server/db/schema.ts`) injecte une constante, `FLOOR_COUNT`, dans une contrainte CHECK. Le seul identifiant dynamique, `LESSON_COLUMNS[lesson]`, sort d'un enum Zod.
 - La recherche admin (`LIKE '%…%'`) n'échappe pas `%` et `_` : admin seulement, sans effet.
 - Aucun `v-html` ni `innerHTML` : Vue échappe tout ce qu'un joueur écrit (nom d'aventurier, réponses).
 
