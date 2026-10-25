@@ -125,10 +125,18 @@ L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet
 
 Un seul champ distingue les deux écrans, pas deux phases (voir [`boss.md`](./boss.md#porte-à-deux-clés)) :
 
-- **Porte fermée** (moins de deux clés posées côté équipe) : qui a déjà posé sa clé, qui manque encore. Un joueur sans équipe ne voit jamais cet écran, il tombe direct sur la porte ouverte. Contenu exact encore à spécifier.
-- **Porte ouverte** : une action pour engager le combat. Le joueur qui a sa clé la pose ici, par un bouton dédié — pas automatique à l'arrivée.
+L'illustration de la porte de l'étage couvre l'écran, son nom en grand en haut. Ses deux serrures s'allument à chaque clé posée. Le nom des poseurs n'est pas encore affiché à l'écran (choix de design ; l'état de jeu le servira, voir #139).
+
+- **Porte fermée** (moins de deux clés posées côté équipe) : deux liens lumineux en bas, pas de bouton plein. « Utiliser la clé de la Lune » (le nom de la clé suit celui de la porte) si le joueur en a une, et dessous, plus discret, « Redescendre », qui le ramène au camp.
+- **Porte ouverte** : « Entrer », le bouton médaillon de l'ascension, posé sur le bas des battants. Il engage le combat. Un joueur sans équipe arrive directement sur cette version.
+
+Les cas d'arrivée, l'attente au camp et « Remonter » : voir [`boss.md`](./boss.md#arriver-devant-la-porte).
 
 Introduction du boss (apparition, nom, dialogue) jouée ici, une seule fois par boss.
+
+### Camp en attente de porte
+
+Le camp habituel, avec l'état de la porte : clés posées sur 2. Le nom de ceux qui les ont posées n'est pas encore affiché, comme sur la porte (voir [`boss.md`](./boss.md#poser-la-clé)). Un bouton « Remonter », actif seulement porte ouverte (et, à 0 vie, attente et rattrapage finis). Il relit l'état environ toutes les 30 s. Voir [`boss.md`](./boss.md#attendre-au-camp).
 
 ### `bossFight` — combat de boss
 

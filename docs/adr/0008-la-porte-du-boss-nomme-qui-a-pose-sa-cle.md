@@ -34,3 +34,18 @@ jamais cet écran (pas de porte), donc la question ne se pose pas pour lui.
 Le principe qui borne les deux exceptions : on nomme une action que quelqu'un
 a choisi de faire et qui vous concerne directement, jamais un état qu'il
 n'a pas choisi de montrer.
+
+## Amendement — 2026-10-23
+
+Le joueur n'attend plus devant la porte fermée : il redescend au camp (voir
+`boss.md#attendre-au-camp`). Le camp **nomme aussi** qui a posé sa clé,
+avec la même règle : une action accomplie, jamais une progression. Sans ça,
+le joueur devrait remonter pour savoir qui il attend. Le joueur sans équipe,
+lui, voit désormais la porte, déjà ouverte : il n'y a personne à nommer.
+Cette dernière phrase remplace celle des Conséquences (« pas de porte »).
+
+## Amendement — 2026-10-25
+
+La décision tient, mais les noms ne s'affichent pas encore : la porte et le
+camp ne montrent que les serrures allumées, choix de design. L'état de jeu
+les servira (#139) ; les afficher ne demandera alors que l'écran.

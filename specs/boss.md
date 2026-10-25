@@ -96,8 +96,9 @@ chacun posant sa clé, pour l'ouvrir.
 - **Toujours 2 clés**, quelle que soit la taille de l'équipe.
 - Une fois ouverte, la porte reste ouverte **définitivement** pour toute
   l'équipe — les membres qui arrivent après n'ont plus besoin de clé.
-- **Joueur sans équipe** (dont l'admin) : pas de porte, il affronte le boss
-  seul dès qu'il l'atteint.
+- **Joueur sans équipe** (dont l'admin) : il trouve la porte **déjà
+  ouverte**, et « Entrer » l'engage seul dans le combat. Un seul parcours pour
+  tous les joueurs.
 - **Porte fermée et porte ouverte-mais-pas-encore-engagée sont une seule et
   même phase**, `bossDoor` : un champ (nombre de clés posées / porte ouverte)
   distingue les deux écrans, pas deux phases — même précédent que le coffre,
@@ -120,15 +121,61 @@ chacun posant sa clé, pour l'ouvrir.
 
 ### Poser la clé
 
-- **Action manuelle** : un bouton dédié sur l'écran de porte, pas automatique
-  à l'arrivée.
-- Un joueur ayant fini l'étage mais dont la porte n'est pas encore ouverte
-  (moins de 2 clés posées) est bloqué sur un **écran d'attente dédié** — rien
-  d'autre à y faire.
+- **Action manuelle** (`placeKey`) : un lien dédié sur l'écran de porte,
+  « Utiliser la clé de la Lune » (le nom de la clé suit celui de la porte),
+  pas automatique à l'arrivée.
 - **Cet écran nomme qui a déjà posé sa clé.** Nouvelle exception à l'anonymat
   des coéquipiers (`equipes.md`), au même titre que le journal des Sorts : la
   porte est une action coopérative, le joueur doit savoir qui il attend, pas
   seulement combien. Voir [ADR 0008](../docs/adr/0008-la-porte-du-boss-nomme-qui-a-pose-sa-cle.md).
+  **Pas encore affiché** : l'état de jeu servira les noms (#139), mais la porte et le
+  camp ne montrent pour l'instant que les serrures allumées (choix de design
+  du 2026-10-25). La règle reste, l'affichage viendra.
+
+### Arriver devant la porte
+
+Le joueur qui finit l'étage arrive devant la porte. Ce qu'il y trouve :
+
+| Porte à son arrivée | Il a une clé | Ce qu'il fait |
+|---|---|---|
+| Fermée, 0 clé posée | oui | Pose sa clé (1 sur 2), puis **Redescendre** |
+| Fermée, 0 ou 1 clé posée | non | Voit combien de clés sont posées, puis **Redescendre** |
+| Fermée, 1 clé posée | oui | Pose sa clé, la porte s'ouvre : **Entrer** |
+| Ouverte | oui ou non | **Entrer**. Sa clé reste stockée, sans effet |
+| Sans équipe | — | Porte déjà ouverte : **Entrer** |
+
+« Entrer » engage le combat de boss du joueur (`bossFight`), seul.
+
+### Attendre au camp
+
+- Porte fermée, le joueur **redescend** au camp (`descendToCamp`). Il n'y a
+  pas d'écran d'attente devant la porte.
+- Le camp dit l'état de la porte : combien de clés sur 2, et **qui** les a
+  posées (le camp nomme comme la porte, voir ADR 0008 — pas encore affiché,
+  comme sur la porte).
+- Le bouton **« Remonter »** (`climbToDoor`) du camp ne s'active que porte
+  ouverte. Il ramène devant la porte, où « Entrer » attend.
+- **Position retenue** (`doorSpot`) : le joueur retombe là où il était, porte
+  ou camp, à chaque connexion. Le serveur la stocke, et la remet à zéro à
+  `crossFloor`.
+- **Porte et camp relisent l'état** environ toutes les 30 s : la porte qui
+  s'ouvre pendant que le joueur la regarde s'ouvre sous ses yeux, sans
+  recharger.
+- **Entre deux combats** : défaite, attente au camp, rattrapage, puis
+  « Remonter » face à la porte ouverte, et « Entrer ».
+- **Arrivée à 0 vie** (voir [Cas à 0 vie](#cas-à-0-vie)) : « Remonter » attend
+  deux choses, la porte ouverte **et** l'attente et le rattrapage finis.
+- **Une guilde qui n'aura jamais deux clés** : cas accepté, aucun geste admin
+  pour ouvrir une porte.
+
+### Les portes de tous les étages
+
+Un seul écran de porte sert les 6 étages. Ce qui change d'une porte à
+l'autre vit au **catalogue des portes** (`bossDoors`, dans
+`utils/bossDoors.ts`) : nom, nom de la clé, illustration (sous `public/images/boss/`),
+position des deux serrures. Les hublots, chaînes et autres détails de
+l'illustration sont du décor. Banc de design : `/test/door/<étage>`, avec 0,
+1 ou 2 clés déjà posées.
 
 ## Contenu des épreuves — pas d'aléatoire
 

@@ -68,16 +68,18 @@ qui le lira en hérite. Voir [`admin.md`](./admin.md#joueurs-test).
 
 Deuxième usage de l'équipe, indépendant du ciblage des Sorts : le boss de
 chaque étage est derrière une porte que deux membres d'une même équipe doivent
-ouvrir, chacun posant sa clé. Un joueur sans équipe n'a pas de porte, il
-affronte le boss seul dès qu'il l'atteint — même règle que pour le PvP :
-personne à attendre, personne à qui il doive quelque chose.
+ouvrir, chacun posant sa clé. Un joueur sans équipe trouve la porte déjà
+ouverte et affronte le boss seul dès qu'il l'atteint — même règle que pour le
+PvP : personne à attendre, personne à qui il doive quelque chose.
 
 **Deuxième fissure dans l'anonymat des coéquipiers**, du même type que le
-journal des Sorts (voir plus bas) : l'écran de porte fermée **nomme** qui a
-déjà posé sa clé — une action accomplie qui vous concerne, jamais une
+journal des Sorts (voir plus bas) : l'écran de porte fermée, et le camp qui
+l'attend, **nomment** qui a déjà posé sa clé — une action accomplie qui vous concerne, jamais une
 progression que ce coéquipier n'a pas choisi de montrer. Voir
 [`boss.md`](./boss.md#porte-à-deux-clés) et
 [ADR 0008](../docs/adr/0008-la-porte-du-boss-nomme-qui-a-pose-sa-cle.md).
+Pas encore affiché à l'écran : la porte et le camp ne montrent pour l'instant
+que le nombre de clés posées.
 
 ## Le joueur sans équipe
 
