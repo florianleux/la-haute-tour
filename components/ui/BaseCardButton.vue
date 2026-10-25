@@ -65,6 +65,8 @@
 //   non `left-1/2` : l'illustration n'est pas symétrique (bannière débordant à
 //   droite, corde pendant à gauche), si bien que le parchemin y est centré sur
 //   54%. Mesuré, pas estimé — le corps de la feuille va de x=182 à x=807 sur 918.
+// - 'door' : BossDoor, sur le bas des battants de la porte du boss. Mesuré
+//   sur la scène 16:9 du décor (`@container`), pas sur un cadre de jeu.
 // - 'parchment-bottom' : RecoveryCard, où le bouton se pose à cheval sur le bord
 //   bas de la feuille. Il tombe plus haut que 'image-bottom' parce que
 //   l'illustration garde du bois sous le parchemin, que le bouton ne recouvre pas.
@@ -72,7 +74,7 @@
 // `face` choisit l'illustration : le médaillon de parchemin par défaut, ou la
 // planche clouée du camp — bois sombre, donc texte crème plutôt qu'ambre, et pas
 // de `pb-2` puisqu'elle est symétrique là où le médaillon a une lèvre basse.
-type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'parchment-bottom'
+type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'parchment-bottom' | 'door'
 type Face = 'medallion' | 'plank'
 
 const ANCHORS: Record<Anchor, { position: string, width: string, text: string }> = {
@@ -105,6 +107,11 @@ const ANCHORS: Record<Anchor, { position: string, width: string, text: string }>
     // 28,8 % × 1,4 et 3,3 cqw × 1,4.
     width: 'w-[58.5%] sm:w-[40.5%]',
     text: 'text-[6.6cqw] sm:text-[4.6cqw]',
+  },
+  'door': {
+    position: 'top-[74%] left-1/2',
+    width: 'w-[17%]',
+    text: 'text-[1.96cqw]',
   },
 }
 

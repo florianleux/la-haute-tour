@@ -35,8 +35,10 @@ const props = withDefaults(defineProps<{
    * à la taille et à la couleur du texte qui l'entoure, qu'elle reprend plutôt
    * que d'imposer les siennes. `parchment` : un bouton tracé à l'encre, pour
    * une action posée sur du papier (le Grimoire), où les fonds sombres jurent.
+   * `glow` : le libellé seul, sans fond ni soulignement, qui grossit au survol —
+   * pour un lien lumineux (BaseGlowLabel) posé sur une illustration.
    */
-  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment'
+  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'glow'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -53,21 +55,24 @@ defineEmits<{ click: [MouseEvent] }>()
  * Le gabarit d'un bouton seul. Une option, empilée avec d'autres dans un texte,
  * en veut un plus serré et garde la taille de ce texte.
  */
-const PADDED = 'py-3 text-sm font-semibold'
+const PADDED = 'py-3 text-sm font-semibold transition-colors'
 
+// Chaque variante porte sa transition : deux `transition-*` sur un même
+// bouton se disputeraient `transition-property`.
 const VARIANTS = {
   primary: `${PADDED} bg-indigo-500 text-white hover:bg-indigo-400`,
   ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
-  option: 'py-1 italic bg-transparent text-inherit hover:underline',
+  option: 'py-1 italic bg-transparent text-inherit transition-colors hover:underline',
   parchment: `${PADDED} border-2 border-amber-900/40 bg-transparent text-amber-950 enabled:hover:bg-amber-900/10`,
+  glow: 'py-1 bg-transparent transition-[scale] hover:scale-110',
 }
 
 const classes = computed(() => [
   // `relative` : le loader se pose par-dessus le libellé plutôt qu'à côté, pour
   // que le bouton garde sa largeur pendant l'attente.
   'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5',
-  'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
   'disabled:cursor-not-allowed disabled:opacity-50',
   props.block ? 'w-full' : '',
   VARIANTS[props.variant],

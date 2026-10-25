@@ -23,6 +23,7 @@ const OTHER_ADMIN_PAGES = [
   'test/dialogue.vue',
   'test/intro.vue',
   'test/camp.vue',
+  'test/door/[floor].vue',
   'boss/1.vue',
 ]
 
