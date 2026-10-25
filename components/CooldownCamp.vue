@@ -1,9 +1,10 @@
 <template>
   <!-- Les objets du camp, posés sur le décor. Chaque image est recadrée depuis
-       un calque 1920×1080 aligné sur cooldown-bg.webp, et replacée à ses
-       coordonnées d'origine en % d'une boîte 16:9 : COVER (la bannière) reproduit
-       le `bg-cover bg-center` du décor, GROUND (la corde et le sol) reste calée
-       sur la hauteur de la fenêtre. Voir ces deux constantes plus bas.
+       un calque 1920×1080 aligné sur le centre de cooldown-bg.webp, et
+       replacée à ses coordonnées d'origine, en % de la scène 16:9 au centre du
+       décor 20:9 (utils/backdrop.ts). BACKDROP_COVER (la bannière) reproduit
+       le `bg-cover bg-center` du décor, BACKDROP_GROUND (la corde et le sol) reste
+       calée sur la hauteur de la fenêtre. Voir utils/backdrop.ts.
 
        Deux profondeurs : la corde et la bannière passent derrière le poster,
        ce qui est posé au sol devant — comme sur l'illustration. Une boîte par
@@ -18,56 +19,57 @@
     class="pointer-events-none fixed inset-0 @container-size"
     :class="layer.depth"
   >
-    <div
-      class="absolute left-1/2 aspect-video -translate-x-1/2"
-      :class="layer.box"
-    >
-      <template
-        v-for="item in layer.items"
-        :key="item.src"
-      >
-        <!-- Tous les objets se survolent, pour leur nom ; seuls ceux qui
-             mènent quelque part luisent et scintillent en plus. Le bouton se
-             pose par-dessus l'objet (BaseSurfaceButton), annoncé sous le nom
-             affiché : ce qu'on lit et ce qu'on entend ne divergent pas. -->
-        <!-- En leçon, ce que Michel ne montre pas s'assombrit, et ce qu'il ne
-             demande pas de cliquer ne répond plus, au clavier non plus
-             (`inert`). Ce qu'il demande d'ouvrir pulse. Voir spotlightOn. -->
-        <div
-          class="group pointer-events-auto absolute transition duration-200"
-          :class="[item.place, layer.origin, item.click && HOVER, item.spot.dimmed && LESSON_SHADE, item.spot.pulses && 'motion-safe:animate-nudge']"
-          :inert="!item.spot.clickable"
+    <div :class="[BACKDROP_BOX, layer.box]">
+      <!-- La scène d'origine, où les objets gardent les coordonnées de
+           leur calque. -->
+      <div :class="BACKDROP_SCENE">
+        <template
+          v-for="item in layer.items"
+          :key="item.src"
         >
-          <img
-            :src="item.src"
-            alt=""
-            class="w-full"
+          <!-- Tous les objets se survolent, pour leur nom ; seuls ceux qui
+               mènent quelque part luisent et scintillent en plus. Le bouton se
+               pose par-dessus l'objet (BaseSurfaceButton), annoncé sous le nom
+               affiché : ce qu'on lit et ce qu'on entend ne divergent pas. -->
+          <!-- En leçon, ce que Michel ne montre pas s'assombrit, et ce qu'il ne
+               demande pas de cliquer ne répond plus, au clavier non plus
+               (`inert`). Ce qu'il demande d'ouvrir pulse. Voir spotlightOn. -->
+          <div
+            class="group pointer-events-auto absolute transition duration-200"
+            :class="[item.place, layer.origin, item.click && HOVER, item.spot.dimmed && LESSON_SHADE, item.spot.pulses && 'motion-safe:animate-nudge']"
+            :inert="!item.spot.clickable"
           >
-          <SparkleField
-            v-if="item.click"
-            :sparks="CAMP_SPARKS"
-            class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-          />
-          <!-- Le nom de l'objet, blanc et lumineux. En cqh : il suit la
-               hauteur de la fenêtre, comme les objets du sol. Au focus clavier
-               aussi, pas seulement au survol. -->
-          <BaseGlowLabel
-            class="pointer-events-none absolute -translate-x-1/2 text-[3cqh] opacity-0 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
-            :class="item.labelAt ?? 'bottom-full left-1/2 mb-[0.5cqh]'"
-          >
-            {{ item.title }}
-            <span
-              v-if="item.note"
-              class="block text-[0.6em] font-normal"
-            >{{ item.note }}</span>
-          </BaseGlowLabel>
-          <BaseSurfaceButton
-            v-if="item.click"
-            :label="item.title"
-            @click="onClick(item.click)"
-          />
-        </div>
-      </template>
+            <img
+              :src="item.src"
+              alt=""
+              class="w-full"
+            >
+            <SparkleField
+              v-if="item.click"
+              :sparks="CAMP_SPARKS"
+              class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+            />
+            <!-- Le nom de l'objet, blanc et lumineux. En cqh : il suit la
+                 hauteur de la fenêtre, comme les objets du sol. Au focus clavier
+                 aussi, pas seulement au survol. -->
+            <BaseGlowLabel
+              class="pointer-events-none absolute -translate-x-1/2 text-[3cqh] opacity-0 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
+              :class="item.labelAt ?? 'bottom-full left-1/2 mb-[0.5cqh]'"
+            >
+              {{ item.title }}
+              <span
+                v-if="item.note"
+                class="block text-[0.6em] font-normal"
+              >{{ item.note }}</span>
+            </BaseGlowLabel>
+            <BaseSurfaceButton
+              v-if="item.click"
+              :label="item.title"
+              @click="onClick(item.click)"
+            />
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -77,6 +79,7 @@
 // et sac, posés sur le décor de CooldownCard entre lui et le poster. Certains
 // ouvrent une boîte par-dessus le camp, tous disent leur nom au survol.
 import type { TeamId } from '~~/shared/utils/teams'
+import { BACKDROP_BOX, BACKDROP_COVER, BACKDROP_GROUND, BACKDROP_SCENE } from '~~/utils/backdrop'
 import type { LessonLine, Spotlit } from '~~/utils/lessons'
 import type { CampOverlayId } from '~~/utils/phase'
 
@@ -112,7 +115,7 @@ interface CampItem {
   /** L'objet que l'image représente : posé seulement s'il a quelque chose à montrer. */
   object: CampObject
   src: string
-  /** Position et largeur en % du décor 1920×1080, relevées sur le calque d'origine. */
+  /** Position et largeur en % de la scène 1920×1080, relevées sur le calque d'origine. */
   place: string
   /** Le nom affiché au survol, et annoncé en synthèse vocale. */
   title: string
@@ -158,16 +161,6 @@ const CAMP_SPARKS = [
   { left: '60%', top: '84%', size: '7%', delay: '1.4s' },
 ]
 
-// La boîte du décor : le `bg-cover bg-center` de cooldown-bg.webp, reproduit.
-const COVER = 'top-1/2 w-[max(100cqw,100cqh*16/9)] -translate-y-1/2'
-
-// La boîte du sol : la même tant que la fenêtre est plus étroite que 16:9 (le
-// cover y est alors calé sur la hauteur). Plus large, le cover se cale sur la
-// largeur et rogne le bas du décor — les objets posés y tombaient à moitié hors
-// écran, et grossissaient quand le poster, lui, suit la hauteur. Le sol reste
-// donc calé sur la hauteur et posé au bas de la fenêtre : mêmes taille et
-// place par rapport au poster qu'en 16:9, quelle que soit la largeur.
-const GROUND = 'bottom-0 w-[calc(100cqh*16/9)]'
 
 // Ce qui pend grandit depuis son point d'attache, ce qui est posé depuis le
 // sol : centré, le scale ferait décoller les objets ou glisser la corde.
@@ -186,7 +179,7 @@ const layers = computed((): ShownLayer[] => {
     // le poster, comme la bannière, et non devant avec le reste du sol.
     {
       depth: 'z-[5]',
-      box: GROUND,
+      box: BACKDROP_GROUND,
       origin: 'origin-top',
       items: [
         props.ready
@@ -198,7 +191,7 @@ const layers = computed((): ShownLayer[] => {
     },
     {
       depth: 'z-[5]',
-      box: COVER,
+      box: BACKDROP_COVER,
       origin: 'origin-top',
       items: [
         // Le nom de la bannière se lit sur l'étoffe, au milieu : au-dessus, il
@@ -209,7 +202,7 @@ const layers = computed((): ShownLayer[] => {
     {
       // Entre l'image du poster (z-10) et son contenu (z-[15]) : voir CooldownCard.
       depth: 'z-[12]',
-      box: GROUND,
+      box: BACKDROP_GROUND,
       origin: 'origin-bottom',
       items: [
         { object: 'scroll', src: '/images/cooldown-scroll.webp', place: 'left-[31.72%] top-[84%] w-[16.46%]', title: 'Volumen', click: { open: 'questionLog' } },

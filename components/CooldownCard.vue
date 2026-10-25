@@ -62,7 +62,8 @@
        du sol (calés sur la hauteur) face au poster (calé sur la largeur) : il
        remonte alors d'un sixième de ce qui manque à la largeur pour faire du
        16:9, plafonné à 8svh, et laisse le sol aux objets — sans que sa
-       bannière ne vienne buter contre le haut de l'écran.
+       bannière ne vienne buter contre le haut de l'écran. Ce 16:9 est celui de
+       la scène où les objets se posent (BACKDROP_SCENE), au centre du décor.
 
        Transparent aux clics, sauf ce qu'il porte : sa boîte rectangulaire
        déborde de l'image détourée et recouvrait la corde du camp, qui ne se
