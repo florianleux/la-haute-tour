@@ -77,10 +77,15 @@
                l'intérieure le fait léviter. L'ombre portée sombre le détache
                du coffre doré, le halo doré par-dessus le garde lumineux.
                @container : les étincelles qui en partent comptent leur course
-               en cqw, donc en largeur de médaillon. -->
+               en cqw, donc en largeur de médaillon.
+               Posée à quatre fois sa taille (120 % au lieu de 30 %, centre
+               remonté au même point par le translate de 37,5 %), réduite au
+               quart par `animate-emerge` : Safari la rastérise à cette taille,
+               et le médaillon reste net quand il grossit. D'où aussi les
+               ombres en px multipliées par quatre. -->
           <div
             v-if="chest.spell && spellImage(chest.spell)"
-            class="absolute left-1/2 top-[0%] w-[30%] -translate-x-1/2 @container motion-safe:animate-emerge"
+            class="absolute left-1/2 top-[0%] w-[120%] -translate-x-1/2 -translate-y-[37.5%] @container motion-safe:animate-emerge motion-reduce:[transform:scale(0.25)]"
           >
             <!-- Le climax, à l'apogée du jaillissement (entre 0,45 et 1,4 s,
                  quand le médaillon tient à quatre fois sa taille) : des rayons
@@ -95,19 +100,19 @@
               <img
                 :src="spellImage(chest.spell)!"
                 :alt="spellLabel(chest.spell)"
-                class="w-full [filter:drop-shadow(0_6px_10px_rgb(0_0_0/0.5))_drop-shadow(0_0_12px_#fde68a)]"
+                class="w-full [filter:drop-shadow(0_24px_40px_rgb(0_0_0/0.5))_drop-shadow(0_0_48px_#fde68a)]"
               >
               <div class="absolute inset-[5%] overflow-hidden rounded-full">
                 <div class="absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgb(255_255_255/0.85)_50%,transparent_65%)] motion-safe:animate-sheen motion-reduce:hidden" />
               </div>
-              <div class="absolute inset-0 drop-shadow-[0_0_8px_#fef3c7]">
+              <div class="absolute inset-0 drop-shadow-[0_0_32px_#fef3c7]">
                 <SparkleStar class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint" />
                 <SparkleStar class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]" />
               </div>
               <!-- Le scintillement autour du médaillon, une fois posé. -->
               <SparkleField
                 :sparks="SPELL_SPARKS"
-                class="drop-shadow-[0_0_4px_#fef3c7]"
+                class="drop-shadow-[0_0_16px_#fef3c7]"
               />
             </div>
 
@@ -115,7 +120,7 @@
                  partent du centre dans toutes les directions, une seule fois. -->
             <SparkleSpray
               :sparks="SPELL_SPRAY"
-              class="drop-shadow-[0_0_6px_#fde68a]"
+              class="drop-shadow-[0_0_24px_#fde68a]"
             />
           </div>
 
