@@ -54,13 +54,22 @@
                sa place. Calé sur le coffre ouvert par la caisse, commune aux
                deux images : même largeur (77 % de la boîte), même bas. Au
                bond, `--lunge` dit de combien il grossit — moins en mobile,
-               où le cadre portrait le fait déjà plus grand. -->
-          <img
+               où le cadre portrait le fait déjà plus grand.
+               Posé à `--lunge` fois sa taille, centré au même point par les
+               translate, et réduit par `animate-mimic-lunge` : Safari le
+               rastérise ainsi à sa taille au bond, et il y reste net. La
+               boîte porte la place, l'image l'animation : celle-ci règle
+               déjà `translate`, qui écraserait celui de la place. -->
+          <div
             v-if="chest.mimic"
-            src="/images/chest-mimic.webp"
-            alt="Un mimic"
-            class="absolute left-[10.3%] top-[4.1%] z-10 w-[77%] max-w-none [--lunge:2.4] sm:[--lunge:3] motion-safe:animate-mimic-lunge"
+            class="absolute left-[10.3%] top-[4.1%] z-10 w-[calc(77%*var(--lunge))] -translate-x-[calc(50%-50%/var(--lunge))] -translate-y-[calc(50%-50%/var(--lunge))] [--lunge:2.4] sm:[--lunge:3]"
           >
+            <img
+              src="/images/chest-mimic.webp"
+              alt="Un mimic"
+              class="w-full max-w-none motion-safe:animate-mimic-lunge motion-reduce:[transform:scale(calc(1/var(--lunge)))]"
+            >
+          </div>
 
           <!-- L'éclair, centré sur la fente entre couvercle et caisse (48% de
                la hauteur de l'image) : il éblouit pendant le fondu, qui se
@@ -78,14 +87,14 @@
                du coffre doré, le halo doré par-dessus le garde lumineux.
                @container : les étincelles qui en partent comptent leur course
                en cqw, donc en largeur de médaillon.
-               Posée à quatre fois sa taille (120 % au lieu de 30 %, centre
-               remonté au même point par le translate de 37,5 %), réduite au
-               quart par `animate-emerge` : Safari la rastérise à cette taille,
-               et le médaillon reste net quand il grossit. D'où aussi les
-               ombres en px multipliées par quatre. -->
+               Posée à `--peak` fois sa taille (celle de la pause), centre
+               remonté au même point par le translate, et réduite par
+               `animate-emerge` : Safari la rastérise à cette taille, et le
+               médaillon reste net quand il grossit. D'où aussi les ombres en
+               px multipliées par `--peak`. -->
           <div
             v-if="chest.spell && spellImage(chest.spell)"
-            class="absolute left-1/2 top-[0%] w-[120%] -translate-x-1/2 -translate-y-[37.5%] @container motion-safe:animate-emerge motion-reduce:[transform:scale(0.25)]"
+            class="absolute left-1/2 top-[0%] w-[calc(30%*var(--peak))] -translate-x-1/2 -translate-y-[calc(50%-50%/var(--peak))] [--peak:4] @container motion-safe:animate-emerge motion-reduce:[transform:scale(calc(1/var(--peak)))]"
           >
             <!-- Le climax, à l'apogée du jaillissement (entre 0,45 et 1,4 s,
                  quand le médaillon tient à quatre fois sa taille) : des rayons
@@ -100,19 +109,19 @@
               <img
                 :src="spellImage(chest.spell)!"
                 :alt="spellLabel(chest.spell)"
-                class="w-full [filter:drop-shadow(0_24px_40px_rgb(0_0_0/0.5))_drop-shadow(0_0_48px_#fde68a)]"
+                class="w-full [filter:drop-shadow(0_calc(6px*var(--peak))_calc(10px*var(--peak))_rgb(0_0_0/0.5))_drop-shadow(0_0_calc(12px*var(--peak))_#fde68a)]"
               >
               <div class="absolute inset-[5%] overflow-hidden rounded-full">
                 <div class="absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgb(255_255_255/0.85)_50%,transparent_65%)] motion-safe:animate-sheen motion-reduce:hidden" />
               </div>
-              <div class="absolute inset-0 drop-shadow-[0_0_32px_#fef3c7]">
+              <div class="absolute inset-0 drop-shadow-[0_0_calc(8px*var(--peak))_#fef3c7]">
                 <SparkleStar class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint" />
                 <SparkleStar class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]" />
               </div>
               <!-- Le scintillement autour du médaillon, une fois posé. -->
               <SparkleField
                 :sparks="SPELL_SPARKS"
-                class="drop-shadow-[0_0_16px_#fef3c7]"
+                class="drop-shadow-[0_0_calc(4px*var(--peak))_#fef3c7]"
               />
             </div>
 
@@ -120,7 +129,7 @@
                  partent du centre dans toutes les directions, une seule fois. -->
             <SparkleSpray
               :sparks="SPELL_SPRAY"
-              class="drop-shadow-[0_0_24px_#fde68a]"
+              class="drop-shadow-[0_0_calc(6px*var(--peak))_#fde68a]"
             />
           </div>
 
