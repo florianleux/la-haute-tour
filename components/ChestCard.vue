@@ -106,10 +106,17 @@
             <div class="absolute left-1/2 top-1/2 aspect-square w-[230%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[repeating-conic-gradient(rgb(254_243_199/0.9)_0deg_8deg,transparent_8deg_24deg)] opacity-0 [mask-image:radial-gradient(circle,black_15%,transparent_68%)] motion-safe:animate-rays" />
 
             <div class="relative motion-safe:animate-float">
+              <!-- Le halo doré puis l'ombre portée, en dégradés ronds sous
+                   l'image plutôt qu'en `drop-shadow` sur elle : au zoom,
+                   Safari teintait de noir la transparence autour du disque,
+                   tout le carré de l'image. Le médaillon est rond et remplit
+                   son image, un disque suffit. -->
+              <div class="absolute inset-[-30%] bg-[radial-gradient(circle_closest-side,rgb(253_230_138/0.4)_62.5%,rgb(253_230_138/0.12)_81%,transparent)]" />
+              <div class="absolute inset-[-25%] translate-y-[5%] bg-[radial-gradient(circle_closest-side,rgb(0_0_0/0.35)_48%,transparent)]" />
               <img
                 :src="spellImage(chest.spell)!"
                 :alt="spellLabel(chest.spell)"
-                class="w-full [filter:drop-shadow(0_calc(6px*var(--peak))_calc(10px*var(--peak))_rgb(0_0_0/0.5))_drop-shadow(0_0_calc(12px*var(--peak))_#fde68a)]"
+                class="relative w-full"
               >
               <div class="absolute inset-[5%] overflow-hidden rounded-full">
                 <div class="absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgb(255_255_255/0.85)_50%,transparent_65%)] motion-safe:animate-sheen motion-reduce:hidden" />
