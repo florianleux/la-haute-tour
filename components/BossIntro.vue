@@ -56,7 +56,8 @@
           </div>
         </template>
 
-        <!-- Son nom en grand titre au-dessus de sa tête, façon Dark Souls :
+        <!-- Son nom en grand titre au-dessus de sa tête, façon Dark Souls,
+             son épithète en plus petit juste au-dessus, révélée la première :
              capitales espacées, or en dégradé. Il se révèle de gauche à
              droite (un masque qui glisse), un reflet le balaie, puis il
              s'efface ; son filet s'étire de gauche à droite avec lui. Le tout
@@ -67,12 +68,53 @@
           class="absolute inset-x-0 bottom-[79%] flex flex-col items-center motion-safe:animate-title-card"
           :style="{ '--title-ms': `${beat.holdMs ?? 0}ms` }"
         >
-          <p class="bg-[linear-gradient(100deg,#a8741a_0%,#f6dc8c_30%,#fffbe8_45%,#f6dc8c_60%,#a8741a_100%)] bg-size-[250%_100%] bg-clip-text [-webkit-background-clip:text] text-[4.6cqw] uppercase tracking-[0.2em] text-transparent [mask-image:linear-gradient(to_right,black_40%,transparent_60%)] [mask-size:250%_100%] motion-safe:animate-title-reveal">
+          <p
+            v-if="intro.epithet"
+            class="-mb-[0.4cqw] text-[1.4cqw] leading-none"
+            :class="TITLE_GOLD"
+          >
+            {{ intro.epithet }}
+          </p>
+          <p
+            class="text-[4.6cqw]"
+            :class="TITLE_GOLD"
+            :style="nameDelay"
+          >
             {{ intro.name }}
           </p>
-          <div class="mt-[0.4cqw] h-[0.15cqw] w-[48cqw] origin-left bg-linear-to-r from-transparent via-[#e6c878] to-transparent motion-safe:animate-title-rule" />
+          <div
+            class="mt-[0.4cqw] h-[0.15cqw] w-[48cqw] origin-left bg-linear-to-r from-transparent via-[#e6c878] to-transparent motion-safe:animate-title-rule"
+            :style="nameDelay"
+          />
         </div>
+      </div>
+    </div>
 
+    <!-- La nuée : chaque objet entre au moment de son départ, traverse
+         l'écran une fois et se retire. Une animation retirée en route
+         (« réduire les animations » activé) le retire aussi. -->
+    <img
+      v-for="flyer in flyers"
+      :key="flyer.id"
+      :src="flyer.image"
+      alt=""
+      class="pointer-events-none absolute left-0 top-0 z-20 motion-safe:animate-swoop"
+      :style="flyer.style"
+      @animationend="land(flyers, flyer)"
+      @animationcancel="land(flyers, flyer)"
+    >
+
+    <!-- La fenêtre, sur un calque de la même scène posé au-dessus de la
+         nuée : les cartes passent devant le boss, jamais devant ce qui se dit.
+         Elle ne prend pas les clics : ils vont à la surface, dessous. -->
+    <div
+      class="pointer-events-none z-30"
+      :class="[BACKDROP_BOX, BACKDROP_COVER]"
+    >
+      <div
+        class="@container"
+        :class="BACKDROP_SCENE"
+      >
         <!-- La fenêtre de celui qui a parlé en dernier (`spoken`) : la
              remarque du joueur, aux couleurs de la porte, ou la réplique du
              boss, aux siennes. Elle reste pendant les temps sans réplique
@@ -117,20 +159,6 @@
       </div>
     </div>
 
-    <!-- La nuée : chaque objet entre au moment de son départ, traverse
-         l'écran une fois et se retire. Une animation retirée en route
-         (« réduire les animations » activé) le retire aussi. -->
-    <img
-      v-for="flyer in flyers"
-      :key="flyer.id"
-      :src="flyer.image"
-      alt=""
-      class="pointer-events-none absolute left-0 top-0 z-20 motion-safe:animate-swoop"
-      :style="flyer.style"
-      @animationend="land(flyers, flyer)"
-      @animationcancel="land(flyers, flyer)"
-    >
-
     <!-- Le temps attend un clic : on le dit au joueur, en petit, dans le
          coin. Rien pendant qu'un temps avance seul ou que le texte défile. -->
     <Transition
@@ -174,6 +202,12 @@ const emit = defineEmits<{ end: [] }>()
 
 /** Le fondu de sortie, avant le combat : `duration-[800ms]` du fond. */
 const LEAVE_MS = 800
+/** L'or du titre, en dégradé, révélé de gauche à droite : son nom et son épithète. */
+const TITLE_GOLD = 'bg-[linear-gradient(100deg,#a8741a_0%,#f6dc8c_30%,#fffbe8_45%,#f6dc8c_60%,#a8741a_100%)] bg-size-[250%_100%] bg-clip-text [-webkit-background-clip:text] uppercase tracking-[0.2em] text-transparent [mask-image:linear-gradient(to_right,black_40%,transparent_60%)] [mask-size:250%_100%] motion-safe:animate-title-reveal'
+/** L'avance de l'épithète sur le nom, dans le titre : elle paraît, puis lui. */
+const EPITHET_LEAD_MS = 700
+/** Le nom et son filet partent ensemble, après l'épithète s'il y en a une. */
+const nameDelay = computed(() => (props.intro.epithet ? { animationDelay: `${EPITHET_LEAD_MS}ms` } : undefined))
 /** L'écart entre deux mots du cri. */
 const IMPACT_GAP_MS = 380
 /** Le flottement d'une carte au-dessus d'une main (`hover`), et l'écart de rythme d'une carte à l'autre. */

@@ -46,6 +46,8 @@ export type BossIntroBeat = {
 export interface BossIntroEntry {
   /** Le nom du boss, en grand titre au cue `title`, au-dessus de sa tête. */
   name: string
+  /** Son épithète, en plus petit au-dessus de son nom, même police. */
+  epithet?: string
   /**
    * L'illustration, sous public/images/boss/<étage>/ : l'écran de chargement
    * du boss l'attend, celui du jeu non. Détourée, rognée par `cleanimage`.
@@ -83,6 +85,7 @@ export interface BossIntroEntry {
 export const BOSS_INTROS: Readonly<Partial<Record<number, BossIntroEntry>>> = {
   1: {
     name: 'Julien le perse',
+    epithet: 'Gardien de la Lune',
     image: '/images/boss/1/boss-julien.webp',
     // 15 % plus grand que sur son calque (49,32 % × 1,15), centré, pieds sur
     // le bord bas : sa hauteur passe de 61,94 % à 71,23 % de la scène.
@@ -115,8 +118,9 @@ export const BOSS_INTROS: Readonly<Partial<Record<number, BossIntroEntry>>> = {
       { speaker: 'player', text: '...', cue: 'swarm', holdMs: 2000 },
       { speaker: 'player', text: 'Qu\'est-ce que c\'était ???', holdMs: 3200 },
       { cue: 'appear', holdMs: 1900 },
-      { speaker: 'boss', text: 'OUI OUI OUI !', cue: 'shout' },
-      { cue: 'title', holdMs: 4000 },
+      // Le titre suit seul, la secousse finie (`shout-window`, 3 s).
+      { speaker: 'boss', text: 'OUI OUI OUI !', cue: 'shout', holdMs: 3200 },
+      { cue: 'title', holdMs: 5500 },
       // TODO(texte) : monologue provisoire, Flo l'écrira.
       { speaker: 'boss', text: 'Bienvenue, candidat, dans mon royaume des drapeaux !' },
       { speaker: 'boss', text: 'Sept fois tu devras me répondre juste. Un faux pas, et c\'est toi qui tombes.' },

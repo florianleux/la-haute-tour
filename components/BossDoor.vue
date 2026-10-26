@@ -82,14 +82,16 @@
              remarque dit où en est la porte, les gestes possibles suivent,
              comme les choix d'une réplique (BaseDialogueWindow).
 
-             Une fenêtre par étape (`stage`) : la suivante paraît en fondu une
-             fois la précédente effacée. Celle de « Entrer » attend les
+             Une fenêtre par étape (`stage`) : la suivante paraît en fondu
+             pendant que la précédente s'efface, à la même place. Pas de
+             `mode="out-in"` : la porte se redessinant pendant la sortie (clé
+             posée, battants), Vue ne montait jamais la fenêtre suivante — même
+             piège que l'introduction du boss. Celle de « Entrer » attend les
              battants, et ne paraît qu'une fois qu'ils ont disparu ; elle ne se
              clique qu'une fois là. Une fenêtre qui s'efface ne se clique plus :
              pas de deuxième geste pendant son fondu. Devant une porte déjà
              ouverte, elle est là d'emblée : pas d'`appear`. -->
         <Transition
-          mode="out-in"
           :enter-active-class="stage === 'opened' ? FADE_AFTER_LEAVES : FADE"
           enter-from-class="opacity-0"
           :leave-active-class="FADE"
@@ -139,12 +141,11 @@ const emit = defineEmits<{ placeKey: [], openDoor: [], enter: [], descendToCamp:
  */
 const FADE = 'pointer-events-none motion-safe:transition-opacity motion-safe:duration-[800ms]'
 /**
- * La fenêtre de « Entrer », qui attend les battants : elle commence après la
- * sortie de « Ouvrir » (800 ms, `out-in`), et son délai la fait paraître une
- * fois les battants effacés (3,1 s après le clic : 700 + 2600 + 500 ms de leur
- * transition), de 3,1 s à 3,9 s.
+ * La fenêtre de « Entrer », qui attend les battants : son délai la fait
+ * paraître une fois les battants effacés (3,1 s après le clic : 700 + 2600 +
+ * 500 ms de leur transition), de 3,1 s à 3,9 s.
  */
-const FADE_AFTER_LEAVES = `${FADE} motion-safe:delay-[2300ms]`
+const FADE_AFTER_LEAVES = `${FADE} motion-safe:delay-[3100ms]`
 
 /** Le fondu des deux faces d'un battant ouvert, à la fin de son pivot. */
 const LEAF_FADE = 'motion-safe:[transition:opacity_500ms_ease-in_2600ms]'

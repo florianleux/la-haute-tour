@@ -22,9 +22,10 @@ Sur le fond sombre de l'arche, après « Entrer » :
    Les cartes s'écartent : il est là.
 5. Julien crie, et tremble avec ses cartes, dans sa fenêtre (fond jaune pâle, bordure et
    texte dorés) : « OUI OUI OUI ». Sa fenêtre tremble aussi, à un autre
-   rythme.
-6. Son nom en grand titre au-dessus de lui, façon *Dark Souls* : un or qui se
-   révèle de gauche à droite, balayé d'un reflet.
+   rythme. Les cartes ne passent jamais devant une fenêtre.
+6. La secousse finie, sans clic : son nom en grand titre au-dessus de lui,
+   façon *Dark Souls*, et au-dessus, en plus petit, « Gardien de la Lune » :
+   un or qui se révèle de gauche à droite, balayé d'un reflet.
 7. Son monologue (texte à écrire), puis le combat. Dès qu'il paraît, et
    jusqu'à la fin, une carte flotte au-dessus de chacun de ses poings, et des
    cartes passent derrière lui, trois ou quatre à la fois, plus petites :

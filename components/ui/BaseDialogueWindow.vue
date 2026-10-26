@@ -10,7 +10,9 @@
   >
     <!-- Le slot remplace la remarque quand elle se met en scène autrement
          qu'en texte simple : le cri d'un boss, mot après mot. -->
-    <p>
+    <!-- Une ligne au moins : vide, au départ d'un défilé, la fenêtre ne
+         s'écrase pas pour regrandir au premier caractère. -->
+    <p class="min-h-[1lh]">
       <slot>{{ remark }}</slot>
     </p>
     <DialogueChoiceList
