@@ -11,7 +11,8 @@
       :spell="effect.spell"
       :face="effect.face"
       :alt="description"
-      class="w-[6.5cqw] [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.55))] sm:w-[3cqw]"
+      class="w-[6.5cqw] sm:w-[3cqw]"
+      shadow-class="shadow-[0_2px_3px_rgb(0_0_0/0.55)]"
       fallback-class="border border-rose-800 bg-rose-100 text-xs text-rose-800"
     />
   </SpellTooltip>

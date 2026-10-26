@@ -4,6 +4,7 @@
       v-for="(spark, index) in sparks"
       :key="index"
       class="opacity-0 motion-safe:animate-sparkle"
+      :glow="glow"
       :style="{ left: spark.left, top: spark.top, width: spark.size, animationDelay: spark.delay }"
     />
   </div>
@@ -11,9 +12,7 @@
 
 <script setup lang="ts">
 // Un champ d'étincelles qui scintillent en boucle, posé sur toute la boîte de
-// son parent. Le halo arrive par `class` depuis l'appelant (un `drop-shadow`) :
-// posé ici, sur le champ, et non sur chaque étoile, qui le rognerait par son
-// propre clip-path.
+// son parent. Le halo de chaque étoile vient de `glow`, posé par l'appelant.
 
 /** Une étincelle, en % de la boîte du champ. */
 interface Spark {
@@ -24,5 +23,9 @@ interface Spark {
   delay: string
 }
 
-defineProps<{ sparks: Spark[] }>()
+defineProps<{
+  sparks: Spark[]
+  /** La couleur du halo des étoiles. Voir SparkleStar. */
+  glow?: string
+}>()
 </script>

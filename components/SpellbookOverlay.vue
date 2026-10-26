@@ -31,13 +31,13 @@
       />
 
       <!-- La magie du livre : des étincelles partout dessus, qui s'allument
-           une fois le livre posé. Blanches : un liseré turquoise, la couleur
-           de la couverture, les détache du papier clair, et un halo blanc les
-           fait briller. Elles tournent en boucle : la sortie ne les attend
-           pas. -->
+           une fois le livre posé. Blanches, dans un halo turquoise, la
+           couleur de la couverture, qui les détache du papier clair. Elles
+           tournent en boucle : la sortie ne les attend pas. -->
       <SparkleField
         :sparks="SPARKS"
-        class="pointer-events-none [filter:drop-shadow(0_0_1px_rgb(15_118_110/0.8))_drop-shadow(0_0_5px_#fff)]"
+        glow="rgb(15 118 110 / 0.8)"
+        class="pointer-events-none"
         v-bind="fadeLayer(closing, '0.6s')"
       />
 

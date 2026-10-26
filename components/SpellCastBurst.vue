@@ -67,7 +67,7 @@
         v-if="cast.stage === 'charging'"
         inward
         :sparks="CONVERGE"
-        class="drop-shadow-[0_0_4px_var(--cast-glow)]"
+        glow="var(--cast-glow)"
       />
 
       <div
@@ -84,7 +84,8 @@
           <SpellMedallion
             :spell="cast.spell"
             :face="cast.face"
-            class="size-full [filter:drop-shadow(0_4px_6px_rgb(0_0_0/0.45))_drop-shadow(0_0_10px_var(--cast-glow))]"
+            class="size-full"
+            shadow-class="shadow-[0_4px_6px_rgb(0_0_0/0.45),0_0_10px_var(--cast-glow)]"
             fallback-class="border-2 border-spell-page/60 bg-amber-50 text-[60cqw] text-spell-page"
           />
         </div>
@@ -126,12 +127,12 @@
       <div
         v-for="delay in [CLIMAX_S, CLIMAX_S + 0.12]"
         :key="delay"
-        class="absolute left-1/2 top-1/2 aspect-square w-[240%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[color:var(--cast-glow)] opacity-0 drop-shadow-[0_0_6px_var(--cast-glow)] [border-width:4cqw] motion-safe:animate-cast-shockwave"
+        class="absolute left-1/2 top-1/2 aspect-square w-[240%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[color:var(--cast-glow)] opacity-0 shadow-[0_0_6px_var(--cast-glow),inset_0_0_6px_var(--cast-glow)] [border-width:4cqw] motion-safe:animate-cast-shockwave"
         :style="{ animationDelay: `${delay}s` }"
       />
       <SparkleSpray
         :sparks="SPRAY"
-        class="drop-shadow-[0_0_6px_var(--cast-glow)]"
+        glow="var(--cast-glow)"
       />
 
       <!-- À qui le sort est allé, une fois la pièce envolée, dans l'éclat du

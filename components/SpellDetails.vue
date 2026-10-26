@@ -4,7 +4,8 @@
       <SpellMedallion
         :spell="spell"
         :face="effect?.face ?? 'mixed'"
-        class="w-[3.75rem] shrink-0 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.4))]"
+        class="w-[3.75rem] shrink-0"
+        shadow-class="shadow-[0_2px_3px_rgb(0_0_0/0.4)]"
         fallback-class="border-2 border-current/40 text-xl"
       />
 

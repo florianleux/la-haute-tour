@@ -67,6 +67,12 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 
 - Tailwind CSS uniquement — pas de CSS custom/scoped sauf cas impossible en utility classes.
 - Les classes Tailwind répétées (bouton, input, card...) vivent **dans** les composants `Base*`, jamais recopiées en inline dans les composants métier.
+- **Pas de `drop-shadow`** (classe `drop-shadow-*` ou `filter:drop-shadow`) quand un équivalent sans filtre existe :
+  - médaillon de sort : `shadowClass` de `SpellMedallion` (une `box-shadow` sur un disque, mêmes valeurs) ;
+  - étincelle : `glow` de `SparkleStar` / `SparkleField` / `SparkleSpray` ;
+  - texte : `text-shadow` ; forme ronde ou anneau : `box-shadow` (+ `inset`).
+- Pourquoi : sur iPad, Safari peint le filtre d'un élément qui grossit (animation, `scale`) sur toute sa boîte — un carré noir dans la transparence autour du médaillon jailli du coffre.
+- Le `drop-shadow` reste pour ce qui n'a pas d'équivalent : suivre le contour détouré d'une image ou d'un tracé SVG (survol des objets du camp, boss, éclairs du lancer, croix de fermeture, icône de succès dont le dessin peut être détouré). Un tel élément qui grossit se vérifie sur iPad.
 
 ## Images
 

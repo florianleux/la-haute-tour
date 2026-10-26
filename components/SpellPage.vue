@@ -45,7 +45,7 @@
           :class="[
             selected === spell
               ? 'motion-safe:animate-spell-pick'
-              : 'scale-[0.73] drop-shadow-[0_2px_3px_rgb(0_0_0/0.35)] group-hover-or-focus:scale-[0.78]',
+              : 'scale-[0.73] group-hover-or-focus:scale-[0.78]',
             selected && selected !== spell
               ? 'opacity-60 grayscale-70 group-hover-or-focus:opacity-100 group-hover-or-focus:grayscale-0'
               : '',
@@ -55,6 +55,7 @@
             :spell="spell"
             face="mixed"
             class="size-full"
+            :shadow-class="`transition-shadow duration-200 motion-reduce:transition-none ${selected === spell ? '' : 'shadow-[0_2px_3px_rgb(0_0_0/0.35)]'}`"
             fallback-class="border-2 border-spell-page/60 text-[50cqw] text-spell-page"
           />
           <SpellCountBadge :count="counts[spell] ?? 0" />

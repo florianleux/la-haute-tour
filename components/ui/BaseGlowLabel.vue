@@ -14,7 +14,7 @@
       <SparkleField
         v-if="tone !== 'plain'"
         :sparks="SPARKS"
-        class="drop-shadow-[0_0_3px_#fff]"
+        glow="#fff"
       />
     </span>
   </span>

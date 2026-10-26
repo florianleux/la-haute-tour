@@ -24,8 +24,8 @@
              si bien que le fondu ne fait bouger que le couvercle. C'est la
              boîte qui remue, pas une image : les deux restent calées.
              z-30 : ce qui en jaillit passe devant tout le reste de la carte —
-             le texte dessous, dont la petite icône du sort (filtrée, donc
-             peinte par-dessus sans lui), et le bouton (z-20) sous le Mimic
+             le texte dessous, dont la petite icône du sort (positionnée,
+             donc peinte par-dessus sans lui), et le bouton (z-20) sous le Mimic
              qui saute. -->
         <div
           class="relative z-30 h-full shrink-0 origin-bottom"
@@ -90,8 +90,8 @@
                Posée à `--peak` fois sa taille (celle de la pause), centre
                remonté au même point par le translate, et réduite par
                `animate-emerge` : Safari la rastérise à cette taille, et le
-               médaillon reste net quand il grossit. D'où aussi les ombres en
-               px multipliées par `--peak`. -->
+               médaillon reste net quand il grossit. D'où aussi l'ombre en px
+               multipliée par `--peak`. -->
           <div
             v-if="chest.spell && spellImage(chest.spell)"
             class="absolute left-1/2 top-[0%] w-[calc(30%*var(--peak))] -translate-x-1/2 -translate-y-[calc(50%-50%/var(--peak))] [--peak:4] @container motion-safe:animate-emerge motion-reduce:[transform:scale(calc(1/var(--peak)))]"
@@ -106,29 +106,28 @@
             <div class="absolute left-1/2 top-1/2 aspect-square w-[230%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[repeating-conic-gradient(rgb(254_243_199/0.9)_0deg_8deg,transparent_8deg_24deg)] opacity-0 [mask-image:radial-gradient(circle,black_15%,transparent_68%)] motion-safe:animate-rays" />
 
             <div class="relative motion-safe:animate-float">
-              <!-- Le halo doré puis l'ombre portée, en dégradés ronds sous
-                   l'image plutôt qu'en `drop-shadow` sur elle : au zoom,
-                   Safari teintait de noir la transparence autour du disque,
-                   tout le carré de l'image. Le médaillon est rond et remplit
-                   son image, un disque suffit. -->
-              <div class="absolute inset-[-30%] bg-[radial-gradient(circle_closest-side,rgb(253_230_138/0.4)_62.5%,rgb(253_230_138/0.12)_81%,transparent)]" />
-              <div class="absolute inset-[-25%] translate-y-[5%] bg-[radial-gradient(circle_closest-side,rgb(0_0_0/0.35)_48%,transparent)]" />
-              <img
-                :src="spellImage(chest.spell)!"
+              <SpellMedallion
+                :spell="chest.spell"
+                face="mixed"
                 :alt="spellLabel(chest.spell)"
-                class="relative w-full"
-              >
+                class="w-full"
+                shadow-class="shadow-[0_calc(6px*var(--peak))_calc(10px*var(--peak))_rgb(0_0_0/0.5),0_0_calc(12px*var(--peak))_#fde68a]"
+              />
               <div class="absolute inset-[5%] overflow-hidden rounded-full">
                 <div class="absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgb(255_255_255/0.85)_50%,transparent_65%)] motion-safe:animate-sheen motion-reduce:hidden" />
               </div>
-              <div class="absolute inset-0 drop-shadow-[0_0_calc(8px*var(--peak))_#fef3c7]">
-                <SparkleStar class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint" />
-                <SparkleStar class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]" />
-              </div>
+              <SparkleStar
+                glow="#fef3c7"
+                class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint"
+              />
+              <SparkleStar
+                glow="#fef3c7"
+                class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]"
+              />
               <!-- Le scintillement autour du médaillon, une fois posé. -->
               <SparkleField
                 :sparks="SPELL_SPARKS"
-                class="drop-shadow-[0_0_calc(4px*var(--peak))_#fef3c7]"
+                glow="#fef3c7"
               />
             </div>
 
@@ -136,7 +135,7 @@
                  partent du centre dans toutes les directions, une seule fois. -->
             <SparkleSpray
               :sparks="SPELL_SPRAY"
-              class="drop-shadow-[0_0_calc(6px*var(--peak))_#fde68a]"
+              glow="#fde68a"
             />
           </div>
 
@@ -144,7 +143,7 @@
           <SparkleField
             v-if="looted"
             :sparks="SPARKS"
-            class="drop-shadow-[0_0_3px_#fde68a]"
+            glow="#fde68a"
           />
         </div>
 

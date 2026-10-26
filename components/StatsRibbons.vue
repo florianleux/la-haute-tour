@@ -98,7 +98,7 @@
             >♥</span>
             <SparkleSpray
               :sparks="HEART_SPRAY"
-              class="drop-shadow-[0_0_3px_#e11d48]"
+              glow="#e11d48"
             />
             <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
               <span

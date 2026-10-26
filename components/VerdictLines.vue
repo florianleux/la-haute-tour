@@ -14,7 +14,7 @@
     <SparkleSpray
       v-if="verdict.correct && !review"
       :sparks="CHEER_SPRAY"
-      class="drop-shadow-[0_0_4px_#6ee7b7]"
+      glow="#6ee7b7"
     />
   </PlayText>
 

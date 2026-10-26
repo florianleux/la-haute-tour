@@ -15,7 +15,8 @@
         :spell="spell"
         :face="effect?.face ?? 'mixed'"
         :alt="effect ? `lancé par ${effect.casterName}` : ''"
-        class="w-[1.5em] self-center [filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.35))]"
+        class="w-[1.5em] self-center"
+        shadow-class="shadow-[0_1px_2px_rgb(0_0_0/0.35)]"
         fallback-class="border border-current/40 text-[0.75em]"
       />
     </span>
