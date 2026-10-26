@@ -14,12 +14,12 @@
         class="@container"
         :class="BACKDROP_SCENE"
       >
-        <!-- Une ombre sombre de plus sous les deux du ton `soft`, en
-             `text-shadow` et non en `drop-shadow` (voir CLAUDE.md#styling) :
-             elle remplace celles du ton, d'où leur liste réécrite ici. -->
+        <!-- Une ombre sombre de plus sous celles du ton `soft`, par
+             `--under-shadow` (voir BaseGlowLabel). Elle n'ombre que le nom :
+             ses étincelles gardent leur seul halo. -->
         <BaseGlowLabel
           tone="soft"
-          class="absolute left-1/2 top-[3%] -translate-x-1/2 text-[4.6cqw] [text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_12px_var(--glow,rgb(191_219_254/0.6)),0_0.25cqw_0.6cqw_rgb(0_0_0/0.85)]!"
+          class="absolute left-1/2 top-[3%] -translate-x-1/2 text-[4.6cqw] [--under-shadow:0_0.25cqw_0.6cqw_rgb(0_0_0/0.85)]"
         >
           {{ door.name }}
         </BaseGlowLabel>

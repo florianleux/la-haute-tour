@@ -35,15 +35,19 @@ withDefaults(defineProps<{
 
 type GlowTone = 'bright' | 'soft' | 'plain'
 
+// Chaque ton finit par `--under-shadow`, vide par défaut : un appelant y pose
+// une ombre de plus, sous celles du ton, sans recopier sa liste (la porte du
+// boss, sur son décor chargé). En `text-shadow`, pas en `drop-shadow` : voir
+// CLAUDE.md#styling.
 const SHADOWS: Record<GlowTone, string> = {
   // Les noms du camp : l'ombre sombre au plus près les détache d'un décor clair.
-  bright: '[text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6),0_0_14px_var(--glow,rgb(191_219_254/0.7))]',
+  bright: '[text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6),0_0_14px_var(--glow,rgb(191_219_254/0.7)),var(--under-shadow,0_0_#0000)]',
   // Un grand titre sur un fond déjà sombre ou flouté : à cette taille, l'ombre
   // des noms du camp l'alourdit.
-  soft: '[text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_12px_var(--glow,rgb(191_219_254/0.6))]',
+  soft: '[text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_12px_var(--glow,rgb(191_219_254/0.6)),var(--under-shadow,0_0_#0000)]',
   // Un nom posé sous un autre qui a déjà l'éclat (la guilde, sous « Haut-faits ») :
   // halo léger, et pas d'étincelles.
-  plain: '[text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_6px_var(--glow,rgb(191_219_254/0.3))]',
+  plain: '[text-shadow:0_1px_2px_rgb(0_0_0/0.4),0_0_6px_var(--glow,rgb(191_219_254/0.3)),var(--under-shadow,0_0_#0000)]',
 }
 
 /**

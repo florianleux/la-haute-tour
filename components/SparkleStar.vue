@@ -19,7 +19,8 @@
 // carrée. Voir CLAUDE.md#styling.
 
 defineProps<{
-  /** La couleur du halo ; sans elle, l'étoile n'en a pas. */
+  /** La couleur du halo ; sans elle, l'étoile n'en a pas. Sa taille suit
+   *  celle de l'étoile (1,5 fois), pas un flou réglé en px. */
   glow?: string
 }>()
 </script>
