@@ -18,15 +18,18 @@ Sur le fond sombre de l'arche, après « Entrer » :
    haut en bas, de bas en haut, en oblique, et se croisent là où Julien va
    paraître, jusqu'à couvrir la zone.
 3. Le joueur, pendant la montée : « Qu'est-ce que c'était ??? ».
-4. Pendant que la nuée cache la zone, Julien y paraît en fondu, sans bouger.
-   Les cartes s'écartent : il est là.
-5. Julien crie, et tremble avec ses cartes, dans sa fenêtre (fond jaune pâle, bordure et
+4. Pendant que la nuée cache la zone, Julien y paraît en fondu, sans bouger,
+   bras écartés, l'air sérieux. Les cartes s'écartent : il est là.
+5. Julien crie, la bouche grande ouverte, et tremble avec ses cartes ; sa
+   tête tremble à part, autour du cou. Il crie dans sa fenêtre (fond jaune pâle, bordure et
    texte dorés) : « OUI OUI OUI ». Sa fenêtre tremble aussi, à un autre
    rythme. Les cartes ne passent jamais devant une fenêtre.
-6. La secousse finie, sans clic : son nom en grand titre au-dessus de lui,
+6. La secousse finie, sans clic : sa fenêtre s'efface, il redevient sérieux,
+   et son nom paraît en grand titre au-dessus de lui,
    façon *Dark Souls*, et au-dessus, en plus petit, « Gardien de la Lune » :
    un or qui se révèle de gauche à droite, balayé d'un reflet.
-7. Son monologue (texte à écrire), puis le combat. Dès qu'il paraît, et
+7. Son monologue (texte à écrire) dans une nouvelle fenêtre — sa tête hoche
+   autour du menton tant que la réplique défile —, puis le combat. Dès qu'il paraît, et
    jusqu'à la fin, une carte flotte au-dessus de chacun de ses poings, et des
    cartes passent derrière lui, trois ou quatre à la fois, plus petites :
    plus loin que lui.

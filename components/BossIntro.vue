@@ -28,24 +28,29 @@
         <!-- Le boss, à sa place relevée sur son calque, derrière la nuée qui
              cache sa zone. Il y paraît en fondu, sans bouger ni grandir : quand
              les cartes s'écartent, il est déjà là. Son cri le secoue
-             longtemps, à un autre rythme que sa fenêtre. -->
-        <img
-          :src="intro.image"
-          alt=""
+             longtemps, à un autre rythme que sa fenêtre, et sa tête à un
+             autre encore. -->
+        <BossFigure
+          :figure="intro.figure"
+          :pose="pose"
+          :expression="expression"
+          :shaking="shaking"
+          :talking="talking"
           class="absolute motion-safe:transition-opacity motion-safe:duration-[800ms]"
-          :class="[intro.imageBox, !appeared && 'opacity-0', shaking && 'motion-safe:animate-shout-boss']"
-        >
+          :class="[intro.figureBox, !appeared && 'opacity-0', shaking && 'motion-safe:animate-shout-boss']"
+        />
 
         <!-- Une carte flotte au-dessus de chaque main, chacune à son rythme
              (`hover`, durée et délai propres). Elles paraissent avec lui, du
-             même fondu, et tremblent avec lui à son cri, du même tremblement
-             (`animate-shout-boss`, en cqw). Devant lui. -->
+             même fondu, s'il a les bras écartés (pose `open`) : sinon,
+             quand il les écarte. Elles tremblent avec lui à son cri, du même
+             tremblement (`animate-shout-boss`, en cqw). Devant lui. -->
         <template v-if="intro.levitation && levitationCard">
           <div
             v-for="(spot, rank) in intro.levitation"
             :key="spot"
             class="pointer-events-none absolute -translate-1/2 motion-safe:transition-opacity motion-safe:duration-[800ms]"
-            :class="[spot, !appeared && 'opacity-0', shaking && 'motion-safe:animate-shout-boss']"
+            :class="[spot, (!appeared || pose !== 'open') && 'opacity-0', shaking && 'motion-safe:animate-shout-boss']"
           >
             <img
               :src="levitationCard"
@@ -118,7 +123,7 @@
         <!-- La fenêtre de celui qui a parlé en dernier (`spoken`) : la
              remarque du joueur, aux couleurs de la porte, ou la réplique du
              boss, aux siennes. Elle reste pendant les temps sans réplique
-             (apparition, titre). Une fenêtre par interlocuteur (`:key`) : elle
+             (apparition), mais pas sous le titre. Une fenêtre par interlocuteur (`:key`) : elle
              ne repart en fondu que quand la parole change de bouche. Les deux
              se croisent en fondu, à la même place : pas de `mode="out-in"`,
              qui, la scène se redessinant sans cesse pendant la sortie (défilé,
@@ -131,7 +136,7 @@
           @after-enter="windowEntered = true"
         >
           <BaseDialogueWindow
-            v-if="spoken"
+            v-if="spoken && windowShown"
             :key="spoken.speaker"
             :remark="shown"
             :colors="spoken.speaker === 'boss' ? intro.windowColors : undefined"
@@ -252,6 +257,14 @@ const played = computed(() => props.intro.beats.slice(0, index.value + 1))
 const appeared = computed(() => played.value.some(({ cue }) => cue === 'appear'))
 /** Le dernier temps qui a parlé : sa fenêtre reste tant que personne d'autre ne parle. */
 const spoken = computed(() => played.value.findLast((entry): entry is SpokenBeat => entry.speaker !== undefined))
+/**
+ * Sa fenêtre est là — sauf sous le titre du boss, qui la chasse : la réplique
+ * suivante en ouvre une nouvelle. Elle garde son texte en s'effaçant.
+ */
+const windowShown = computed(() => spoken.value !== undefined && beat.value.cue !== 'title')
+/** Sa pose et son expression : les dernières données par les temps joués. */
+const pose = computed(() => played.value.findLast(entry => entry.pose)?.pose ?? 'back')
+const expression = computed(() => played.value.findLast(entry => entry.expression)?.expression ?? 'stern')
 /** La carte qui flotte au-dessus de ses mains : la première image de sa nuée. */
 const levitationCard = computed(() => props.intro.swarm?.images[0])
 
@@ -277,6 +290,8 @@ watch(text, restart)
  * d'eux-mêmes, sans défilé que le premier clic aurait à finir.
  */
 const lineOut = computed(() => loud.value || revealed.value)
+/** Le boss dit sa réplique : sa tête hoche tant qu'elle défile. */
+const talking = computed(() => spoken.value?.speaker === 'boss' && beat.value === spoken.value && !lineOut.value)
 /** Les mots du cri. Le « ! » reste collé au dernier : l'espace d'avant est insécable. */
 const shoutWords = computed(() => text.value.split(' '))
 
@@ -293,10 +308,11 @@ const leaving = ref(false)
 /** Le temps attend le clic du joueur : il ne part pas seul, son texte est sorti, ses animations finies. */
 const awaitingClick = computed(() => beat.value.holdMs === undefined && lineOut.value && settled.value && !leaving.value)
 
-// La fenêtre change de bouche : on attend son entrée. Sous « réduire les
-// animations », la Transition n'a rien à jouer et la dit entrée d'elle-même.
-watch(() => spoken.value?.speaker, (speaker, before) => {
-  if (speaker !== before) {
+// La fenêtre change de bouche, ou revient après le titre : on attend son
+// entrée. Sous « réduire les animations », la Transition n'a rien à jouer et
+// la dit entrée d'elle-même.
+watch(() => windowShown.value && spoken.value?.speaker, (speaker, before) => {
+  if (speaker && speaker !== before) {
     windowEntered.value = false
   }
 })

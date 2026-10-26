@@ -210,7 +210,12 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
   (fenêtre à ses couleurs), qui avancent seules ou au clic, et des effets
   déclenchés au début d'un temps — une nuée d'objets qui traverse l'écran
   par vagues, l'apparition du boss (derrière la nuée), son cri, son nom en
-  grand titre. Chaque boss a les siens au
+  grand titre. Le boss y est une **figure** (`bossFigure`) : un corps par
+  pose, une tête par expression, que chaque temps peut changer (Julien paraît
+  bras écartés, sérieux ; il crie, puis redevient sérieux ; sa fenêtre
+  s'efface sous son titre). Quand il parle, sa tête hoche autour du
+  menton. Au combat, sa tête réagit, et hoche le temps du coup : en colère
+  quand il encaisse, rieuse quand le joueur encaisse. Chaque boss a les siens au
   catalogue des introductions (`bossIntros`) ; un étage sans entrée passe
   directement au combat. La séquence de chaque boss est décrite dans sa spec.
 - **Chaque épreuve juste** anime la barre de vie du boss : elle perd 1/7 et le

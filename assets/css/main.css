@@ -1428,9 +1428,22 @@
      fenêtre, en % de sa boîte. Le boss ne
      tremble que vers le bas et sans tourner : vers le haut, ou en tournant,
      le bord bas de son illustration se verrait au-dessus de celui de
-     l'écran. Voir components/BossIntro.vue. */
+     l'écran. Sa tête, en plus, bascule autour de son cou, à un troisième
+     rythme (33 secousses) : elle ne tremble pas d'un bloc avec son corps.
+     Voir components/BossIntro.vue et components/BossFigure.vue. */
   --animate-shout-boss: shout-boss 3s linear both;
   --animate-shout-window: shout-window 3s linear both;
+  --animate-shout-head: shout-head 3s linear both;
+  /* Sa tête quand il parle ou réagit : elle hoche autour du cou, en boucle,
+     tant que dure la parole. Rotation seule : une translation en même temps
+     déplacerait le pivot sur le côté. Voir components/BossFigure.vue. */
+  --animate-head-talk: head-talk 0.5s ease-in-out infinite;
+
+  @keyframes head-talk {
+    0%, 100% { transform: none; }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+  }
 
   @keyframes shout-boss {
     0% { transform: none; }
@@ -1473,6 +1486,43 @@
     92.5% { transform: translate(-0.12cqw, 0.02cqw); }
     95% { transform: translate(0.10cqw, 0.09cqw); }
     97.5% { transform: translate(-0.06cqw, 0.06cqw); }
+    100% { transform: none; }
+  }
+
+  @keyframes shout-head {
+    0% { transform: none; }
+    3.03% { transform: rotate(5.82deg); }
+    6.06% { transform: rotate(-5.64deg); }
+    9.09% { transform: rotate(5.45deg); }
+    12.12% { transform: rotate(-5.27deg); }
+    15.15% { transform: rotate(5.09deg); }
+    18.18% { transform: rotate(-4.91deg); }
+    21.21% { transform: rotate(4.73deg); }
+    24.24% { transform: rotate(-4.55deg); }
+    27.27% { transform: rotate(4.36deg); }
+    30.3% { transform: rotate(-4.18deg); }
+    33.33% { transform: rotate(4.00deg); }
+    36.36% { transform: rotate(-3.82deg); }
+    39.39% { transform: rotate(3.64deg); }
+    42.42% { transform: rotate(-3.45deg); }
+    45.45% { transform: rotate(3.27deg); }
+    48.48% { transform: rotate(-3.09deg); }
+    51.52% { transform: rotate(2.91deg); }
+    54.55% { transform: rotate(-2.73deg); }
+    57.58% { transform: rotate(2.55deg); }
+    60.61% { transform: rotate(-2.36deg); }
+    63.64% { transform: rotate(2.18deg); }
+    66.67% { transform: rotate(-2.00deg); }
+    69.7% { transform: rotate(1.82deg); }
+    72.73% { transform: rotate(-1.64deg); }
+    75.76% { transform: rotate(1.45deg); }
+    78.79% { transform: rotate(-1.27deg); }
+    81.82% { transform: rotate(1.09deg); }
+    84.85% { transform: rotate(-0.91deg); }
+    87.88% { transform: rotate(0.73deg); }
+    90.91% { transform: rotate(-0.55deg); }
+    93.94% { transform: rotate(0.36deg); }
+    96.97% { transform: rotate(-0.18deg); }
     100% { transform: none; }
   }
 

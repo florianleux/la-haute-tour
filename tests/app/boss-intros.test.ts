@@ -16,9 +16,11 @@ describe('les introductions de boss', () => {
     }
   })
 
-  it('ont une illustration et une nuée dans le dossier de leur boss', () => {
+  it('ont une figure et une nuée dans le dossier de leur boss', () => {
     for (const [floor, intro] of intros) {
-      for (const image of [intro!.image, ...(intro!.swarm?.images ?? [])]) {
+      const { bodies, heads } = intro!.figure
+      const figure = [...Object.values(bodies).map(({ src }) => src), ...Object.values(heads)]
+      for (const image of [...figure, ...(intro!.swarm?.images ?? [])]) {
         expect(image).toMatch(new RegExp(`^/images/boss/${floor}/`))
         expect(existsSync(join(publicDir, image))).toBe(true)
       }

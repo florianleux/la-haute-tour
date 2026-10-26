@@ -3,14 +3,19 @@
     <!-- Nuit bleue par-dessus le ciel de PlayFrame : le combat n'a pas de décor. -->
     <div class="fixed inset-0 z-1 bg-[#070d24]" />
 
-    <!-- Le boss, à gauche, posé au bas de l'écran et un peu coupé par le bord. Il encaisse chaque bonne
-         réponse. -->
-    <img
-      :src="BOSS_IMAGE"
-      alt=""
-      class="pointer-events-none fixed -left-[5vw] bottom-0 z-5 h-[62dvh] w-auto"
+    <!-- Le boss, à gauche, posé au bas de l'écran et un peu coupé par le bord,
+         bras dans le dos. Il encaisse chaque bonne réponse en colère, et rit
+         de chaque faute du joueur. Son cadre a la largeur des bras écartés :
+         le corps bras dans le dos y commence à 19,96 %, soit 17,5dvh à 62dvh
+         de haut, retranchés pour que son bord gauche reste à -5vw. -->
+    <BossFigure
+      :figure="FIGURE"
+      pose="back"
+      :expression="expression"
+      :talking="hurt !== null"
+      class="pointer-events-none fixed -left-[calc(5vw+17.5dvh)] bottom-0 z-5 h-[62dvh]"
       :class="hurt === 'boss' && 'motion-safe:animate-hit'"
-    >
+    />
 
     <!-- Le joueur, à droite, plus petit que le boss et retourné pour lui faire
          face. Il encaisse chaque faute, et rougit le temps du coup. -->
@@ -115,6 +120,8 @@ import { isAnswerAccepted } from '~~/shared/utils/answers'
 // Le jeu de règles, seul à connaître les vies. Un module pur, sans base ni
 // requête : le banc le lit tel quel, faute de partie servie.
 import { rulesForFloor } from '~~/server/utils/rules'
+import { BOSS_INTROS } from '~~/utils/bossIntros'
+import type { BossExpression } from '~~/utils/bossIntros'
 
 definePageMeta({ admin: true })
 
@@ -123,11 +130,8 @@ const rules = rulesForFloor(1)
 // le jeu de règles — le chrono est propre à chaque boss (specs/boss.md). Ils y
 // entrent avec le vrai combat (#34 à #44) ; ce banc les lira alors comme les vies.
 const FULL_BOSS_HP = 7
-/**
- * Julien le perse. Le banc est propre à l'étage 1 : l'illustration se nomme
- * ici, comme les drapeaux, sans passer par le catalogue des introductions.
- */
-const BOSS_IMAGE = '/images/boss/1/boss-julien.webp'
+/** Julien le perse : sa figure est celle de son introduction. */
+const FIGURE = BOSS_INTROS[1]!.figure
 const SECONDS = 30
 /** Le temps d'un coup encaissé : la secousse (`animate-hit`) et le halo. */
 const HURT_MS = 900
@@ -158,6 +162,7 @@ const typed = ref('')
 const verdict = ref<boolean | null>(null)
 const secondsLeft = ref(SECONDS)
 const hurt = ref<'boss' | 'player' | null>(null)
+const expression = computed<BossExpression>(() => (hurt.value === 'boss' ? 'angry' : hurt.value === 'player' ? 'laugh' : 'stern'))
 
 const flag = computed(() => order.value[index.value])
 const over = computed(() => bossHp.value === 0 || lives.value === 0)
