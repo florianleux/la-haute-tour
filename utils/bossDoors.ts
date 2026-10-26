@@ -10,8 +10,37 @@ export interface BossDoorEntry {
    */
   image: string
   /**
-   * Le centre de ses deux serrures, gauche puis droite, en classes Tailwind
-   * (`left-[x%] top-[y%]` de la scène 1920×1080 d'origine) : comme les objets du camp.
+   * Le fond de l'arche, une couleur unie en classe Tailwind (`bg-[…]`) : le
+   * décor laisse l'arche transparente, ce qu'on posera derrière la porte s'y
+   * glissera entre ce fond et l'illustration.
+   */
+  archColor: string
+  /**
+   * Le cœur de l'arche, en `origin-[x%_y%]` du décor 20:9 entier : le point
+   * vers lequel « Entrer » plonge : au milieu de l'arche, près du sol, comme si
+   * on y marchait.
+   */
+  archCenter: string
+  /** Le verso des battants, une couleur unie en classe Tailwind (`bg-[…]`) : le bois vu de dos. */
+  leafBackColor: string
+  /**
+   * Ses deux battants, gauche puis droite : la porte détourée, coupée en deux
+   * à la verticale. Ils couvrent l'arche vide de l'illustration et pivotent
+   * vers le joueur quand il ouvre la porte. Sous public/images/boss/ aussi.
+   */
+  leaves: [string, string]
+  /**
+   * La boîte des deux battants réunis, en classes Tailwind (`left-[x%] top-[y%]
+   * w-[…] h-[…]` de la scène 16:9), relevée sur le calque 20:9 de la porte
+   * détourée : x moins la marge de 240 px, sur 1920.
+   */
+  doorway: string
+  /** La clé posée dans une serrure, détourée : la même image pour les deux. */
+  key: string
+  /**
+   * Ses deux serrures, gauche puis droite, chacune sur son battant : le centre
+   * et la largeur de la clé qu'on y pose, en classes Tailwind (`left-[x%]
+   * top-[y%] w-[w%]`) en % du battant. La clé suit ainsi le battant qui pivote.
    */
   keyholes: [string, string]
 }
@@ -26,6 +55,12 @@ export const BOSS_DOORS: Readonly<Partial<Record<number, BossDoorEntry>>> = {
     name: 'Porte de la Lune',
     keyName: 'la clé de la Lune',
     image: '/images/boss/door-moon.webp',
-    keyholes: ['left-[44.5%] top-[56%]', 'left-[55.7%] top-[56%]'],
+    archColor: 'bg-[#1f1c2e]',
+    archCenter: 'origin-[49.9%_74%]',
+    leafBackColor: 'bg-[#0c1f3a]',
+    leaves: ['/images/boss/door-moon-left.webp', '/images/boss/door-moon-right.webp'],
+    doorway: 'left-[36.2%] top-[19.17%] w-[27.29%] h-[79.35%]',
+    key: '/images/boss/door-moon-key.webp',
+    keyholes: ['left-[61.6%] top-[48.4%] w-[8.78%]', 'left-[41.2%] top-[48.4%] w-[8.78%]'],
   },
 }

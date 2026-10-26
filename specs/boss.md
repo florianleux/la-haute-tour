@@ -23,7 +23,7 @@ pas.
   la 10e est une marge. Le compte tient parce que les Sorts n'agissent pas en
   combat de boss (voir plus bas).
 - **Combat individuel** : chaque joueur affronte son propre boss, ses propres
-  PV, ses propres épreuves — même une fois la porte ouverte pour l'équipe
+  PV, ses propres épreuves — même une fois la porte déverrouillée pour l'équipe
   (voir plus bas).
 - Format d'une épreuve (saisie, timer, anti-triche) : propre à chaque boss,
   hors périmètre de ce document — mais **un seul format par boss**, partagé par
@@ -91,18 +91,23 @@ comme les combats suivants, pas de vies héritées dans ce cas.
 
 Le boss est derrière une porte (`bossDoor`) à deux clés, à l'échelle de
 l'**équipe** (`team`) : il faut que deux membres de la même équipe l'atteignent,
-chacun posant sa clé, pour l'ouvrir.
+chacun posant sa clé, pour la déverrouiller.
 
 - **Toujours 2 clés**, quelle que soit la taille de l'équipe.
-- Une fois ouverte, la porte reste ouverte **définitivement** pour toute
+- Une fois déverrouillée, la porte le reste **définitivement** pour toute
   l'équipe — les membres qui arrivent après n'ont plus besoin de clé.
 - **Joueur sans équipe** (dont l'admin) : il trouve la porte **déjà
-  ouverte**, et « Entrer » l'engage seul dans le combat. Un seul parcours pour
-  tous les joueurs.
-- **Porte fermée et porte ouverte-mais-pas-encore-engagée sont une seule et
-  même phase**, `bossDoor` : un champ (nombre de clés posées / porte ouverte)
-  distingue les deux écrans, pas deux phases — même précédent que le coffre,
-  porté comme champ dans le verdict plutôt que comme phase à part.
+  déverrouillée**. Un seul parcours pour tous les joueurs.
+- **Déverrouillée n'est pas ouverte.** Devant une porte déverrouillée, chaque
+  joueur l'**ouvre** lui-même (`openDoor`, bouton « Ouvrir ») : les battants
+  pivotent vers lui, puis « Entrer » paraît. Ouvrir est **par joueur** et
+  **retenu par le serveur** : qui a déjà ouvert retrouve la porte ouverte, sans
+  rejouer l'animation ; ses coéquipiers ouvrent chacun la leur.
+- **Porte verrouillée, déverrouillée et ouverte sont une seule et même phase**,
+  `bossDoor` : des champs (nombre de clés posées / porte déverrouillée / porte
+  ouverte par le joueur) distinguent les écrans, pas des phases — même
+  précédent que le coffre, porté comme champ dans le verdict plutôt que comme
+  phase à part.
 
 ### Obtention de la clé
 
@@ -114,14 +119,14 @@ chacun posant sa clé, pour l'ouvrir.
 - Si le joueur ne réussit aucun coffre de loot après 50 % avant la fin de
   l'étage, il n'a pas de clé cette ascension — il compte alors sur deux
   coéquipiers qui en ont une.
-- Une clé obtenue alors que la porte est déjà ouverte **reste acquise,
+- Une clé obtenue alors que la porte est déjà déverrouillée **reste acquise,
   inutile — mais se stocke quand même**, dans une **table dédiée**, à part des
   sorts en poche (`pocketSpells.spell` est un enum strict qui ne l'accepte
   pas).
 
 ### Poser la clé
 
-- **Action manuelle** (`placeKey`) : un lien dédié sur l'écran de porte,
+- **Action manuelle** (`placeKey`) : un choix de la fenêtre de dialogue de la porte,
   « Utiliser la clé de la Lune » (le nom de la clé suit celui de la porte),
   pas automatique à l'arrivée.
 - **Cet écran nomme qui a déjà posé sa clé.** Nouvelle exception à l'anonymat
@@ -129,7 +134,7 @@ chacun posant sa clé, pour l'ouvrir.
   porte est une action coopérative, le joueur doit savoir qui il attend, pas
   seulement combien. Voir [ADR 0008](../docs/adr/0008-la-porte-du-boss-nomme-qui-a-pose-sa-cle.md).
   **Pas encore affiché** : l'état de jeu servira les noms (#139), mais la porte et le
-  camp ne montrent pour l'instant que les serrures allumées (choix de design
+  camp ne montrent pour l'instant que les clés posées dans leurs serrures (choix de design
   du 2026-10-25). La règle reste, l'affichage viendra.
 
 ### Arriver devant la porte
@@ -138,35 +143,38 @@ Le joueur qui finit l'étage arrive devant la porte. Ce qu'il y trouve :
 
 | Porte à son arrivée | Il a une clé | Ce qu'il fait |
 |---|---|---|
-| Fermée, 0 clé posée | oui | Pose sa clé (1 sur 2), puis **Redescendre** |
-| Fermée, 0 ou 1 clé posée | non | Voit combien de clés sont posées, puis **Redescendre** |
-| Fermée, 1 clé posée | oui | Pose sa clé, la porte s'ouvre : **Entrer** |
-| Ouverte | oui ou non | **Entrer**. Sa clé reste stockée, sans effet |
-| Sans équipe | — | Porte déjà ouverte : **Entrer** |
+| Verrouillée, 0 clé posée | oui | Pose sa clé (1 sur 2), puis **Redescendre** |
+| Verrouillée, 0 ou 1 clé posée | non | Voit combien de clés sont posées, puis **Redescendre** |
+| Verrouillée, 1 clé posée | oui | Pose sa clé, la porte se déverrouille : **Ouvrir**, puis **Entrer** |
+| Déverrouillée | oui ou non | **Ouvrir**, puis **Entrer**. Sa clé reste stockée, sans effet |
+| Déjà ouverte par lui | — | **Entrer** |
+| Sans équipe | — | Porte déjà déverrouillée : **Ouvrir**, puis **Entrer** |
 
-« Entrer » engage le combat de boss du joueur (`bossFight`), seul.
+« Ouvrir » écarte les battants, qui s'effacent avant la fin du mouvement ;
+« Entrer » paraît en fondu une fois qu'ils ont disparu et engage le combat de boss du joueur (`bossFight`), seul.
 
 ### Attendre au camp
 
-- Porte fermée, le joueur **redescend** au camp (`descendToCamp`). Il n'y a
+- Porte verrouillée, le joueur **redescend** au camp (`descendToCamp`). Il n'y a
   pas d'écran d'attente devant la porte.
 - Le camp dit l'état de la porte : combien de clés sur 2, et **qui** les a
   posées (le camp nomme comme la porte, voir ADR 0008 — pas encore affiché,
   comme sur la porte).
 - Le bouton **« Remonter »** (`climbToDoor`) du camp ne s'active que porte
-  ouverte. Il ramène devant la porte, où « Entrer » attend.
+  déverrouillée. Il ramène devant la porte, où « Ouvrir » (ou « Entrer », s'il
+  l'a déjà ouverte) attend.
 - **Position retenue** (`doorSpot`) : le joueur retombe là où il était, porte
   ou camp, à chaque connexion. Le serveur la stocke, et la remet à zéro à
   `crossFloor`.
 - **Porte et camp relisent l'état** environ toutes les 30 s : la porte qui
-  s'ouvre pendant que le joueur la regarde s'ouvre sous ses yeux, sans
+  se déverrouille pendant que le joueur la regarde lui offre « Ouvrir », sans
   recharger.
 - **Entre deux combats** : défaite, attente au camp, rattrapage, puis
-  « Remonter » face à la porte ouverte, et « Entrer ».
+  « Remonter » face à la porte qu'il a déjà ouverte, et « Entrer ».
 - **Arrivée à 0 vie** (voir [Cas à 0 vie](#cas-à-0-vie)) : « Remonter » attend
-  deux choses, la porte ouverte **et** l'attente et le rattrapage finis.
+  deux choses, la porte déverrouillée **et** l'attente et le rattrapage finis.
 - **Une guilde qui n'aura jamais deux clés** : cas accepté, aucun geste admin
-  pour ouvrir une porte.
+  pour déverrouiller une porte.
 
 ### Les portes de tous les étages
 

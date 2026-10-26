@@ -59,6 +59,12 @@ export interface DialoguePrompt {
  */
 export type DialogueChoices = readonly [string, ...string[]]
 
+/** Un geste proposé par une fenêtre de dialogue (BaseDialogueWindow) : son libellé et ce qu'il fait. */
+export interface DialogueAction {
+  label: string
+  run: () => void
+}
+
 /**
  * Une prise de parole : d'où elle vient, ce qui s'y dit, ce qu'elle demande.
  *

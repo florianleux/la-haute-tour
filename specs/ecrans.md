@@ -123,12 +123,13 @@ L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet
 
 ### `bossDoor` — porte du boss
 
-Un seul champ distingue les deux écrans, pas deux phases (voir [`boss.md`](./boss.md#porte-à-deux-clés)) :
+Des champs distinguent les trois écrans, pas des phases (voir [`boss.md`](./boss.md#porte-à-deux-clés)) :
 
-L'illustration de la porte de l'étage couvre l'écran, son nom en grand en haut. Ses deux serrures s'allument à chaque clé posée. Le nom des poseurs n'est pas encore affiché à l'écran (choix de design ; l'état de jeu le servira, voir #139).
+L'illustration de la porte de l'étage couvre l'écran, son nom en grand en haut. Le décor laisse l'arche transparente : derrière, un fond uni (couleur de la porte au catalogue), où se glissera ce qui suit la porte. Ses deux battants couvrent l'arche, image à part du décor. Chaque clé posée paraît dans sa serrure, une par battant. Le nom des poseurs n'est pas encore affiché à l'écran (choix de design ; l'état de jeu le servira, voir #139).
 
-- **Porte fermée** (moins de deux clés posées côté équipe) : deux liens lumineux en bas, pas de bouton plein. « Utiliser la clé de la Lune » (le nom de la clé suit celui de la porte) si le joueur en a une, et dessous, plus discret, « Redescendre », qui le ramène au camp.
-- **Porte ouverte** : « Entrer », le bouton médaillon de l'ascension, posé sur le bas des battants. Il engage le combat. Un joueur sans équipe arrive directement sur cette version.
+- **Porte verrouillée** (moins de deux clés posées côté équipe) : une fenêtre de dialogue en bas, au gabarit de la boîte de dialogue (bordure `#051C26`, fond `#CFF`, texte `#2579A6`). Le joueur y pense tout haut : sa remarque dit combien de clés manquent et s'il peut poser la sienne (« Mmmh, il semble qu'il faille DEUX clés pour ouvrir cette porte… »). Dessous, les gestes possibles, comme les choix d'une réplique : « Utiliser la clé de la Lune » (le nom de la clé suit celui de la porte) si le joueur en a une, puis « Redescendre au camp ».
+- **Porte déverrouillée** : la même fenêtre, une autre remarque (« Les deux clés sont dans leurs serrures… », ou sans équipe « Aucune serrure ne retient cette porte… ») et un seul choix, « Ouvrir ». Pas de « Redescendre au camp ». Au clic, chaque clé tourne d'un quart de tour vers son bord (la gauche vers la gauche, la droite vers la droite), puis les battants pivotent vers le joueur, clés comprises, chacun sur son bord extérieur, et s'effacent avant la fin du mouvement (leur verso est sombre, pas le recto). Un joueur sans équipe arrive directement sur cette version. « Réduire les animations » : les battants passent ouverts d'un coup.
+- **Porte ouverte** (par ce joueur) : battants effacés, l'arche libre, la même fenêtre avec un seul choix, « Entrer » (« La porte est ouverte. Je ne sais pas ce qui m'attend là-dedans… »). Au clic sur « Ouvrir », la fenêtre s'efface ; celle de « Entrer » paraît en fondu une fois les battants disparus. Au clic sur « Entrer », elle s'efface et l'écran plonge lentement dans l'arche jusqu'à n'être plus que son fond uni ; le combat s'engage alors. « Réduire les animations » : pas de plongée, le combat s'engage tout de suite.
 
 Les cas d'arrivée, l'attente au camp et « Remonter » : voir [`boss.md`](./boss.md#arriver-devant-la-porte).
 
@@ -136,7 +137,7 @@ Introduction du boss (apparition, nom, dialogue) jouée ici, une seule fois par 
 
 ### Camp en attente de porte
 
-Le camp habituel, avec l'état de la porte : clés posées sur 2. Le nom de ceux qui les ont posées n'est pas encore affiché, comme sur la porte (voir [`boss.md`](./boss.md#poser-la-clé)). Un bouton « Remonter », actif seulement porte ouverte (et, à 0 vie, attente et rattrapage finis). Il relit l'état environ toutes les 30 s. Voir [`boss.md`](./boss.md#attendre-au-camp).
+Le camp habituel, avec l'état de la porte : clés posées sur 2. Le nom de ceux qui les ont posées n'est pas encore affiché, comme sur la porte (voir [`boss.md`](./boss.md#poser-la-clé)). Un bouton « Remonter », actif seulement porte déverrouillée (et, à 0 vie, attente et rattrapage finis). Il relit l'état environ toutes les 30 s. Voir [`boss.md`](./boss.md#attendre-au-camp).
 
 ### `bossFight` — combat de boss
 

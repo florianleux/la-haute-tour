@@ -8,23 +8,25 @@ const publicDir = fileURLToPath(new URL('../../public', import.meta.url))
 
 const doors = Object.values(BOSS_DOORS).filter((door): door is BossDoorEntry => door !== undefined)
 
-/** Les deux pourcentages d'une serrure, `left-[x%] top-[y%]`. */
+/** Les trois pourcentages d'une serrure, `left-[x%] top-[y%] w-[w%]`. */
 function keyholeAt(keyhole: string): number[] {
-  const match = /^left-\[([\d.]+)%\] top-\[([\d.]+)%\]$/.exec(keyhole)
+  const match = /^left-\[([\d.]+)%\] top-\[([\d.]+)%\] w-\[([\d.]+)%\]$/.exec(keyhole)
   expect(match).not.toBeNull()
-  return [Number(match![1]), Number(match![2])]
+  return [Number(match![1]), Number(match![2]), Number(match![3])]
 }
 
 // Le format 20:9 des illustrations se vérifie avec les autres décors, dans backdrops.test.ts.
 describe('les portes de boss', () => {
-  it('ont toutes une illustration de phase de boss qui existe', () => {
+  it('ont toutes une illustration, des battants et une clé de phase de boss qui existent', () => {
     for (const door of doors) {
-      expect(door.image).toMatch(/^\/images\/boss\//)
-      expect(existsSync(join(publicDir, door.image))).toBe(true)
+      for (const image of [door.image, ...door.leaves, door.key]) {
+        expect(image).toMatch(/^\/images\/boss\//)
+        expect(existsSync(join(publicDir, image))).toBe(true)
+      }
     }
   })
 
-  it('posent leurs serrures sur la scène', () => {
+  it('posent leurs serrures sur leurs battants', () => {
     for (const door of doors) {
       for (const keyhole of door.keyholes) {
         for (const percent of keyholeAt(keyhole)) {

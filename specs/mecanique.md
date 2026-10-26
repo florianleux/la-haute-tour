@@ -42,8 +42,8 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 | `recovery` | Plus de vies, attente écoulée, Pool Échecs assez fourni | Les questions de rattrapage, une à une, avec le même mécanisme de réservation et de verdict qu'en ascension |
 | `floorEnd` | Toutes les questions de l'étage vues | Le palier atteint — prélude du boss de l'étage, plus la fin elle-même. Voir [`boss.md`](./boss.md) |
 | `deckEnd` | Toutes les questions de l'étage vues, et l'étage d'au-dessus vide | Le message de fin du deck, sans action. Phase terminale tant que le deck ne change pas. Voir [`spec.md`](./spec.md#glossaire) (Fin du deck) |
-| `bossDoor` | `floorEnd` franchi, boss pas encore battu | La porte du boss — fermée (moins de deux clés posées côté équipe) ou ouverte, sur le même champ. Voir [`boss.md`](./boss.md#porte-à-deux-clés) |
-| `bossFight` | Porte ouverte (ou pas d'équipe), combat en cours | Le combat de boss actif — PV du boss, vies du joueur, épreuve en cours. Voir [`boss.md`](./boss.md) |
+| `bossDoor` | `floorEnd` franchi, boss pas encore battu | La porte du boss — verrouillée (moins de deux clés posées côté équipe) ou déverrouillée, puis ouverte par le joueur (`opened`, par joueur) : des champs, pas des phases. Voir [`boss.md`](./boss.md#porte-à-deux-clés) |
+| `bossFight` | Porte déverrouillée (ou pas d'équipe), combat en cours | Le combat de boss actif — PV du boss, vies du joueur, épreuve en cours. Voir [`boss.md`](./boss.md) |
 | `gameOver` | Boss du dernier étage battu, ou passé automatiquement | Message de fin. Phase terminale |
 
 ### Transitions

@@ -35,10 +35,8 @@ const props = withDefaults(defineProps<{
    * à la taille et à la couleur du texte qui l'entoure, qu'elle reprend plutôt
    * que d'imposer les siennes. `parchment` : un bouton tracé à l'encre, pour
    * une action posée sur du papier (le Grimoire), où les fonds sombres jurent.
-   * `glow` : le libellé seul, sans fond ni soulignement, qui grossit au survol —
-   * pour un lien lumineux (BaseGlowLabel) posé sur une illustration.
    */
-  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'glow'
+  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -65,7 +63,6 @@ const VARIANTS = {
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
   option: 'py-1 italic bg-transparent text-inherit transition-colors hover:underline',
   parchment: `${PADDED} border-2 border-amber-900/40 bg-transparent text-amber-950 enabled:hover:bg-amber-900/10`,
-  glow: 'py-1 bg-transparent transition-[scale] hover:scale-110',
 }
 
 const classes = computed(() => [

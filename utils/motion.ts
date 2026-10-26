@@ -18,7 +18,8 @@ export function fadeLayer(closing: boolean, delay: string): { class: string, sty
  * Le joueur a demandé moins d'animations : `motion-safe:` les retire déjà, il ne
  * reste qu'à ne pas attendre leur fin. Écrit une fois pour le lancer d'un sort
  * (composables/useSpellCast.ts) et le jugement d'une réponse
- * (composables/usePlay.ts).
+ * (composables/usePlay.ts), repris par l'entrée dans la porte du boss
+ * (components/BossDoor.vue).
  */
 export function prefersReducedMotion(): boolean {
   return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
