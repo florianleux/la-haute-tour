@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { showsAssetsLoadingScreen } from '../../composables/useAssetsLoadingScreen'
-import { assetsLoadingScreenFiles } from '../../scripts/assetsLoadingScreen'
+import { assetsLoadingScreenFiles, bossAssetsLoadingScreenFiles } from '../../scripts/assetsLoadingScreen'
 import { installAppGlobals } from '../helpers/app'
 
 const { reset } = installAppGlobals()
@@ -30,6 +30,30 @@ describe('les fichiers que l écran de chargement attend', () => {
     writeFileSync(join(dir, 'images', 'boss', 'door.webp'), '')
 
     expect(assetsLoadingScreenFiles(dir).sort()).toEqual(['/favicon.svg', '/images/play-bg.webp'])
+  })
+})
+
+describe('les fichiers que l écran de chargement du boss attend', () => {
+  let dir: string
+
+  afterEach(() => rmSync(dir, { recursive: true, force: true }))
+
+  it('range ceux de chaque boss sous son étage, sous-dossiers compris', () => {
+    dir = mkdtempSync(join(tmpdir(), 'assets-'))
+    mkdirSync(join(dir, 'images', 'boss', '1', 'flags'), { recursive: true })
+    mkdirSync(join(dir, 'images', 'boss', '2'), { recursive: true })
+    writeFileSync(join(dir, 'images', 'play-bg.webp'), '')
+    writeFileSync(join(dir, 'images', 'boss', 'stray.webp'), '')
+    writeFileSync(join(dir, 'images', 'boss', '1', 'door.webp'), '')
+    writeFileSync(join(dir, 'images', 'boss', '1', '.DS_Store'), '')
+    writeFileSync(join(dir, 'images', 'boss', '1', 'flags', 'peru.webp'), '')
+    writeFileSync(join(dir, 'images', 'boss', '2', 'door.webp'), '')
+
+    const byFloor = bossAssetsLoadingScreenFiles(dir)
+
+    expect(byFloor['1']!.sort()).toEqual(['/images/boss/1/door.webp', '/images/boss/1/flags/peru.webp'])
+    expect(byFloor['2']).toEqual(['/images/boss/2/door.webp'])
+    expect(Object.keys(byFloor).sort()).toEqual(['1', '2'])
   })
 })
 
@@ -133,6 +157,44 @@ describe('le préchargement', () => {
     wall.offsetParent = null
     listeners.forEach(listener => listener())
     expect(FakeImage.created).toHaveLength(1)
+  })
+})
+
+describe('le préchargement d un boss', () => {
+  async function bossScreenFor(byFloor: Record<string, string[]>, floor: number) {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { assetsLoadingScreenFiles: [], bossAssetsLoadingScreenFiles: byFloor } }))
+    vi.resetModules()
+    const { useBossAssetsLoadingScreen } = await import('../../composables/useAssetsLoadingScreen')
+    return useBossAssetsLoadingScreen(floor)
+  }
+
+  beforeEach(() => {
+    reset()
+    FakeImage.created = []
+    vi.stubGlobal('Image', FakeImage)
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('n attend que les fichiers de son étage', async () => {
+    const screen = await bossScreenFor({ 1: ['/images/boss/1/door.webp'], 2: ['/images/boss/2/door.webp'] }, 1)
+
+    screen.start()
+    expect(FakeImage.created.map(image => image.src)).toEqual(['/images/boss/1/door.webp'])
+    expect(screen.done.value).toBe(false)
+
+    FakeImage.created[0]!.onload!()
+    expect(screen.done.value).toBe(true)
+  })
+
+  it('n a rien à attendre pour un étage sans dossier', async () => {
+    const screen = await bossScreenFor({ 1: ['/images/boss/1/door.webp'] }, 3)
+
+    expect(screen.done.value).toBe(true)
   })
 })
 

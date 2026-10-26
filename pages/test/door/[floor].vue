@@ -1,6 +1,21 @@
 <template>
   <div class="contents">
+    <!-- L'arrivée devant la porte attend d'abord les fichiers de ce boss, la
+         première fois dans l'onglet : porte, introduction, combat. -->
+    <AssetsLoadingScreen
+      v-if="!bossAssets.done.value"
+      :floor="floor"
+    />
+
+    <BossIntro
+      v-else-if="intro && stage === 'intro'"
+      :intro="intro"
+      :backdrop="door.archColor"
+      @end="fight"
+    />
+
     <BossDoor
+      v-else
       :key="arrivals"
       :door="door"
       :keys-placed="keysPlaced"
@@ -9,12 +24,13 @@
       :opened="opened"
       @place-key="placeKey"
       @open-door="opened = true"
-      @enter="reset"
+      @enter="enter"
       @descend-to-camp="reset"
     />
 
     <!-- La situation à l'arrivée : tous les cas de specs/boss.md#arriver-devant-la-porte. -->
     <BaseTabs
+      v-if="bossAssets.done.value && stage === 'door'"
       v-model="scenario"
       :tabs="SCENARIOS"
       class="fixed right-4 top-4 z-20 rounded-lg bg-slate-950/70"
@@ -34,7 +50,11 @@
 // et Redescendre remettent le scénario : une nouvelle arrivée, la porte remontée
 // de zéro (battants fermés, plongée annulée), sans battants qui se referment
 // sous les yeux. Admin seulement. Voir specs/boss.md#porte-à-deux-clés.
+//
+// Entrer enchaîne les trois phases du boss : l'introduction de l'étage
+// (BossIntro) s'il en a une au catalogue, puis le banc du combat.
 import { BOSS_DOORS, type BossDoorEntry } from '~~/utils/bossDoors'
+import { BOSS_INTROS } from '~~/utils/bossIntros'
 
 definePageMeta({ admin: true })
 
@@ -90,6 +110,35 @@ function reset(): void {
 }
 
 watch(scenario, reset)
+
+const bossAssets = useBossAssetsLoadingScreen(floor)
+const router = useRouter()
+
+const intro = BOSS_INTROS[floor]
+/** La phase du boss que montre le banc : la porte, puis l'introduction. */
+const stage = ref<'door' | 'intro'>('door')
+
+/**
+ * Le combat de l'étage, s'il a son banc (pages/test/boss/<étage>.vue, route
+ * `test-boss-<étage>`) ; sinon une nouvelle arrivée devant la porte.
+ */
+function fight(): void {
+  if (router.hasRoute(`test-boss-${floor}`)) {
+    void navigateTo(`/test/boss/${floor}`)
+    return
+  }
+  stage.value = 'door'
+  reset()
+}
+
+function enter(): void {
+  if (intro) {
+    stage.value = 'intro'
+  }
+  else {
+    fight()
+  }
+}
 
 function placeKey(): void {
   placed.value = true

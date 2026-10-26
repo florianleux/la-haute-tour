@@ -17,10 +17,11 @@ function keyholeAt(keyhole: string): number[] {
 
 // Le format 20:9 des illustrations se vérifie avec les autres décors, dans backdrops.test.ts.
 describe('les portes de boss', () => {
-  it('ont toutes une illustration, des battants et une clé de phase de boss qui existent', () => {
-    for (const door of doors) {
-      for (const image of [door.image, ...door.leaves, door.key]) {
-        expect(image).toMatch(/^\/images\/boss\//)
+  it('ont toutes une illustration, des battants et une clé dans le dossier de leur boss', () => {
+    for (const [floor, door] of Object.entries(BOSS_DOORS)) {
+      for (const image of [door!.image, ...door!.leaves, door!.key]) {
+        // Dans le dossier de son boss : l'écran de chargement du boss l'attend.
+        expect(image).toMatch(new RegExp(`^/images/boss/${floor}/`))
         expect(existsSync(join(publicDir, image))).toBe(true)
       }
     }

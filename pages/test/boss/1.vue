@@ -4,9 +4,9 @@
     <div class="fixed inset-0 z-1 bg-[#070d24]" />
 
     <!-- Le boss, à gauche, posé au bas de l'écran et un peu coupé par le bord. Il encaisse chaque bonne
-         réponse. Pour l'instant le portrait de L'Inconnu, de face. -->
+         réponse. -->
     <img
-      src="/images/intro-unknown.webp"
+      :src="BOSS_IMAGE"
       alt=""
       class="pointer-events-none fixed -left-[5vw] bottom-0 z-5 h-[62dvh] w-auto"
       :class="hurt === 'boss' && 'motion-safe:animate-hit'"
@@ -65,7 +65,7 @@
 
       <template v-if="verdict === null">
         <img
-          :src="`/images/boss/flags/${flag.slug}.webp`"
+          :src="`/images/boss/1/flags/${flag.slug}.webp`"
           alt="Le drapeau à reconnaître"
           class="mb-[3cqw] min-h-0 w-full flex-1 object-contain drop-shadow-md"
         >
@@ -123,6 +123,11 @@ const rules = rulesForFloor(1)
 // le jeu de règles — le chrono est propre à chaque boss (specs/boss.md). Ils y
 // entrent avec le vrai combat (#34 à #44) ; ce banc les lira alors comme les vies.
 const FULL_BOSS_HP = 7
+/**
+ * Julien le perse. Le banc est propre à l'étage 1 : l'illustration se nomme
+ * ici, comme les drapeaux, sans passer par le catalogue des introductions.
+ */
+const BOSS_IMAGE = '/images/boss/1/boss-julien.webp'
 const SECONDS = 30
 /** Le temps d'un coup encaissé : la secousse (`animate-hit`) et le halo. */
 const HURT_MS = 900

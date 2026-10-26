@@ -8,7 +8,7 @@ export interface BossFlagsResponse {
 
 /**
  * Les drapeaux du premier combat contre le boss de l'étage 1, réponses
- * comprises, pour son banc (pages/boss/1.vue). Admin seulement.
+ * comprises, pour son banc (pages/test/boss/1.vue). Admin seulement.
  *
  * Servis d'ici plutôt qu'importés par la page : tout ce qu'une page importe
  * part dans un fichier JS que n'importe qui télécharge, connecté ou non — les

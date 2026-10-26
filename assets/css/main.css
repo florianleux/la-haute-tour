@@ -1403,6 +1403,158 @@
     to { transform: translateY(100dvh); }
   }
 
+  /* Un objet de la nuée d'une introduction de boss : il traverse l'écran en
+     coup de vent, d'un bord à l'autre (--x0, --y0 à --x1, --y1), en arc
+     (--arc), en tournant (--turn), et bat des ailes comme une chauve-souris :
+     sa hauteur se tasse et revient. Durée propre à chacun (--swoop-ms),
+     posée par components/BossIntro.vue, qui l'insère au moment de son
+     départ. */
+  --animate-swoop: swoop var(--swoop-ms, 900ms) cubic-bezier(0.4, 0, 0.6, 1) both;
+
+  @keyframes swoop {
+    0% { opacity: 0; transform: translate(var(--x0), var(--y0)) rotate(0) scaleY(1); }
+    10% { opacity: 1; }
+    25% { transform: translate(calc(var(--x0) * 0.75 + var(--x1) * 0.25), calc(var(--y0) * 0.75 + var(--y1) * 0.25 + var(--arc) * 0.75)) rotate(calc(var(--turn) * 0.25)) scaleY(0.45); }
+    50% { transform: translate(calc(var(--x0) * 0.5 + var(--x1) * 0.5), calc(var(--y0) * 0.5 + var(--y1) * 0.5 + var(--arc))) rotate(calc(var(--turn) * 0.5)) scaleY(1); }
+    75% { transform: translate(calc(var(--x0) * 0.25 + var(--x1) * 0.75), calc(var(--y0) * 0.25 + var(--y1) * 0.75 + var(--arc) * 0.75)) rotate(calc(var(--turn) * 0.75)) scaleY(0.45); }
+    90% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--x1), var(--y1)) rotate(var(--turn)) scaleY(1); }
+  }
+
+  /* Le cri d'un boss : lui et sa fenêtre tremblent fort, longtemps, et se
+     calment peu à peu — chacun à son rythme (40 et 29 secousses), jamais en
+     même temps. Ceux du boss sont en cqw de la scène, pour que les cartes
+     qu'il fait flotter tremblent avec lui, du même écart ; ceux de la
+     fenêtre, en % de sa boîte. Le boss ne
+     tremble que vers le bas et sans tourner : vers le haut, ou en tournant,
+     le bord bas de son illustration se verrait au-dessus de celui de
+     l'écran. Voir components/BossIntro.vue. */
+  --animate-shout-boss: shout-boss 3s linear both;
+  --animate-shout-window: shout-window 3s linear both;
+
+  @keyframes shout-boss {
+    0% { transform: none; }
+    2.5% { transform: translate(-0.56cqw, 0.11cqw); }
+    5% { transform: translate(0.55cqw, 0.54cqw); }
+    7.5% { transform: translate(-0.54cqw, 0.54cqw); }
+    10% { transform: translate(0.53cqw, 0.10cqw); }
+    12.5% { transform: translate(-0.52cqw, 0.10cqw); }
+    15% { transform: translate(0.52cqw, 0.51cqw); }
+    17.5% { transform: translate(-0.50cqw, 0.50cqw); }
+    20% { transform: translate(0.49cqw, 0.10cqw); }
+    22.5% { transform: translate(-0.49cqw, 0.10cqw); }
+    25% { transform: translate(0.48cqw, 0.47cqw); }
+    27.5% { transform: translate(-0.47cqw, 0.46cqw); }
+    30% { transform: translate(0.46cqw, 0.09cqw); }
+    32.5% { transform: translate(-0.45cqw, 0.09cqw); }
+    35% { transform: translate(0.44cqw, 0.43cqw); }
+    37.5% { transform: translate(-0.43cqw, 0.42cqw); }
+    40% { transform: translate(0.42cqw, 0.08cqw); }
+    42.5% { transform: translate(-0.41cqw, 0.08cqw); }
+    45% { transform: translate(0.40cqw, 0.39cqw); }
+    47.5% { transform: translate(-0.39cqw, 0.38cqw); }
+    50% { transform: translate(0.37cqw, 0.07cqw); }
+    52.5% { transform: translate(-0.36cqw, 0.07cqw); }
+    55% { transform: translate(0.35cqw, 0.35cqw); }
+    57.5% { transform: translate(-0.34cqw, 0.34cqw); }
+    60% { transform: translate(0.33cqw, 0.06cqw); }
+    62.5% { transform: translate(-0.32cqw, 0.06cqw); }
+    65% { transform: translate(0.30cqw, 0.30cqw); }
+    67.5% { transform: translate(-0.29cqw, 0.28cqw); }
+    70% { transform: translate(0.28cqw, 0.06cqw); }
+    72.5% { transform: translate(-0.26cqw, 0.05cqw); }
+    75% { transform: translate(0.25cqw, 0.24cqw); }
+    77.5% { transform: translate(-0.23cqw, 0.23cqw); }
+    80% { transform: translate(0.22cqw, 0.04cqw); }
+    82.5% { transform: translate(-0.20cqw, 0.04cqw); }
+    85% { transform: translate(0.18cqw, 0.18cqw); }
+    87.5% { transform: translate(-0.16cqw, 0.16cqw); }
+    90% { transform: translate(0.14cqw, 0.03cqw); }
+    92.5% { transform: translate(-0.12cqw, 0.02cqw); }
+    95% { transform: translate(0.10cqw, 0.09cqw); }
+    97.5% { transform: translate(-0.06cqw, 0.06cqw); }
+    100% { transform: none; }
+  }
+
+  @keyframes shout-window {
+    0% { transform: none; }
+    3.45% { transform: translate(1.57%, 4.90%) rotate(1.17deg); }
+    6.9% { transform: translate(-1.53%, 4.79%) rotate(-1.15deg); }
+    10.34% { transform: translate(1.50%, -4.68%) rotate(1.12deg); }
+    13.79% { transform: translate(-1.46%, -4.57%) rotate(-1.10deg); }
+    17.24% { transform: translate(1.43%, 4.46%) rotate(1.07deg); }
+    20.69% { transform: translate(-1.39%, 4.35%) rotate(-1.04deg); }
+    24.14% { transform: translate(1.36%, -4.24%) rotate(1.02deg); }
+    27.59% { transform: translate(-1.32%, -4.12%) rotate(-0.99deg); }
+    31.03% { transform: translate(1.28%, 4.00%) rotate(0.96deg); }
+    34.48% { transform: translate(-1.24%, 3.88%) rotate(-0.93deg); }
+    37.93% { transform: translate(1.20%, -3.76%) rotate(0.90deg); }
+    41.38% { transform: translate(-1.16%, -3.63%) rotate(-0.87deg); }
+    44.83% { transform: translate(1.12%, 3.50%) rotate(0.84deg); }
+    48.28% { transform: translate(-1.08%, 3.37%) rotate(-0.81deg); }
+    51.72% { transform: translate(1.03%, -3.23%) rotate(0.78deg); }
+    55.17% { transform: translate(-0.99%, -3.09%) rotate(-0.74deg); }
+    58.62% { transform: translate(0.94%, 2.94%) rotate(0.71deg); }
+    62.07% { transform: translate(-0.89%, 2.79%) rotate(-0.67deg); }
+    65.52% { transform: translate(0.84%, -2.64%) rotate(0.63deg); }
+    68.97% { transform: translate(-0.79%, -2.48%) rotate(-0.59deg); }
+    72.41% { transform: translate(0.74%, 2.31%) rotate(0.55deg); }
+    75.86% { transform: translate(-0.68%, 2.13%) rotate(-0.51deg); }
+    79.31% { transform: translate(0.62%, -1.94%) rotate(0.47deg); }
+    82.76% { transform: translate(-0.56%, -1.74%) rotate(-0.42deg); }
+    86.21% { transform: translate(0.49%, 1.52%) rotate(0.37deg); }
+    89.66% { transform: translate(-0.41%, 1.28%) rotate(-0.31deg); }
+    93.1% { transform: translate(0.32%, -1.00%) rotate(0.24deg); }
+    96.55% { transform: translate(-0.21%, -0.66%) rotate(-0.16deg); }
+    100% { transform: none; }
+  }
+
+  /* Un mot crié qui s'abat sur sa place : il arrive de très gros, écrase un
+     peu trop, et se pose. Délai par mot (--enter-delay), posé par
+     components/BossIntro.vue. */
+  --animate-impact: impact 0.3s cubic-bezier(0.3, 0, 0.6, 1) var(--enter-delay, 0s) both;
+
+  @keyframes impact {
+    0% { opacity: 0; transform: scale(3); }
+    60% { opacity: 1; transform: scale(0.88); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Une carte qu'un boss fait flotter au-dessus de sa main : elle monte et
+     descend franchement, en penchant un peu. Durée et délai posés par
+     components/BossIntro.vue. */
+  --animate-hover: hover 3s ease-in-out infinite;
+
+  @keyframes hover {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-2.2cqw) rotate(4deg); }
+  }
+
+  /* Le nom d'un boss en grand titre, façon Dark Souls, calé sur la durée du
+     temps qui le montre (--title-ms). Le bloc tient puis s'efface
+     (title-card) ; le nom se révèle de gauche à droite par un masque qui
+     glisse, puis un reflet balaie son or (title-reveal) ; le filet s'étire
+     de gauche à droite (title-rule). Voir components/BossIntro.vue. */
+  --animate-title-card: title-card var(--title-ms, 4s) ease-in-out both;
+  --animate-title-reveal: title-reveal var(--title-ms, 4s) ease-out both;
+  --animate-title-rule: title-rule var(--title-ms, 4s) ease-out both;
+
+  @keyframes title-card {
+    0%, 80% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes title-reveal {
+    0% { mask-position: 100% 0; background-position: 100% 0; }
+    35% { mask-position: 0 0; background-position: 100% 0; }
+    70%, 100% { mask-position: 0 0; background-position: 0 0; }
+  }
+
+  @keyframes title-rule {
+    0% { transform: scaleX(0); }
+    40%, 100% { transform: scaleX(1); }
+  }
+
   /* Un fondu d'entrée, retardable par --enter-delay ; et sa sortie. */
   /* Le détail du Grimoire qui apparaît sur le papier comme de l'encre, flou
      puis net. Le délai, posé par l'appelant, fait la cascade. Voir

@@ -7,6 +7,29 @@ Suit le cadre général défini dans [`boss.md`](./boss.md) : 7 PV, 10 épreuves
 curatées par combat de boss (pas d'aléatoire sur le contenu, seul l'ordre est
 mélangé), 6 combats en 3 paliers de difficulté dégressive.
 
+## Introduction
+
+Sur le fond sombre de l'arche, après « Entrer » :
+
+1. Le joueur, dans sa fenêtre : « ... ».
+2. Une carte de *Questions pour un champion* fend l'air devant lui, très
+   vite. Puis 2, 4, 12, 24, 48 : chaque vague plus nombreuse et plus
+   rapprochée, comme une nuée de chauves-souris. Elles volent de côté, de
+   haut en bas, de bas en haut, en oblique, et se croisent là où Julien va
+   paraître, jusqu'à couvrir la zone.
+3. Le joueur, pendant la montée : « Qu'est-ce que c'était ??? ».
+4. Pendant que la nuée cache la zone, Julien y paraît en fondu, sans bouger.
+   Les cartes s'écartent : il est là.
+5. Julien crie, et tremble avec ses cartes, dans sa fenêtre (fond jaune pâle, bordure et
+   texte dorés) : « OUI OUI OUI ». Sa fenêtre tremble aussi, à un autre
+   rythme.
+6. Son nom en grand titre au-dessus de lui, façon *Dark Souls* : un or qui se
+   révèle de gauche à droite, balayé d'un reflet.
+7. Son monologue (texte à écrire), puis le combat. Dès qu'il paraît, et
+   jusqu'à la fin, une carte flotte au-dessus de chacun de ses poings, et des
+   cartes passent derrière lui, trois ou quatre à la fois, plus petites :
+   plus loin que lui.
+
 ## Déroulement d'une épreuve
 
 - Le drapeau s'affiche, avec un **timer de 30 secondes**.

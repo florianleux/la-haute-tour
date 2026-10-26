@@ -180,7 +180,7 @@ Le joueur qui finit l'étage arrive devant la porte. Ce qu'il y trouve :
 
 Un seul écran de porte sert les 6 étages. Ce qui change d'une porte à
 l'autre vit au **catalogue des portes** (`bossDoors`, dans
-`utils/bossDoors.ts`) : nom, nom de la clé, illustration (sous `public/images/boss/`),
+`utils/bossDoors.ts`) : nom, nom de la clé, illustration (sous `public/images/boss/<étage>/`),
 position des deux serrures. Les hublots, chaînes et autres détails de
 l'illustration sont du décor. Banc de design : `/test/door/<étage>`, avec 0,
 1 ou 2 clés déjà posées.
@@ -194,13 +194,25 @@ combats de chaque boss — 60 épreuves curatées par boss au total (10 × 6).
 
 ## Introduction et animations
 
-Les images des phases de boss (porte, combat, épreuves) vont dans
-`public/images/boss/` : l'écran de chargement ne les attend pas. Une relique
-montrée hors des phases de boss — dans l'Inventaire, par exemple — n'y va pas :
-elle reste préchargée. Voir la section « Images » de [`CLAUDE.md`](../CLAUDE.md#images).
+Les images des phases de boss (porte, introduction, combat, épreuves) vont
+dans `public/images/boss/<étage>/`, le dossier de leur boss : l'écran de
+chargement du jeu ne les attend pas, celui du boss
+(`bossAssetsLoadingScreen`) les attend toutes, à l'arrivée devant sa porte.
+Une relique montrée hors des phases de boss — dans l'Inventaire, par exemple —
+n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » de
+[`CLAUDE.md`](../CLAUDE.md#images).
 
-- **Première rencontre d'un boss** : introduction (apparition, nom, dialogue),
-  jouée une seule fois.
+- **Trois phases** à chaque boss : la porte, l'introduction, le combat.
+- **Première rencontre d'un boss** : introduction (`bossIntro`), jouée une
+  seule fois (pas encore implémenté : le banc la rejoue à chaque entrée, #34
+  à #44). Elle part du fond uni de l'arche où « Entrer » vient de plonger,
+  et déroule ses temps : répliques du joueur (fenêtre de la porte) ou du boss
+  (fenêtre à ses couleurs), qui avancent seules ou au clic, et des effets
+  déclenchés au début d'un temps — une nuée d'objets qui traverse l'écran
+  par vagues, l'apparition du boss (derrière la nuée), son cri, son nom en
+  grand titre. Chaque boss a les siens au
+  catalogue des introductions (`bossIntros`) ; un étage sans entrée passe
+  directement au combat. La séquence de chaque boss est décrite dans sa spec.
 - **Chaque épreuve juste** anime la barre de vie du boss : elle perd 1/7 et le
   boss vibre. Une épreuve fausse retire une vie au joueur sans animation
   particulière pour l'instant — juste l'affichage qui baisse.

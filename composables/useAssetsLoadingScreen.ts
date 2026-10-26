@@ -14,8 +14,9 @@ export function showsAssetsLoadingScreen(path: string): boolean {
   return path === '/' || path === '/intro' || path.startsWith('/test/')
 }
 
-// Une fois par onglet : le module vit autant que l'application côté client.
-let started = false
+// Une fois par écran et par onglet — le jeu, chaque boss —, à la clé de son
+// état : le module vit autant que l'application côté client.
+const started = new Set<string>()
 
 // Les images préchargées, tenues jusqu'à la fin de l'onglet. Lâchées, le
 // navigateur les oublie au premier ménage de sa mémoire, et les redemande au
@@ -42,13 +43,31 @@ export interface AssetsLoadingScreen {
  * `start()` ne part que d'un `onMounted`, donc jamais côté serveur.
  */
 export function useAssetsLoadingScreen(): AssetsLoadingScreen {
-  const files = useRuntimeConfig().public.assetsLoadingScreenFiles
+  return preloading(useRuntimeConfig().public.assetsLoadingScreenFiles, 'assetsLoadingScreen')
+}
+
+/**
+ * Le même préchargement, pour les phases d'un boss (`bossAssetsLoadingScreen`) :
+ * les fichiers de son dossier, `public/images/boss/<étage>/`, à l'arrivée
+ * devant sa porte. Une fois par boss et par onglet. Un étage sans dossier n'a
+ * rien à attendre : l'écran est fini d'emblée. Voir specs/spec.md#glossaire.
+ */
+export function useBossAssetsLoadingScreen(floor: number): AssetsLoadingScreen {
+  // Typée sur les dossiers présents au démarrage : relue comme une table
+  // ouverte, un étage sans dossier y est permis.
+  const byFloor: Record<string, string[]> = useRuntimeConfig().public.bossAssetsLoadingScreenFiles
+  const files = byFloor[String(floor)] ?? []
+  return preloading(files, `bossAssetsLoadingScreen-${floor}`)
+}
+
+/** Le préchargement de ces fichiers, sous cette clé : celle de son état, et de son départ. */
+function preloading(files: string[], key: string): AssetsLoadingScreen {
   const total = files.length
-  const loaded = useState('assetsLoadingScreen', () => 0)
+  const loaded = useState(key, () => 0)
   const done = computed(() => loaded.value >= total)
 
   function start(): void {
-    if (started) {
+    if (started.has(key)) {
       return
     }
 
@@ -58,7 +77,7 @@ export function useAssetsLoadingScreen(): AssetsLoadingScreen {
       window.addEventListener('resize', start, { once: true })
       return
     }
-    started = true
+    started.add(key)
 
     // Borné : un fichier arrivé après le plafond ne fait pas déborder la barre.
     const settle = (): void => {

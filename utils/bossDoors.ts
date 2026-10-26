@@ -6,7 +6,8 @@ export interface BossDoorEntry {
   keyName: string
   /**
    * L'illustration, en 20:9 comme tous les décors plein écran (CLAUDE.md#images),
-   * sous public/images/boss/ : l'écran de chargement ne l'attend pas.
+   * sous public/images/boss/<étage>/ : l'écran de chargement du jeu ne
+   * l'attend pas, celui du boss si.
    */
   image: string
   /**
@@ -26,7 +27,7 @@ export interface BossDoorEntry {
   /**
    * Ses deux battants, gauche puis droite : la porte détourée, coupée en deux
    * à la verticale. Ils couvrent l'arche vide de l'illustration et pivotent
-   * vers le joueur quand il ouvre la porte. Sous public/images/boss/ aussi.
+   * vers le joueur quand il ouvre la porte. Sous public/images/boss/<étage>/ aussi.
    */
   leaves: [string, string]
   /**
@@ -54,13 +55,13 @@ export const BOSS_DOORS: Readonly<Partial<Record<number, BossDoorEntry>>> = {
   1: {
     name: 'Porte de la Lune',
     keyName: 'la clé de la Lune',
-    image: '/images/boss/door-moon.webp',
+    image: '/images/boss/1/door-moon.webp',
     archColor: 'bg-[#1f1c2e]',
     archCenter: 'origin-[49.9%_74%]',
     leafBackColor: 'bg-[#0c1f3a]',
-    leaves: ['/images/boss/door-moon-left.webp', '/images/boss/door-moon-right.webp'],
+    leaves: ['/images/boss/1/door-moon-left.webp', '/images/boss/1/door-moon-right.webp'],
     doorway: 'left-[36.2%] top-[19.17%] w-[27.29%] h-[79.35%]',
-    key: '/images/boss/door-moon-key.webp',
+    key: '/images/boss/1/door-moon-key.webp',
     keyholes: ['left-[61.6%] top-[48.4%] w-[8.78%]', 'left-[41.2%] top-[48.4%] w-[8.78%]'],
   },
 }
