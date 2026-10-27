@@ -1,4 +1,4 @@
-# Boss — Étage 1 : Julien le perse
+# Boss — Étage 1 : Julien Le Perse
 
 Mini-jeu : **Drapeaux**. Le joueur voit un drapeau, doit donner le lieu
 associé en saisie libre.

@@ -28,3 +28,11 @@ export function prefersReducedMotion(): boolean {
 export function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
+
+/**
+ * Le bord de l'écran qui rougit le temps d'un éclair, à chaque vie perdue : à
+ * l'ascension (components/PlayFrame.vue) comme au combat de boss
+ * (components/BossArena.vue). Sur un calque `fixed inset-0`, monté à chaque
+ * coup pour que l'éclair reparte de zéro.
+ */
+export const HIT_VIGNETTE = 'bg-[radial-gradient(ellipse_at_center,transparent_35%,rgb(185_28_28/0.75)_100%)] opacity-0 motion-safe:animate-vignette-flash'

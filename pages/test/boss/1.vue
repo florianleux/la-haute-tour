@@ -8,16 +8,23 @@
     :lives="lives"
     :max-lives="rules.lives"
   >
-    <!-- Au milieu, le cadre de l'ascension sans ses rubans : le drapeau, le
-         champ, puis le verdict. Le drapeau prend toute la hauteur que le champ
-         lui laisse : c'est lui qu'il faut lire. -->
-    <PlayFrame skin="ascent">
-      <template #medallion>
+    <!-- ponytail: cadre provisoire, écrit dans la page en attendant son dessin ;
+         il deviendra un composant avec lui. Au milieu : le chrono, le drapeau,
+         le champ, puis le verdict. Tout est en `dvh`, réglé sur une fenêtre de
+         880 px de haut (1dvh = 8,8 px) : le cadre garde sa place et sa part de
+         l'écran à toute taille. L'enveloppe, invisible, fait 101,8dvh (896 px) :
+         le bouton, dimensionné en `cqw`, s'y ancre. -->
+    <div class="fixed left-1/2 top-[14dvh] z-10 w-[101.8dvh] -translate-x-1/2 @container text-center">
+      <!-- Le cadre visible, en portrait 8:9 : 54,5dvh de large, soit 480×540 px.
+           Ses textes, en `cqw`, se règlent sur lui, marges de 0,9dvh déduites
+           (464 px). Le drapeau y fait 43,3dvh (381 px). Le vide en haut et en
+           bas attend le chrono rond et un message. -->
+      <div class="mx-auto flex aspect-8/9 w-[54.5dvh] flex-col items-center justify-center gap-[1.8dvh] rounded-[1.8dvh] bg-amber-100 px-[0.9dvh] @container">
         <PlayText
           v-if="verdict === null"
           role="timer"
           as="span"
-          class="text-amber-600"
+          class="text-[4cqw] text-amber-600"
         >
           {{ secondsLeft }}
         </PlayText>
@@ -25,44 +32,42 @@
           v-else
           :correct="verdict"
         />
-      </template>
 
-      <template v-if="verdict === null">
-        <img
-          :src="`/images/boss/1/flags/${flag.slug}.webp`"
-          alt="Le drapeau à reconnaître"
-          class="mb-[3cqw] min-h-0 w-full flex-1 object-contain drop-shadow-md"
-        >
-        <BaseParchmentInput
-          :key="flag.slug"
-          v-model="typed"
-          @submit="answer"
-        />
-      </template>
+        <template v-if="verdict === null">
+          <img
+            :src="`/images/boss/1/flags/${flag.slug}.webp`"
+            alt="Le drapeau à reconnaître"
+            class="aspect-2/1 w-[43.3dvh] object-contain drop-shadow-md"
+          >
+          <BaseParchmentInput
+            :key="flag.slug"
+            v-model="typed"
+            @submit="answer"
+          />
+        </template>
 
-      <template v-else>
-        <PlayText
-          role="headline"
-          :class="headline.ink"
-        >
-          {{ headline.text }}
-        </PlayText>
-        <PlayText
-          role="answer"
-          class="text-amber-800"
-        >
-          {{ flag.answerLabel }}
-        </PlayText>
-      </template>
+        <template v-else>
+          <PlayText
+            role="headline"
+            :class="headline.ink"
+          >
+            {{ headline.text }}
+          </PlayText>
+          <PlayText
+            role="answer"
+            class="text-amber-800"
+          >
+            {{ flag.answerLabel }}
+          </PlayText>
+        </template>
+      </div>
 
-      <template #action>
-        <BaseCardButton
-          :label="verdict === null ? 'Valider' : over ? 'Rejouer' : 'Suivant'"
-          anchor="card-bottom"
-          @click="verdict === null ? answer() : next()"
-        />
-      </template>
-    </PlayFrame>
+      <BaseCardButton
+        :label="verdict === null ? 'Valider' : over ? 'Rejouer' : 'Suivant'"
+        anchor="image-bottom"
+        @click="verdict === null ? answer() : next()"
+      />
+    </div>
   </BossArena>
 </template>
 
@@ -88,7 +93,7 @@ const rules = rulesForFloor(1)
 // le jeu de règles — le chrono est propre à chaque boss (specs/boss.md). Ils y
 // entrent avec le vrai combat (#34 à #44) ; ce banc les lira alors comme les vies.
 const FULL_BOSS_HP = 7
-/** Julien le perse. */
+/** Julien Le Perse. */
 const BOSS = BOSSES[1]!
 const SECONDS = 30
 
@@ -97,9 +102,13 @@ const { data: fight } = await useAsyncData(
   () => $fetch<BossFlagsResponse>('/api/admin/boss-flags', useApiFetchOptions()),
 )
 
+// ponytail: drapeau forcé en tête pour régler la taille : le seul en 2:1 du
+// combat, donc le plus large. À retirer une fois le cadre dessiné.
+const FORCED_FLAG = 'transnistria'
+
 function shuffled(): BossFlag[] {
   return (fight.value?.flags ?? [])
-    .map(entry => ({ entry, key: Math.random() }))
+    .map(entry => ({ entry, key: entry.slug === FORCED_FLAG ? -1 : Math.random() }))
     .sort((a, b) => a.key - b.key)
     .map(({ entry }) => entry)
 }

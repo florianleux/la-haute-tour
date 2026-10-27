@@ -41,7 +41,7 @@ export interface BossEntry {
  */
 export const BOSSES: Readonly<Partial<Record<number, BossEntry>>> = {
   1: {
-    name: 'Julien le perse',
+    name: 'Julien Le Perse',
     epithet: 'Gardien de la Lune',
     // Le cadre (947×669) : la tête posée sur le corps bras écartés, qui en
     // prend toute la largeur. Le corps bras dans le dos (542 de large) y est
@@ -61,8 +61,8 @@ export const BOSSES: Readonly<Partial<Record<number, BossEntry>>> = {
       headBox: 'left-[37.06%] top-0 w-[24.92%]',
     },
     // Bras dans le dos. Son cadre a la largeur des bras écartés : le corps
-    // bras dans le dos y commence à 19,96 %, soit 17,5dvh à 62dvh de haut,
+    // bras dans le dos y commence à 19,96 %, soit 20,1dvh à 71,3dvh de haut,
     // retranchés pour que son bord gauche reste à -5vw.
-    arena: { pose: 'back', box: '-left-[calc(5vw+17.5dvh)] h-[62dvh]' },
+    arena: { pose: 'back', box: '-left-[calc(5vw+20.1dvh)] h-[71.3dvh]' },
   },
 }

@@ -1,8 +1,10 @@
 <template>
   <!-- La taille du nom vient de l'appelant (`class` sur la racine) : le boss
-       s'annonce plus gros que le joueur. -->
+       s'annonce plus gros que le joueur. Son côté aussi (`text-right`) : le
+       nom est dans un onglet d'or posé sur la barre, qui se détache de la nuit,
+       cerclé comme elle. -->
   <div class="pointer-events-none">
-    <p class="mb-2 font-serif leading-none tracking-wide text-amber-50 [text-shadow:0_1px_3px_black]">
+    <p class="inline-block rounded-t-lg border-2 border-b-0 border-amber-400 bg-linear-to-b from-amber-300 to-amber-400 shadow-[0_0_0_1px_rgb(120_53_15)] px-[0.6em] pt-[0.3em] pb-[0.2em] font-serif leading-none tracking-wide text-amber-950">
       {{ name }}
     </p>
     <div

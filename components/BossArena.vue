@@ -4,29 +4,41 @@
     <div class="fixed inset-0 z-1 bg-[#070d24]" />
 
     <!-- Le boss, à gauche, dans sa pose d'arène, à sa place (`arena.box`).
-         Il encaisse en colère, et rit de chaque coup du joueur. -->
+         Il encaisse en colère, et rit de chaque coup du joueur. Les deux
+         figures passent devant l'épreuve (z-10), sous le bord rouge (z-20) et
+         les barres de vie (z-25). -->
     <BossFigure
       :figure="boss.figure"
       :pose="boss.arena.pose"
       :expression="expression"
       :talking="hurt !== null"
-      class="pointer-events-none fixed bottom-0 z-5"
+      class="pointer-events-none fixed bottom-0 z-15"
       :class="[boss.arena.box, hurt === 'boss' && 'motion-safe:animate-hit']"
     />
 
     <!-- Le joueur, à droite, plus petit que le boss et retourné pour lui faire
-         face. Il encaisse chaque faute, et rougit le temps du coup. -->
+         face. Calé dans le coin, il déborde un peu de l'écran, comme le boss.
+         Il encaisse chaque faute. -->
     <div
-      class="pointer-events-none fixed bottom-0 right-[4vw] z-5 h-[38dvh]"
+      class="pointer-events-none fixed bottom-0 -right-[3vw] z-15 h-[43.7dvh]"
       :class="hurt === 'player' && 'motion-safe:animate-hit'"
     >
       <img
         :src="portrait"
         alt=""
-        class="h-full w-auto -scale-x-100 transition-[filter] duration-300"
-        :class="hurt === 'player' && 'drop-shadow-[0_0_1.5rem_rgb(220_38_38)]'"
+        class="h-full w-auto -scale-x-100"
       >
     </div>
+
+    <!-- Le coup que le joueur encaisse : le bord de l'écran rougit, comme à
+         l'ascension, mais le temps du coup (`HURT_MS`). Par-dessus les
+         figures (z-15), sous les barres de vie (z-25). -->
+    <div
+      v-if="hurt === 'player'"
+      class="pointer-events-none fixed inset-0 z-20"
+      :class="HIT_VIGNETTE"
+      :style="{ animationDuration: `${HURT_MS}ms` }"
+    />
 
     <!-- La vie du joueur, en cases, à la hauteur de celle du boss. -->
     <HealthBar
@@ -34,7 +46,7 @@
       :value="lives"
       :max="maxLives"
       segmented
-      class="fixed bottom-[5dvh] right-[4vw] z-20 w-[20vw] text-right text-2xl"
+      class="fixed bottom-[5dvh] right-[4vw] z-25 w-[20vw] text-right text-2xl"
     />
 
     <!-- La vie du boss : une longue barre qui part de dessus le boss et
@@ -43,7 +55,7 @@
       :name="boss.name"
       :value="bossHp"
       :max="bossMaxHp"
-      class="fixed bottom-[5dvh] left-[3vw] right-[31vw] z-20 text-[2rem]"
+      class="fixed bottom-[5dvh] left-[3vw] right-[31vw] z-25 text-[2rem]"
     />
 
     <!-- L'épreuve du combat, propre à chaque boss, au milieu. -->
@@ -69,8 +81,8 @@ const props = defineProps<{
   maxLives: number
 }>()
 
-/** Le temps d'un coup encaissé : la secousse (`animate-hit`) et le halo. */
-const HURT_MS = 900
+/** Le temps d'un coup encaissé : la secousse (`animate-hit`) et le bord rouge. */
+const HURT_MS = 1800
 /** Sa tête quand il encaisse, puis quand le joueur encaisse. */
 const REACTION: Record<'boss' | 'player', BossExpression> = { boss: 'angry', player: 'laugh' }
 

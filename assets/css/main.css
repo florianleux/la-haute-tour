@@ -1445,6 +1445,25 @@
     75% { transform: rotate(3deg); }
   }
 
+  /* Sa respiration, au repos comme au combat : le buste gonfle depuis la
+     taille (scaleY, origine en bas) et la tête monte avec les épaules, un
+     souffle lent en boucle. La tête bouge sur un calque à elle : ses propres
+     animations (hochement, cri) restent sur l'image, sans s'écraser. Le
+     buste fait ~56 % de la figure : 1,5 % de buste, ~0,8 % de figure pour la
+     tête. Voir components/BossFigure.vue. */
+  --animate-breathe-body: breathe-body 4s ease-in-out infinite;
+  --animate-breathe-head: breathe-head 4s ease-in-out infinite;
+
+  @keyframes breathe-body {
+    0%, 100% { transform: none; }
+    50% { transform: scaleY(1.015); }
+  }
+
+  @keyframes breathe-head {
+    0%, 100% { transform: none; }
+    50% { transform: translateY(-0.8%); }
+  }
+
   @keyframes shout-boss {
     0% { transform: none; }
     2.5% { transform: translate(-0.56cqw, 0.11cqw); }

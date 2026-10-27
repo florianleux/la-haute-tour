@@ -274,7 +274,7 @@ const REACTIONS = {
 // Le bord rouge de chaque coup : un éclair sur `hit`, plus dense et qui reste
 // en battant sous le Mimic.
 const VIGNETTES: Partial<Record<keyof typeof REACTIONS, string>> = {
-  hit: 'bg-[radial-gradient(ellipse_at_center,transparent_35%,rgb(185_28_28/0.75)_100%)] opacity-0 motion-safe:animate-vignette-flash',
+  hit: HIT_VIGNETTE,
   mauled: 'bg-[radial-gradient(ellipse_at_center,transparent_20%,rgb(220_38_38/0.5)_55%,rgb(127_29_29/0.95)_100%)] motion-safe:animate-vignette-hold',
 }
 
