@@ -1,18 +1,19 @@
 <template>
   <!-- Le juste jaillit, juste après le tampon du médaillon, et lâche une
        gerbe d'étincelles à son plus gros. Le faux, lui, secoue la tête. Relu
-       au Volumen, rien ne bouge : la question est jugée depuis longtemps. -->
+       au Volumen, le titre passe en tête de fiche (QuestionLogDetail). -->
   <PlayText
+    v-if="!review"
     role="headline"
     :class="[
-      verdict.correct ? 'relative text-emerald-700' : 'text-rose-700',
-      review ? '' : verdict.correct ? 'motion-safe:animate-cheer [--enter-delay:0.1s]' : 'motion-safe:animate-shake [--enter-delay:0.1s]',
+      verdict.correct ? 'relative text-emerald-700 motion-safe:animate-cheer' : 'text-rose-700 motion-safe:animate-shake',
+      '[--enter-delay:0.1s]',
       shade,
     ]"
   >
-    {{ headline }}
+    {{ verdict.correct ? 'Correct !' : 'Incorrect...' }}
     <SparkleSpray
-      v-if="verdict.correct && !review"
+      v-if="verdict.correct"
       :sparks="CHEER_SPRAY"
       glow="#6ee7b7"
     />
@@ -36,9 +37,9 @@
     {{ verdict.answerLabel }}
   </PlayText>
 
-  <!-- Au Volumen, une question connue n'a rien à corriger : sa saisie se tait. -->
+  <!-- Au Volumen, la fiche montre la bonne réponse, pas la saisie. -->
   <PlayText
-    v-if="!(review && verdict.correct)"
+    v-if="!review"
     role="aside"
     :class="shade"
     class="text-amber-800/80"
@@ -106,8 +107,8 @@ const props = defineProps<{
   /** La vie perdue était la dernière : la tentative s'arrête sur ce verdict. */
   lastLife?: boolean
   /**
-   * Relu au Volumen plutôt que rendu en jeu : « Connue » ou « À revoir », sans
-   * animation, et la saisie d'une question connue tue. Voir specs/ecrans.md#volumen.
+   * Relu au Volumen plutôt que rendu en jeu : ni titre (la fiche le porte en
+   * tête), ni saisie, ni contestation après coup. Voir specs/ecrans.md#volumen.
    */
   review?: boolean
   /**
@@ -133,13 +134,6 @@ const sent = computed(() => !props.review && isSent(props.verdict.questionId))
 const disputeHeld = computed(() =>
   !props.review && !props.verdict.correct && props.verdict.submittedAnswer !== '',
 )
-
-const headline = computed(() => {
-  if (props.review) {
-    return props.verdict.correct ? 'Connue' : 'À revoir'
-  }
-  return props.verdict.correct ? 'Correct !' : 'Incorrect...'
-})
 
 defineEmits<{ dispute: [] }>()
 

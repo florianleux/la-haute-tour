@@ -51,18 +51,17 @@
       class="@container flex flex-1 flex-col overflow-y-auto max-md:order-first max-md:max-h-[45%] md:border-l md:border-amber-900/20 md:pl-6"
       :class="selected ? '' : 'max-md:hidden'"
     >
-      <!-- Centrée en hauteur par `my-auto` plutôt que `justify-center` : une
-           question trop longue pour le panneau garde son haut lisible au lieu
-           de déborder au-dessus. -->
+      <!-- Toute la hauteur du panneau : titre en haut, seuil du pool en bas.
+           Une question trop longue fait défiler le panneau, haut lisible. -->
       <QuestionLogDetail
         v-if="selected"
         :key="selected.questionId"
-        class="my-auto"
+        class="flex-1"
         :entry="selected"
         :pool-successes-to-leave="poolSuccessesToLeave"
       />
       <p v-else-if="entries.length" class="my-auto text-center text-sm italic text-amber-900/60">
-        Choisis une question pour relire sa réponse.
+        Aucune question sélectionnée
       </p>
     </section>
   </div>

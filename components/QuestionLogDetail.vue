@@ -3,14 +3,40 @@
        s'est jugée. Le panneau qui la porte est un @container, d'où viennent
        les tailles de PlayText ; `zoom` les réduit d'un cinquième — une fiche
        qu'on relit, pas le verdict qu'on reçoit. -->
+  <!-- Le titre en tête et le seuil du pool en pied, quelle que soit la taille
+       de la question ; le reste se centre entre les deux. -->
   <div class="flex flex-col items-center gap-[2cqw] px-[8cqw] text-center [zoom:0.8]">
-    <VerdictLines
-      review
-      :verdict="verdict"
-      :disputable="isDisputable(entry.questionId)"
-      :disputing="disputingId === entry.questionId"
-      @dispute="sendDispute(entry.questionId)"
-    />
+    <PlayText
+      role="headline"
+      :class="entry.correct ? 'text-emerald-700' : 'text-rose-700'"
+    >
+      {{ entry.correct ? 'Connue' : 'À revoir' }}
+    </PlayText>
+
+    <div class="my-auto flex flex-col items-center gap-[2cqw]">
+      <VerdictLines
+        review
+        :verdict="verdict"
+        :disputable="isDisputable(entry.questionId)"
+        :disputing="disputingId === entry.questionId"
+        @dispute="sendDispute(entry.questionId)"
+      />
+
+      <PlayText
+        v-if="entry.disputeStatus === 'pending'"
+        role="notice"
+        class="text-amber-700"
+      >
+        Contestation en cours…
+      </PlayText>
+      <PlayText
+        v-else-if="entry.disputeStatus === 'rejected'"
+        role="notice"
+        class="text-amber-700"
+      >
+        Contestation refusée
+      </PlayText>
+    </div>
 
     <!-- Ce qui reste à faire pour qu'elle quitte le pool : les Réussites se
          lisent sur le seuil, pas seules. -->
@@ -19,22 +45,7 @@
       role="aside"
       class="text-amber-800/80"
     >
-      À revoir : {{ entry.poolSuccesses }}/{{ poolSuccessesToLeave }} réussite{{ poolSuccessesToLeave > 1 ? 's' : '' }} pour sortir du pool
-    </PlayText>
-
-    <PlayText
-      v-if="entry.disputeStatus === 'pending'"
-      role="notice"
-      class="text-amber-700"
-    >
-      Contestation en cours…
-    </PlayText>
-    <PlayText
-      v-else-if="entry.disputeStatus === 'rejected'"
-      role="notice"
-      class="text-amber-700"
-    >
-      Contestation refusée
+      {{ entry.poolSuccesses }}/{{ poolSuccessesToLeave }} réussite{{ poolSuccessesToLeave > 1 ? 's' : '' }} pour sortir du Pool des Échecs
     </PlayText>
   </div>
 </template>
