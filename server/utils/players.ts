@@ -12,6 +12,7 @@ import {
   recoveryQuestions,
   reservations,
   seenQuestions,
+  settings,
   users,
 } from '../db/schema'
 import { nextFloorTotal } from './deck'
@@ -151,9 +152,8 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
  * mondes. Voir specs/admin.md#gestion-des-joueurs.
  */
 export async function resetPlayer(db: Database, player: User, now: Date): Promise<void> {
-  // La partie et ses compteurs repartent de zéro, le palmarès d'un vrai joueur
-  // reste ; celui d'un joueur test tombe avec le reste.
-  // Voir specs/succes.md#remise-à-zéro.
+  // La partie, ses compteurs et son palmarès repartent de zéro, vrai joueur
+  // comme joueur test. Voir specs/succes.md#remise-à-zéro.
   await db.batch([
     db.delete(seenQuestions).where(eq(seenQuestions.userId, player.id)),
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
@@ -195,16 +195,20 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         recoveryLessonAt: null,
         spellbookLessonAt: null,
         // Le palmarès porté tombe avec les lignes qu'il double : le laisser
-        // plein ferait croire au jeu que le joueur test possède encore ce qu'on
+        // plein ferait croire au jeu que le joueur possède encore ce qu'on
         // vient d'effacer, et aucune « première fois » ne se réécrirait.
         // Voir server/db/schema.ts.
-        ...player.isTest ? { achievementsHeld: [] } : {},
+        achievementsHeld: [],
       })
       .where(eq(users.id, player.id)),
     // Dans le même lot que le palmarès qui les double, et non à part : une
     // interruption entre les deux laisserait un palmarès plein sur des lignes
     // disparues. Rien ne dépend de cette ligne avant les autres, donc un seul
     // aller-retour lui suffit autant qu'au reste de la remise à zéro.
-    ...player.isTest ? [db.delete(achievements).where(eq(achievements.userId, player.id))] : [],
+    db.delete(achievements).where(eq(achievements.userId, player.id)),
+    // « Premier en haut » tombe avec le reste, et sa place se libère : le
+    // prochain à quitter l'étage 1, lui compris, le gagne. Voir
+    // specs/succes.md#remise-à-zéro.
+    db.update(settings).set({ firstAscensionUserId: null }).where(eq(settings.firstAscensionUserId, player.id)),
   ])
 }

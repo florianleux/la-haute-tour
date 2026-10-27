@@ -47,7 +47,7 @@
 - **Repartir de zéro** efface la partie du joueur (étage, vies, sorts en poche, Objets, nom d'aventurier, genre, leçons de Michel, questions vues et ratées, effets, contestations n'y survivent pas) et le remet à l'étage 1, vies pleines, devant l'introduction à rejouer — c'est elle qui redonne le Fromage — même geste que pour un joueur test (voir plus bas), sans le monde scellé qui les sépare : celui-ci touche un vrai compte. Pensé pour un joueur bloqué ou testé en solo, pas pour un usage courant en partie live.
   - Les effets effacés sont ceux qu'il subit **et** les sorts qu'il a lancés sur d'autres joueurs : ceux-là perdent les effets qu'il leur avait posés.
   - Les contestations effacées le sont toutes, en cours comme tranchées : gardée, une contestation tranchée interdirait de recontester une question ratée de nouveau. Les réponses qu'elle a fait accepter restent sur la question.
-  - Ses compteurs repartent de zéro et ses succès restent, sauf pour un joueur test qui les perd : voir [`succes.md`](./succes.md#remise-à-zéro).
+  - Ses compteurs et ses succès repartent de zéro, vrai joueur comme joueur test : voir [`succes.md`](./succes.md#remise-à-zéro).
   - Les pertes de focus restent : ce sont des drapeaux d'administration, pas la partie.
 - L'avatar est le hash renvoyé par Discord à la connexion, resynchronisé à chaque login. Faute de hash, l'avatar par défaut du compte.
 

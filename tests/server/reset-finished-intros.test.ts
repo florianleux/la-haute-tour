@@ -85,8 +85,9 @@ describe('la remise à zéro des introductions finies sans Fromage', () => {
     return userId
   }
 
-  // Un joueur test perd aussi son palmarès, comme sous le geste de l'admin.
-  it.each([false, true])('remet le joueur comme le ferait l admin (joueur test : %s)', async (isTest) => {
+  // Sur un joueur test seulement : la migration, déjà jouée, gardait le
+  // palmarès d'un vrai joueur, que le geste de l'admin efface depuis.
+  it.each([true])('remet le joueur comme le ferait l admin (joueur test : %s)', async (isTest) => {
     const byAdmin = await playing(`admin-reset-${isTest}`, isTest)
     const byMigration = await playing(`migration-reset-${isTest}`, isTest)
 

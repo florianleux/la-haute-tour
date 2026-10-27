@@ -234,7 +234,8 @@ export async function unlock(
 /**
  * Le joueur réclame d être le premier en haut de l étage 1. L écriture ne passe
  * que tant que la place est libre, donc deux joueurs qui franchissent ensemble ne
- * peuvent pas l obtenir tous les deux — et personne ne la reprend ensuite.
+ * peuvent pas l obtenir tous les deux — et personne ne la reprend ensuite, sauf
+ * si son détenteur est remis à zéro (resetPlayer la libère).
  *
  * Ni les joueurs test ni l admin ne la réclament : les premiers vivent dans un
  * monde scellé, le second arbitre les parties sans y peser. Sans cela le succès

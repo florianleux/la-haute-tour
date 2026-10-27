@@ -122,7 +122,8 @@ Même raison, même absence de correctif.
 ### Premier sur le serveur — 1
 
 Premier joueur à franchir l'étage 1. Un seul succès pour tout le jeu, réclamé une
-fois et jamais réattribué. Gagné à `floorEnd` (voir « Progression » plus haut) :
+fois. Il ne se réattribue que si son détenteur est remis à zéro (voir
+[Remise à zéro](#remise-à-zéro)). Gagné à `floorEnd` (voir « Progression » plus haut) :
 pas besoin d'avoir battu le boss de l'étage 1.
 
 **Les joueurs test en sont exclus**, comme de tout ce qui touche aux vrais
@@ -148,10 +149,9 @@ distingue pas ces cas, et n'a pas à le faire.
 Fromage quitte le sac. C'est le premier succès du mur, en haut à gauche : le
 premier qu'on gagne, avant toute question.
 
-Le Fromage ne se donne qu'une fois par partie. Après une remise à zéro, le
-redonner ne redébloque rien, le succès est déjà acquis — sauf pour un joueur
-test, dont les succès s'effacent avec le reste (voir
-[Remise à zéro](#remise-à-zéro)) : lui le regagne.
+Le Fromage ne se donne qu'une fois par partie. Après une remise à zéro, les
+succès s'effacent avec le reste (voir [Remise à zéro](#remise-à-zéro)) : le
+joueur le regagne.
 
 ## Ce qui porte les succès
 
@@ -203,13 +203,13 @@ pouvait être réécrite dans un sens, elle devrait pouvoir l'être dans l'autre
 
 ## Remise à zéro
 
-Remettre un joueur à zéro efface sa partie, pas son palmarès : ses compteurs —
-série, questions vues, jours joués — repartent de zéro, ses succès restent.
+Remettre un joueur à zéro efface sa partie **et son palmarès** : ses compteurs —
+série, questions vues, jours joués — repartent de zéro, ses succès aussi. Vrai
+joueur comme joueur test : une partie neuve se regagne entière, et une « première
+fois » se rejoue. Voir [`admin.md`](./admin.md#gestion-des-joueurs).
 
-**Sauf pour un joueur test**, dont les succès sont effacés avec le reste. Ils
-existent précisément pour rejouer des situations : sans cela, une « première fois »
-ne se testerait qu'une seule fois par joueur test, et le banc d'essai s'userait à
-la première utilisation. Voir [`admin.md`](./admin.md#joueurs-test).
+« Premier sur le serveur » tombe aussi, et sa place se libère : le prochain
+joueur à quitter l'étage 1, le joueur remis à zéro compris, le gagne.
 
 ## Ce que les Succès n'apportent pas
 
