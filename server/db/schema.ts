@@ -168,6 +168,18 @@ export const users = sqliteTable('users', {
    */
   streak: integer('streak').notNull().default(0),
   /**
+   * Les PV du boss du combat en cours. Null hors combat : avant le premier, et
+   * dès la défaite, qui rend le joueur au camp. Zéro, le boss est battu : au
+   * dernier étage la partie s'arrête là, ailleurs « Continuer » franchit le
+   * palier et l'efface. Voir specs/boss.md.
+   */
+  bossHp: integer('boss_hp'),
+  /**
+   * Combien de combats le joueur a ouverts contre le boss de son étage. Remis à
+   * zéro au franchissement du palier, comme `floorCursor`. Voir specs/boss.md.
+   */
+  bossAttemptNumber: integer('boss_attempt_number').notNull().default(0),
+  /**
    * Questions vues depuis la dernière remise à zéro du joueur, tous étages et
    * toutes tentatives confondus. Ne redescend jamais d'ici là.
    *
@@ -407,6 +419,28 @@ export const recoveryQuestions = sqliteTable('recovery_questions', {
   primaryKey({ columns: [table.userId, table.questionId] }),
   index('recovery_questions_user_position_idx').on(table.userId, table.position),
 ])
+
+/**
+ * Les épreuves du combat de boss en cours : tirées à son ouverture, dans un
+ * ordre mélangé, puis servies une à une. Comme le tirage d'un rattrapage, elles
+ * n'existent que le temps du combat — le suivant les remplace, `crossFloor` les
+ * efface. Voir specs/boss.md.
+ */
+export const bossTrials = sqliteTable('boss_trials', {
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  flagSlug: text('flag_slug')
+    .notNull()
+    .references(() => flags.slug, { onDelete: 'cascade' }),
+  position: integer('position').notNull(),
+  /** Fixée quand l'épreuve est servie : son chrono court. Null tant qu'elle attend son tour. */
+  expiresAt: integer('expires_at', { mode: 'timestamp' }),
+  /** Null tant que l'épreuve n'est pas jugée. */
+  resolvedAt: integer('resolved_at', { mode: 'timestamp' }),
+  correct: integer('correct', { mode: 'boolean' }),
+  submittedAnswer: text('submitted_answer'),
+}, table => [primaryKey({ columns: [table.userId, table.position] })])
 
 /**
  * Une contestation : le joueur affirme que sa réponse valait la bonne, l'admin
@@ -671,3 +705,4 @@ export type ActiveEffect = typeof activeEffects.$inferSelect
 export type Settings = typeof settings.$inferSelect
 export type Achievement = typeof achievements.$inferSelect
 export type Flag = typeof flags.$inferSelect
+export type BossTrial = typeof bossTrials.$inferSelect

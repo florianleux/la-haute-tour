@@ -8,66 +8,17 @@
     :lives="lives"
     :max-lives="rules.lives"
   >
-    <!-- ponytail: cadre provisoire, écrit dans la page en attendant son dessin ;
-         il deviendra un composant avec lui. Au milieu : le chrono, le drapeau,
-         le champ, puis le verdict. Tout est en `dvh`, réglé sur une fenêtre de
-         880 px de haut (1dvh = 8,8 px) : le cadre garde sa place et sa part de
-         l'écran à toute taille. L'enveloppe, invisible, fait 101,8dvh (896 px) :
-         le bouton, dimensionné en `cqw`, s'y ancre. -->
-    <div class="fixed left-1/2 top-[14dvh] z-10 w-[101.8dvh] -translate-x-1/2 @container text-center">
-      <!-- Le cadre visible, en portrait 8:9 : 54,5dvh de large, soit 480×540 px.
-           Ses textes, en `cqw`, se règlent sur lui, marges de 0,9dvh déduites
-           (464 px). Le drapeau y fait 43,3dvh (381 px). Le vide en haut et en
-           bas attend le chrono rond et un message. -->
-      <div class="mx-auto flex aspect-8/9 w-[54.5dvh] flex-col items-center justify-center gap-[1.8dvh] rounded-[1.8dvh] bg-amber-100 px-[0.9dvh] @container">
-        <PlayText
-          v-if="verdict === null"
-          role="timer"
-          as="span"
-          class="text-[4cqw] text-amber-600"
-        >
-          {{ secondsLeft }}
-        </PlayText>
-        <VerdictMark
-          v-else
-          :correct="verdict"
-        />
-
-        <template v-if="verdict === null">
-          <img
-            :src="`/images/boss/1/flags/${flag.image}.webp`"
-            alt="Le drapeau à reconnaître"
-            class="aspect-2/1 w-[43.3dvh] object-contain drop-shadow-md"
-          >
-          <BaseParchmentInput
-            :key="flag.image"
-            v-model="typed"
-            @submit="answer"
-          />
-        </template>
-
-        <template v-else>
-          <PlayText
-            role="headline"
-            :class="headline.ink"
-          >
-            {{ headline.text }}
-          </PlayText>
-          <PlayText
-            role="answer"
-            class="text-amber-800"
-          >
-            {{ flag.answerLabel }}
-          </PlayText>
-        </template>
-      </div>
-
-      <BaseCardButton
-        :label="verdict === null ? 'Valider' : over ? 'Rejouer' : 'Suivant'"
-        anchor="image-bottom"
-        @click="verdict === null ? answer() : next()"
-      />
-    </div>
+    <BossFlagTrial
+      :image="flag.image"
+      :seconds-left="secondsLeft"
+      :verdict="verdict === null ? null : { correct: verdict, answerLabel: flag.answerLabel }"
+      :outcome="bossHp === 0 ? 'victory' : lives === 0 ? 'defeat' : null"
+      :model-value="typed"
+      :action-label="over ? 'Rejouer' : 'Suivant'"
+      @update:model-value="typed = $event"
+      @submit="answer"
+      @advance="next"
+    />
   </BossArena>
 </template>
 
@@ -89,13 +40,10 @@ import { BOSSES } from '~~/utils/bosses'
 definePageMeta({ admin: true })
 
 const rules = rulesForFloor(1)
-// ponytail: les PV du boss et le chrono d'une épreuve ne sont pas encore dans
-// le jeu de règles — le chrono est propre à chaque boss (specs/boss.md). Ils y
-// entrent avec le vrai combat (#34 à #44) ; ce banc les lira alors comme les vies.
-const FULL_BOSS_HP = 7
+const FULL_BOSS_HP = rules.bossHp
 /** Julien Le Perse. */
 const BOSS = BOSSES[1]!
-const SECONDS = 30
+const SECONDS = rules.bossTrialTimerMs / 1000
 
 const { data: fight } = await useAsyncData(
   'boss-bench-flags',
@@ -129,18 +77,6 @@ const secondsLeft = ref(SECONDS)
 
 const flag = computed(() => order.value[index.value])
 const over = computed(() => bossHp.value === 0 || lives.value === 0)
-
-const headline = computed(() => {
-  if (bossHp.value === 0) {
-    return { text: 'Victoire !', ink: 'text-emerald-700' }
-  }
-  if (lives.value === 0) {
-    return { text: 'Défaite...', ink: 'text-rose-700' }
-  }
-  return verdict.value
-    ? { text: 'Correct !', ink: 'text-emerald-700' }
-    : { text: 'Incorrect...', ink: 'text-rose-700' }
-})
 
 function answer(): void {
   if (verdict.value !== null) {

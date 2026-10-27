@@ -19,6 +19,8 @@ export function phaseLabel(phase: Phase): string {
       return "Au palier";
     case "deckEnd":
       return "Deck épuisé";
+    case "bossFight":
+      return "Contre le boss";
     case "gameOver":
       return "Partie terminée";
   }
@@ -56,8 +58,9 @@ export function nextActionLabel(state: GameState): string {
     return NEXT;
   }
 
-  if (state.phase === "floorEnd") {
-    return "Continuer vers l'étage suivant";
+  // Au combat : l'épreuve suivante, ou, le boss battu, le palier franchi.
+  if (state.phase === "bossFight") {
+    return state.boss?.outcome === "victory" ? "Continuer" : NEXT;
   }
 
   // Un verdict lu en pleine ascension : la suite est la question d'après.
@@ -116,7 +119,37 @@ export interface RecoveryLine {
  * Voir specs/ecrans.md#principes.
  */
 export function isAnswering(state: GameState | null): boolean {
-  return Boolean(state?.question);
+  return runningTimer(state) !== null;
+}
+
+/** Ce qui court, question ou épreuve de boss : de quoi rendre son chrono et envoyer à temps. */
+export interface RunningTimer {
+  /** Change d'une question ou d'une épreuve à la suivante : une seule réponse partie par id. */
+  id: string;
+  expiresAt: string;
+  focusGraceMs: number;
+}
+
+/** La question servie, ou l'épreuve de boss servie. Null quand rien ne court. */
+export function runningTimer(state: GameState | null): RunningTimer | null {
+  const trial = state?.boss?.trial;
+  // L'échéance désigne l'épreuve : fixée à son service, elle ne se répète pas,
+  // là où un même drapeau peut revenir d'un combat à l'autre.
+  return state?.question ?? (trial ? { id: trial.expiresAt, expiresAt: trial.expiresAt, focusGraceMs: trial.focusGraceMs } : null);
+}
+
+/**
+ * La fin d'un combat de boss qui se lit avant la phase d'après : la défaite,
+ * sur son outro, avant le camp en attente ; la victoire au dernier étage, sur
+ * l'arène, avant la fin de partie. Désignée pour que la page ne la montre
+ * qu'une fois — la défaite par l'échéance de son attente, propre à chacune.
+ * Null partout ailleurs.
+ */
+export function bossEndId(state: GameState): string | null {
+  if (state.phase === "cooldown" && state.boss?.outcome === "defeat") {
+    return state.cooldownUntil;
+  }
+  return state.phase === "gameOver" && state.boss?.outcome === "victory" ? "victory" : null;
 }
 
 /**
@@ -220,6 +253,8 @@ export interface PlayClientState {
   chestOf: string | null;
   /** La question de la chute que le joueur lit encore. */
   fallenOn: string | null;
+  /** La fin de combat que le joueur lit encore (bossEndId). */
+  bossEndOn?: string | null;
 }
 
 const NO_DETOUR: PlayClientState = { chestOf: null, fallenOn: null };
@@ -235,7 +270,8 @@ export type PlayView = {
 } & (
   | { card: "question"; question: ServedQuestion }
   | { card: "chest"; chest: ChestView }
-  | { card: "recovery" | "cooldown" | "result" }
+  | { card: "recovery" | "cooldown" | "result" | "bossDoor" | "bossOutro" }
+  | { card: "bossFight"; boss: NonNullable<GameState["boss"]> }
 );
 
 /**
@@ -266,6 +302,26 @@ export function playView(
   const readingFall = atCamp && onVerdict(client.fallenOn);
   const viewingChest = onVerdict(client.chestOf);
   const next: PlayAction = { label: nextActionLabel(state), move: "advance" };
+
+  // La fin du combat se lit avant la phase d'après, comme une chute avant le
+  // poster : la défaite sur son outro, la victoire du dernier étage sur
+  // l'arène. Voir specs/spec.md#glossaire (Outro de défaite).
+  const ended = bossEndId(state);
+  if (ended !== null && ended === client.bossEndOn && state.boss) {
+    return state.boss.outcome === "defeat"
+      ? { screen, card: "bossOutro", action: { label: "Redescendre", move: "leave" } }
+      : { screen, card: "bossFight", boss: state.boss, action: { label: "Continuer", move: "leave" } };
+  }
+
+  // Le combat : l'arène sert l'épreuve, puis son verdict et la suite.
+  if (state.phase === "bossFight" && state.boss) {
+    return { screen, card: "bossFight", boss: state.boss, action: state.boss.trial ? null : next };
+  }
+
+  // Le palier, verdict lu : le joueur est devant la porte, qui porte ses gestes.
+  if (state.phase === "floorEnd" && !screen.verdict) {
+    return { screen, card: "bossDoor", action: null };
+  }
 
   // Avant l'attente : le rattrapage tiré porte sa question et son verdict.
   // Pendant une question, aucune action à part répondre.

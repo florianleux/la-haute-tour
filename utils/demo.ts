@@ -100,6 +100,7 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     maintenance: false,
     effects: [],
     unlocked: [],
+    boss: null,
     ...overrides,
   }
 }

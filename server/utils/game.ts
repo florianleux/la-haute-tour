@@ -25,6 +25,7 @@ import {
   playedToday,
   unlock,
 } from './achievements'
+import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
@@ -35,6 +36,7 @@ import { rulesWithEffects, SPELLS } from './spellbook'
 import {
   acceptedAnswers,
   activeEffects,
+  bossTrials,
   deckFloors,
   disputes,
   missedPool,
@@ -47,6 +49,7 @@ import {
   seenQuestions,
   users,
 } from '../db/schema'
+import type { BossView, HeldTrial } from './boss'
 import type { EffectStake, EffectView, PlacedEffect } from './effects'
 import type { AchievementId } from '../../shared/utils/achievements'
 import type { LessonId } from '../../shared/utils/lessons'
@@ -196,6 +199,11 @@ export interface GameState {
    * qu'aucune garde n'ait à s'en souvenir. Voir specs/succes.md#affichage.
    */
   unlocked: AchievementId[]
+  /**
+   * Le combat de boss : PV, épreuve servie (sans ce qui la valide), dernier
+   * verdict et terme. Null hors combat. Voir specs/boss.md.
+   */
+  boss: BossView | null
 }
 
 /**
@@ -224,6 +232,8 @@ export interface PlayerSnapshot {
   question?: Question
   /** Le tirage du rattrapage en cours, vide hors rattrapage. Lu dans le même lot. */
   recoveryRun: RecoveryQuestion[]
+  /** Les épreuves du combat de boss, vides hors combat. Lues dans le même lot. */
+  trials: HeldTrial[]
 }
 
 /**
@@ -261,6 +271,14 @@ function playedRules(snapshot: PlayerSnapshot, floor = snapshot.user.currentFloo
     // ne sert que ceux-là. Voir server/utils/mechanics.ts#isBorneBy.
     snapshot.effects.filter(effect => effect.state === 'active' || isCooldownBound(effect.spell)),
   )
+}
+
+/**
+ * L'étage est vu en entier : la tentative qui s'ouvre au bout d'une attente est
+ * un combat de boss, où les Sorts n'agissent pas. Voir specs/boss.md.
+ */
+function atBoss(snapshot: PlayerSnapshot): boolean {
+  return snapshot.user.floorSeen >= snapshot.floorTotal
 }
 
 /** Une question encore en jeu, c'est-à-dire réservée et non résolue. */
@@ -317,12 +335,14 @@ function snapshotQueries(db: Database, userId: number) {
       .from(recoveryQuestions)
       .where(eq(recoveryQuestions.userId, userId))
       .orderBy(recoveryQuestions.position),
+    // Vide hors combat de boss, pour la même raison.
+    trialsQuery(db, userId),
   ] as const
 }
 
 type SnapshotQueries = ReturnType<typeof snapshotQueries>
 
-function toSnapshot([[row], [held], effects, recoveryRun]: BatchResponse<SnapshotQueries>): PlayerSnapshot {
+function toSnapshot([[row], [held], effects, recoveryRun, trials]: BatchResponse<SnapshotQueries>): PlayerSnapshot {
   return {
     // Le joueur porte ses deux décomptes de questions vues, il ne les compte
     // plus : les compter coûtait une ligne par question déjà vue, à chaque
@@ -337,6 +357,7 @@ function toSnapshot([[row], [held], effects, recoveryRun]: BatchResponse<Snapsho
     reservation: held?.reservation,
     question: held?.question,
     recoveryRun,
+    trials: toHeldTrials(trials),
   }
 }
 
@@ -676,6 +697,10 @@ async function resolve(
   // palier. Au dernier étage il n'y a plus de clic : `gameOver` ne porte aucune
   // action, personne ne repasse. Voir utils/phase.ts.
   const floorDone = fresh.floorSeen >= snapshot.floorTotal
+  // Le palier vers un étage qui existe : c'est là que l'étage suivant est
+  // « atteint », au sens des succès — pas à la victoire sur le boss, qui n'est
+  // qu'une porte de plus. Voir ADR 0007.
+  const crossing = floorDone && snapshot.nextFloorTotal > 0
 
   const earned = [
     ...answeredAchievements(fresh, correct, answer === '', cooldownUntil !== null),
@@ -686,6 +711,7 @@ async function resolve(
           streak: fresh.streak,
         })
       : [],
+    ...crossing ? earnedByCrossing(user.currentFloor) : [],
   ]
 
   const outcome = await db.batch([
@@ -721,9 +747,13 @@ async function resolve(
     return { snapshot: await loadSnapshot(db, user.id), unlocked: [] }
   }
 
+  // Seul le premier étage peut faire un premier arrivé : réclamer la place
+  // coûterait une écriture par palier pour rien.
+  const firstAscent = crossing && user.currentFloor === 1 ? await claimFirstAscent(db, user) : []
+
   return {
     snapshot: { ...snapshot, user: fresh, reservation: resolved },
-    unlocked: await unlock(db, snapshot.user, earned, now),
+    unlocked: await unlock(db, snapshot.user, [...earned, ...firstAscent], now),
   }
 }
 
@@ -825,6 +855,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     // Vide par défaut, et rempli par la seule fonction qui vient d'écrire :
     // un état construit sans rien débloquer n'annonce rien.
     unlocked: [] as AchievementId[],
+    boss: bossView(user, snapshot.trials, rulesForFloor(user.currentFloor)),
   }
 
   if (reservation && question) {
@@ -962,6 +993,14 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     return withUnlocked(stateFrom(resolution.snapshot, now), resolution.unlocked)
   }
 
+  // Une épreuve de boss dont le chrono est tombé : fausse, comme une question.
+  const trial = servedTrial(snapshot.trials)
+
+  if (trial?.expiresAt && isExpired(trial.expiresAt, rulesForFloor(snapshot.user.currentFloor), now)) {
+    await resolveTrial(db, snapshot.user, trial, '', rulesForFloor(snapshot.user.currentFloor), now)
+    return buildState(db, user.id, now)
+  }
+
   // Une attente qui vient de s'achever est le seul cas où une lecture a quelque
   // chose à écrire. Un palier ou une fin de partie n'en font pas partie : il n'y
   // a plus de vies à y rendre.
@@ -971,7 +1010,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     return stateFrom(snapshot, now)
   }
 
-  await resumeIfPoolTooSmall(db, snapshot.user, snapshot.recoveryRun.length > 0, now)
+  await resumeIfPoolTooSmall(db, snapshot.user, snapshot.recoveryRun.length > 0, !atBoss(snapshot), now)
 
   return buildState(db, user.id, now)
 }
@@ -986,6 +1025,8 @@ async function resumeIfPoolTooSmall(
   user: User,
   /** Un rattrapage est tiré — lu dans l'instantané de l'appelant. */
   recovering: boolean,
+  /** Faux quand l'étage est vu en entier : la tentative qui s'ouvre est un combat de boss. Voir openAttempt. */
+  anchorEffects: boolean,
   now: Date,
 ): Promise<void> {
   const elapsed = user.cooldownUntil !== null && now >= user.cooldownUntil
@@ -1001,7 +1042,7 @@ async function resumeIfPoolTooSmall(
   // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
   // contestable. Voir specs/validation.md#contestation. Ouverte avant tout le
   // reste : si une autre requête vient de le faire, il n'y a plus rien à écrire.
-  if (!await openAttempt(db, user, now)) {
+  if (!await openAttempt(db, user, now, anchorEffects)) {
     return
   }
 
@@ -1078,14 +1119,16 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   }
 
   if (phase === 'floorEnd') {
-    // Les règles de l'étage d'au-dessus : les effets ancrés le suivent, l'étage
-    // change sous eux.
-    const crossed = await crossFloor(db, current, fresh, playedRules(current, fresh.currentFloor + 1), now)
+    // Le verdict de la question qui a fini l'étage se quitte : le joueur
+    // arrive devant la porte. Le combat, lui, ne s'ouvre que par son geste
+    // propre, au terme de l'introduction (`enterBoss`) : un « Suivant » en
+    // retard ne doit pas le lancer sous la porte. Voir specs/boss.md.
+    await db.delete(reservations).where(eq(reservations.userId, user.id))
+    return withUnlocked(await buildState(db, user.id, now), unlocked)
+  }
 
-    // L'étage a changé, donc le décompte des questions vues et le total de
-    // l'étage avec lui : on relit plutôt que de rapiécer un instantané qui ne
-    // décrit plus le joueur. Cinq fois par partie, pas par question.
-    return withUnlocked(await buildState(db, user.id, now), [...unlocked, ...crossed])
+  if (phase === 'bossFight') {
+    return withUnlocked(await advanceBossFight(db, current, fresh, now), unlocked)
   }
 
   if (fresh.lives <= 0) {
@@ -1197,56 +1240,79 @@ export async function openPlayerChest(
 }
 
 /**
+ * « Entrer », au terme de la porte et de l'introduction : ouvre le combat de
+ * boss. Sans effet hors du palier, verdict quitté — la porte s'atteint par
+ * `serveNextQuestion`. Voir specs/boss.md.
+ */
+export async function enterBoss(db: Database, user: User, now: Date): Promise<GameState> {
+  const snapshot = await loadSnapshot(db, user.id)
+
+  if (phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) !== 'floorEnd' || snapshot.reservation) {
+    return stateFrom(snapshot, now)
+  }
+
+  await enterBossFight(db, snapshot.user, rulesForFloor(snapshot.user.currentFloor), now)
+  return buildState(db, user.id, now)
+}
+
+/**
+ * La suite d'un combat de boss. Battu, « Continuer » franchit le palier sur une
+ * tentative d'ascension neuve : vies pleines, et ce qui attendait la prochaine
+ * tentative s'y ancre — c'est elle, la « tentative suivante » que le combat a
+ * laissé passer. Sinon, l'épreuve suivante. Voir specs/boss.md.
+ */
+async function advanceBossFight(db: Database, snapshot: PlayerSnapshot, user: User, now: Date): Promise<GameState> {
+  if (user.bossHp !== 0) {
+    await serveNextTrial(db, user, snapshot.trials, rulesForFloor(user.currentFloor), now)
+    return buildState(db, user.id, now)
+  }
+
+  // Ouverte d'abord : si une autre requête vient de le faire, c'est elle qui
+  // franchit. Ouverte sur l'étage d'au-dessus : les règles rendues sont celles
+  // de la tentative qui s'y jouera, effets compris.
+  const attemptRules = await openAttempt(db, { ...user, currentFloor: user.currentFloor + 1 }, now)
+
+  if (attemptRules) {
+    await closeAttempt(db, user, now)
+    await crossFloor(db, user, attemptRules, now)
+  }
+
+  return buildState(db, user.id, now)
+}
+
+/**
  * Franchir le palier : l'étage monte d'un cran, le Pool Échecs de celui qu'on
- * quitte est abandonné — les ratées non rattrapées ne suivent pas le joueur — et
- * la question qu'il tenait reste en bas avec son verdict.
- * Appelée sur la phase `floorEnd`, qui garantit qu'un étage suivant existe.
+ * quitte est abandonné — les ratées non rattrapées ne suivent pas le joueur —,
+ * le combat de boss s'efface, et la première question du suivant est réservée.
+ * Appelée sur la victoire contre le boss, qui garantit qu'un étage suivant existe.
  * Voir specs/mecanique.md#fin-détage.
  */
-async function crossFloor(
-  db: Database,
-  snapshot: PlayerSnapshot,
-  user: User,
-  rules: FloorRules,
-  now: Date,
-): Promise<AchievementId[]> {
+async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date): Promise<void> {
   const currentFloor = user.currentFloor + 1
 
-  // Franchir est un seul acte : en trois écritures séparées, une interruption
-  // au milieu abandonnerait le Pool Échecs d'un étage que le joueur n'a pas
+  // Franchir est un seul acte : en écritures séparées, une interruption au
+  // milieu abandonnerait le Pool Échecs d'un étage que le joueur n'a pas
   // quitté. Un batch plutôt qu'une transaction : sur Turso, le HTTP n'en porte
   // pas.
   await db.batch([
     db.delete(reservations).where(eq(reservations.userId, user.id)),
+    db.delete(bossTrials).where(eq(bossTrials.userId, user.id)),
     db
       .delete(missedPool)
       .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor))),
-    // Étage neuf : le décompte des questions vues repart de zéro avec lui.
-    // Écrit dans le même lot que l'étage, sinon un franchissement interrompu
-    // laisserait le joueur au palier suivant avec le décompte du précédent.
-    db.update(users).set({ currentFloor, floorSeen: 0 }).where(eq(users.id, user.id)),
+    // Étage neuf : le décompte des questions vues et le boss repartent de zéro
+    // avec lui. Écrits dans le même lot que l'étage, sinon un franchissement
+    // interrompu laisserait le joueur au palier suivant avec ceux du précédent.
+    db
+      .update(users)
+      .set({ currentFloor, floorSeen: 0, bossHp: null, bossAttemptNumber: 0 })
+      .where(eq(users.id, user.id)),
   ])
 
-  // Sans vie, on ne réserve rien : l'attente gagnée à l'étage d'en dessous
-  // attend le joueur au nouveau, et un chrono qui tournerait pendant cette
-  // attente lui coûterait une vie qu'il n'a pas.
-  if (user.lives > 0) {
-    // Étage neuf : le curseur repart de zéro, donc la première question de
-    // l'étage est la première de rang supérieur à 0.
-    await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, rules, now)
-  }
-
-  // Le sans-faute de l'étage quitté s'est gagné à sa dernière question, dans
-  // resolve() : ici on ne récompense que la montée elle-même.
-  const earned = [
-    ...earnedByCrossing(user.currentFloor),
-    // Seul le premier étage franchi peut faire un premier arrivé : au suivant, la
-    // place est prise depuis longtemps, et la réclamer coûterait une écriture par
-    // palier pour rien.
-    ...user.currentFloor === 1 ? await claimFirstAscent(db, user) : [],
-  ]
-
-  return unlock(db, snapshot.user, earned, now)
+  // Étage neuf : le curseur repart de zéro, donc la première question de
+  // l'étage est la première de rang supérieur à 0. Les succès de la montée se
+  // sont gagnés au palier, voir `resolve`.
+  await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, rules, now)
 }
 
 /** Ce qu'un tirage vient d'écrire, pour éviter d'aller le relire. */
@@ -1350,7 +1416,7 @@ async function advanceRecovery(
     // d'entrée — sinon elle empêcherait le rattrapage qu'elle rallonge.
     if (!canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
       // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
-      await resumeIfPoolTooSmall(db, user, false, now)
+      await resumeIfPoolTooSmall(db, user, false, !atBoss(snapshot), now)
       return buildState(db, user.id, now)
     }
 
@@ -1467,7 +1533,7 @@ async function finishRecovery(
     // décompte du verdict, qui ne connaît que les règles de l'étage. Ouverte
     // avant tout le reste : si une autre requête vient de le faire, c'est elle
     // qui sert la suite.
-    const attemptRules = await openAttempt(db, user, now)
+    const attemptRules = await openAttempt(db, user, now, !atBoss(snapshot))
 
     if (!attemptRules) {
       return withUnlocked(await buildState(db, user.id, now), unlocked)
@@ -1687,6 +1753,15 @@ export async function submitAnswer(
   const [accepted, ...rows] = await db.batch([acceptedQuery(db, user.id), ...snapshotQueries(db, user.id)])
   const snapshot = toSnapshot(rows)
   const { reservation } = snapshot
+  const trial = servedTrial(snapshot.trials)
+
+  // Une épreuve de boss : jugée côté serveur, comme une question. Une perte de
+  // focus y envoie la réponse en l'état, sans flag d'administration — la table
+  // des pertes de focus ne connaît que les questions du deck.
+  if (trial) {
+    await resolveTrial(db, snapshot.user, trial, answer, rulesForFloor(snapshot.user.currentFloor), now)
+    return buildState(db, user.id, now)
+  }
 
   if (!reservation || reservation.resolvedAt) {
     // Rien à résoudre : l'appareil qui a envoyé ça est en retard, pas fautif.

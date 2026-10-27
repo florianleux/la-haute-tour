@@ -10,6 +10,14 @@ describe('entrée dans la partie', () => {
 })
 
 const verdict = { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true }
+/** Un combat de boss en cours, son épreuve servie. */
+const fight = {
+  hp: 7,
+  maxHp: 7,
+  trial: { image: '0000000000000001', expiresAt: '2026-09-03T12:00:30.000Z', focusGraceMs: 1_000 },
+  verdict: null,
+  outcome: null,
+}
 
 const question = {
   id: 'q1',
@@ -166,10 +174,12 @@ describe('action de la page de jeu', () => {
     expect(nextActionLabel(state({ phase: 'ascent', verdict }))).toBe('Suivant')
   })
 
-  it('propose de franchir le palier, verdict de la dernière question compris', () => {
-    expect(nextActionLabel(state({ phase: 'floorEnd' }))).toBe('Continuer vers l\'étage suivant')
-    expect(nextActionLabel(state({ phase: 'floorEnd', verdict })))
-      .toBe('Continuer vers l\'étage suivant')
+  it('quitte le verdict de la dernière question de l étage d un « Suivant », vers la porte', () => {
+    expect(nextActionLabel(state({ phase: 'floorEnd', verdict }))).toBe('Suivant')
+  })
+
+  it('franchit le palier d un « Continuer », boss battu', () => {
+    expect(nextActionLabel(state({ phase: 'bossFight', boss: { ...fight, trial: null, outcome: 'victory' } }))).toBe('Continuer')
   })
 
   it('démarre, poursuit puis termine un rattrapage', () => {
@@ -303,10 +313,37 @@ describe('carte de jeu', () => {
       .toEqual({ card: 'recovery', action: { label: 'Suivant', move: 'advance' } })
   })
 
-  it('annonce le palier et la fin de partie sur le verdict', () => {
+  it('lit le verdict de la dernière question avant la porte, et la fin de partie sur le sien', () => {
     expect(card({ phase: 'floorEnd', verdict: right }))
-      .toEqual({ card: 'result', action: { label: 'Continuer vers l\'étage suivant', move: 'advance' } })
+      .toEqual({ card: 'result', action: { label: 'Suivant', move: 'advance' } })
     expect(card({ phase: 'gameOver', verdict: right })).toEqual({ card: 'result', action: null })
+  })
+
+  // specs/boss.md : la porte, le combat, l'outro de défaite.
+  it('mène à la porte une fois le verdict quitté : elle porte ses propres gestes', () => {
+    expect(card({ phase: 'floorEnd' })).toEqual({ card: 'bossDoor', action: null })
+  })
+
+  it('sert l épreuve sans autre bouton que répondre, puis la suite', () => {
+    expect(card({ phase: 'bossFight', boss: fight })).toEqual({ card: 'bossFight', action: null })
+    expect(card({ phase: 'bossFight', boss: { ...fight, trial: null } }))
+      .toEqual({ card: 'bossFight', action: { label: 'Suivant', move: 'advance' } })
+  })
+
+  it('montre l outro de la défaite que la page retient, puis le camp', () => {
+    const defeated = { phase: 'cooldown' as const, lives: 0, cooldownUntil: '2026-09-03T12:00:00.000Z', boss: { ...fight, trial: null, outcome: 'defeat' as const } }
+
+    expect(card(defeated, { chestOf: null, fallenOn: null, bossEndOn: defeated.cooldownUntil }))
+      .toEqual({ card: 'bossOutro', action: { label: 'Redescendre', move: 'leave' } })
+    expect(card(defeated).card).toBe('cooldown')
+  })
+
+  it('montre la victoire du dernier étage sur l arène, puis la fin de partie', () => {
+    const won = { phase: 'gameOver' as const, boss: { ...fight, hp: 0, trial: null, outcome: 'victory' as const } }
+
+    expect(card(won, { chestOf: null, fallenOn: null, bossEndOn: 'victory' }))
+      .toEqual({ card: 'bossFight', action: { label: 'Continuer', move: 'leave' } })
+    expect(card(won)).toEqual({ card: 'result', action: null })
   })
 })
 

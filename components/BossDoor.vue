@@ -1,5 +1,8 @@
 <template>
-  <div class="fixed inset-0 z-1 overflow-hidden bg-[#070d24] @container-size">
+  <div
+    class="fixed inset-0 z-1 overflow-hidden @container-size"
+    :class="BOSS_NIGHT"
+  >
     <!-- L'illustration couvre l'écran sans se déformer (BACKDROP_COVER) :
          elle déborde sur les côtés, du décor qu'on peut perdre. Tout ce qui
          s'y pose se place en % de la scène 16:9 au centre, et se mesure en
@@ -115,7 +118,7 @@
 // toutes les portes : seule l'entrée de BOSS_DOORS change d'un étage à l'autre.
 // Il n'affiche que ce qu'on lui donne ; la règle (qui peut poser, quand la
 // porte s'ouvre) reste au serveur. Banc : pages/test/door/[floor].vue.
-import { BACKDROP_BOX, BACKDROP_COVER, BACKDROP_SCENE } from '~~/utils/backdrop'
+import { BACKDROP_BOX, BACKDROP_COVER, BACKDROP_SCENE, BOSS_NIGHT } from '~~/utils/backdrop'
 import type { BossDoorEntry } from '~~/utils/bossDoors'
 import type { DialogueAction } from '~~/utils/dialogue'
 import { prefersReducedMotion, wait } from '~~/utils/motion'

@@ -1,5 +1,6 @@
 import { and, asc, count, eq, exists, inArray, max, min, sql } from 'drizzle-orm'
 import { pendingEffects } from './effects'
+import { rulesForFloor } from './rules'
 import { activeEffects, attempts, disputes, questions, seenQuestions, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
@@ -26,10 +27,22 @@ import type { User } from '../db/schema'
  * qui s'achève, et l'écriture qui la remplace part en dernier : seule la
  * première la trouve encore en place. Qui reçoit null n'a plus rien à écrire.
  */
-export async function openAttempt(db: Database, user: User, now: Date): Promise<FloorRules | null> {
+export async function openAttempt(
+  db: Database,
+  user: User,
+  now: Date,
+  /**
+   * Faux quand la tentative qui s'ouvre est un combat de boss : les Sorts n'y
+   * agissent pas, ce qui attendait reste en attente pour la tentative
+   * d'ascension suivante, et les vies sont celles de l'étage. Voir specs/boss.md.
+   */
+  anchorEffects = true,
+): Promise<FloorRules | null> {
   // Les vies de la tentative dépendent de ce qui l'attend : lu d'abord, puis
   // ancré dans le même lot que les vies.
-  const { ids, rules } = await pendingEffects(db, user)
+  const { ids, rules } = anchorEffects
+    ? await pendingEffects(db, user)
+    : { ids: [], rules: rulesForFloor(user.currentFloor) }
   const unchanged = and(eq(users.id, user.id), eq(users.attemptStartedAt, user.attemptStartedAt))
 
   const [, opened] = await db.batch([

@@ -173,35 +173,51 @@ describe('les succès en jeu', () => {
 
       const state = await submitAnswer(db, await reload(), 'Bordeaux', NOW)
 
-      expect(state.phase).toBe('gameOver')
+      // Le boss du dernier étage reste à battre : la tour, au sens des succès,
+      // est finie quand toutes ses questions sont vues. Voir ADR 0007.
+      expect(state.phase).toBe('floorEnd')
       expect(state.unlocked).toContain('GAME_COMPLETED')
       expect(state.unlocked).toContain(`FLAWLESS_FLOOR_${FLOOR_COUNT}`)
     })
   })
 
+  // Atteindre l'étage suivant se gagne sur la réponse qui finit l'étage, pas
+  // à la victoire sur le boss : il n'est qu'une porte de plus. Voir ADR 0007.
   describe('au palier', () => {
-    beforeEach(async () => {
-      const questionId = await createQuestion(db, { floor: 1, statement: 'Question de l étage 1 ?' })
-      await markSeen(db, player.id, questionId, { floor: 1 })
-      await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
-      player = await reload()
-    })
+    /** Un étage 2 où monter : sans lui, c'est la fin du deck. */
+    const floorAbove = (): Promise<string> => createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
 
-    it('annonce l étage atteint en franchissant', async () => {
-      const state = await serveNextQuestion(db, player, NOW)
+    it('annonce l étage atteint sur la réponse qui finit l étage', async () => {
+      await floorAbove()
+      await holdingLastQuestionOf(1)
 
+      const state = await submitAnswer(db, await reload(), 'Toulouse', NOW)
+
+      expect(state.phase).toBe('floorEnd')
       expect(state.unlocked).toContain('REACHED_FLOOR_2')
     })
 
+    it('ne l annonce pas en fin de deck : il n y a pas d étage où monter', async () => {
+      await holdingLastQuestionOf(1)
+
+      const state = await submitAnswer(db, await reload(), 'Bordeaux', NOW)
+
+      expect(state.phase).toBe('deckEnd')
+      expect(state.unlocked).not.toContain('REACHED_FLOOR_2')
+      expect(state.unlocked).not.toContain('FIRST_ASCENT')
+    })
+
     it('donne le premier arrivé en haut, à un seul joueur', async () => {
-      const state = await serveNextQuestion(db, player, NOW)
-      expect(state.unlocked).toContain('FIRST_ASCENT')
+      await floorAbove()
+      await holdingLastQuestionOf(1)
+      expect((await submitAnswer(db, await reload(), 'Bordeaux', NOW)).unlocked).toContain('FIRST_ASCENT')
 
+      // Le second finit le même étage, sur la même et unique question.
       const second = await createPlayer(db, { discordId: 'second', username: 'frodo' })
-      const questionId = await createQuestion(db, { floor: 1, statement: 'Une autre de l étage 1 ?' })
-      await markSeen(db, second, questionId, { floor: 1 })
+      await serveNextQuestion(db, await loadPlayer(db, second), NOW)
 
-      const other = await serveNextQuestion(db, await loadPlayer(db, second), NOW)
+      const other = await submitAnswer(db, await loadPlayer(db, second), 'Bordeaux', NOW)
+      expect(other.phase).toBe('floorEnd')
       expect(other.unlocked).not.toContain('FIRST_ASCENT')
     })
 
@@ -209,8 +225,10 @@ describe('les succès en jeu', () => {
     // pris au premier test qui suit l ouverture. Voir specs/succes.md.
     it('ne donne le premier arrivé ni à l admin ni à un joueur test', async () => {
       await db.update(users).set({ isAdmin: true }).where(eq(users.id, player.id))
+      await floorAbove()
+      await holdingLastQuestionOf(1)
 
-      const state = await serveNextQuestion(db, await reload(), NOW)
+      const state = await submitAnswer(db, await reload(), 'Bordeaux', NOW)
 
       expect(state.unlocked).not.toContain('FIRST_ASCENT')
       expect(await db.select().from(settings)).toEqual([])

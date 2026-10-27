@@ -8,8 +8,8 @@ import type { LootQuestionInput } from '../../server/utils/mechanics'
 const NOW = new Date('2026-09-03T12:00:00.000Z')
 const rules = rulesForFloor(1)
 
-function player(overrides: Partial<{ lives: number, currentFloor: number, cooldownUntil: Date | null }> = {}) {
-  return { lives: 3, currentFloor: 1, cooldownUntil: null, ...overrides }
+function player(overrides: Partial<{ lives: number, currentFloor: number, cooldownUntil: Date | null, bossHp: number | null }> = {}) {
+  return { lives: 3, currentFloor: 1, cooldownUntil: null, bossHp: null, ...overrides }
 }
 
 describe('phase', () => {
@@ -37,11 +37,11 @@ describe('phase', () => {
     expect(phaseOf(elapsed, NOW)).toBe('recovery')
   })
 
-  it('est le palier quand tout l étage est vu, la fin au dernier étage', () => {
+  it('est le palier quand tout l étage est vu, au dernier étage aussi : le boss vient avant la fin', () => {
     const done = { user: player(), hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
 
     expect(phaseOf(done, NOW)).toBe('floorEnd')
-    expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('gameOver')
+    expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('floorEnd')
   })
 
   it('ne conclut pas l étage tant qu une question est en jeu', () => {
@@ -50,17 +50,26 @@ describe('phase', () => {
     expect(phaseOf(held, NOW)).toBe('ascent')
   })
 
-  it('conclut l étage même sans vie : il n y a plus rien à y rattraper', () => {
-    const done = {
-      user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }),
-      hasLiveReservation: false,
-      seen: 10,
-      floorTotal: 10,
-      nextFloorTotal: 10,
-    }
+  // specs/boss.md#cas-à-0-vie : l'attente et le rattrapage passent avant le combat.
+  it('fait passer l attente et le rattrapage avant le boss quand l étage finit sans vie', () => {
+    const done = { hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
 
-    expect(phaseOf(done, NOW)).toBe('floorEnd')
-    expect(phaseOf({ ...done, user: player({ lives: 0, currentFloor: 6 }) }, NOW)).toBe('gameOver')
+    expect(phaseOf({ ...done, user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }) }, NOW)).toBe('cooldown')
+    expect(phaseOf({ ...done, user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() - 1) }) }, NOW)).toBe('recovery')
+  })
+
+  it('est le combat tant que le boss a des PV, et le reste sur la victoire à lire', () => {
+    const done = { hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
+
+    expect(phaseOf({ ...done, user: player({ bossHp: 7 }) }, NOW)).toBe('bossFight')
+    expect(phaseOf({ ...done, user: player({ bossHp: 0 }) }, NOW)).toBe('bossFight')
+  })
+
+  it('finit la partie sur le boss du dernier étage battu', () => {
+    const done = { hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 0 }
+
+    expect(phaseOf({ ...done, user: player({ currentFloor: 6, bossHp: 0 }) }, NOW)).toBe('gameOver')
+    expect(phaseOf({ ...done, user: player({ currentFloor: 6, bossHp: 3 }) }, NOW)).toBe('bossFight')
   })
 
   it('est la fin du deck quand l étage d au-dessus est vide, vies ou pas', () => {
@@ -69,7 +78,8 @@ describe('phase', () => {
     expect(phaseOf(done, NOW)).toBe('deckEnd')
     expect(phaseOf({ ...done, user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }) }, NOW)).toBe('deckEnd')
     expect(phaseOf({ ...done, hasLiveReservation: true }, NOW)).toBe('ascent')
-    expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('gameOver')
+    // Le dernier étage n'a jamais d'étage au-dessus : son boss passe quand même.
+    expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('floorEnd')
   })
 })
 

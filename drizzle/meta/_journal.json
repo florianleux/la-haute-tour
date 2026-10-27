@@ -253,6 +253,13 @@
       "when": 1793126220124,
       "tag": "0035_thin_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1793131105160,
+      "tag": "0036_tough_blackheart",
+      "breakpoints": true
     }
   ]
 }

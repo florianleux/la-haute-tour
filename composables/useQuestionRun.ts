@@ -2,7 +2,7 @@ import { useClockTick } from './useClockTick'
 import { useGameState } from './useGameState'
 import { usePlay } from './usePlay'
 import { formatCountdown } from '../utils/date'
-import { isCooldown } from '../utils/phase'
+import { isCooldown, runningTimer } from '../utils/phase'
 import type { Ref } from 'vue'
 import type { AnswerSource } from '~~/server/utils/mechanics'
 import type { GameState } from '~~/server/utils/game'
@@ -14,7 +14,7 @@ export interface QuestionRun {
   now: Ref<number>
   /** Ce que le joueur a tapé, conservé tant que la réponse n'est pas partie. */
   typed: Ref<string>
-  /** Secondes restantes sur la question en cours, null hors question. */
+  /** Secondes restantes sur la question ou l'épreuve de boss en cours, null sinon. */
   secondsLeft: Ref<number | null>
   /** Temps restant avant la reprise, tel qu'on le lit sur l'écran d'attente. */
   cooldownRemaining: Ref<string>
@@ -26,6 +26,8 @@ export interface QuestionRun {
   skipCooldown: () => Promise<void>
   /** Ouvre le coffre d'une question loot réussie. */
   openChest: () => Promise<void>
+  /** « Entrer » : ouvre le combat de boss. */
+  enterBoss: () => Promise<void>
   pending: Ref<boolean>
   /** Une action a échoué. */
   actionFailed: Ref<boolean>
@@ -66,7 +68,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   // après, ni la portée réactive ni l'instance Nuxt ne sont plus les siennes.
   // Un composable Nuxt appelé après l'await lève « called outside of setup ».
   const owner = getCurrentScope()
-  const { next, answer, skipCooldown, openChest, failed: actionFailed, pending } = usePlay()
+  const { next, answer, skipCooldown, openChest, enterBoss, failed: actionFailed, pending } = usePlay()
   const now = options.now ?? useClockTick(TICK_MS)
 
   const { state, failed: readFailed, loading, refresh } = await useGameState()
@@ -75,7 +77,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   const visible = options.visible ?? ref(true)
 
   const secondsLeft = computed<number | null>(() => {
-    const deadline = state.value?.question?.expiresAt
+    const deadline = runningTimer(state.value)?.expiresAt
     if (!deadline) {
       return null
     }
@@ -135,7 +137,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
 
     /** Envoie ce qui est saisi, une fois pour la question servie. */
     function sendOnce(source: AnswerSource): void {
-      const served = state.value?.question?.id
+      const served = runningTimer(state.value)?.id
       // Déjà partie au clic : le chrono qui tombe à zéro pendant l'animation de
       // jugement ne la renvoie pas.
       if (!served || autoSubmitted === served || pending.value) {
@@ -157,7 +159,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     // Voir specs/anti-triche.md#perte-de-focus.
     const leftAt = ref<number | null>(null)
 
-    watch([visible, () => state.value?.question?.id], ([seen, served]) => {
+    watch([visible, () => runningTimer(state.value)?.id], ([seen, served]) => {
       leftAt.value = seen || !served ? null : now.value
     })
 
@@ -165,7 +167,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     // passé : un alt-tab rattrapé n'est pas de la triche.
     watch([now, leftAt], () => {
       const since = leftAt.value
-      const grace = state.value?.question?.focusGraceMs
+      const grace = runningTimer(state.value)?.focusGraceMs
 
       if (since === null || grace === undefined || now.value - since < grace) {
         return
@@ -229,6 +231,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     advance,
     skipCooldown,
     openChest,
+    enterBoss,
     pending,
     actionFailed,
     readFailed,

@@ -17,6 +17,8 @@ export interface Play {
   skipCooldown: () => Promise<void>
   /** Ouvrir le coffre d'une question loot réussie. Le dé se jette côté serveur. */
   openChest: () => Promise<void>
+  /** « Entrer » : ouvrir le combat de boss, au terme de la porte et de l'introduction. */
+  enterBoss: () => Promise<void>
   /** True when the last action came back empty-handed. */
   failed: Ref<boolean>
   pending: Ref<boolean>
@@ -77,6 +79,7 @@ export function usePlay(): Play {
     answer: (text, source = 'player') => move('/api/game/answer', { answer: text, source }, judgingHold()),
     skipCooldown: () => move('/api/game/skip-cooldown'),
     openChest: () => move('/api/game/chest'),
+    enterBoss: () => move('/api/game/boss'),
     failed,
     pending,
   }

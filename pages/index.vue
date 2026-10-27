@@ -118,6 +118,40 @@
       @advance="goNext"
     />
 
+    <!-- Le palier, verdict lu : la porte du boss, puis son introduction. Au
+         terme, le serveur ouvre le combat. -->
+    <BossStage
+      v-else-if="view?.card === 'bossDoor' && bossStage"
+      :key="bossStage.floor"
+      :stage="bossStage"
+      @enter="enterBossFight"
+    />
+
+    <BossFightCard
+      v-else-if="view?.card === 'bossFight' && state && bossStage"
+      :lives="state.lives"
+      :max-lives="state.maxLives"
+      :boss="view.boss"
+      :stage="bossStage"
+      :player-name="user?.displayName ?? ''"
+      :portrait="playerPortrait(user?.gender ?? null)"
+      :model-value="typed"
+      :seconds-left="secondsLeft"
+      :submitting="pending"
+      :action="view.action"
+      :advancing="isRunning('advance')"
+      @update:model-value="typed = $event"
+      @submit="submit"
+      @advance="goNext"
+    />
+
+    <BossOutro
+      v-else-if="view?.card === 'bossOutro' && bossStage"
+      :boss="bossStage.boss"
+      :colors="bossStage.intro?.windowColors"
+      @leave="goNext"
+    />
+
     <BaseCard v-else>
       <BaseNotice v-if="readFailed">
         Impossible de lire ta partie. Recharge la page.
@@ -187,6 +221,7 @@ const {
   cooldownRemaining,
   submit,
   advance,
+  enterBoss,
   skipCooldown,
   openChest,
   pending,
@@ -254,18 +289,25 @@ watch(() => state.value?.verdict, (verdict) => {
 // page ne fait qu'exécuter.
 const chestOf = ref<string | null>(null)
 const fallenOn = ref<string | null>(null)
+// La fin d'un combat de boss, lue avant la phase d'après (l'outro de la
+// défaite, la victoire du dernier étage) : un troisième aller client, armé
+// comme la chute.
+const bossEndOn = ref<string | null>(null)
 
 const view = computed(() =>
   state.value
-    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value })
+    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value, bossEndOn: bossEndOn.value })
     : null,
 )
+
+/** Le boss de l'étage, sa porte et son introduction. */
+const bossStage = computed(() => state.value && bossStageOf(state.value.floor))
 
 // Le jeu qui rend la main au camp : voir le voile `campFade` du gabarit. Pas au
 // chargement (aucune carte avant), ni depuis la question d'essai, jouée sur le
 // camp sans le quitter.
 const campFade = ref(false)
-const PLAY_CARDS = new Set<PlayView['card']>(['question', 'result', 'chest', 'recovery'])
+const PLAY_CARDS = new Set<PlayView['card']>(['question', 'result', 'chest', 'recovery', 'bossOutro'])
 
 watch(() => view.value?.card, (card, previous) => {
   if (card === 'cooldown' && previous && PLAY_CARDS.has(previous)) {
@@ -291,6 +333,16 @@ watch(() => state.value?.verdict?.questionId, (questionId) => {
   if (held && held !== lastFallId) {
     lastFallId = held
     fallenOn.value = held
+  }
+})
+
+// La fin du combat, comme la chute : une seule fois, et pas au chargement —
+// une page rechargée va droit au poster, ou à la fin de partie.
+let lastBossEnd = state.value && bossEndId(state.value)
+watch(() => state.value && bossEndId(state.value), (ended) => {
+  if (ended && ended !== lastBossEnd) {
+    lastBossEnd = ended
+    bossEndOn.value = ended
   }
 })
 
@@ -379,6 +431,7 @@ async function goNext(): Promise<void> {
     case 'leave':
       fallenOn.value = null
       chestOf.value = null
+      bossEndOn.value = null
       return
     case 'enterChest':
       chestOf.value = action.chestOf
@@ -389,6 +442,13 @@ async function goNext(): Promise<void> {
       if (!pending.value) {
         await run('advance', advance)
       }
+  }
+}
+
+/** « Entrer », au terme de l'introduction : le serveur ouvre le combat. */
+async function enterBossFight(): Promise<void> {
+  if (!pending.value) {
+    await run('advance', enterBoss)
   }
 }
 </script>

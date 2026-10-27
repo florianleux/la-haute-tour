@@ -31,7 +31,7 @@ Jouer sur deux écrans **en même temps** n'est pas supporté : la perte de focu
 
 ## Machine à états
 
-> **Pas encore implémenté (#34 à #44)** : `bossDoor` et `bossFight`. Aujourd'hui le serveur connaît cinq phases ; `floorEnd` franchit le palier au clic (`crossFloor`), et le dernier palier mène directement à `gameOver`.
+> **En partie implémenté (#34)** : `bossFight` existe. `bossDoor` pas encore (#137) : en attendant, la porte se lit sur `floorEnd` sans verdict, déverrouillée pour tous, et c'est le clic qui suit l'introduction qui ouvre le combat.
 
 Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son écran : il affiche celui que la phase désigne. C'est la seule définition de « où en est le joueur » dans tout le projet — aucun autre document ne la reformule.
 
@@ -43,7 +43,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 | `floorEnd` | Toutes les questions de l'étage vues | Le palier atteint — prélude du boss de l'étage, plus la fin elle-même. Voir [`boss.md`](./boss.md) |
 | `deckEnd` | Toutes les questions de l'étage vues, et l'étage d'au-dessus vide | Le message de fin du deck, sans action. Phase terminale tant que le deck ne change pas. Voir [`spec.md`](./spec.md#glossaire) (Fin du deck) |
 | `bossDoor` | `floorEnd` franchi, boss pas encore battu | La porte du boss — verrouillée (moins de deux clés posées côté équipe) ou déverrouillée, puis ouverte par le joueur (`opened`, par joueur) : des champs, pas des phases. Voir [`boss.md`](./boss.md#porte-à-deux-clés) |
-| `bossFight` | Porte déverrouillée (ou pas d'équipe), combat en cours | Le combat de boss actif — PV du boss, vies du joueur, épreuve en cours. Voir [`boss.md`](./boss.md) |
+| `bossFight` | Porte déverrouillée (ou pas d'équipe), combat en cours, ou boss battu dont la victoire reste à lire | Le combat de boss actif — PV du boss, vies du joueur, épreuve en cours (sans ce qui la valide), puis son verdict. Voir [`boss.md`](./boss.md) |
 | `gameOver` | Boss du dernier étage battu, ou passé automatiquement | Message de fin. Phase terminale |
 
 ### Transitions
@@ -52,7 +52,9 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 - **Aucune lecture ne réserve de question.** Le tirage naît d'une action explicite du joueur : commencer, passer à la question suivante, franchir un palier. Une lecture ne fait que rendre ce qui existe — réservation vivante, réservation expirée résolue en échec, ou verdict en attente.
 - `floorEnd` ne coûte aucun stockage : elle se déduit du nombre de questions vues à l'étage courant. `bossDoor` et `bossFight` suivent `floorEnd` jusqu'à ce que le boss soit battu (ou passé automatiquement) — c'est cet instant-là, pas `floorEnd`, qui déclenche `crossFloor`, l'action qui incrémente l'étage. Voir [`boss.md`](./boss.md#franchissement-détage).
 - Pendant `bossDoor`, le joueur est **devant la porte ou au camp**. Ce n'est pas une phase de plus : la phase reste `bossDoor`, une position stockée (`doorSpot`) dit lequel des deux écrans montrer. « Redescendre » (`descendToCamp`) la met au camp, « Remonter » (`climbToDoor`) devant la porte ; `crossFloor` l'efface. Voir [`boss.md`](./boss.md#attendre-au-camp).
-- **L'étage épuisé prime sur les vies** : perdre sa dernière vie sur la dernière question de l'étage mène au palier, pas à l'attente. Le Pool Échecs de cet étage est sur le point d'être abandonné — il n'y a plus rien à y rattraper. L'attente due, elle, reste due : elle attend le joueur à l'étage suivant. Au dernier étage, c'est la fin de partie qui prime, sans attente ni rattrapage.
+- **L'attente passe avant le boss** : perdre sa dernière vie sur la dernière question de l'étage mène à l'attente, puis au rattrapage sur le Pool Échecs de l'étage — il reste vivant tant que le boss n'est pas battu. Le combat vient ensuite, à vies pleines. Au dernier étage aussi : son boss attend. Voir [`boss.md`](./boss.md#cas-à-0-vie).
+- **La fin du deck passe avant le boss** : un étage épuisé sous un étage vide s'arrête sur `deckEnd`, sans combat. Le dernier étage n'a jamais d'étage au-dessus : son boss passe quand même.
+- Le combat dure tant que le boss a des PV (`bossHp`, stocké). La victoire se lit sur l'arène ; « Continuer » franchit alors le palier, ou, au dernier étage, la partie est finie. La défaite efface les PV : le joueur sans vie retombe sur l'attente.
 - Un **verdict** ne retient pas le joueur à sa phase : il se lit sur l'écran de celle qui suit — palier, attente ou fin. Seule une question **non résolue** maintient l'ascension.
 
 ## Tentative, attente et rattrapage

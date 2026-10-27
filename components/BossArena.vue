@@ -1,7 +1,10 @@
 <template>
   <div class="contents">
     <!-- Nuit bleue par-dessus le ciel de PlayFrame : le combat n'a pas de décor. -->
-    <div class="fixed inset-0 z-1 bg-[#070d24]" />
+    <div
+      class="fixed inset-0 z-1"
+      :class="BOSS_NIGHT"
+    />
 
     <!-- Le boss, à gauche, dans sa pose d'arène, à sa place (`arena.box`).
          Il encaisse en colère, et rit de chaque coup du joueur. Les deux
@@ -69,6 +72,7 @@
 // l'épreuve au milieu change, dans le slot. L'arène ne compte rien : l'écran du
 // combat lui donne les vies, et chaque vie perdue d'un côté est un coup
 // encaissé de ce côté-là.
+import { BOSS_NIGHT } from '~~/utils/backdrop'
 import type { BossEntry, BossExpression } from '~~/utils/bosses'
 
 const props = defineProps<{

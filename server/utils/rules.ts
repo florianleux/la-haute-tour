@@ -93,6 +93,22 @@ export interface FloorRules {
    * Voir specs/bonus.md#limite-deffets-positifs.
    */
   maxBoons: number
+  /**
+   * Les PV du boss au début d'un combat. Une épreuve juste en retire un ; à zéro,
+   * le boss est battu. Voir specs/boss.md#cadre-général.
+   */
+  bossHp: number
+  /**
+   * Le chrono d'une épreuve de boss. Propre au boss dans la spec ; le seul boss
+   * qui existe le fixe à 30 s, et un autre le surchargera par étage, comme
+   * n'importe quelle règle. Voir specs/boss-etage1-drapeaux.md.
+   */
+  bossTrialTimerMs: number
+  /**
+   * Les épreuves tirées pour un combat : de quoi trancher à coup sûr, 7 PV et
+   * 3 vies se décidant en 9 au plus. Voir specs/boss.md#cadre-général.
+   */
+  bossTrialsPerFight: number
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -117,6 +133,9 @@ const DEFAULT_RULES: FloorRules = {
   indulgenceFactor: 2,
   maxCurses: 2,
   maxBoons: 2,
+  bossHp: 7,
+  bossTrialTimerMs: 30_000,
+  bossTrialsPerFight: 10,
 }
 
 /**

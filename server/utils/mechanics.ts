@@ -21,10 +21,10 @@ import type { MissedPoolEntry, Reservation, User } from '../db/schema'
 export type AnswerSource = 'player' | 'focusLoss'
 
 /** Voir specs/mecanique.md#machine-à-états — la seule définition de « où en est le joueur ». */
-export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'deckEnd' | 'gameOver'
+export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'deckEnd' | 'bossFight' | 'gameOver'
 
 export interface PhaseInput {
-  user: Pick<User, 'lives' | 'currentFloor' | 'cooldownUntil'>
+  user: Pick<User, 'lives' | 'currentFloor' | 'cooldownUntil' | 'bossHp'>
   /**
    * Une question encore en jeu, c'est-à-dire une réservation non résolue. Un
    * verdict, lui, n'en est plus une : il se lit sur l'écran de la phase suivante.
@@ -44,25 +44,31 @@ export interface PhaseInput {
  */
 export function phaseOf(input: PhaseInput, now: Date): Phase {
   const { user, hasLiveReservation, seen, floorTotal, nextFloorTotal } = input
+  const floorDone = !hasLiveReservation && seen >= floorTotal
 
-  // L'étage épuisé prime sur les vies : le Pool Échecs de cet étage est sur le
-  // point d'être abandonné, donc il n'y a plus rien à y rattraper — et un joueur
-  // qui n'a plus rien à monter n'a plus de vies à récupérer.
-  if (!hasLiveReservation && seen >= floorTotal) {
-    if (user.currentFloor >= FLOOR_COUNT) {
-      return 'gameOver'
-    }
-    // Un deck réduit, importé sur un seul étage : le palier mènerait à un étage
-    // vide. Voir specs/spec.md#glossaire (Fin du deck).
-    return nextFloorTotal > 0 ? 'floorEnd' : 'deckEnd'
+  // Un deck réduit, importé sur un seul étage : il s'arrête là, avant le boss —
+  // le palier mènerait à un étage vide. Le dernier étage n'a jamais d'étage
+  // au-dessus : son boss passe quand même. Voir specs/spec.md#glossaire (Fin du deck).
+  if (floorDone && nextFloorTotal === 0 && user.currentFloor < FLOOR_COUNT) {
+    return 'deckEnd'
   }
 
+  // Le combat : un boss qui a des PV, ou battu et dont la victoire reste à lire.
+  // Battu au dernier étage, la partie s'arrête là. La défaite efface les PV : le
+  // joueur sans vie retombe sur l'attente. Voir specs/boss.md.
+  if (floorDone && user.bossHp !== null) {
+    return user.bossHp === 0 && user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'bossFight'
+  }
+
+  // Sans vie, l'attente puis le rattrapage — en fin d'étage aussi : ils passent
+  // avant le combat, sur le Pool Échecs de l'étage. Voir specs/boss.md#cas-à-0-vie.
   if (user.lives <= 0) {
     const inCooldown = user.cooldownUntil !== null && now < user.cooldownUntil
     return inCooldown ? 'cooldown' : 'recovery'
   }
 
-  return 'ascent'
+  // Le palier : l'étage vu en entier, le boss pas encore affronté.
+  return floorDone ? 'floorEnd' : 'ascent'
 }
 
 /** Ce qu'il faut d'un effet pour dire s'il est encore porté. */

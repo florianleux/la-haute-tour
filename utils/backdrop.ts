@@ -22,3 +22,6 @@ export const BACKDROP_GROUND = 'bottom-0 w-[calc(100cqh*20/9)]'
  * coordonnées relevées sur le calque 1920×1080, sans conversion.
  */
 export const BACKDROP_SCENE = 'absolute inset-y-0 left-[10%] w-[80%]'
+
+/** La nuit bleue des écrans de boss : sous la porte, l'arène et l'outro. */
+export const BOSS_NIGHT = 'bg-[#070d24]'

@@ -32,6 +32,8 @@ export interface BossEntry {
    * bas de l'écran, un peu coupé par le bord.
    */
   arena: { pose: BossPose, box: string }
+  /** Sa réplique à l'outro de défaite, quand le joueur vient de tomber. */
+  defeatLine: string
 }
 
 /**
@@ -64,5 +66,6 @@ export const BOSSES: Readonly<Partial<Record<number, BossEntry>>> = {
     // bras dans le dos y commence à 19,96 %, soit 20,1dvh à 71,3dvh de haut,
     // retranchés pour que son bord gauche reste à -5vw.
     arena: { pose: 'back', box: '-left-[calc(5vw+20.1dvh)] h-[71.3dvh]' },
+    defeatLine: 'Tu n\'es pas encore au niveau, reviens dans quelques heures si tu l\'oses.',
   },
 }

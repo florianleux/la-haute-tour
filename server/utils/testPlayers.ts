@@ -6,6 +6,7 @@ import { requirePlayer, resetPlayer } from './players'
 import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
 import {
+  bossTrials,
   pocketSpells,
   missedPool,
   questions,
@@ -213,9 +214,12 @@ export async function rewindTestPlayer(db: Database, testPlayer: User, count: nu
       .delete(missedPool)
       .where(and(eq(missedPool.userId, testPlayer.id), inArray(missedPool.questionId, erased))),
     db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
+    // Revenu en arrière de son palier, il n'a plus de boss devant lui.
+    db.delete(bossTrials).where(eq(bossTrials.userId, testPlayer.id)),
     db
       .update(users)
       .set({
+        bossHp: null,
         floorCursor: cursor,
         floorSeen: sql`max(0, ${users.floorSeen} - ${erased.length})`,
         attemptSeen: sql`max(0, ${users.attemptSeen} - ${erased.length})`,
@@ -238,7 +242,8 @@ export async function sendToCooldown(db: Database, testPlayer: User, now: Date):
     db.delete(reservations).where(eq(reservations.userId, testPlayer.id)),
     db
       .update(users)
-      .set({ lives: 0, ...cooldownFields(cooldownFrom(rulesForFloor(testPlayer.currentFloor), now), now) })
+      // En plein combat, c'est une défaite : les PV du boss s'effacent avec.
+      .set({ lives: 0, bossHp: null, ...cooldownFields(cooldownFrom(rulesForFloor(testPlayer.currentFloor), now), now) })
       .where(eq(users.id, testPlayer.id)),
   ])
 }

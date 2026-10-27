@@ -257,8 +257,8 @@ describe('boucle d ascension', () => {
       expect(state.phase).toBe('floorEnd')
     })
 
-    it('atteint la fin de partie au dernier étage', async () => {
-      await db.update(users).set({ currentFloor: 6 }).where(eq(users.id, player.id))
+    it('atteint la fin de partie au dernier étage, boss battu', async () => {
+      await db.update(users).set({ currentFloor: 6, bossHp: 0 }).where(eq(users.id, player.id))
       const questionId = await createQuestion(db, { floor: 6 })
       await markSeen(db, player.id, questionId, { floor: 6 })
 

@@ -19,7 +19,7 @@
 | Connexion | `/login` | oui |
 | Accès refusé | `/refus` | oui |
 | Introduction | `/intro` — imposée tant qu'elle n'est pas finie, fermée ensuite (sauf à un admin). L'Inconnu y lit la guilde du joueur une fois son nom et son genre dits, avant ses questions (voir [`lore.md`](./lore.md#linconnu)) | non |
-| Jeu | `/` — 7 phases, page d'accueil (5 aujourd'hui : les phases de boss ne sont pas encore implémentées) | non |
+| Jeu | `/` — 8 phases, page d'accueil (7 aujourd'hui : `bossDoor` n'est pas encore implémentée, la porte se lit sur `floorEnd`) | non |
 | Profil | `/profil` — par son adresse seulement | non |
 | Grimoire (les Sorts) | boîte sur le camp, sans URL — par le grimoire du camp | non |
 | Haut-faits (les Succès) | boîte sur le camp, sans URL — avec une équipe, par la bannière du camp | non |
@@ -120,7 +120,7 @@ Deux écarts assumés avec l'ascension, que l'illustration du camp impose. Le pa
 
 L'étage est terminé. Le verdict de la dernière question s'y lit — c'est cet écran qui suit la question, l'étage n'ayant plus rien à servir — puis une action pour continuer vers la porte du boss. Version sobre ; le reste du contenu est encore à spécifier.
 
-> **Pas encore implémenté (#34 à #44)** : en attendant le boss, l'action franchit le palier et sert la première question de l'étage suivant, et `gameOver` suit directement le palier du dernier étage. Les deux sections suivantes décrivent la cible.
+> **En attendant `bossDoor` (#137)** : « Suivant » quitte le verdict et montre la porte, déverrouillée pour tous, à ouvrir à chaque arrivée ; « Entrer » joue l'introduction, puis ouvre le combat. Les deux sections suivantes décrivent la cible.
 
 ### `bossDoor` — porte du boss
 
@@ -144,7 +144,9 @@ Le camp habituel, avec l'état de la porte : clés posées sur 2. Le nom de ceux
 
 PV du boss, vies du joueur, l'épreuve en cours — format propre à chaque boss, hors périmètre de ce document. Une épreuve juste anime la barre de vie du boss (elle perd 1/7 et le boss vibre) ; une épreuve fausse retire une vie sans animation particulière pour l'instant.
 
-Le combat s'arrête au boss à 0 PV (victoire) ou au joueur à 0 vie (défaite), chacun avec sa propre animation. Un combat relancé après échec va direct au combat, sans rejouer l'introduction. Voir [`boss.md`](./boss.md).
+Le combat se joue dans l'arène (`bossArena`) : la figure du boss, le joueur, leurs barres de vie, et l'épreuve au milieu — pour Julien, un drapeau, sa saisie et son chrono de 30 s, puis le verdict et la réponse affichée. « Suivant » sert l'épreuve suivante.
+
+Le combat s'arrête au boss à 0 PV (victoire) ou au joueur à 0 vie (défaite). La victoire s'annonce sur le verdict de l'épreuve qui l'emporte, et « Continuer » franchit le palier. La défaite mène à l'**outro de défaite** : « DÉFAITE » en grand titre rouge, comme le nom du boss à l'introduction, le boss au milieu qui rit, sa réplique dans sa fenêtre (« Tu n'es pas encore au niveau, reviens dans quelques heures si tu l'oses. »), et « Redescendre » vers le camp en attente. Une page rechargée pendant l'attente va droit au camp. Un combat relancé après échec va direct au combat, sans rejouer l'introduction (pas encore : #39). Voir [`boss.md`](./boss.md).
 
 ### `gameOver` — fin de partie
 

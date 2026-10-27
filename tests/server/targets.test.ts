@@ -20,6 +20,7 @@ interface AllySeed {
   isTest?: boolean
   currentFloor?: number
   floorSeen?: number
+  bossHp?: number | null
   createdAt?: Date
   pastFirstAttempt?: boolean
 }
@@ -102,7 +103,7 @@ describe('tirage de la cible', () => {
   // Il n'aura jamais de prochaine tentative : l'effet serait mort-né.
   it('écarte un joueur en fin de partie', async () => {
     await createQuestion(db, { floor: 6 })
-    await player('arrivé', { currentFloor: 6, floorSeen: 1 })
+    await player('arrivé', { currentFloor: 6, floorSeen: 1, bossHp: 0 })
 
     expect(await draw(0.5)).toBeNull()
   })

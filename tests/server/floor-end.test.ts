@@ -28,6 +28,12 @@ describe('palier et fin de partie', () => {
     return questionId
   }
 
+  /** Le boss de l'étage battu, sa victoire à lire. Voir tests/server/boss-fight.test.ts. */
+  async function beatBoss(): Promise<void> {
+    await db.update(users).set({ bossHp: 0 }).where(eq(users.id, player.id))
+    player = await reload()
+  }
+
   async function standOn(floor: number): Promise<void> {
     await db.update(users).set({ currentFloor: floor }).where(eq(users.id, player.id))
     player = await reload()
@@ -46,7 +52,8 @@ describe('palier et fin de partie', () => {
       expect(state.question).toBeNull()
     })
 
-    it('franchit le palier : l étage suivant, sa première question réservée', async () => {
+    it('franchit le palier sur la victoire : l étage suivant, sa première question réservée', async () => {
+      await beatBoss()
       const state = await serveNextQuestion(db, player, NOW)
 
       expect(state).toMatchObject({ phase: 'ascent', floor: 2 })
@@ -73,6 +80,7 @@ describe('palier et fin de partie', () => {
         floor: 1,
         lastFailedAt: NOW,
       })
+      await beatBoss()
 
       await serveNextQuestion(db, player, NOW)
 
@@ -100,27 +108,29 @@ describe('palier et fin de partie', () => {
       player = await reload()
     }
 
-    it('mène au palier, pas à l attente : le pool part avec l étage', async () => {
+    // specs/boss.md#cas-à-0-vie : le boss attend la fin de l'attente et du
+    // rattrapage, sur le Pool Échecs de l'étage qu'il garde.
+    it('mène à l attente, pas au palier : le pool reste pour le rattrapage', async () => {
       await outOfLivesWithPool(1)
       await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
 
       const state = await readGameState(db, player, NOW)
 
-      expect(state.phase).toBe('floorEnd')
+      expect(state.phase).toBe('cooldown')
+      expect(await db.select().from(missedPool)).toHaveLength(3)
     })
 
-    it('franchit le palier sans réserver de question : l attente reste due', async () => {
+    it('ne franchit rien tant que l attente court', async () => {
       await outOfLivesWithPool(1)
       await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
 
       const state = await serveNextQuestion(db, player, NOW)
 
-      expect(state).toMatchObject({ phase: 'cooldown', floor: 2, lives: 0 })
+      expect(state).toMatchObject({ phase: 'cooldown', floor: 1, lives: 0 })
       expect(await db.select().from(reservations)).toHaveLength(0)
-      expect(await db.select().from(missedPool)).toHaveLength(0)
     })
 
-    it('mène au palier dès le verdict de la dernière question, jamais au rattrapage', async () => {
+    it('mène à l attente dès le verdict de la dernière question', async () => {
       await createQuestion(db, { floor: 1, statement: 'Dernière de l étage ?' })
       await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
       await db.update(users).set({ lives: 1 }).where(eq(users.id, player.id))
@@ -128,19 +138,17 @@ describe('palier et fin de partie', () => {
 
       const state = await submitAnswer(db, await reload(), 'Toulouse', new Date(NOW.getTime() + 1_000))
 
-      // La dernière vie est perdue, mais l'étage est fini : il n'y a plus rien à
-      // rattraper à un étage qu'on quitte.
-      expect(state).toMatchObject({ phase: 'floorEnd', floor: 1, lives: 0 })
+      expect(state).toMatchObject({ phase: 'cooldown', floor: 1, lives: 0 })
       expect(state.verdict).toMatchObject({ correct: false, lifeLost: true })
     })
 
-    it('mène à la fin de partie au dernier étage, sans attente ni rattrapage', async () => {
+    it('mène à l attente au dernier étage aussi : son boss l attend', async () => {
       await standOn(FLOOR_COUNT)
       await outOfLivesWithPool(FLOOR_COUNT)
 
       const state = await readGameState(db, player, NOW)
 
-      expect(state.phase).toBe('gameOver')
+      expect(state.phase).toBe('cooldown')
     })
   })
 
@@ -171,9 +179,10 @@ describe('palier et fin de partie', () => {
     beforeEach(async () => {
       await standOn(FLOOR_COUNT)
       await seeQuestion(FLOOR_COUNT)
+      await beatBoss()
     })
 
-    it('annonce la fin quand le dernier étage est épuisé', async () => {
+    it('annonce la fin quand le boss du dernier étage est battu', async () => {
       const state = await readGameState(db, player, NOW)
 
       expect(state).toMatchObject({ phase: 'gameOver', floor: FLOOR_COUNT })

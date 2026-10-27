@@ -34,6 +34,7 @@ const served: GameState = {
   maintenance: false,
   effects: [],
   unlocked: [],
+  boss: null,
 }
 
 describe('actions du joueur', () => {
