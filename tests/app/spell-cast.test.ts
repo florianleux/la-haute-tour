@@ -4,7 +4,7 @@ import type { CastHeadline } from '../../utils/spells'
 
 installAppGlobals()
 
-const { CHARGE_MS, FIZZLE_MS, RELEASE_MS, useSpellCast } = await import('../../composables/useSpellCast')
+const { CHARGE_MS, FIZZLE_MS, useSpellCast } = await import('../../composables/useSpellCast')
 
 /** Ce que le titre annonce quand le sort est parti. */
 const HEADLINE: CastHeadline = ['Sort lancé sur', 'toi !']
@@ -20,8 +20,8 @@ describe('l animation d un lancer', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
 
-  it('monte en puissance, éclate, puis revient au repos', async () => {
-    const { cast, play } = useSpellCast()
+  it('monte en puissance, éclate, et tient le titre jusqu au OK', async () => {
+    const { cast, play, dismiss } = useSpellCast()
 
     const played = play('VITALITY', 'boon', answerAfter(200, HEADLINE))
     expect(cast.value).toEqual({ spell: 'VITALITY', face: 'boon', stage: 'charging', headline: null })
@@ -29,7 +29,10 @@ describe('l animation d un lancer', () => {
     await vi.advanceTimersByTimeAsync(CHARGE_MS)
     expect(cast.value).toEqual({ spell: 'VITALITY', face: 'boon', stage: 'release', headline: HEADLINE })
 
-    await vi.advanceTimersByTimeAsync(RELEASE_MS)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(cast.value?.stage).toBe('release')
+
+    dismiss()
     await played
     expect(cast.value).toBeNull()
   })

@@ -31,7 +31,9 @@
           >
           <!-- Pendant un lancer, le médaillon de la face lancée cède la place
                à la pièce qui se charge ; il revient en fondu une fois qu'elle
-               est partie. -->
+               est partie. Le fondu ne tient pas sa fin (`backwards`, pas
+               `both`) : une animation qui reste appliquée garde le médaillon
+               sur son propre calque, que Chrome peint flou à mi-pixel. -->
           <template v-for="round in ROUNDS" :key="round.face">
             <SpellMedallion
               v-if="round.face !== burst?.face"
@@ -40,7 +42,7 @@
               class="absolute -translate-x-1/2 -translate-y-1/2"
               shadow-class="shadow-[0_2px_3px_rgb(0_0_0/0.35)]"
               :class="{ 'motion-safe:animate-fade-in': round.face !== 'mixed' }"
-              :style="{ left: round.left, top: round.top, width: round.width }"
+              :style="{ left: round.left, top: round.top, width: round.width, animationFillMode: 'backwards' }"
               fallback-class="border-2 border-spell-page/60 text-[11cqw] text-spell-page"
             />
           </template>
@@ -54,6 +56,7 @@
           :cast="burst"
           class="absolute z-20 -translate-x-1/2 -translate-y-1/2"
           :style="{ left: burstRound.left, top: burstRound.top, width: burstRound.width }"
+          @dismiss="$emit('dismiss')"
         />
       </div>
     </div>
@@ -97,6 +100,9 @@ const props = withDefaults(defineProps<{
   /** Le lancer en cours d'animation, null au repos. Voir composables/useSpellCast.ts. */
   cast?: SpellCast | null
 }>(), { cast: null })
+
+/** Le OK du titre d'un lancer parti. Voir composables/useSpellCast.ts. */
+defineEmits<{ dismiss: [] }>()
 
 /** Le lancer, s'il est celui de ce sort : un autre choisi entre-temps n'a pas à le jouer. */
 const burst = computed(() => (props.cast?.spell === props.spell ? props.cast : null))

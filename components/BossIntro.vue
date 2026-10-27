@@ -210,8 +210,6 @@ const emit = defineEmits<{ end: [] }>()
 
 /** Le fondu de sortie, avant le combat : `duration-[800ms]` du fond. */
 const LEAVE_MS = 800
-/** L'or du titre, en dégradé, révélé de gauche à droite : son nom et son épithète. */
-const TITLE_GOLD = 'bg-[linear-gradient(100deg,#a8741a_0%,#f6dc8c_30%,#fffbe8_45%,#f6dc8c_60%,#a8741a_100%)] bg-size-[250%_100%] bg-clip-text [-webkit-background-clip:text] uppercase tracking-[0.2em] text-transparent [mask-image:linear-gradient(to_right,black_40%,transparent_60%)] [mask-size:250%_100%] motion-safe:animate-title-reveal'
 /** L'avance de l'épithète sur le nom, dans le titre : elle paraît, puis lui. */
 const EPITHET_LEAD_MS = 700
 /** Le nom et son filet partent ensemble, après l'épithète s'il y en a une. */

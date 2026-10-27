@@ -17,8 +17,10 @@
       <!-- Hors du panneau de texte, posé sur le cadre lui-même. Le bloc a la
            hauteur du coffre, en % de la card : `top` et `h` se règlent
            librement, et le texte déborde juste dessous, quoi qu'on choisisse.
-           Mobile (cadre portrait) puis `sm:` (paysage). -->
-      <div class="pointer-events-none absolute inset-x-0 top-[15%] flex h-[55%] flex-col items-center sm:top-[5%] sm:h-[65%]">
+           Mobile (cadre portrait) puis `sm:` (paysage). Transparent aux
+           clics, en `!` : le `*:pointer-events-auto` de PlayFrame l'emporterait,
+           et le Mimic, grossi pour son bond, couvrirait « Suivant ». -->
+      <div class="pointer-events-none! absolute inset-x-0 top-[15%] flex h-[55%] flex-col items-center sm:top-[5%] sm:h-[65%]">
         <!-- Les deux coffres empilés dans la même boîte : les deux webp ont été
              rognés sur le même cadre (pieds, serrure, poignées au même pixel),
              si bien que le fondu ne fait bouger que le couvercle. C'est la
@@ -28,6 +30,7 @@
              donc peinte par-dessus sans lui), et le bouton (z-20) sous le Mimic
              qui saute. -->
         <div
+          ref="chestBox"
           class="relative z-30 h-full shrink-0 origin-bottom"
           :class="{
             // Ouvert, le contenu est sorti : plus rien ne remue dedans.
@@ -53,8 +56,10 @@
                l'écran, au visage du joueur, y reste suspendu, puis retombe à
                sa place. Calé sur le coffre ouvert par la caisse, commune aux
                deux images : même largeur (77 % de la boîte), même bas. Au
-               bond, `--lunge` dit de combien il grossit — moins en mobile,
-               où le cadre portrait le fait déjà plus grand.
+               bond, `--lunge` dit de combien il grossit : mesuré à son
+               arrivée (`lunge`), pour qu'il fasse 90 % de la hauteur de la
+               fenêtre, centré, quelle que soit sa taille. Avant la mesure,
+               une valeur de repli.
                Posé à `--lunge` fois sa taille, centré au même point par les
                translate, et réduit par `animate-mimic-lunge` : Safari le
                rastérise ainsi à sa taille au bond, et il y reste net. La
@@ -62,7 +67,8 @@
                déjà `translate`, qui écraserait celui de la place. -->
           <div
             v-if="chest.mimic"
-            class="absolute left-[10.3%] top-[4.1%] z-10 w-[calc(77%*var(--lunge))] -translate-x-[calc(50%-50%/var(--lunge))] -translate-y-[calc(50%-50%/var(--lunge))] [--lunge:2.4] sm:[--lunge:3]"
+            class="absolute z-10 -translate-x-[calc(50%-50%/var(--lunge))] -translate-y-[calc(50%-50%/var(--lunge))] [--lunge:2.4] sm:[--lunge:3]"
+            :style="{ ...MIMIC_STYLE, ...lunge }"
           >
             <img
               src="/images/chest-mimic.webp"
@@ -77,7 +83,8 @@
                ouvert quand l'écran arrive. -->
           <div
             v-if="stage === 'open' && looted"
-            class="absolute left-1/2 top-[48%] aspect-square w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,white_0%,rgb(254_243_199/0.9)_30%,transparent_70%)] opacity-0 motion-safe:animate-dazzle"
+            :style="{ top: percent(SLIT_TOP) }"
+            class="absolute left-1/2 aspect-square w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,white_0%,rgb(254_243_199/0.9)_30%,transparent_70%)] opacity-0 motion-safe:animate-dazzle"
           />
 
           <!-- Le sort pioché, qui sort du coffre et flotte au-dessus. Deux
@@ -92,9 +99,16 @@
                `animate-emerge` : Safari la rastérise à cette taille, et le
                médaillon reste net quand il grossit. D'où aussi l'ombre en px
                multipliée par `--peak`. -->
+          <!-- À l'ouverture, c'est l'apparition (ItemReveal, plus bas) qui le
+               fait jaillir ; il n'est là qu'une fois elle refermée, posé à sa
+               place sans rejouer son jaillissement. -->
           <div
-            v-if="chest.spell && spellImage(chest.spell)"
-            class="absolute left-1/2 top-[0%] w-[calc(30%*var(--peak))] -translate-x-1/2 -translate-y-[calc(50%-50%/var(--peak))] [--peak:4] @container motion-safe:animate-emerge motion-reduce:[transform:scale(calc(1/var(--peak)))]"
+            v-if="chest.spell && spellImage(chest.spell) && (stage !== 'open' || spellSeen)"
+            :style="{ width: `calc(${percent(SPELL_WIDTH)} * var(--peak))` }"
+            class="absolute left-1/2 top-[0%] -translate-x-1/2 -translate-y-[calc(50%-50%/var(--peak))] [--peak:4] @container"
+            :class="spellSeen
+              ? '[transform:scale(calc(1/var(--peak)))] motion-safe:animate-fade-in'
+              : 'motion-safe:animate-emerge motion-reduce:[transform:scale(calc(1/var(--peak)))]'"
           >
             <!-- Le climax, à l'apogée du jaillissement (entre 0,45 et 1,4 s,
                  quand le médaillon tient à quatre fois sa taille) : des rayons
@@ -103,7 +117,11 @@
                  `animate-emerge` et démarrent avec lui : leurs pourcentages
                  tombent donc sur les mêmes instants. Ils grossissent avec le
                  médaillon, d'où leur place dans cette boîte. -->
-            <div class="absolute left-1/2 top-1/2 aspect-square w-[230%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[repeating-conic-gradient(rgb(254_243_199/0.9)_0deg_8deg,transparent_8deg_24deg)] opacity-0 [mask-image:radial-gradient(circle,black_15%,transparent_68%)] motion-safe:animate-rays" />
+            <RaysHalo
+              v-if="!spellSeen"
+              color="rgb(254 243 199 / 0.9)"
+              class="w-[230%] opacity-0 motion-safe:animate-rays"
+            />
 
             <div class="relative motion-safe:animate-float">
               <SpellMedallion
@@ -113,17 +131,22 @@
                 class="w-full"
                 shadow-class="shadow-[0_calc(6px*var(--peak))_calc(10px*var(--peak))_rgb(0_0_0/0.5),0_0_calc(12px*var(--peak))_#fde68a]"
               />
-              <div class="absolute inset-[5%] overflow-hidden rounded-full">
+              <div
+                v-if="!spellSeen"
+                class="absolute inset-[5%] overflow-hidden rounded-full"
+              >
                 <div class="absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgb(255_255_255/0.85)_50%,transparent_65%)] motion-safe:animate-sheen motion-reduce:hidden" />
               </div>
-              <SparkleStar
-                glow="#fef3c7"
-                class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint"
-              />
-              <SparkleStar
-                glow="#fef3c7"
-                class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]"
-              />
+              <template v-if="!spellSeen">
+                <SparkleStar
+                  glow="#fef3c7"
+                  class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint"
+                />
+                <SparkleStar
+                  glow="#fef3c7"
+                  class="left-[4%] top-[62%] w-[22%] opacity-0 motion-safe:animate-glint [animation-delay:0.06s]"
+                />
+              </template>
               <!-- Le scintillement autour du médaillon, une fois posé. -->
               <SparkleField
                 :sparks="SPELL_SPARKS"
@@ -134,6 +157,7 @@
             <!-- La gerbe, au moment où il retombe à sa place : les étincelles
                  partent du centre dans toutes les directions, une seule fois. -->
             <SparkleSpray
+              v-if="!spellSeen"
               :sparks="SPELL_SPRAY"
               glow="#fde68a"
             />
@@ -183,6 +207,23 @@
           </PlayText>
         </div>
       </div>
+
+      <!-- Le sort sorti du coffre : il saute de la fente du coffre au centre
+           de l'écran, et s'y montre pour lui seul jusqu'au OK. Seulement à
+           l'ouverture, pas sur un coffre déjà ouvert quand l'écran arrive. -->
+      <ItemReveal
+        v-if="stage === 'open' && looted && chest.spell && !spellSeen"
+        :label="spellLabel(chest.spell)"
+        :from="spellFrom"
+        @close="spellSeen = true"
+      >
+        <SpellMedallion
+          :spell="chest.spell"
+          face="mixed"
+          class="size-full"
+          shadow-class="shadow-[0_6px_10px_rgb(0_0_0/0.5),0_0_12px_#fde68a]"
+        />
+      </ItemReveal>
 
       <BaseCardButton
         v-if="!chest.opened"
@@ -281,6 +322,77 @@ const SPELL_SPRAY = Array.from({ length: 10 }, (_, index) => {
 })
 
 const stage = ref<'idle' | 'bursting' | 'open'>('idle')
+/** Le sort obtenu a été vu, et son apparition refermée par OK. */
+const spellSeen = ref(false)
+
+/**
+ * La géométrie du coffre, en part de sa boîte : le gabarit s'en sert pour
+ * poser les choses, et les mesures du saut du sort et du bond du Mimic pour
+ * les retrouver à l'écran. Un seul endroit à changer quand une image bouge.
+ */
+/** La fente entre couvercle et caisse, en part de la hauteur : l'éclair y naît, le sort en jaillit. */
+const SLIT_TOP = 0.48
+/** La largeur du sort posé au-dessus du coffre ouvert. */
+const SPELL_WIDTH = 0.3
+/** La place du Mimic, calé sur le coffre ouvert par la caisse : même largeur, même bas. */
+const MIMIC_SLOT = { left: 0.103, top: 0.041, width: 0.77 }
+/** Les proportions du Mimic (public/images/chest-mimic.webp, 1275×1377). */
+const MIMIC_RATIO = 1377 / 1275
+
+function percent(part: number): string {
+  return `${part * 100}%`
+}
+
+/** Le Mimic à sa place, posé à `--lunge` fois sa taille (voir le gabarit). */
+const MIMIC_STYLE = {
+  left: percent(MIMIC_SLOT.left),
+  top: percent(MIMIC_SLOT.top),
+  width: `calc(${percent(MIMIC_SLOT.width)} * var(--lunge))`,
+}
+
+const chestBox = useTemplateRef<HTMLElement>('chestBox')
+/**
+ * Le coffre à l'écran, mesuré quand il s'ouvre (le tremblement fini), ou au
+ * montage s'il l'est déjà : le saut du sort et le bond du Mimic en partent.
+ */
+const openedBox = ref<DOMRect>()
+
+onMounted(() => {
+  if (props.chest.opened) {
+    openedBox.value = chestBox.value!.getBoundingClientRect()
+  }
+})
+
+/** D'où le sort saute vers son apparition : la fente, à la largeur qu'il a posé au-dessus. */
+const spellFrom = computed(() => {
+  const box = openedBox.value
+  return box && { x: box.left + box.width / 2, y: box.top + box.height * SLIT_TOP, width: box.width * SPELL_WIDTH }
+})
+/** Sa hauteur à l'apex, en part de la fenêtre. */
+const LUNGE_HEIGHT = 0.9
+/** Le grossissement de son suspens, au plus haut (`scale(1.06)` d'`animate-mimic-lunge`). */
+const LUNGE_PEAK = 1.06
+
+/**
+ * Le bond : `--lunge`, de combien il grossit pour faire 90 % de la hauteur
+ * de la fenêtre au plus fort de son suspens, et (`--lunge-dx`, `--lunge-dy`),
+ * de sa place dans le coffre (MIMIC_SLOT) au centre de la fenêtre. Voir
+ * `animate-mimic-lunge`.
+ */
+const lunge = computed(() => {
+  const box = openedBox.value
+  if (!box || !props.chest.mimic) {
+    return undefined
+  }
+  const height = box.width * MIMIC_SLOT.width * MIMIC_RATIO
+  const x = box.left + box.width * (MIMIC_SLOT.left + MIMIC_SLOT.width / 2)
+  const y = box.top + box.height * MIMIC_SLOT.top + height / 2
+  return {
+    '--lunge': ((LUNGE_HEIGHT * innerHeight) / (height * LUNGE_PEAK)).toFixed(2),
+    '--lunge-dx': `${Math.round(innerWidth / 2 - x)}px`,
+    '--lunge-dy': `${Math.round(innerHeight / 2 - y)}px`,
+  }
+})
 /** Le serveur n'a pas ouvert le coffre : on le dit, au lieu d'un échec muet. */
 const refused = ref(false)
 // Le coffre ne s'ouvre qu'avec la réponse du serveur, pas à la fin du
@@ -311,6 +423,7 @@ function burst(): void {
   refused.value = false
   stage.value = 'bursting'
   setTimeout(() => {
+    openedBox.value = chestBox.value!.getBoundingClientRect()
     stage.value = 'open'
     emit('open')
   }, BURST_MS)
@@ -332,6 +445,7 @@ watch(() => props.opening, (opening, wasOpening) => {
 watch(() => props.chest.opened, (opened) => {
   if (!opened) {
     stage.value = 'idle'
+    spellSeen.value = false
   }
 })
 </script>

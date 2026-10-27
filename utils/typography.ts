@@ -36,3 +36,22 @@ export const LONG_CHARS = {
 export function isLong(role: keyof typeof LONG_CHARS, text: string): boolean {
   return text.length > LONG_CHARS[role]
 }
+
+/**
+ * Les grands titres, révélés de gauche à droite par un masque qui glisse :
+ * capitales espacées. `--title-ms` règle la durée de `animate-title-reveal`.
+ * La couleur s'ajoute par-dessus (TITLE_GOLD, TITLE_YELLOW).
+ */
+const TITLE_REVEAL = 'uppercase tracking-[0.2em] [mask-image:linear-gradient(to_right,black_40%,transparent_60%)] [mask-size:250%_100%] motion-safe:animate-title-reveal'
+
+/**
+ * L'or du nom d'un boss (BossIntro), en dégradé balayé d'un reflet. Pas de
+ * `text-shadow` dessous : sous un texte à fond découpé, il salirait l'or.
+ */
+export const TITLE_GOLD = `bg-[linear-gradient(100deg,#a8741a_0%,#f6dc8c_30%,#fffbe8_45%,#f6dc8c_60%,#a8741a_100%)] bg-size-[250%_100%] bg-clip-text [-webkit-background-clip:text] text-transparent ${TITLE_REVEAL}`
+
+/**
+ * Le titre de l'objet obtenu (ItemReveal) : un jaune plein (#FCD400) sur une
+ * ombre noire nette, sans or ni reflet.
+ */
+export const TITLE_YELLOW = `text-[#fcd400] [text-shadow:0_2px_1px_rgb(0_0_0/0.85),0_0_4px_rgb(0_0_0/0.5)] ${TITLE_REVEAL}`

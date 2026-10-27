@@ -5,7 +5,6 @@
   <span
     class="inline-block whitespace-nowrap text-center font-semibold tracking-wide text-white"
     :class="SHADOWS[tone]"
-    :style="color ? { color, '--glow': color } : undefined"
   >
     <!-- Une boîte à soi, positionnée, pour les étincelles : la racine reste
          libre de se placer comme l'appelant le veut (`absolute` au camp). -->
@@ -29,14 +28,14 @@
 withDefaults(defineProps<{
   /** L'éclat, voir SHADOWS. */
   tone?: GlowTone
-  /** La couleur du nom et de son halo, au lieu du blanc bleuté : le titre d'un lancer prend celle de sa magie. */
-  color?: string
-}>(), { tone: 'bright', color: undefined })
+}>(), { tone: 'bright' })
 
 type GlowTone = 'bright' | 'soft' | 'plain'
 
-// Chaque ton finit par `--under-shadow`, vide par défaut : un appelant y pose
-// une ombre de plus, sous celles du ton, sans recopier sa liste (la porte du
+// Le halo prend `--glow` quand l'appelant le pose (le titre d'un lancer, à la
+// couleur de sa magie), sinon un blanc bleuté. Chaque ton finit par
+// `--under-shadow`, vide par défaut : un appelant y pose une ombre de plus,
+// sous celles du ton, sans recopier sa liste (la porte du
 // boss, sur son décor chargé). En `text-shadow`, pas en `drop-shadow` : voir
 // CLAUDE.md#styling.
 const SHADOWS: Record<GlowTone, string> = {

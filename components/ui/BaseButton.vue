@@ -35,8 +35,10 @@ const props = withDefaults(defineProps<{
    * à la taille et à la couleur du texte qui l'entoure, qu'elle reprend plutôt
    * que d'imposer les siennes. `parchment` : un bouton tracé à l'encre, pour
    * une action posée sur du papier (le Grimoire), où les fonds sombres jurent.
+   * `link` : un simple lien blanc, en capitales, posé sur un voile sombre — le
+   * OK d'une apparition (ItemReveal, SpellCastBurst).
    */
-  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment'
+  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'link'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -62,6 +64,7 @@ const VARIANTS = {
   ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
   option: 'py-1 italic bg-transparent text-inherit transition-colors hover:underline',
+  link: 'py-1 text-[max(1.1rem,2.6dvh)] font-semibold tracking-wider uppercase bg-transparent text-white underline-offset-4 transition-opacity hover:underline hover:opacity-80',
   parchment: `${PADDED} border-2 border-amber-900/40 bg-transparent text-amber-950 enabled:hover:bg-amber-900/10`,
 }
 

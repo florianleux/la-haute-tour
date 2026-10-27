@@ -20,12 +20,10 @@ export interface SpellCast {
 
 /**
  * Les durées de `animate-cast-charge` et `-fizzle` (assets/css/main.css) :
- * elles bougent ensemble. L'éclat dure plus que `animate-cast-release` (1,4 s) :
- * le titre tient encore 2,5 s après l'envol, puis s'efface avec la vignette, à 3,6 s
- * (components/SpellCastBurst.vue et SpellbookDetails.vue).
+ * elles bougent ensemble. L'éclat, lui, n'a pas de durée : le titre et la
+ * vignette tiennent jusqu'au OK du joueur (`dismiss`, components/SpellCastBurst.vue).
  */
 export const CHARGE_MS = 1500
-export const RELEASE_MS = 3850
 export const FIZZLE_MS = 700
 
 /**
@@ -45,8 +43,17 @@ export function useSpellCast(): {
    * annoncer si le sort est parti, null s'il ne l'est pas.
    */
   play: (spell: SpellId, face: SpellFace, send: () => Promise<CastHeadline | null>) => Promise<void>
+  /** Le OK du titre : le lancer parti finit, et `play` rend la main. */
+  dismiss: () => void
 } {
   const cast = ref<SpellCast | null>(null)
+  /** Ce qui termine l'éclat en cours, tant que le titre attend son OK. */
+  let release: (() => void) | null = null
+
+  function dismiss(): void {
+    release?.()
+    release = null
+  }
 
   async function play(spell: SpellId, face: SpellFace, send: () => Promise<CastHeadline | null>): Promise<void> {
     if (prefersReducedMotion()) {
@@ -58,10 +65,10 @@ export function useSpellCast(): {
     const [headline] = await Promise.all([send(), wait(CHARGE_MS)])
 
     cast.value = { spell, face, stage: headline ? 'release' : 'fizzle', headline }
-    await wait(headline ? RELEASE_MS : FIZZLE_MS)
+    await (headline ? new Promise<void>((resolve) => { release = resolve }) : wait(FIZZLE_MS))
 
     cast.value = null
   }
 
-  return { cast, play }
+  return { cast, play, dismiss }
 }

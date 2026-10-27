@@ -15,7 +15,7 @@
     <div class="absolute inset-0">
       <div class="absolute bottom-[9%] left-[54%] right-[11%] top-[16%] flex flex-col text-sm leading-snug text-amber-950">
         <template v-if="selected">
-          <SpellbookDetails :key="selected" :spell="selected" :count="3" :cast="cast" />
+          <SpellbookDetails :key="selected" :spell="selected" :count="3" :cast="cast" @dismiss="dismiss" />
 
           <div class="mt-3 flex flex-wrap gap-2">
             <BaseButton
@@ -60,7 +60,7 @@ const COUNTS = Object.fromEntries(SPELL_IDS.map(spell => [spell, 3]))
 
 const selected = ref<SpellId | null>('VITALITY')
 
-const { cast, play } = useSpellCast()
+const { cast, play, dismiss } = useSpellCast()
 
 /** La cible que le faux tirage donne à chaque catégorie. */
 const TARGETS: Record<TargetKind, string> = { self: 'toi', ally: 'samsagace', foe: 'gollum' }

@@ -339,8 +339,9 @@
      se joue là. */
 
   /* La montée (1,5 s) :
-     - anticipation : il s'écrase dans son rond ;
-     - étirement et arc : il jaillit, allongé, monte au-dessus de la ligne
+     - étirement et arc : dès son apparition, il jaillit de son rond,
+       allongé — sans s'y écraser d'abord, qui le montrait posé à côté avant
+       qu'il parte —, monte au-dessus de la ligne
        droite et redescend au centre de l'écran en grossissant — il vient
        vers le joueur ;
      - il y freine en s'écrasant, rebondit, se cale ;
@@ -352,14 +353,6 @@
     0% {
       transform: translate(0, 0) scale(1, 1);
       filter: brightness(1);
-      animation-timing-function: ease-in-out;
-    }
-    8% {
-      transform: translate(0, 10%) scale(1.15, 0.8);
-      animation-timing-function: ease-in;
-    }
-    13% {
-      transform: translate(0, 12%) scale(1.22, 0.74);
       animation-timing-function: cubic-bezier(0.15, 0.85, 0.35, 1);
     }
     22% {
@@ -1039,7 +1032,9 @@
   --animate-mimic-lunge: mimic-lunge 2.6s ease-in-out both;
 
   /* Le décalage vers le centre vit dans `translate`, à part : les rebonds ne
-     règlent que `scale` et `rotate`, et le gardent tant qu'il est au centre. */
+     règlent que `scale` et `rotate`, et le gardent tant qu'il est au centre.
+     (--lunge-dx, --lunge-dy), mesurés par ChestCard, mènent de sa place au
+     centre de la fenêtre ; sans eux, il descend juste un peu. */
   @keyframes mimic-lunge {
     0% {
       translate: 0 calc(10% / var(--lunge));
@@ -1047,7 +1042,7 @@
       animation-timing-function: cubic-bezier(0.2, 0.8, 0.4, 1);
     }
     7% {
-      translate: 0 calc(18% / var(--lunge));
+      translate: var(--lunge-dx, 0px) var(--lunge-dy, calc(18% / var(--lunge)));
       transform: scale(0.9, 1.15) rotate(-6deg);
       animation-timing-function: ease-out;
     }
@@ -1057,7 +1052,7 @@
     27% { transform: scale(1) rotate(0); }
     /* Le suspens : il ne bouge presque plus, et avance encore un peu. */
     64% {
-      translate: 0 calc(18% / var(--lunge));
+      translate: var(--lunge-dx, 0px) var(--lunge-dy, calc(18% / var(--lunge)));
       transform: scale(1.06);
       animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0.4);
     }
@@ -1633,6 +1628,35 @@
   @keyframes ink-in {
     from { opacity: 0; transform: translateY(6px); filter: blur(3px); }
   }
+
+  /* L'objet obtenu (ItemReveal) : il part de (--from-x, --from-y) à
+     --from-scale fois sa taille — de rien, sur place, par défaut — et file
+     droit à sa place d'un seul mouvement, qui ralentit en arrivant ; seule sa
+     taille dépasse un peu avant de se poser. Pas d'arc : il montait plus haut
+     que sa place puis redescendait, un second mouvement. Derrière lui, les
+     rayons s'allument puis tournent tant qu'il reste affiché. */
+  --animate-item-pop: item-pop 0.8s linear both;
+  --animate-item-rays: fade-in 0.6s ease-out 0.25s both, item-rays 14s linear infinite;
+
+  @keyframes item-pop {
+    0% {
+      transform: translate(var(--from-x, 0px), var(--from-y, 0px)) scale(var(--from-scale, 0)) rotate(-12deg);
+      animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+    }
+    70% {
+      transform: translate(calc(var(--from-x, 0px) * 0.04), calc(var(--from-y, 0px) * 0.04)) scale(1.1) rotate(2deg);
+      animation-timing-function: ease-in-out;
+    }
+    100% { transform: translate(0, 0) scale(1) rotate(0); }
+  }
+
+  @keyframes item-rays {
+    to { rotate: 360deg; }
+  }
+
+  /* Le voile du retour au camp (pages/index.vue) : il cache le camp le temps
+     d'une image, puis le découvre lentement. */
+  --animate-camp-fade: fade-out 1.4s ease-out 0.05s both;
 
   --animate-fade-in: fade-in 0.3s ease-out var(--enter-delay, 0s) both;
   --animate-fade-out: fade-out 0.2s ease-in var(--enter-delay, 0s) both;

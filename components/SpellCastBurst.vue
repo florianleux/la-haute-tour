@@ -16,7 +16,7 @@
         class="absolute left-1/2 top-1/2 aspect-square w-[6000%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_closest-side,transparent_4%,rgb(15_10_30/0.65)_16%)]"
         :class="{
           'motion-safe:animate-fade-in': cast.stage === 'charging',
-          'motion-safe:animate-fade-out [--enter-delay:3.6s]': cast.stage === 'release',
+          'pointer-events-auto': cast.stage === 'release',
           'motion-safe:animate-fade-out [--enter-delay:0.35s]': cast.stage === 'fizzle',
         }"
       />
@@ -136,20 +136,26 @@
       />
 
       <!-- À qui le sort est allé, une fois la pièce envolée, dans l'éclat du
-           titre du Grimoire et la couleur de sa magie — ombre pleine : il peut
-           tomber sur le papier clair. Il s'efface avec la vignette. Deux
-           boîtes : le fondu de sortie et le rebond d'arrivée animent chacun la
-           leur. `w-max` : posée dans une boîte d'un médaillon de large, la
-           ligne se mesurerait sur elle. -->
+           titre du Grimoire : blanc, dans un halo de la couleur de sa magie
+           (`--glow`) — ombre pleine : il peut tomber sur le papier clair. Il
+           tient, vignette comprise, jusqu'à son OK. `w-max` : posée dans une
+           boîte d'un médaillon de large, la ligne se mesurerait sur elle. -->
       <div
         v-if="cast.headline"
-        class="absolute left-1/2 top-1/2 w-max -translate-x-1/2 -translate-y-1/2 motion-safe:animate-fade-out [--enter-delay:3.6s]"
+        class="absolute left-1/2 top-1/2 flex w-max -translate-x-1/2 -translate-y-1/2 flex-col items-center"
       >
         <p class="text-center text-[max(2rem,6dvh)] leading-tight motion-safe:animate-cheer [--enter-delay:1.05s]">
-          <BaseGlowLabel :color="CAST_GLOWS[cast.face]">
+          <BaseGlowLabel :style="{ '--glow': CAST_GLOWS[cast.face] }">
             {{ cast.headline[0] }}<br>{{ cast.headline[1] }}
           </BaseGlowLabel>
         </p>
+        <BaseButton
+          variant="link"
+          class="pointer-events-auto mt-[3dvh] motion-safe:animate-fade-in [--enter-delay:1.3s]"
+          @click="$emit('dismiss')"
+        >
+          OK
+        </BaseButton>
       </div>
     </div>
   </div>
@@ -164,7 +170,7 @@
 // composables/useSpellCast.ts, leurs mouvements de assets/css/main.css.
 //
 // Les douze principes, où ils jouent : écrasement et étirement au décollage,
-// à l'éclat et à l'envol ; anticipation avant chacun (il s'écrase, inspire,
+// à l'éclat et à l'envol ; anticipation avant l'éclat et l'envol (il inspire,
 // plonge) ; mise en scène par la vignette et le centre de l'écran ; poses
 // clés pour la pièce, éclairs et gerbes générés au fil de l'eau ; la foudre,
 // la gerbe et le titre qui survivent à la pièce ; une courbe par étape ; arcs
@@ -175,12 +181,13 @@ import type { SpellCast } from '~~/composables/useSpellCast'
 
 defineProps<{ cast: SpellCast }>()
 
+defineEmits<{ dismiss: [] }>()
+
 const root = useTemplateRef<HTMLElement>('root')
 
 /**
  * Du centre du rond au centre de l'écran, en pixels. Mesuré une fois, au
- * montage — avant la première image : la pièce s'écrase d'abord dans son rond,
- * elle ne part qu'ensuite. Une translation plutôt qu'une pièce posée en
+ * montage — avant la première image. Une translation plutôt qu'une pièce posée en
  * `fixed` : les boîtes animées du Grimoire (son entrée, l'encre) captent le
  * `fixed`, qui se placerait sur elles et non sur l'écran.
  */

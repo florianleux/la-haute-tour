@@ -1,10 +1,29 @@
 <template>
-  <DialogueScene
-    :dialogue="dialogue"
-    @answer="name = $event"
-    @choose="pick"
-    @end="end"
-  />
+  <div class="contents">
+    <DialogueScene
+      :dialogue="dialogue"
+      @answer="name = $event"
+      @choose="pick"
+      @end="end"
+    />
+
+    <!-- Le Fromage pris : il se montre pour lui seul, et OK fait entrer dans
+         la Tour. -->
+    <ItemReveal
+      v-if="gifted"
+      :label="CHEESE.name"
+      @close="leave"
+    >
+      <template v-if="leaveFailed" #notice>
+        L'entrée dans la Tour a échoué. Réessaie.
+      </template>
+      <img
+        :src="CHEESE.image"
+        :alt="CHEESE.name"
+        class="size-full object-contain"
+      >
+    </ItemReveal>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -418,14 +437,42 @@ async function end(): Promise<void> {
       step.value = { scene: 'gift' }
       break
     case 'gift':
-      // Le Fromage pris, l'introduction rend la main au jeu : la page de jeu affiche ce que la
-      // phase du joueur désigne, et c'est là qu'il commence. L'identité est
-      // relue avant d'y aller : gardée en cache, elle dirait encore
-      // l'introduction à faire, et le garde des pages y renverrait le joueur.
-      await $fetch('/api/profile/intro', { method: 'POST' })
-      await refreshUser()
-      await navigateTo('/')
+      // Le Fromage pris, il se montre (ItemReveal) ; son OK appelle leave().
+      gifted.value = true
       break
   }
+}
+
+/** Le Fromage, que L'Inconnu tend au départ. */
+const CHEESE = itemLabel('CHEESE')
+/** Le Fromage est pris : il se montre jusqu'au OK. */
+const gifted = ref(false)
+/** Le OK est parti : un second clic ne refinit pas l'introduction. */
+const leaving = ref(false)
+/** Le OK n'a pas abouti : on le dit, et il redevient cliquable. */
+const leaveFailed = ref(false)
+
+/**
+ * Le OK du Fromage : l'introduction rend la main au jeu. La page de jeu affiche
+ * ce que la phase du joueur désigne, et c'est là qu'il commence. L'identité est
+ * relue avant d'y aller : gardée en cache, elle dirait encore l'introduction à
+ * faire, et le garde des pages y renverrait le joueur.
+ */
+async function leave(): Promise<void> {
+  if (leaving.value) {
+    return
+  }
+  leaving.value = true
+  leaveFailed.value = false
+  try {
+    await $fetch('/api/profile/intro', { method: 'POST' })
+  }
+  catch {
+    leaveFailed.value = true
+    leaving.value = false
+    return
+  }
+  await refreshUser()
+  await navigateTo('/')
 }
 </script>

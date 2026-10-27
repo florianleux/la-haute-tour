@@ -31,12 +31,13 @@
       />
 
       <!-- La magie du livre : des étincelles partout dessus, qui s'allument
-           une fois le livre posé. Blanches, dans un halo turquoise, la
-           couleur de la couverture, qui les détache du papier clair. Elles
-           tournent en boucle : la sortie ne les attend pas. -->
+           une fois le livre posé. Blanches, dans un halo turquoise clair, la
+           couleur de la couverture, qui les détache du papier clair : foncé,
+           le disque se lit comme une tache noire. Elles tournent en boucle :
+           la sortie ne les attend pas. -->
       <SparkleField
         :sparks="SPARKS"
-        glow="rgb(15 118 110 / 0.8)"
+        glow="rgb(20 184 166 / 0.5)"
         class="pointer-events-none"
         v-bind="fadeLayer(closing, '0.6s')"
       />
@@ -65,7 +66,7 @@
             <!-- Changer de sort remonte le détail, le reste de la page et
                  l'historique (`:key`) : ils réapparaissent à l'encre, en
                  cascade, du nom du sort à la dernière ligne. -->
-            <SpellbookDetails :key="`details-${selected}`" :spell="selected" :count="count" :cast="castScene" />
+            <SpellbookDetails :key="`details-${selected}`" :spell="selected" :count="count" :cast="castScene" @dismiss="dismissCast" />
 
             <div :key="`actions-${selected}`" class="motion-safe:animate-ink-in [--enter-delay:0.18s]">
               <!-- Une catégorie par bouton, jamais une personne : le joueur ne
@@ -288,7 +289,11 @@ watch(() => props.lesson, (line) => {
 // L'animation du lancer, sur le médaillon du sort : la requête part pendant
 // qu'il se charge, et le résultat ne s'écrit qu'une fois qu'il s'est envolé.
 // Les boutons restent éteints jusque-là, pas seulement le temps de la requête.
-const { cast: castScene, play: playCast } = useSpellCast()
+const { cast: castScene, play: playCast, dismiss: dismissCast } = useSpellCast()
+
+// Un autre sort ouvert pendant que le titre attend son OK : sa page ne montre
+// plus ce lancer, ni donc son OK. Il se referme de lui-même.
+watch(selected, dismissCast)
 
 async function castOn(spell: SpellId, kind: TargetKind): Promise<void> {
   castingOn.value = kind
