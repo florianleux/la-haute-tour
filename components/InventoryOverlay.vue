@@ -57,25 +57,35 @@
         </div>
 
         <!-- La page de détail : l'Objet choisi, son image, son nom et sa
-             description. Sans Objet choisi, une phrase à la place. -->
-        <div v-if="shown" class="flex flex-1 flex-col items-center justify-center gap-[4%] text-center">
-          <img :src="shown.image" alt="" class="h-[40%] object-contain">
-          <h3 class="text-[max(1.25rem,3.5dvh)] font-semibold">
-            {{ shown.name }}
-          </h3>
-          <p class="text-[max(1rem,2.5dvh)]">
-            {{ shown.description }}
-          </p>
-          <!-- En leçon, Michel attend le Fromage : l'utiliser, c'est le lui
-               donner. Voir specs/spec.md (glossaire, « Utiliser »). -->
-          <template v-if="lesson?.awaits === 'use' && selected === 'CHEESE'">
-            <BaseButton variant="parchment" :loading="using" @click="submitUse(close)">
-              Donner à Michel
-            </BaseButton>
-            <p v-if="useFailed" class="text-[max(0.9rem,2dvh)] italic">
+             description, centrés au-dessus de la place du bouton. Sans Objet
+             choisi, une phrase à la place. -->
+        <div v-if="shown" class="flex flex-1 flex-col items-center text-center">
+          <div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-[4%]">
+            <img :src="shown.image" alt="" class="h-[40%] object-contain">
+            <h3 class="text-[max(1.25rem,3.5dvh)] font-semibold">
+              {{ shown.name }}
+            </h3>
+            <p class="text-[max(0.9rem,2.1dvh)] italic">
+              {{ shown.description }}
+            </p>
+            <p v-if="useFailed" class="text-[max(0.9rem,2dvh)] italic text-rose-800">
               Michel n'a pas pu l'attraper. Réessaie.
             </p>
-          </template>
+          </div>
+          <!-- La place du bouton, réservée même vide : le détail ne saute pas
+               quand il paraît. Son bas est celui du volet. En leçon, Michel
+               attend le Fromage : l'utiliser, c'est le lui donner. Voir
+               specs/spec.md (glossaire, « Utiliser »). -->
+          <div class="flex h-11 shrink-0 items-end">
+            <BaseButton
+              v-if="lesson?.awaits === 'use' && selected === 'CHEESE'"
+              variant="parchment"
+              :loading="using"
+              @click="submitUse(close)"
+            >
+              Donner à Michel
+            </BaseButton>
+          </div>
         </div>
         <div v-else class="flex flex-1 items-center justify-center text-center">
           <p class="text-[max(1rem,2.5dvh)] italic text-amber-950/70">
