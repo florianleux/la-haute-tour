@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
+import { seedFlags } from '../../scripts/seed-flags'
 import { createPlayer, createTestDatabase } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { BossFlagsResponse } from '../../server/api/admin/boss-flags.get'
@@ -19,6 +20,10 @@ describe('drapeaux du banc du boss', () => {
   beforeEach(async () => {
     const db = await createTestDatabase()
     setDatabase(db)
+    await seedFlags(db, [
+      { slug: 'katanga', image: 'd24d7cb77092d3a8', bossAttemptNumber: 1, answerLabel: 'Katanga', acceptedAnswers: ['Katanga'] },
+      { slug: 'japan', image: '0123456789abcdef', bossAttemptNumber: 6, answerLabel: 'Japon', acceptedAnswers: ['Japon'] },
+    ])
     playerId = await createPlayer(db)
     adminCookie = await sessionCookieFor(
       await createPlayer(db, { discordId: '999', username: 'saruman', isAdmin: true }),
@@ -35,7 +40,6 @@ describe('drapeaux du banc du boss', () => {
 
     expect(response.status).toBe(200)
     const body: BossFlagsResponse = await response.json()
-    expect(body.flags.length).toBeGreaterThan(0)
-    expect(body.flags.every(flag => flag.bossAttemptNumber === 1 && flag.answer.length > 0)).toBe(true)
+    expect(body.flags).toEqual([{ image: 'd24d7cb77092d3a8', answerLabel: 'Katanga', acceptedAnswers: ['Katanga'] }])
   })
 })

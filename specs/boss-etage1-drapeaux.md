@@ -47,9 +47,18 @@ Sur le fond sombre de l'arche, après « Entrer » :
 - Chaque drapeau (`flag`) porte, comme une question classique, plusieurs
   **réponses acceptées** et une **réponse affichée** séparée (plus riche),
   montrée sur échec.
-- Table dédiée, distincte du deck de questions : image du drapeau, réponses
-  acceptées, réponse affichée, combat de boss associé (`bossAttemptNumber`,
-  1 à 6).
+- Table dédiée (`flags`), distincte du deck de questions : image du drapeau,
+  réponses acceptées, réponse affichée, combat de boss associé
+  (`bossAttemptNumber`, 1 à 6).
+- **Catalogue fixe**, curaté dans `scripts/flags.json` et chargé par
+  `pnpm db:seed-flags` (en prod : `pnpm db:seed-flags:prod`). Le seed
+  remplace le catalogue entier : il se relance sans doublon. Pas d'écran
+  admin, pas de contestation.
+- **Images** : `public/images/boss/1/flags/<image>.webp`, où `<image>` est un
+  identifiant tiré au hasard une fois (16 caractères hexadécimaux), écrit dans
+  le fichier source. Un nom lisible (`katanga.webp`) donnait la réponse dans
+  l'URL de l'image, et laissait deviner quels pays sont dans le lot. Le slug
+  lisible reste côté serveur, jamais servi au joueur.
 
 ## Progression de la difficulté
 
@@ -60,11 +69,6 @@ Le degré de difficulté suit les 3 paliers du cadre général :
 | Difficile | 1-2 | Drapeaux hors pays : régions, départements français, États américains, anciens drapeaux… |
 | Moyen | 3-4 | Drapeaux de pays peu connus |
 | Facile | 5-6 | Drapeaux de pays connus |
-
-## Points encore à spécifier
-
-- Liste exacte des 60 drapeaux curatés (10 par combat × 6).
-- Gestion des images en base (format, stockage, admin).
 
 ---
 

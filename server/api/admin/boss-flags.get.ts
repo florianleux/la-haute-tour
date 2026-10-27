@@ -1,6 +1,10 @@
-import flags from '~~/scripts/flags.json'
+import { eq } from 'drizzle-orm'
+import { useDatabase } from '~~/server/db/client'
+import { flags } from '~~/server/db/schema'
+import type { Flag } from '~~/server/db/schema'
 
-export type BossFlag = typeof flags[number]
+/** Ce que le banc montre d'un drapeau : l'image, et de quoi juger la saisie. Jamais le slug, qui dit la réponse. */
+export type BossFlag = Pick<Flag, 'image' | 'answerLabel' | 'acceptedAnswers'>
 
 export interface BossFlagsResponse {
   flags: BossFlag[]
@@ -17,5 +21,10 @@ export interface BossFlagsResponse {
 export default defineEventHandler(async (event): Promise<BossFlagsResponse> => {
   await requireAdmin(event)
 
-  return { flags: flags.filter(entry => entry.bossAttemptNumber === 1) }
+  return {
+    flags: await useDatabase()
+      .select({ image: flags.image, answerLabel: flags.answerLabel, acceptedAnswers: flags.acceptedAnswers })
+      .from(flags)
+      .where(eq(flags.bossAttemptNumber, 1)),
+  }
 })

@@ -13,7 +13,7 @@ Ce qui a été fait : lecture des 54 handlers de `server/api/**`, des utilitaire
 | CSRF | Tient. |
 | Entrées | Tient. Zod partout, aucun SQL concaténé. |
 | Triche | **Faille corrigée** : deux requêtes simultanées jouaient deux fois le même coup (#124). |
-| Données exposées | **Deux failles corrigées** : réponses du Pool Échecs lisibles pendant le rattrapage (#125), réponses du boss dans le JS public (#126). Reste les noms d'images du boss (#131). |
+| Données exposées | **Deux failles corrigées** : réponses du Pool Échecs lisibles pendant le rattrapage (#125), réponses du boss dans le JS public (#126). Les noms d'images du boss sont opaques depuis #131. |
 | Secrets et dépendances | Aucun secret exposé. Deux dépendances runtime vulnérables mises à jour (#127) ; le reste de l'audit ne part pas en prod, justifié plus bas. |
 | En-têtes HTTP | HSTS et `nosniff` présents ; CSP, `frame-ancestors`, `Referrer-Policy` absents (#128, non bloquant). |
 
@@ -80,7 +80,7 @@ Les quatre failles qui bloquaient #103 (#124 à #127) sont corrigées par les co
 - **Réponses** : une question servie n'en porte aucune, la réponse arrive avec le verdict, le Volumen se ferme hors du camp.
 - **Faille, corrigée (#125)** : `/api/game/disputable-errors` rendait énoncés et réponses du Pool Échecs à tout moment, rattrapage compris. Il ne rend plus que les identifiants.
 - **Faille, corrigée (#126)** : la page du banc du boss importait `scripts/flags.json`, et le chunk `/_nuxt/DQcZNxOV.js` servait les 60 drapeaux, réponses comprises, à n'importe qui depuis le déploiement du 21 octobre. Les drapeaux passent maintenant par `/api/admin/boss-flags`, admin seul ; un build vérifié n'en contient plus aucun dans `.output/public`.
-- **Reste (#131)** : les images des drapeaux portent leur réponse dans leur nom. À régler avant d'ouvrir le combat.
+- **Corrigé (#131)** : les images des drapeaux portaient leur réponse dans leur nom. Elles ont maintenant un nom tiré au hasard (`public/images/boss/1/flags/<image>.webp`), et le slug lisible reste en base. Reste pour le combat (#34) : servir une épreuve sans ses réponses acceptées, et la juger côté serveur.
 - Nitro en prod ne renvoie aucune pile d'erreur.
 
 ## Secrets et dépendances

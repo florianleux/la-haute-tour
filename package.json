@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:prod": "DATABASE_URL= drizzle-kit migrate",
-    "db:import": "tsx --env-file-if-exists=.env scripts/import-questions.ts"
+    "db:import": "tsx --env-file-if-exists=.env scripts/import-questions.ts",
+    "db:seed-flags": "tsx --env-file-if-exists=.env scripts/seed-flags.ts",
+    "db:seed-flags:prod": "DATABASE_URL= tsx --env-file-if-exists=.env scripts/seed-flags.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -35,12 +35,12 @@
 
         <template v-if="verdict === null">
           <img
-            :src="`/images/boss/1/flags/${flag.slug}.webp`"
+            :src="`/images/boss/1/flags/${flag.image}.webp`"
             alt="Le drapeau à reconnaître"
             class="aspect-2/1 w-[43.3dvh] object-contain drop-shadow-md"
           >
           <BaseParchmentInput
-            :key="flag.slug"
+            :key="flag.image"
             v-model="typed"
             @submit="answer"
           />
@@ -103,12 +103,12 @@ const { data: fight } = await useAsyncData(
 )
 
 // ponytail: drapeau forcé en tête pour régler la taille : le seul en 2:1 du
-// combat, donc le plus large. À retirer une fois le cadre dessiné.
-const FORCED_FLAG = 'transnistria'
+// combat, donc le plus large (la Transnistrie). À retirer une fois le cadre dessiné.
+const FORCED_FLAG = '419dd040b5e72e1a'
 
 function shuffled(): BossFlag[] {
   return (fight.value?.flags ?? [])
-    .map(entry => ({ entry, key: entry.slug === FORCED_FLAG ? -1 : Math.random() }))
+    .map(entry => ({ entry, key: entry.image === FORCED_FLAG ? -1 : Math.random() }))
     .sort((a, b) => a.key - b.key)
     .map(({ entry }) => entry)
 }
@@ -147,7 +147,7 @@ function answer(): void {
     return
   }
 
-  verdict.value = isAnswerAccepted(typed.value, [flag.value.answer, ...flag.value.variants])
+  verdict.value = isAnswerAccepted(typed.value, flag.value.acceptedAnswers)
   if (verdict.value) {
     bossHp.value--
   }

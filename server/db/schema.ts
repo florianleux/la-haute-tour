@@ -623,6 +623,36 @@ export const deckFloors = sqliteTable('deck_floors', {
   total: integer('total').notNull().default(0),
 })
 
+/**
+ * Les drapeaux du boss de l'étage 1 : le contenu de ses épreuves. Un catalogue
+ * fixe, curaté une fois dans scripts/flags.json et chargé par
+ * `pnpm db:seed-flags`, jamais administré. Une table à part du deck : ce ne sont
+ * pas des questions, et le joueur ne les « voit » jamais au sens du deck.
+ * Voir specs/boss-etage1-drapeaux.md.
+ */
+export const flags = sqliteTable('flags', {
+  /** L'identifiant lisible, celui du fichier source. Jamais servi au joueur : il dit la réponse. */
+  slug: text('slug').primaryKey(),
+  /**
+   * Le nom du fichier sous public/images/boss/1/flags/, sans extension. Tiré au
+   * hasard une fois : un nom lisible donnait la réponse dans l'URL de l'image,
+   * et laissait deviner quels pays sont dans le lot (#131).
+   */
+  image: text('image').notNull().unique(),
+  /** Le combat de boss qui le sert, 1 à 6 : c'est ce qui fait sa difficulté. */
+  bossAttemptNumber: integer('boss_attempt_number').notNull(),
+  /** Ce que le joueur lit sur échec ; jamais comparé à sa saisie. */
+  answerLabel: text('answer_label').notNull(),
+  /**
+   * Toutes les formulations qui valident le drapeau. Une colonne et non une table
+   * comme celle du deck : le catalogue ne s'édite jamais réponse par réponse.
+   */
+  acceptedAnswers: text('accepted_answers', { mode: 'json' }).$type<string[]>().notNull(),
+}, table => [
+  index('flags_boss_attempt_idx').on(table.bossAttemptNumber),
+  check('flags_boss_attempt_range', sql`${table.bossAttemptNumber} BETWEEN 1 AND 6`),
+])
+
 export type User = typeof users.$inferSelect
 export type Whitelist = typeof whitelist.$inferSelect
 export type Question = typeof questions.$inferSelect
@@ -640,3 +670,4 @@ export type Item = typeof items.$inferSelect
 export type ActiveEffect = typeof activeEffects.$inferSelect
 export type Settings = typeof settings.$inferSelect
 export type Achievement = typeof achievements.$inferSelect
+export type Flag = typeof flags.$inferSelect
