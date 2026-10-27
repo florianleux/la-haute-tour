@@ -35,8 +35,10 @@ const props = withDefaults(defineProps<{
    * à la taille et à la couleur du texte qui l'entoure, qu'elle reprend plutôt
    * que d'imposer les siennes. `parchment` : un bouton tracé à l'encre, pour
    * une action posée sur du papier (le Grimoire), où les fonds sombres jurent.
-   * `link` : un simple lien blanc, en capitales, posé sur un voile sombre — le
-   * OK d'une apparition (ItemReveal, SpellCastBurst).
+   * `link` : un simple lien blanc, en capitales, l'ombre sombre des noms du
+   * camp au plus près : il se lit sur un voile sombre comme sur le papier clair
+   * que la vignette d'un lancer laisse au centre — le OK d'une apparition
+   * (ItemReveal, SpellCastBurst).
    */
   variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'link'
   disabled?: boolean
@@ -64,7 +66,7 @@ const VARIANTS = {
   ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
   option: 'py-1 italic bg-transparent text-inherit transition-colors hover:underline',
-  link: 'py-1 text-[max(1.1rem,2.6dvh)] font-semibold tracking-wider uppercase bg-transparent text-white underline-offset-4 transition-opacity hover:underline hover:opacity-80',
+  link: 'py-1 text-[max(1.1rem,2.6dvh)] font-semibold tracking-wider uppercase bg-transparent text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6)] underline-offset-4 transition-opacity hover:underline hover:opacity-80',
   parchment: `${PADDED} border-2 border-amber-900/40 bg-transparent text-amber-950 enabled:hover:bg-amber-900/10`,
 }
 
