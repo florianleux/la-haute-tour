@@ -124,6 +124,17 @@
       </BaseNotice>
     </BaseCard>
 
+    <!-- Le retour au camp depuis le jeu (ascension, coffre, rattrapage) : le
+         camp sort d'un fondu au noir, au lieu de remplacer le cadre de jeu
+         d'un coup. Hors de la chaîne des cartes, que `<Transition>` ne peut
+         pas porter : le camp a plusieurs racines. Sans animation, pas de
+         voile — il ne se retirerait jamais. -->
+    <div
+      v-if="campFade"
+      class="pointer-events-none fixed inset-0 z-40 bg-slate-950 motion-safe:animate-camp-fade motion-reduce:hidden"
+      @animationend="campFade = false"
+    />
+
     <!-- Michel en leçon, sur le camp. Hors de la chaîne des cartes : glissé
          dedans, il la coupait, et la carte vide du `v-else` s'affichait à côté
          de la question. Quand une boîte du camp est ouverte, c'est
@@ -163,7 +174,7 @@
 <script setup lang="ts">
 import { AchievementsOverlay, InventoryOverlay, QuestionLogOverlay, SpellbookOverlay } from '#components'
 import type { Component } from 'vue'
-import type { CampOverlayId } from '~~/utils/phase'
+import type { CampOverlayId, PlayView } from '~~/utils/phase'
 
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
 // celle-là. Le joueur ne choisit jamais son écran. Voir specs/ecrans.md.
@@ -249,6 +260,18 @@ const view = computed(() =>
     ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value })
     : null,
 )
+
+// Le jeu qui rend la main au camp : voir le voile `campFade` du gabarit. Pas au
+// chargement (aucune carte avant), ni depuis la question d'essai, jouée sur le
+// camp sans le quitter.
+const campFade = ref(false)
+const PLAY_CARDS = new Set<PlayView['card']>(['question', 'result', 'chest', 'recovery'])
+
+watch(() => view.value?.card, (card, previous) => {
+  if (card === 'cooldown' && previous && PLAY_CARDS.has(previous)) {
+    campFade.value = true
+  }
+})
 
 // Armé sur l'id, pas l'objet : une relecture rend le même verdict dans un nouvel
 // objet et le rouvrirait. Sans `immediate` : une page rechargée en pleine
