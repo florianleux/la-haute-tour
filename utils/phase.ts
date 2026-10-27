@@ -58,9 +58,9 @@ export function nextActionLabel(state: GameState): string {
     return NEXT;
   }
 
-  // Au combat : l'épreuve suivante, ou, le boss battu, le palier franchi.
+  // Au combat : l'épreuve suivante, ou, le boss battu ou passé, le palier franchi.
   if (state.phase === "bossFight") {
-    return state.boss?.outcome === "victory" ? "Continuer" : NEXT;
+    return state.boss?.outcome ? "Continuer" : NEXT;
   }
 
   // Un verdict lu en pleine ascension : la suite est la question d'après.
@@ -140,8 +140,8 @@ export function runningTimer(state: GameState | null): RunningTimer | null {
 
 /**
  * La fin d'un combat de boss qui se lit avant la phase d'après : la défaite,
- * sur son outro, avant le camp en attente ; la victoire au dernier étage, sur
- * l'arène, avant la fin de partie. Désignée pour que la page ne la montre
+ * sur son outro, avant le camp en attente ; la victoire ou le passage au
+ * dernier étage, sur l'arène, avant la fin de partie. Désignée pour que la page ne la montre
  * qu'une fois — la défaite par l'échéance de son attente, propre à chacune.
  * Null partout ailleurs.
  */
@@ -149,7 +149,7 @@ export function bossEndId(state: GameState): string | null {
   if (state.phase === "cooldown" && state.boss?.outcome === "defeat") {
     return state.cooldownUntil;
   }
-  return state.phase === "gameOver" && state.boss?.outcome === "victory" ? "victory" : null;
+  return state.phase === "gameOver" ? state.boss?.outcome ?? null : null;
 }
 
 /**
@@ -304,7 +304,7 @@ export function playView(
   const next: PlayAction = { label: nextActionLabel(state), move: "advance" };
 
   // La fin du combat se lit avant la phase d'après, comme une chute avant le
-  // poster : la défaite sur son outro, la victoire du dernier étage sur
+  // poster : la défaite sur son outro, la victoire ou le passage du dernier étage sur
   // l'arène. Voir specs/spec.md#glossaire (Outro de défaite).
   const ended = bossEndId(state);
   if (ended !== null && ended === client.bossEndOn && state.boss) {

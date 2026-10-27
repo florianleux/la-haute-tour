@@ -824,6 +824,9 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
   const { user, reservation, question } = snapshot
   const seen = user.floorSeen
   const played = playedRules(snapshot)
+  // Sans vie, le joueur doit un rattrapage — sauf le boss passé, qui franchit
+  // le palier à vies pleines. Voir specs/boss.md#tentatives-et-difficulté.
+  const fallen = user.lives <= 0 && user.bossHp !== 0
 
   const base = {
     floor: user.currentFloor,
@@ -834,10 +837,10 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
     // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
     // faut un perfect pour repartir.
-    recovery: user.lives <= 0 ? recoveryProgress(snapshot.recoveryRun, played) : null,
+    recovery: fallen ? recoveryProgress(snapshot.recoveryRun, played) : null,
     // Les règles seules, sans compter le Pool Échecs : le tirage réel s'arrête
     // à ce qu'il contient.
-    nextRecovery: user.lives <= 0 && !snapshot.recoveryRun.length
+    nextRecovery: fallen && !snapshot.recoveryRun.length
       ? { total: played.recoveryQuestions, required: recoveryThreshold(played.recoveryQuestions, played) }
       : null,
     floorSeen: seen,

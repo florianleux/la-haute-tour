@@ -14,11 +14,11 @@ import type { User } from '../../server/db/schema'
 const NOW = new Date('2026-09-03T12:00:00.000Z')
 const rules = rulesForFloor(1)
 
-/** Les dix drapeaux du premier combat : l'image dit la réponse au test, jamais au joueur. */
-const FLAGS = Array.from({ length: 10 }, (_, index) => ({
+/** Dix drapeaux par combat, six combats : l'image dit la réponse au test, jamais au joueur. */
+const FLAGS = Array.from({ length: 60 }, (_, index) => ({
   slug: `drapeau-${index}`,
   image: index.toString(16).padStart(16, '0'),
-  bossAttemptNumber: 1,
+  bossAttemptNumber: Math.floor(index / 10) + 1,
   answerLabel: `Le pays ${index}`,
   acceptedAnswers: [`Pays ${index}`],
 }))
@@ -210,6 +210,49 @@ describe('combat de boss', () => {
       expect(again).toMatchObject({ phase: 'bossFight', lives: rules.lives })
       expect(again.boss).toMatchObject({ hp: rules.bossHp, verdict: null })
       expect((await reload()).bossAttemptNumber).toBe(2)
+    })
+
+    it('sert au combat suivant les drapeaux de son numéro : la difficulté baisse', async () => {
+      await set({ bossAttemptNumber: 3 })
+
+      await enter()
+
+      const drawn = await db.select().from(bossTrials)
+      expect(drawn).toHaveLength(10)
+      expect(new Set(drawn.map(trial => FLAGS.find(flag => flag.slug === trial.flagSlug)!.bossAttemptNumber))).toEqual(new Set([4]))
+    })
+
+    it('au 6e combat perdu, le boss laisse passer : ni outro ni attente, « Continuer » franchit le palier', async () => {
+      await set({ bossAttemptNumber: 5 })
+
+      const passed = await lose()
+
+      expect(passed).toMatchObject({ phase: 'bossFight', lives: 0, cooldownUntil: null, recovery: null, nextRecovery: null })
+      expect(passed.boss).toMatchObject({ outcome: 'passed', hp: rules.bossHp, trial: null })
+
+      const climbed = await next()
+
+      expect(climbed).toMatchObject({ phase: 'ascent', floor: 2, lives: rules.lives })
+      expect(climbed.question?.statement).toBe('Question de l étage 2 ?')
+      expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0 })
+    })
+
+    it('rouvre encore le dernier combat à qui en a déjà perdu six, plutôt que de le bloquer au palier', async () => {
+      await set({ bossAttemptNumber: 6 })
+
+      expect((await enter()).phase).toBe('bossFight')
+      const drawn = await db.select().from(bossTrials)
+      expect(new Set(drawn.map(trial => FLAGS.find(flag => flag.slug === trial.flagSlug)!.bossAttemptNumber))).toEqual(new Set([6]))
+    })
+
+    it('au 6e combat perdu du dernier étage, la partie s achève', async () => {
+      await set({ currentFloor: FLOOR_COUNT, bossAttemptNumber: 5 })
+      await markSeen(db, player.id, await createQuestion(db, { floor: FLOOR_COUNT }), { floor: FLOOR_COUNT })
+
+      const passed = await lose()
+
+      expect(passed.phase).toBe('gameOver')
+      expect(passed.boss?.outcome).toBe('passed')
     })
 
     it('ne consomme pas un effet en attente : ni à l entrée, ni à la reprise d avant combat', async () => {

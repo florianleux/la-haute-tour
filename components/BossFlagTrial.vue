@@ -90,6 +90,9 @@ const headline = computed(() => {
   if (props.outcome === 'victory') {
     return { text: 'Victoire !', ink: 'text-emerald-700' }
   }
+  if (props.outcome === 'passed') {
+    return { text: 'Le boss te laisse passer', ink: 'text-amber-700' }
+  }
   if (props.outcome === 'defeat') {
     return { text: 'Défaite...', ink: 'text-rose-700' }
   }

@@ -1,6 +1,6 @@
 # Boss
 
-> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente puis au rattrapage. Pas encore : la porte retenue et ses clés (#137 à #143), les paliers de difficulté et le passage automatique (#35, toujours les épreuves du 1er combat), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas), les reliques (#40). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
+> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente puis au rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. Pas encore : la porte retenue et ses clés (#137 à #143), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas), les reliques (#40). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
 
 Chaque étage se termine par un boss. Battu, il ouvre le suivant. Contrairement
 aux questions du deck, chaque boss est un mini-jeu propre — le cadre ci-dessous
@@ -67,7 +67,9 @@ Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
   transversale — donc elle est propre à chaque boss : c'est le curateur qui
   place ses épreuves les plus dures dans les tranches 1-2 en construisant les
   60.
-- **6 échecs consécutifs → passage automatique** à l'étage suivant.
+- **6 échecs consécutifs → passage automatique** (`passed`) à l'étage suivant :
+  pas d'outro de défaite ni d'attente, « Le boss te laisse passer » se lit sur
+  l'arène, puis « Continuer » franchit le palier, comme après une victoire.
 - **1er combat** : le joueur entre avec les vies qu'il lui restait à la fin
   de l'ascension, **3 au plus** — une vie gagnée par Vitalité ne passe pas la
   porte du boss. Sauf si elles sont à 0, voir « Cas à 0 vie » plus bas.

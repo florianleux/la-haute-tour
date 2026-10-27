@@ -182,6 +182,10 @@ describe('action de la page de jeu', () => {
     expect(nextActionLabel(state({ phase: 'bossFight', boss: { ...fight, trial: null, outcome: 'victory' } }))).toBe('Continuer')
   })
 
+  it('franchit le palier d un « Continuer », boss passé au 6e combat perdu', () => {
+    expect(nextActionLabel(state({ phase: 'bossFight', lives: 0, boss: { ...fight, trial: null, outcome: 'passed' } }))).toBe('Continuer')
+  })
+
   it('démarre, poursuit puis termine un rattrapage', () => {
     const ongoing = { total: 3, played: 0, successes: 0, resumes: false, sealed: false, required: 1 }
 
@@ -344,6 +348,14 @@ describe('carte de jeu', () => {
     expect(card(won, { chestOf: null, fallenOn: null, bossEndOn: 'victory' }))
       .toEqual({ card: 'bossFight', action: { label: 'Continuer', move: 'leave' } })
     expect(card(won)).toEqual({ card: 'result', action: null })
+  })
+
+  it('montre le passage du dernier étage sur l arène, puis la fin de partie', () => {
+    const passed = { phase: 'gameOver' as const, lives: 0, boss: { ...fight, trial: null, outcome: 'passed' as const } }
+
+    expect(card(passed, { chestOf: null, fallenOn: null, bossEndOn: 'passed' }))
+      .toEqual({ card: 'bossFight', action: { label: 'Continuer', move: 'leave' } })
+    expect(card(passed)).toEqual({ card: 'result', action: null })
   })
 })
 
