@@ -1,54 +1,13 @@
 <template>
-  <div class="contents">
-    <!-- Nuit bleue par-dessus le ciel de PlayFrame : le combat n'a pas de décor. -->
-    <div class="fixed inset-0 z-1 bg-[#070d24]" />
-
-    <!-- Le boss, à gauche, posé au bas de l'écran et un peu coupé par le bord,
-         bras dans le dos. Il encaisse chaque bonne réponse en colère, et rit
-         de chaque faute du joueur. Son cadre a la largeur des bras écartés :
-         le corps bras dans le dos y commence à 19,96 %, soit 17,5dvh à 62dvh
-         de haut, retranchés pour que son bord gauche reste à -5vw. -->
-    <BossFigure
-      :figure="FIGURE"
-      pose="back"
-      :expression="expression"
-      :talking="hurt !== null"
-      class="pointer-events-none fixed -left-[calc(5vw+17.5dvh)] bottom-0 z-5 h-[62dvh]"
-      :class="hurt === 'boss' && 'motion-safe:animate-hit'"
-    />
-
-    <!-- Le joueur, à droite, plus petit que le boss et retourné pour lui faire
-         face. Il encaisse chaque faute, et rougit le temps du coup. -->
-    <div
-      class="pointer-events-none fixed bottom-0 right-[4vw] z-5 h-[38dvh]"
-      :class="hurt === 'player' && 'motion-safe:animate-hit'"
-    >
-      <img
-        :src="portrait"
-        alt=""
-        class="h-full w-auto -scale-x-100 transition-[filter] duration-300"
-        :class="hurt === 'player' && 'drop-shadow-[0_0_1.5rem_rgb(220_38_38)]'"
-      >
-    </div>
-
-    <!-- La vie du joueur, en trois cases, à la hauteur de celle du boss. -->
-    <HealthBar
-      :name="user?.displayName ?? ''"
-      :value="lives"
-      :max="rules.lives"
-      segmented
-      class="fixed bottom-[5dvh] right-[4vw] z-20 w-[20vw] text-right text-2xl"
-    />
-
-    <!-- La vie du boss : une longue barre qui part de dessus le boss et
-         s'arrête avant le joueur. Un septième part à chaque bonne réponse. -->
-    <HealthBar
-      name="Julien le perse"
-      :value="bossHp"
-      :max="FULL_BOSS_HP"
-      class="fixed bottom-[5dvh] left-[3vw] right-[31vw] z-20 text-[2rem]"
-    />
-
+  <BossArena
+    :boss="BOSS"
+    :boss-hp="bossHp"
+    :boss-max-hp="FULL_BOSS_HP"
+    :player-name="user?.displayName ?? ''"
+    :portrait="portrait"
+    :lives="lives"
+    :max-lives="rules.lives"
+  >
     <!-- Au milieu, le cadre de l'ascension sans ses rubans : le drapeau, le
          champ, puis le verdict. Le drapeau prend toute la hauteur que le champ
          lui laisse : c'est lui qu'il faut lire. -->
@@ -104,12 +63,12 @@
         />
       </template>
     </PlayFrame>
-  </div>
+  </BossArena>
 </template>
 
 <script setup lang="ts">
-// Banc du combat contre le boss de l'étage 1 : le boss à gauche, le joueur à
-// droite, les drapeaux au milieu. Tout se joue dans la page, sans partie
+// Banc du combat contre le boss de l'étage 1 : l'arène commune (BossArena), les
+// drapeaux au milieu. Tout se joue dans la page, sans partie
 // réelle — le combat n'existe pas encore côté serveur (#34 à #44). Les
 // drapeaux sont ceux du premier combat, mélangés, lus à l'API admin et jamais
 // importés : un import partirait dans le JS public, réponses comprises.
@@ -120,8 +79,7 @@ import { isAnswerAccepted } from '~~/shared/utils/answers'
 // Le jeu de règles, seul à connaître les vies. Un module pur, sans base ni
 // requête : le banc le lit tel quel, faute de partie servie.
 import { rulesForFloor } from '~~/server/utils/rules'
-import { BOSS_INTROS } from '~~/utils/bossIntros'
-import type { BossExpression } from '~~/utils/bossIntros'
+import { BOSSES } from '~~/utils/bosses'
 
 definePageMeta({ admin: true })
 
@@ -130,11 +88,9 @@ const rules = rulesForFloor(1)
 // le jeu de règles — le chrono est propre à chaque boss (specs/boss.md). Ils y
 // entrent avec le vrai combat (#34 à #44) ; ce banc les lira alors comme les vies.
 const FULL_BOSS_HP = 7
-/** Julien le perse : sa figure est celle de son introduction. */
-const FIGURE = BOSS_INTROS[1]!.figure
+/** Julien le perse. */
+const BOSS = BOSSES[1]!
 const SECONDS = 30
-/** Le temps d'un coup encaissé : la secousse (`animate-hit`) et le halo. */
-const HURT_MS = 900
 
 const { data: fight } = await useAsyncData(
   'boss-bench-flags',
@@ -161,8 +117,6 @@ const typed = ref('')
 /** Null tant que le drapeau attend sa réponse, puis juste ou faux. */
 const verdict = ref<boolean | null>(null)
 const secondsLeft = ref(SECONDS)
-const hurt = ref<'boss' | 'player' | null>(null)
-const expression = computed<BossExpression>(() => (hurt.value === 'boss' ? 'angry' : hurt.value === 'player' ? 'laugh' : 'stern'))
 
 const flag = computed(() => order.value[index.value])
 const over = computed(() => bossHp.value === 0 || lives.value === 0)
@@ -191,11 +145,6 @@ function answer(): void {
   else {
     lives.value--
   }
-
-  hurt.value = verdict.value ? 'boss' : 'player'
-  setTimeout(() => {
-    hurt.value = null
-  }, HURT_MS)
 }
 
 function next(): void {

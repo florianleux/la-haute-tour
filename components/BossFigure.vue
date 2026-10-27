@@ -26,7 +26,7 @@
 // La figure d'un boss en pièces (specs/spec.md, glossaire, « Figure du
 // boss ») : un corps par pose, une tête par expression, combinés ici. Lue
 // par l'introduction (components/BossIntro.vue) et le combat.
-import type { BossExpression, BossFigure, BossPose } from '~~/utils/bossIntros'
+import type { BossExpression, BossFigure, BossPose } from '~~/utils/bosses'
 
 const props = defineProps<{
   figure: BossFigure

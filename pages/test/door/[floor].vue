@@ -8,7 +8,8 @@
     />
 
     <BossIntro
-      v-else-if="intro && stage === 'intro'"
+      v-else-if="boss && intro && stage === 'intro'"
+      :boss="boss"
       :intro="intro"
       :backdrop="door.archColor"
       @end="fight"
@@ -54,6 +55,7 @@
 // Entrer enchaîne les trois phases du boss : l'introduction de l'étage
 // (BossIntro) s'il en a une au catalogue, puis le banc du combat.
 import { BOSS_DOORS, type BossDoorEntry } from '~~/utils/bossDoors'
+import { BOSSES } from '~~/utils/bosses'
 import { BOSS_INTROS } from '~~/utils/bossIntros'
 
 definePageMeta({ admin: true })
@@ -114,6 +116,7 @@ watch(scenario, reset)
 const bossAssets = useBossAssetsLoadingScreen(floor)
 const router = useRouter()
 
+const boss = BOSSES[floor]
 const intro = BOSS_INTROS[floor]
 /** La phase du boss que montre le banc : la porte, puis l'introduction. */
 const stage = ref<'door' | 'intro'>('door')
@@ -132,7 +135,7 @@ function fight(): void {
 }
 
 function enter(): void {
-  if (intro) {
+  if (boss && intro) {
     stage.value = 'intro'
   }
   else {

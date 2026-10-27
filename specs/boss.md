@@ -218,6 +218,10 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
   quand il encaisse, rieuse quand le joueur encaisse. Chaque boss a les siens au
   catalogue des introductions (`bossIntros`) ; un étage sans entrée passe
   directement au combat. La séquence de chaque boss est décrite dans sa spec.
+- **Le combat** se joue dans l'**arène** (`bossArena`), la même pour tous
+  les boss : figure, joueur, barres de vie et coups. Seule l'épreuve au
+  milieu change d'un boss à l'autre ; le nom et la figure viennent du
+  catalogue des boss (`bosses`).
 - **Chaque épreuve juste** anime la barre de vie du boss : elle perd 1/7 et le
   boss vibre. Une épreuve fausse retire une vie au joueur sans animation
   particulière pour l'instant — juste l'affichage qui baisse.

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { BOSS_DOORS } from '../../utils/bossDoors'
+import { BOSSES } from '../../utils/bosses'
 import { BOSS_INTROS } from '../../utils/bossIntros'
 
 const publicDir = fileURLToPath(new URL('../../public', import.meta.url))
@@ -16,11 +17,15 @@ describe('les introductions de boss', () => {
     }
   })
 
-  it('ont une figure et une nuée dans le dossier de leur boss', () => {
+  it('présentent un boss du catalogue, même étage', () => {
+    for (const [floor] of intros) {
+      expect(BOSSES[Number(floor)]).toBeDefined()
+    }
+  })
+
+  it('ont une nuée dans le dossier de leur boss', () => {
     for (const [floor, intro] of intros) {
-      const { bodies, heads } = intro!.figure
-      const figure = [...Object.values(bodies).map(({ src }) => src), ...Object.values(heads)]
-      for (const image of [...figure, ...(intro!.swarm?.images ?? [])]) {
+      for (const image of intro!.swarm?.images ?? []) {
         expect(image).toMatch(new RegExp(`^/images/boss/${floor}/`))
         expect(existsSync(join(publicDir, image))).toBe(true)
       }

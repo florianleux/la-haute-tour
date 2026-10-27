@@ -1,3 +1,5 @@
+import type { BossExpression, BossPose } from './bosses'
+
 /**
  * Ce qu'un temps de l'introduction déclenche à son début :
  * - `swarm` : la nuée du boss se lâche, vague après vague, indépendamment des
@@ -11,26 +13,6 @@
  * - `title` : son nom en grand titre, le temps du temps.
  */
 export type BossIntroCue = 'swarm' | 'appear' | 'shout' | 'title'
-
-/** La pose du boss, un corps par pose : bras derrière le dos (`back`), bras écartés (`open`). */
-export type BossPose = 'back' | 'open'
-
-/** L'expression du boss, une tête par expression. */
-export type BossExpression = 'stern' | 'shout' | 'angry' | 'laugh'
-
-/**
- * La figure du boss : ses corps et ses têtes, sous public/images/boss/<étage>/,
- * rognés par `cleanimage` (les têtes ensemble : même cadrage). Chaque pièce se
- * place en classes Tailwind (`left-[x%] top-[y%] w-[w%]`) sur le cadre de la
- * figure, dont `frame` donne les proportions : la tête ne bouge pas d'une pose
- * à l'autre, seul le corps change.
- */
-export interface BossFigure {
-  frame: string
-  bodies: Record<BossPose, { src: string, box: string }>
-  heads: Record<BossExpression, string>
-  headBox: string
-}
 
 /**
  * Une vague de la nuée : quand elle part, comptée depuis le cue `swarm`,
@@ -65,17 +47,12 @@ export type BossIntroBeat = {
   | { speaker?: never, text?: never }
 )
 
-/** Une entrée du catalogue des introductions (`bossIntros`) : la mise en scène d'un boss. */
+/**
+ * Une entrée du catalogue des introductions (`bossIntros`) : la mise en scène
+ * d'un boss. Son nom, son épithète et sa figure sont au catalogue des boss
+ * (`bosses`), même étage.
+ */
 export interface BossIntroEntry {
-  /** Le nom du boss, en grand titre au cue `title`, au-dessus de sa tête. */
-  name: string
-  /** Son épithète, en plus petit au-dessus de son nom, même police. */
-  epithet?: string
-  /**
-   * Sa figure, sous public/images/boss/<étage>/ : l'écran de chargement du
-   * boss l'attend, celui du jeu non. Le combat la lit ici aussi.
-   */
-  figure: BossFigure
   /**
    * La place de la figure en classes Tailwind (`left-[x%] top-[y%]
    * w-[w%]`) de la scène 16:9, relevée sur son calque 1920×1080. La nuée se
@@ -108,25 +85,6 @@ export interface BossIntroEntry {
  */
 export const BOSS_INTROS: Readonly<Partial<Record<number, BossIntroEntry>>> = {
   1: {
-    name: 'Julien le perse',
-    epithet: 'Gardien de la Lune',
-    // Le cadre (947×669) : la tête posée sur le corps bras écartés, qui en
-    // prend toute la largeur. Le corps bras dans le dos (542 de large) y est
-    // placé sous le même collier : la tête ne bouge pas quand il change.
-    figure: {
-      frame: 'aspect-[947/669]',
-      bodies: {
-        back: { src: '/images/boss/1/julien-body-back.webp', box: 'left-[19.96%] top-[44.1%] w-[57.23%]' },
-        open: { src: '/images/boss/1/julien-body-open.webp', box: 'left-0 top-[44.1%] w-full' },
-      },
-      heads: {
-        stern: '/images/boss/1/julien-head-stern.webp',
-        shout: '/images/boss/1/julien-head-shout.webp',
-        angry: '/images/boss/1/julien-head-angry.webp',
-        laugh: '/images/boss/1/julien-head-laugh.webp',
-      },
-      headBox: 'left-[37.06%] top-0 w-[24.92%]',
-    },
     // 15 % plus grand que sur son calque (49,32 % × 1,15), centré, pieds sur
     // le bord bas : sa hauteur passe de 61,94 % à 71,23 % de la scène.
     figureBox: 'left-[21.64%] top-[28.77%] w-[56.72%]',

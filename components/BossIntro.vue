@@ -31,7 +31,7 @@
              longtemps, à un autre rythme que sa fenêtre, et sa tête à un
              autre encore. -->
         <BossFigure
-          :figure="intro.figure"
+          :figure="boss.figure"
           :pose="pose"
           :expression="expression"
           :shaking="shaking"
@@ -74,18 +74,18 @@
           :style="{ '--title-ms': `${beat.holdMs ?? 0}ms` }"
         >
           <p
-            v-if="intro.epithet"
+            v-if="boss.epithet"
             class="-mb-[0.4cqw] text-[1.4cqw] leading-none"
             :class="TITLE_GOLD"
           >
-            {{ intro.epithet }}
+            {{ boss.epithet }}
           </p>
           <p
             class="text-[4.6cqw]"
             :class="TITLE_GOLD"
             :style="nameDelay"
           >
-            {{ intro.name }}
+            {{ boss.name }}
           </p>
           <div
             class="mt-[0.4cqw] h-[0.15cqw] w-[48cqw] origin-left bg-linear-to-r from-transparent via-[#e6c878] to-transparent motion-safe:animate-title-rule"
@@ -192,12 +192,15 @@
 // charge de l'écran appelant de lancer le combat. Ses images sont déjà là :
 // l'écran de chargement du boss les a attendues. Banc : pages/test/door/[floor].vue.
 import { BACKDROP_BOX, BACKDROP_COVER, BACKDROP_SCENE } from '~~/utils/backdrop'
+import type { BossEntry } from '~~/utils/bosses'
 import type { BossIntroBeat, BossIntroEntry } from '~~/utils/bossIntros'
 import { DIALOGUE_KEYS } from '~~/utils/keyboard'
 import { prefersReducedMotion } from '~~/utils/motion'
 import { withNonBreakingSpaces } from '~~/utils/typography'
 
 const props = defineProps<{
+  /** Qui il est : nom, épithète, figure (catalogue des boss, même étage). */
+  boss: BossEntry
   intro: BossIntroEntry
   /** Le fond uni de l'arche de la porte (`archColor`), d'où part l'introduction. */
   backdrop: string
@@ -212,7 +215,7 @@ const TITLE_GOLD = 'bg-[linear-gradient(100deg,#a8741a_0%,#f6dc8c_30%,#fffbe8_45
 /** L'avance de l'épithète sur le nom, dans le titre : elle paraît, puis lui. */
 const EPITHET_LEAD_MS = 700
 /** Le nom et son filet partent ensemble, après l'épithète s'il y en a une. */
-const nameDelay = computed(() => (props.intro.epithet ? { animationDelay: `${EPITHET_LEAD_MS}ms` } : undefined))
+const nameDelay = computed(() => (props.boss.epithet ? { animationDelay: `${EPITHET_LEAD_MS}ms` } : undefined))
 /** L'écart entre deux mots du cri. */
 const IMPACT_GAP_MS = 380
 /** Le flottement d'une carte au-dessus d'une main (`hover`), et l'écart de rythme d'une carte à l'autre. */
