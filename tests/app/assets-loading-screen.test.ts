@@ -19,15 +19,17 @@ describe('les fichiers que l écran de chargement attend', () => {
 
   afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-  it('garde le jeu courant et laisse les fichiers cachés et les phases de boss', () => {
+  it('garde le jeu courant et laisse les fichiers cachés, les phases de boss et la connexion', () => {
     dir = mkdtempSync(join(tmpdir(), 'assets-'))
     mkdirSync(join(dir, 'images', 'boss'), { recursive: true })
+    mkdirSync(join(dir, 'images', 'login'))
     mkdirSync(join(dir, '.cache'))
     writeFileSync(join(dir, 'favicon.svg'), '')
     writeFileSync(join(dir, 'images', 'play-bg.webp'), '')
     writeFileSync(join(dir, '.DS_Store'), '')
     writeFileSync(join(dir, '.cache', 'hidden.webp'), '')
     writeFileSync(join(dir, 'images', 'boss', 'door.webp'), '')
+    writeFileSync(join(dir, 'images', 'login', 'title.webp'), '')
 
     expect(assetsLoadingScreenFiles(dir).sort()).toEqual(['/favicon.svg', '/images/play-bg.webp'])
   })

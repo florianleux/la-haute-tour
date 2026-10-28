@@ -38,7 +38,7 @@ Sur une fenêtre au format mobile, aucune de ces pages ne s'affiche : le [mur mo
 
 ## Connexion et accès refusé
 
-- **Connexion** : titre du jeu, une phrase disant que l'accès se fait par Discord sur invitation, un bouton de connexion Discord. Un joueur déjà connecté est renvoyé vers le jeu.
+- **Connexion** : sur les nuages de l'ascension, le logo du jeu tombe du haut de la fenêtre, rebondit puis flotte, un reflet le traverse et ses gemmes scintillent. Dessous, un seul bouton, « Connexion » (le médaillon de « Valider »), qui part vers Discord : l'accès se fait sur invitation. Un joueur déjà connecté est renvoyé vers le jeu.
 - **Accès refusé** : le compte Discord n'est pas sur la whitelist, aucun compte n'a été créé, il faut demander l'accès à l'administrateur. Un retour vers la connexion.
 
 ## Profil

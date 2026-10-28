@@ -13,13 +13,15 @@ import { join, relative, sep } from 'node:path'
  * - `images/boss/` : ce qui ne s'affiche que dans les phases de boss (porte,
  *   introduction, combat, épreuves) n'a pas à rallonger l'écran de tous —
  *   l'écran de chargement du boss l'attend (bossAssetsLoadingScreenFiles) ;
+ * - `images/login/` : la page de connexion, hors de l'écran de chargement, attend
+ *   elle-même son image (LoginTitle) ;
  * - les fichiers et dossiers cachés (`.DS_Store`...) : jamais demandés par le jeu.
  *
  * Lu par nuxt.config.ts au démarrage. Voir la section Images de CLAUDE.md.
  */
 export function assetsLoadingScreenFiles(publicDir: string): string[] {
   return publicFiles(publicDir)
-    .filter(parts => !(parts[0] === 'images' && parts[1] === 'boss'))
+    .filter(parts => !(parts[0] === 'images' && (parts[1] === 'boss' || parts[1] === 'login')))
     .map(parts => `/${parts.join('/')}`)
 }
 
