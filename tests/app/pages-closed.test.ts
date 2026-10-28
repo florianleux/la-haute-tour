@@ -25,6 +25,7 @@ const OTHER_ADMIN_PAGES = [
   'test/camp.vue',
   'test/door/[floor].vue',
   'test/boss/1.vue',
+  'test/loading.vue',
 ]
 
 function pageFiles(): string[] {
