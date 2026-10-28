@@ -56,13 +56,6 @@
       >
         Étage {{ state.floor }} terminé.
       </PlayText>
-      <PlayText
-        role="aside"
-        class="text-amber-800/80"
-      >
-        Tu as vu toutes ses questions. Ce que tu y as raté reste à cet étage :
-        le suivant repart d'une fiche vierge.
-      </PlayText>
     </template>
 
     <template v-else-if="screen.phase === 'gameOver'">
