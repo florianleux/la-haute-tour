@@ -58,11 +58,14 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
     return 'deckEnd'
   }
 
-  // Le combat : un boss qui a des PV, ou battu et dont la victoire reste à lire.
-  // Battu au dernier étage, la partie s'arrête là. La défaite efface les PV : le
-  // joueur sans vie retombe sur l'attente. Voir specs/boss.md.
-  if (floorDone && user.bossHp !== null) {
-    return user.bossHp === 0 && user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'bossFight'
+  // Le combat : en cours, ou battu et dont le terme reste à lire. Battu au
+  // dernier étage, la partie s'arrête là. La défaite n'y retient pas : le joueur
+  // sans vie retombe sur l'attente, d'où les épreuves tues — défaite et aucun
+  // combat s'y lisent pareil. Voir specs/boss.md.
+  const fight = bossFightState(user, false)
+
+  if (floorDone && fight !== 'none') {
+    return fight !== 'running' && user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'bossFight'
   }
 
   // Sans vie, l'attente puis le rattrapage — en fin d'étage aussi : ils passent
@@ -79,6 +82,98 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
   // Le palier : l'étage vu en entier, le boss pas encore affronté. Son verdict
   // quitté, le joueur est devant la porte. Voir specs/boss.md#arriver-devant-la-porte.
   return holdsVerdict ? 'floorEnd' : 'bossDoor'
+}
+
+/**
+ * Le terme d'un combat : le boss à 0 PV, le joueur à 0 vie, ou le joueur à 0
+ * vie au dernier combat, que le boss laisse passer.
+ */
+export type BossOutcome = 'victory' | 'defeat' | 'passed'
+
+/**
+ * L'état du combat de boss (`bossFightState`) : aucun, en cours, ou son terme.
+ * Voir specs/spec.md#glossaire.
+ */
+export type BossFightState = 'none' | 'running' | BossOutcome
+
+/** Les combats d'un boss, au plus : le dernier perdu, il laisse passer. */
+export const BOSS_FIGHT_COUNT = 6
+
+/**
+ * Le boss d'un étage neuf : ni PV, ni combat compté, porte fermée. Ce que le
+ * franchissement du palier, la remise à zéro d'un joueur et le recul d'un joueur
+ * test sous son palier écrivent pareil.
+ */
+export const FRESH_BOSS = { bossHp: null, bossAttemptNumber: 0, doorOpened: false, doorSpot: 'door' } satisfies Partial<User>
+
+/**
+ * Où en est le combat. Seule lecture des PV stockés, qui portent le code :
+ * null hors combat, positifs en cours, zéro boss battu — et les vies disent
+ * alors s'il a été battu ou s'il a laissé passer. Une défaite efface les PV,
+ * mais garde les épreuves du combat jusqu'au suivant : ce sont elles qui la
+ * distinguent d'un boss jamais affronté. Voir specs/boss.md.
+ */
+export function bossFightState(user: Pick<User, 'bossHp' | 'lives'>, holdsTrials: boolean): BossFightState {
+  if (user.bossHp === null) {
+    return holdsTrials ? 'defeat' : 'none'
+  }
+  if (user.bossHp > 0) {
+    return 'running'
+  }
+  return user.lives > 0 ? 'victory' : 'passed'
+}
+
+/** Le terme du combat, null tant qu'il n'en a pas. */
+export function bossOutcome(state: BossFightState): BossOutcome | null {
+  return state === 'none' || state === 'running' ? null : state
+}
+
+/**
+ * Ouvrir un combat : le boss à ses PV pleins, un combat de plus au compte, et
+ * le joueur entre avec ses vies, trois au plus — une vie de Vitalité ne passe
+ * pas la porte. Voir specs/boss.md#tentatives-et-difficulté.
+ */
+export function bossFightOpening(
+  user: Pick<User, 'lives' | 'bossAttemptNumber'>,
+  rules: FloorRules,
+): Pick<User, 'bossHp' | 'bossAttemptNumber' | 'lives'> {
+  return { bossHp: rules.bossHp, bossAttemptNumber: user.bossAttemptNumber + 1, lives: Math.min(user.lives, rules.lives) }
+}
+
+/**
+ * La défaite : les PV s'effacent et l'attente démarre, comme une chute en
+ * ascension. Hors combat, les PV restent ce qu'ils étaient : aucun.
+ */
+export function bossDefeat(rules: FloorRules, now: Date): Pick<User, 'bossHp' | 'cooldownUntil' | 'cooldownStartedAt' | 'cooldownBaseMs'> {
+  return { bossHp: null, ...cooldownFields(cooldownFrom(rules, now), now) }
+}
+
+/**
+ * Ce qu'une épreuve jugée change au combat en cours. Juste, le boss perd un PV ;
+ * fausse ou expirée, le joueur perd une vie. À zéro vie, la défaite — sauf au
+ * dernier combat, où le boss laisse passer : ses PV tombent à zéro, sans
+ * attente, et « Continuer » franchit le palier comme après une victoire.
+ */
+export function judgeTrial(
+  user: Pick<User, 'bossHp' | 'lives' | 'bossAttemptNumber'>,
+  correct: boolean,
+  rules: FloorRules,
+  now: Date,
+): Partial<Pick<User, 'bossHp' | 'lives' | 'cooldownUntil' | 'cooldownStartedAt' | 'cooldownBaseMs'>> {
+  if (correct) {
+    // Une épreuve ne se juge qu'en combat : les PV y sont comptés.
+    return { bossHp: (user.bossHp ?? 0) - 1 }
+  }
+
+  const lives = user.lives - 1
+
+  if (lives > 0) {
+    return { lives }
+  }
+
+  return user.bossAttemptNumber >= BOSS_FIGHT_COUNT
+    ? { lives, bossHp: 0 }
+    : { lives, ...bossDefeat(rules, now) }
 }
 
 /** Ce qu'il faut d'un effet pour dire s'il est encore porté. */

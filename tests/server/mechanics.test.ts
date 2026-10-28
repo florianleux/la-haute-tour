@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { canDrawRecovery, drawByRank, isLootQuestion, judgeAnswer, judgeRecovery, movePoolCounter, rollChest, phaseOf, sealedRecovery } from '../../server/utils/mechanics'
+import {
+  BOSS_FIGHT_COUNT,
+  bossFightOpening,
+  bossFightState,
+  bossOutcome,
+  canDrawRecovery,
+  drawByRank,
+  isLootQuestion,
+  judgeAnswer,
+  judgeRecovery,
+  judgeTrial,
+  movePoolCounter,
+  rollChest,
+  phaseOf,
+  sealedRecovery,
+} from '../../server/utils/mechanics'
 import { SPELL_IDS } from '../../shared/utils/spells'
 import { rulesForFloor } from '../../server/utils/rules'
 import { rolls } from '../helpers/random'
@@ -88,6 +103,56 @@ describe('phase', () => {
     expect(phaseOf({ ...done, hasLiveReservation: true }, NOW)).toBe('ascent')
     // Le dernier étage n'a jamais d'étage au-dessus : son boss passe quand même.
     expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('bossDoor')
+  })
+})
+
+describe('combat de boss', () => {
+  // specs/spec.md#glossaire (État du combat) : les cinq états, lus au même endroit.
+  it('se lit en cinq états', () => {
+    expect(bossFightState({ bossHp: null, lives: 3 }, false)).toBe('none')
+    expect(bossFightState({ bossHp: 4, lives: 1 }, true)).toBe('running')
+    expect(bossFightState({ bossHp: 0, lives: 2 }, true)).toBe('victory')
+    expect(bossFightState({ bossHp: 0, lives: 0 }, true)).toBe('passed')
+    // La défaite efface les PV mais garde les épreuves : c'est ce qui la distingue.
+    expect(bossFightState({ bossHp: null, lives: 0 }, true)).toBe('defeat')
+  })
+
+  it('n a de terme qu une fois le combat fini', () => {
+    expect(bossOutcome('none')).toBeNull()
+    expect(bossOutcome('running')).toBeNull()
+    expect(bossOutcome('passed')).toBe('passed')
+  })
+
+  it('s ouvre à PV pleins, un combat de plus, trois vies au plus', () => {
+    expect(bossFightOpening({ lives: rules.lives + 1, bossAttemptNumber: 2 }, rules))
+      .toEqual({ bossHp: rules.bossHp, bossAttemptNumber: 3, lives: rules.lives })
+    expect(bossFightOpening({ lives: 1, bossAttemptNumber: 0 }, rules).lives).toBe(1)
+  })
+
+  describe('épreuve jugée', () => {
+    const fighting = { bossHp: 5, lives: 2, bossAttemptNumber: 1 }
+
+    it('juste, retire un PV au boss et rien au joueur', () => {
+      expect(judgeTrial(fighting, true, rules, NOW)).toEqual({ bossHp: 4 })
+    })
+
+    it('fausse, retire une vie au joueur', () => {
+      expect(judgeTrial(fighting, false, rules, NOW)).toEqual({ lives: 1 })
+    })
+
+    it('fausse sur la dernière vie, c est la défaite : PV effacés, attente ouverte', () => {
+      const fields = judgeTrial({ ...fighting, lives: 1 }, false, rules, NOW)
+
+      expect(fields).toMatchObject({ lives: 0, bossHp: null, cooldownStartedAt: NOW })
+      expect(fields.cooldownUntil?.getTime()).toBe(NOW.getTime() + rules.cooldownMs)
+    })
+
+    it('fausse sur la dernière vie du dernier combat, le boss laisse passer', () => {
+      const fields = judgeTrial({ ...fighting, lives: 1, bossAttemptNumber: BOSS_FIGHT_COUNT }, false, rules, NOW)
+
+      expect(fields).toEqual({ lives: 0, bossHp: 0 })
+      expect(bossFightState({ ...fighting, ...fields }, true)).toBe('passed')
+    })
   })
 })
 

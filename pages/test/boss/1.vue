@@ -1,18 +1,18 @@
 <template>
   <BossArena
     :boss="BOSS"
-    :boss-hp="bossHp"
+    :boss-hp="FULL_BOSS_HP - hits"
     :boss-max-hp="FULL_BOSS_HP"
     :player-name="user?.displayName ?? ''"
     :portrait="portrait"
-    :lives="lives"
+    :lives="fighter.lives"
     :max-lives="rules.lives"
   >
     <BossFlagTrial
       :image="flag.image"
       :seconds-left="secondsLeft"
       :verdict="verdict === null ? null : { correct: verdict, answerLabel: flag.answerLabel }"
-      :outcome="bossHp === 0 ? 'victory' : lives === 0 ? 'defeat' : null"
+      :outcome="bossOutcome(fightState)"
       :model-value="typed"
       :action-label="over ? 'Rejouer' : 'Suivant'"
       @update:model-value="typed = $event"
@@ -24,8 +24,8 @@
 
 <script setup lang="ts">
 // Banc du combat contre le boss de l'étage 1 : l'arène commune (BossArena), les
-// drapeaux au milieu. Tout se joue dans la page, sans partie
-// réelle — le combat n'existe pas encore côté serveur (#34 à #44). Les
+// drapeaux au milieu. Tout se joue dans la page, sans partie réelle, mais avec
+// les règles du jeu : le combat se juge par la mécanique du serveur. Les
 // drapeaux sont ceux du premier combat, mélangés, lus à l'API admin et jamais
 // importés : un import partirait dans le JS public, réponses comprises.
 // Admin seulement. Voir specs/boss.md et specs/boss-etage1-drapeaux.md.
@@ -35,6 +35,9 @@ import { isAnswerAccepted } from '~~/shared/utils/answers'
 // Le jeu de règles, seul à connaître les vies. Un module pur, sans base ni
 // requête : le banc le lit tel quel, faute de partie servie.
 import { rulesForFloor } from '~~/server/utils/rules'
+// La mécanique du combat, pure elle aussi : le banc juge comme le jeu.
+import { bossFightOpening, bossFightState, bossOutcome, judgeTrial } from '~~/server/utils/mechanics'
+import type { User } from '~~/server/db/schema'
 import { BOSSES } from '~~/utils/bosses'
 
 definePageMeta({ admin: true })
@@ -68,36 +71,39 @@ const portrait = computed(() => playerPortrait(user.value?.gender ?? null))
 // deux tirages donneraient deux écrans à l'hydratation.
 const order = useState('boss-bench-order', shuffled)
 const index = ref(0)
-const bossHp = ref(FULL_BOSS_HP)
-const lives = ref(rules.lives)
+
+/** Le joueur au combat, tel que le serveur le stockerait : un premier combat, à vies pleines. */
+type Fighter = Pick<User, 'bossHp' | 'lives' | 'bossAttemptNumber'>
+const opening = (): Fighter => bossFightOpening({ lives: rules.lives, bossAttemptNumber: 0 }, rules)
+const fighter = ref<Fighter>(opening())
+/** Les épreuves justes : les PV montrés s'y relisent, comme au jeu (bossView). */
+const hits = ref(0)
 const typed = ref('')
 /** Null tant que le drapeau attend sa réponse, puis juste ou faux. */
 const verdict = ref<boolean | null>(null)
 const secondsLeft = ref(SECONDS)
 
 const flag = computed(() => order.value[index.value])
-const over = computed(() => bossHp.value === 0 || lives.value === 0)
+const fightState = computed(() => bossFightState(fighter.value, true))
+const over = computed(() => fightState.value !== 'running')
 
 function answer(): void {
   if (verdict.value !== null) {
     return
   }
 
-  verdict.value = isAnswerAccepted(typed.value, flag.value.acceptedAnswers)
-  if (verdict.value) {
-    bossHp.value--
-  }
-  else {
-    lives.value--
-  }
+  const correct = isAnswerAccepted(typed.value, flag.value.acceptedAnswers)
+  verdict.value = correct
+  hits.value += correct ? 1 : 0
+  fighter.value = { ...fighter.value, ...judgeTrial(fighter.value, correct, rules, new Date()) }
 }
 
 function next(): void {
   if (over.value) {
     order.value = shuffled()
     index.value = 0
-    bossHp.value = FULL_BOSS_HP
-    lives.value = rules.lives
+    fighter.value = opening()
+    hits.value = 0
   }
   else {
     index.value++

@@ -68,7 +68,8 @@
 // au milieu de l'arène (BossArena), en jeu (BossFightCard) comme sur le banc
 // (pages/test/boss/1.vue). Elle ne juge rien : le verdict vient de l'appelant.
 // Voir specs/boss-etage1-drapeaux.md.
-import type { BossOutcome, BossVerdict } from '~~/server/utils/boss'
+import type { BossVerdict } from '~~/server/utils/boss'
+import type { BossOutcome } from '~~/server/utils/mechanics'
 
 const props = defineProps<{
   /** Le nom opaque du drapeau, sous public/images/boss/1/flags/. */

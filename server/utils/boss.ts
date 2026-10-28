@@ -1,17 +1,12 @@
 import { and, asc, eq, exists, isNull, sql } from 'drizzle-orm'
 import { isAnswerAccepted } from '../../shared/utils/answers'
 import { closeAttempt } from './journey'
-import { cooldownFields, cooldownFrom, isExpired } from './mechanics'
+import { BOSS_FIGHT_COUNT, bossFightOpening, bossFightState, bossOutcome, isExpired, judgeTrial } from './mechanics'
 import { bossTrials, flags, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
+import type { BossOutcome } from './mechanics'
 import type { BossTrial, Flag, User } from '../db/schema'
-
-/**
- * Le boss d'un étage neuf : ni PV, ni combat compté, porte fermée. Ce que le
- * franchissement du palier et la remise à zéro d'un joueur écrivent pareil.
- */
-export const FRESH_BOSS = { bossHp: null, bossAttemptNumber: 0, doorOpened: false, doorSpot: 'door' } satisfies Partial<User>
 
 /**
  * Le combat de boss : ses épreuves, tirées à l'ouverture et servies une à une,
@@ -39,12 +34,6 @@ export interface BossVerdict {
   submittedAnswer: string
 }
 
-/**
- * Le terme d'un combat : le boss à 0 PV, le joueur à 0 vie, ou le joueur à 0
- * vie au dernier combat, que le boss laisse passer.
- */
-export type BossOutcome = 'victory' | 'defeat' | 'passed'
-
 export interface BossView {
   hp: number
   maxHp: number
@@ -55,9 +44,6 @@ export interface BossView {
   /** Le terme du combat, null tant qu'il dure. */
   outcome: BossOutcome | null
 }
-
-/** Les combats d'un boss, au plus : le dernier perdu, il laisse passer. */
-const BOSS_FIGHT_COUNT = 6
 
 /**
  * Les drapeaux du combat qui s'ouvre : chaque combat a les siens, de plus en
@@ -129,17 +115,12 @@ export function bossView(user: User, trials: HeldTrial[], rules: FloorRules): Bo
           submittedAnswer: judged.submittedAnswer ?? '',
         }
       : null,
-    // Une épreuve juste ne coûte aucune vie : le boss à zéro et le joueur aussi,
-    // c'est le passage.
-    outcome: user.bossHp === null
-      ? 'defeat'
-      : user.bossHp > 0 ? null : user.lives > 0 ? 'victory' : 'passed',
+    outcome: bossOutcome(bossFightState(user, true)),
   }
 }
 
 /**
- * Ouvre un combat : le joueur entre avec ses vies, trois au plus — une vie de
- * Vitalité ne passe pas la porte —, et c'est une tentative neuve. Ce qui
+ * Ouvre un combat (voir `bossFightOpening`), et c'est une tentative neuve. Ce qui
  * attendait la prochaine tentative n'est pas ancré : les Sorts n'agissent pas
  * en combat, l'effet attend la tentative d'ascension suivante. Les épreuves sont
  * tirées dans un ordre mélangé, et la première est servie.
@@ -149,21 +130,19 @@ export function bossView(user: User, trials: HeldTrial[], rules: FloorRules): Bo
  */
 export async function enterBossFight(db: Database, user: User, rules: FloorRules, now: Date): Promise<boolean> {
   // Le joueur se réclame le combat d'abord : deux clics partis ensemble
-  // tireraient chacun leurs épreuves. Pas sans épreuves en base : un catalogue
-  // pas encore chargé laisse le joueur au palier.
+  // tireraient chacun leurs épreuves. La tentative qui s'achève les départage :
+  // seul le premier la trouve encore en place. Pas sans épreuves en base : un
+  // catalogue pas encore chargé laisse le joueur au palier.
   const [claimed] = await db
     .update(users)
     .set({
-      bossHp: rules.bossHp,
-      bossAttemptNumber: sql`${users.bossAttemptNumber} + 1`,
-      lives: Math.min(user.lives, rules.lives),
+      ...bossFightOpening(user, rules),
       attemptStartedAt: now,
       attemptSeen: 0,
       streak: 0,
     })
     .where(and(
       eq(users.id, user.id),
-      isNull(users.bossHp),
       eq(users.attemptStartedAt, user.attemptStartedAt),
       exists(db.select({ one: sql`1` }).from(flags).where(fightFlags(user))),
     ))
@@ -227,11 +206,7 @@ export async function serveNextTrial(db: Database, user: User, trials: HeldTrial
 }
 
 /**
- * Juge l'épreuve servie. Juste, le boss perd un PV ; fausse ou expirée, le
- * joueur perd une vie. À zéro vie, c'est la défaite : les PV s'effacent et
- * l'attente démarre, comme une chute en ascension. Au dernier combat, le boss
- * laisse passer : ses PV tombent à zéro, sans attente, et « Continuer » franchit
- * le palier comme après une victoire.
+ * Juge l'épreuve servie : ce qu'elle change au combat, `judgeTrial` le décide.
  *
  * Toutes les écritures partent dans un lot gardé sur l'épreuve encore ouverte,
  * celle qui la ferme en dernier : une seconde réponse partie en même temps
@@ -247,9 +222,6 @@ export async function resolveTrial(
 ): Promise<void> {
   const expired = trial.expiresAt === null || isExpired(trial.expiresAt, rules, now)
   const correct = !expired && isAnswerAccepted(answer, trial.acceptedAnswers)
-  const lives = correct ? user.lives : user.lives - 1
-  const defeated = lives <= 0
-  const passed = defeated && user.bossAttemptNumber >= BOSS_FIGHT_COUNT
 
   const stillOpen = and(
     eq(bossTrials.userId, user.id),
@@ -261,14 +233,7 @@ export async function resolveTrial(
   await db.batch([
     db
       .update(users)
-      .set(correct
-        ? { bossHp: sql`${users.bossHp} - 1` }
-        : {
-            lives,
-            ...passed
-              ? { bossHp: 0 }
-              : defeated ? { bossHp: null, ...cooldownFields(cooldownFrom(rules, now), now) } : {},
-          })
+      .set(judgeTrial(user, correct, rules, now))
       .where(and(eq(users.id, user.id), whileOpen)),
     db.update(bossTrials).set({ resolvedAt: now, correct, submittedAnswer: answer }).where(stillOpen),
   ])

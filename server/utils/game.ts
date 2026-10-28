@@ -3,9 +3,11 @@ import type { BatchItem, BatchResponse } from 'drizzle-orm/batch'
 import type { RunnableQuery } from 'drizzle-orm/runnable-query'
 import type { SQL } from 'drizzle-orm'
 import {
+  bossFightState,
   canDrawRecovery,
   cooldownFields,
   cooldownFrom,
+  FRESH_BOSS,
   isExpired,
   isLootQuestion,
   judgeAnswer,
@@ -27,7 +29,7 @@ import {
 } from './achievements'
 import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
 import { keyHoldersQuery, placeKeyIfRoom } from './bossKeys'
-import { bossView, enterBossFight, FRESH_BOSS, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
+import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
@@ -863,7 +865,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
   const played = playedRules(snapshot)
   // Sans vie, le joueur doit un rattrapage — sauf le boss passé, qui franchit
   // le palier à vies pleines. Voir specs/boss.md#tentatives-et-difficulté.
-  const fallen = user.lives <= 0 && user.bossHp !== 0
+  const fallen = user.lives <= 0 && bossFightState(user, snapshot.trials.length > 0) !== 'passed'
 
   const base = {
     floor: user.currentFloor,
@@ -1395,7 +1397,7 @@ export async function enterBoss(db: Database, user: User, now: Date): Promise<Ga
  * laissé passer. Sinon, l'épreuve suivante. Voir specs/boss.md.
  */
 async function advanceBossFight(db: Database, snapshot: PlayerSnapshot, user: User, now: Date): Promise<GameState> {
-  if (user.bossHp !== 0) {
+  if (bossFightState(user, snapshot.trials.length > 0) === 'running') {
     await serveNextTrial(db, user, snapshot.trials, rulesForFloor(user.currentFloor), now)
     return buildState(db, user.id, now)
   }

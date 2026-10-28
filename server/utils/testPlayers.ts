@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
 import { upcomingQuestions } from './deck'
-import { cooldownFields, cooldownFrom, startOfGame } from './mechanics'
+import { bossDefeat, FRESH_BOSS, startOfGame } from './mechanics'
 import { requirePlayer, resetPlayer } from './players'
 import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
@@ -219,9 +219,7 @@ export async function rewindTestPlayer(db: Database, testPlayer: User, count: nu
     db
       .update(users)
       .set({
-        bossHp: null,
-        doorOpened: false,
-        doorSpot: 'door',
+        ...FRESH_BOSS,
         floorCursor: cursor,
         floorSeen: sql`max(0, ${users.floorSeen} - ${erased.length})`,
         attemptSeen: sql`max(0, ${users.attemptSeen} - ${erased.length})`,
@@ -245,7 +243,7 @@ export async function sendToCooldown(db: Database, testPlayer: User, now: Date):
     db
       .update(users)
       // En plein combat, c'est une défaite : les PV du boss s'effacent avec.
-      .set({ lives: 0, bossHp: null, ...cooldownFields(cooldownFrom(rulesForFloor(testPlayer.currentFloor), now), now) })
+      .set({ lives: 0, ...bossDefeat(rulesForFloor(testPlayer.currentFloor), now) })
       .where(eq(users.id, testPlayer.id)),
   ])
 }

@@ -544,11 +544,11 @@ describe('combat de boss', () => {
       expect((await reload()).bossHp).toBeNull()
     })
 
-    it('reculé sous son palier, il n a plus de boss ni de porte ouverte devant lui', async () => {
+    it('reculé sous son palier, il retrouve un boss neuf : ni combat compté, ni porte ouverte', async () => {
       await set({ doorOpened: true, doorSpot: 'camp' })
       await rewindTestPlayer(db, await reload(), 1)
 
-      expect(await reload()).toMatchObject({ bossHp: null, doorOpened: false, doorSpot: 'door' })
+      expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0, doorOpened: false, doorSpot: 'door' })
       expect(await db.select().from(bossTrials)).toHaveLength(0)
     })
   })
