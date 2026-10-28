@@ -23,6 +23,8 @@ export interface Play {
   openDoor: () => Promise<void>
   /** « Redescendre » : quitter la porte verrouillée pour le camp, retenu côté serveur. */
   descendToCamp: () => Promise<void>
+  /** « Remonter » : du camp à la porte déverrouillée, retenu côté serveur. */
+  climbToDoor: () => Promise<void>
   /** « Entrer » : ouvrir le combat de boss, au terme de la porte et de l'introduction. */
   enterBoss: () => Promise<void>
   /** True when the last action came back empty-handed. */
@@ -88,6 +90,7 @@ export function usePlay(): Play {
     placeKey: () => move('/api/game/door/key'),
     openDoor: () => move('/api/game/door/open'),
     descendToCamp: () => move('/api/game/door/descend'),
+    climbToDoor: () => move('/api/game/door/climb'),
     enterBoss: () => move('/api/game/boss'),
     failed,
     pending,

@@ -337,9 +337,16 @@ describe('carte de jeu', () => {
     expect(card({ phase: 'bossDoor', door: lockedDoor })).toEqual({ card: 'bossDoor', action: null })
   })
 
-  // « Remonter » viendra avec climbToDoor : d'ici là, le camp n'avance rien.
-  it('montre le camp sans bouton au joueur redescendu de la porte', () => {
+  // specs/boss.md#attendre-au-camp : « Remonter » ne s'active que porte déverrouillée.
+  it('montre le camp sans action au joueur redescendu de la porte verrouillée', () => {
     expect(card({ phase: 'bossDoor', door: { ...lockedDoor, spot: 'camp' } })).toEqual({ card: 'cooldown', action: null })
+  })
+
+  it('offre « Remonter » au camp une fois la porte déverrouillée', () => {
+    expect(card({ phase: 'bossDoor', door: { ...lockedDoor, unlocked: true, spot: 'camp' } })).toEqual({
+      card: 'cooldown',
+      action: { label: 'Remonter', move: 'climbToDoor' },
+    })
   })
 
   it('sert l épreuve sans autre bouton que répondre, puis la suite', () => {

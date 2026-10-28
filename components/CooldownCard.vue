@@ -114,7 +114,7 @@
       class="absolute left-[19.5%] top-[2%] flex h-[13%] w-[69%] items-center justify-center text-center font-semibold tracking-wide text-amber-800"
       :class="[inCooldown ? '-translate-y-[0.5cqw] text-[9.35cqw] leading-none tabular-nums' : 'text-[5cqw] uppercase', bannerLit ? 'transition duration-200' : shade]"
     >
-      {{ inCooldown ? (cooldownRemaining || 'Attente') : welcome ? '' : 'Attente terminée' }}
+      {{ inCooldown ? (cooldownRemaining || 'Attente') : bannerQuiet ? '' : 'Attente terminée' }}
     </h1>
 
     <!-- Le panneau de parchemin porte tout ce que l'écran a à dire : décompte,
@@ -139,9 +139,9 @@
       <!-- Le décompte est monté dans la bannière : le répéter ici ferait lire
            deux fois le même chiffre à dix centimètres d'écart. Une seule phrase
            pour les deux phases : ce que le joueur a à faire, attendre ou jouer.
-           Au repos, l'accueil du camp. -->
+           Au repos, l'accueil du camp ; redescendu de la porte, son état. -->
       <p class="text-[4.16cqw]">
-        {{ welcome ? 'Bienvenue au camp de base' : inCooldown && state.cooldownUntil ? `Reviens ${formatReturnAt(state.cooldownUntil, Date.now())} pour tenter le rattrapage.` : 'Tu peux lancer ton rattrapage.' }}
+        {{ posterLine() }}
       </p>
 
       <!-- Ce qui est posé sur le joueur : la plupart des sorts attendent sa
@@ -194,6 +194,16 @@
       :loading="skipping"
       @click="$emit('skipCooldown')"
     />
+    <!-- Porte verrouillée, « Remonter » se montre éteint : playView ne le sert
+         qu'une fois la porte déverrouillée. Voir specs/boss.md#attendre-au-camp. -->
+    <BaseCardButton
+      v-else-if="door"
+      label="Remonter"
+      anchor="poster"
+      face="plank"
+      :class="shade"
+      disabled
+    />
   </div>
 </template>
 
@@ -239,9 +249,30 @@ const shade = computed(() => ['transition duration-200', lessonDims(props.lesson
 const bannerLit = computed(() => lessonDims(props.lesson) && !spotlightOn(props.lesson, 'posterBanner').dimmed)
 
 const inCooldown = computed(() => isCooldown(props.state))
-// Le camp sans attente à décompter, qui accueille : au repos, ou redescendu de
-// la porte, en attendant d'y dire l'état de la porte.
-const welcome = computed(() => isAtRest(props.state) || isAtCampFromDoor(props.state))
+
+// La porte dont le joueur est redescendu, null ailleurs.
+const door = computed(() => isAtCampFromDoor(props.state) ? props.state.door : null)
+
+// Le camp sans attente à décompter, où la bannière se tait : au repos, ou
+// redescendu de la porte, dont le poster dit alors l'état.
+const bannerQuiet = computed(() => isAtRest(props.state) || door.value !== null)
+
+/**
+ * La phrase du poster. Une fonction, pas un computed : le retour de l'attente
+ * se lit sur Date.now(), qu'un computed figerait entre deux états.
+ */
+function posterLine(): string {
+  if (door.value) {
+    return campDoorLine(door.value)
+  }
+  if (bannerQuiet.value) {
+    return 'Bienvenue au camp de base'
+  }
+  if (inCooldown.value && props.state.cooldownUntil) {
+    return `Reviens ${formatReturnAt(props.state.cooldownUntil, Date.now())} pour tenter le rattrapage.`
+  }
+  return 'Tu peux lancer ton rattrapage.'
+}
 
 // La place et la taille du poster, partagées par son image et son contenu.
 const POSTER_BOX = 'bottom-[calc(4svh+1.5rem)] left-1/2 aspect-918/980 w-[min(calc(100%-3rem),calc((94svh-3rem)*918/980))] -translate-x-1/2 translate-y-[calc(5svh_-_min(8svh,max(0px,(100svh*16/9_-_100vw)/6)))]'

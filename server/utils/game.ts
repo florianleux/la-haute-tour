@@ -25,7 +25,8 @@ import {
   playedToday,
   unlock,
 } from './achievements'
-import { KEYS_TO_UNLOCK, keyHoldersQuery, placeKeyIfRoom } from './bossKeys'
+import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
+import { keyHoldersQuery, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, FRESH_BOSS, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
@@ -1324,15 +1325,34 @@ export async function placeKey(db: Database, user: User, now: Date): Promise<Gam
  * déverrouillée, ou déjà au camp. Voir specs/boss.md#attendre-au-camp.
  */
 export async function descendToCamp(db: Database, user: User, now: Date): Promise<GameState> {
+  return moveDoorSpot(db, user, now, 'camp')
+}
+
+/**
+ * « Remonter » : quitte le camp pour la porte déverrouillée, où « Ouvrir » (ou
+ * « Entrer », si le joueur l'a déjà ouverte) attend, et le serveur s'en
+ * souvient. Sans effet ailleurs qu'au camp de la porte, ou sur une porte
+ * verrouillée. Voir specs/boss.md#attendre-au-camp.
+ */
+export async function climbToDoor(db: Database, user: User, now: Date): Promise<GameState> {
+  return moveDoorSpot(db, user, now, 'door')
+}
+
+/**
+ * Mène le joueur au camp ou devant la porte (`doorSpot`), et le serveur s'en
+ * souvient. La porte dit le sens : verrouillée, il ne peut que redescendre ;
+ * déverrouillée, que remonter. Sans effet hors de la porte, ou déjà arrivé.
+ */
+async function moveDoorSpot(db: Database, user: User, now: Date, to: User['doorSpot']): Promise<GameState> {
   const snapshot = await loadSnapshot(db, user.id)
   const door = doorOf(snapshot, now)
 
-  if (!door || door.unlocked || door.spot === 'camp') {
+  if (!door || door.spot === to || door.unlocked !== (to === 'door')) {
     return stateFrom(snapshot, now)
   }
 
-  await db.update(users).set({ doorSpot: 'camp' }).where(eq(users.id, user.id))
-  return stateFrom({ ...snapshot, user: { ...snapshot.user, doorSpot: 'camp' } }, now)
+  await db.update(users).set({ doorSpot: to }).where(eq(users.id, user.id))
+  return stateFrom({ ...snapshot, user: { ...snapshot.user, doorSpot: to } }, now)
 }
 
 /**

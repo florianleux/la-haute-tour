@@ -1,11 +1,9 @@
 import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
+import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
 import { bossKeys, users } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
-
-/** Toujours deux clés, quelle que soit la taille de l'équipe. Voir specs/boss.md#porte-à-deux-clés. */
-export const KEYS_TO_UNLOCK = 2
 
 /**
  * Donner au joueur la clé du boss de son étage courant. Sans effet s'il l'a

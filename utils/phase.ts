@@ -246,12 +246,12 @@ export function gameScreen(state: GameState): GameScreen {
 
 /**
  * Le bouton qui avance et ce qu'il fait : demander la suite au serveur, quitter
- * pour le poster l'écran que la page retenait (la chute, le Mimic), ou entrer
- * dans l'écran du coffre de telle question. Les deux derniers sont des allers
- * purement client.
+ * pour le poster l'écran que la page retenait (la chute, le Mimic), entrer
+ * dans l'écran du coffre de telle question, ou remonter du camp à la porte du
+ * boss. Quitter et entrer dans le coffre sont des allers purement client.
  */
 export type PlayAction =
-  | { label: string; move: "advance" | "leave" }
+  | { label: string; move: "advance" | "leave" | "climbToDoor" }
   | { label: string; move: "enterChest"; chestOf: string };
 
 /**
@@ -329,10 +329,12 @@ export function playView(
     return { screen, card: "bossFight", boss: state.boss, action: state.boss.trial ? null : next };
   }
 
-  // Devant la porte, qui porte ses gestes. Redescendu, au camp : « Remonter »
-  // n'existe pas encore, le camp n'avance rien.
+  // Devant la porte, qui porte ses gestes. Redescendu, au camp : « Remonter »,
+  // porte déverrouillée seulement. Voir specs/boss.md#attendre-au-camp.
   if (state.phase === "bossDoor") {
-    return { screen, card: isAtCampFromDoor(state) ? "cooldown" : "bossDoor", action: null };
+    return isAtCampFromDoor(state)
+      ? { screen, card: "cooldown", action: state.door?.unlocked ? { label: "Remonter", move: "climbToDoor" } : null }
+      : { screen, card: "bossDoor", action: null };
   }
 
   // Avant l'attente : le rattrapage tiré porte sa question et son verdict.

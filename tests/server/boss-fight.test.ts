@@ -2,7 +2,7 @@ import { eq, isNotNull } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, attempts, bossKeys, bossTrials, missedPool, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { descendToCamp, enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { climbToDoor, descendToCamp, enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { placeKeyIfRoom } from '../../server/utils/bossKeys'
 import { requireCamp } from '../../server/utils/camp'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -60,6 +60,8 @@ describe('combat de boss', () => {
   const open = async (): Promise<GameState> => openDoor(db, await reload(), tick())
   /** « Redescendre », devant la porte verrouillée. */
   const descend = async (): Promise<GameState> => descendToCamp(db, await reload(), tick())
+  /** « Remonter », du camp vers la porte déverrouillée. */
+  const climb = async (): Promise<GameState> => climbToDoor(db, await reload(), tick())
 
   async function set(values: Partial<User>): Promise<void> {
     await db.update(users).set(values).where(eq(users.id, player.id))
@@ -287,6 +289,40 @@ describe('combat de boss', () => {
 
         expect((await descend()).phase).toBe('bossFight')
         expect((await reload()).doorSpot).toBe('door')
+      })
+    })
+
+    // specs/boss.md#attendre-au-camp
+    describe('remonter à la porte', () => {
+      it('ramène devant la porte déverrouillée, et le retient', async () => {
+        // Sans équipe, la porte est déverrouillée : le joueur est au camp d'avant.
+        await set({ doorSpot: 'camp' })
+
+        expect(await climb()).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, spot: 'door' } })
+        expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ spot: 'door' })
+      })
+
+      it('retrouve la porte déjà ouverte : « Entrer » attend', async () => {
+        await open()
+        await set({ doorSpot: 'camp' })
+
+        expect((await climb()).door).toMatchObject({ opened: true, spot: 'door' })
+      })
+
+      it('refuse la porte verrouillée : le joueur reste au camp', async () => {
+        await set({ team: 'TLM' })
+        await descend()
+
+        expect((await climb()).door).toMatchObject({ unlocked: false, spot: 'camp' })
+        expect((await reload()).doorSpot).toBe('camp')
+      })
+
+      it('n a pas de sens au combat', async () => {
+        await enter()
+        await set({ doorSpot: 'camp' })
+
+        expect((await climb()).phase).toBe('bossFight')
+        expect((await reload()).doorSpot).toBe('camp')
       })
     })
 

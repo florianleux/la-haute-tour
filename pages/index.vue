@@ -231,6 +231,7 @@ const {
   placeKey,
   openDoor,
   descendToCamp,
+  climbToDoor,
   pending,
   actionFailed,
   readFailed,
@@ -444,10 +445,15 @@ async function goNext(): Promise<void> {
       chestOf.value = action.chestOf
       return
     case 'advance':
-      // Seul l'aller serveur attend la fin d'un envoi en vol : entrer dans le
-      // coffre ou quitter la chute ne demandent rien à personne.
+      // Seuls les allers serveur attendent la fin d'un envoi en vol : entrer
+      // dans le coffre ou quitter la chute ne demandent rien à personne.
       if (!pending.value) {
         await run('advance', advance)
+      }
+      return
+    case 'climbToDoor':
+      if (!pending.value) {
+        await run('advance', climbToDoor)
       }
   }
 }

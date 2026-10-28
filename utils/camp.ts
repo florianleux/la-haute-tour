@@ -1,3 +1,5 @@
+import type { DoorView } from '~~/server/utils/game'
+import { KEYS_TO_UNLOCK } from '~~/shared/utils/bossKeys'
 import type { TeamId } from '~~/shared/utils/teams'
 
 /** Un objet posé sur le décor du camp. */
@@ -27,4 +29,16 @@ export function campObjects({ team, volumen, spellbook }: CampContents): Set<Cam
   if (volumen) objects.add('scroll')
   if (spellbook) objects.add('spellbook')
   return objects
+}
+
+/**
+ * Ce que le poster du camp dit de la porte dont le joueur est redescendu : les
+ * clés posées sur deux, ou la porte déverrouillée. Les noms des poseurs
+ * (`keyHolders`) ne s'affichent pas encore, comme sur la porte.
+ * Voir specs/boss.md#attendre-au-camp.
+ */
+export function campDoorLine(door: DoorView): string {
+  return door.unlocked
+    ? 'La porte est déverrouillée.'
+    : `La porte attend ses clés : ${door.keyHolders.length} sur ${KEYS_TO_UNLOCK}.`
 }
