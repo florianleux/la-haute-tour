@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { activeEffects, pocketSpells, recoveryQuestions, reservations } from '../../server/db/schema'
+import { activeEffects, bossKeys, pocketSpells, recoveryQuestions, reservations } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
@@ -58,6 +58,16 @@ describe('sorts en poche', () => {
       // « Sur moi » sans recompter. Voir specs/bonus.md#limite-deffets-positifs.
       canTargetSelf: true,
     })
+  })
+
+  // specs/boss.md#obtention-de-la-clé : une clé n'est pas un sort.
+  it('ne montre jamais une clé du boss', async () => {
+    const userId = await createPlayer(db, IN_COOLDOWN)
+    await db.insert(bossKeys).values({ userId, floor: 1, obtainedAt: new Date(1_000) })
+
+    const response = await pocketSpellsRead(apiRequest('http://test/pocket-spells', await sessionCookieFor(userId)))
+
+    expect(await response.json()).toMatchObject({ entries: [], log: [] })
   })
 
   // La page ne propose la catégorie Allié qu'à qui a une équipe : sans elle,

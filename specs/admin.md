@@ -43,11 +43,13 @@
 - **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son nom d'aventurier s'il s'est nommé, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
 - **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
-- **Trois gestes** : *passer l'attente*, *rendre une vie*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
+- **Quatre gestes** : *passer l'attente*, *rendre une vie*, *donner une clé*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
+- **Donner une clé** (`grantKey`) donne au joueur la clé du boss de son étage courant, en attendant le loot forcé (#38). Grisé s'il l'a déjà : une clé au plus par joueur et par étage. Voir [`boss.md`](./boss.md#obtention-de-la-clé).
 - **Repartir de zéro** efface la partie du joueur (étage, vies, sorts en poche, Objets, nom d'aventurier, genre, leçons de Michel, questions vues et ratées, effets, contestations n'y survivent pas) et le remet à l'étage 1, vies pleines, devant l'introduction à rejouer — c'est elle qui redonne le Fromage — même geste que pour un joueur test (voir plus bas), sans le monde scellé qui les sépare : celui-ci touche un vrai compte. Pensé pour un joueur bloqué ou testé en solo, pas pour un usage courant en partie live.
   - Les effets effacés sont ceux qu'il subit **et** les sorts qu'il a lancés sur d'autres joueurs : ceux-là perdent les effets qu'il leur avait posés.
   - Les contestations effacées le sont toutes, en cours comme tranchées : gardée, une contestation tranchée interdirait de recontester une question ratée de nouveau. Les réponses qu'elle a fait accepter restent sur la question.
   - Ses compteurs et ses succès repartent de zéro, vrai joueur comme joueur test : voir [`succes.md`](./succes.md#remise-à-zéro).
+  - Ses clés du boss sont effacées avec le reste.
   - Les pertes de focus restent : ce sont des drapeaux d'administration, pas la partie.
 - L'avatar est le hash renvoyé par Discord à la connexion, resynchronisé à chaque login. Faute de hash, l'avatar par défaut du compte.
 
@@ -104,6 +106,7 @@ que le jeu sait produire de lui-même.
 - **Enlever N questions vues**, pour revenir en arrière dans l'étage.
 - **Mettre en attente**, et **passer l'attente**.
 - **Rendre une vie**, comme pour un vrai joueur.
+- **Donner une clé**, comme pour un vrai joueur.
 - **Repartir de zéro** : la partie du joueur test est effacée, il retrouve
   l'étage 1 et ses vies pleines.
 

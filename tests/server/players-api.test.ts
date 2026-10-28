@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { recoveryQuestions, reservations } from '../../server/db/schema'
+import { bossKeys, recoveryQuestions, reservations } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import {
   apiRequest,
@@ -17,10 +17,12 @@ installNitroGlobals()
 const { default: listHandler } = await import('../../server/api/admin/players/index.get')
 const { default: skipHandler } = await import('../../server/api/admin/players/[id]/skip-cooldown.post')
 const { default: grantHandler } = await import('../../server/api/admin/players/[id]/grant-life.post')
+const { default: grantKeyHandler } = await import('../../server/api/admin/players/[id]/grant-key.post')
 
 const list = mountHandler('/players', listHandler)
 const skip = mountRoute('post', '/players/:id/skip-cooldown', skipHandler)
 const grant = mountRoute('post', '/players/:id/grant-life', grantHandler)
+const grantKey = mountRoute('post', '/players/:id/grant-key', grantKeyHandler)
 
 const HOUR_MS = 60 * 60 * 1000
 
@@ -149,5 +151,44 @@ describe('joueurs admin', () => {
     expect(player).toMatchObject({ lives: 1, cooldownUntil: null })
     expect(await db.select().from(recoveryQuestions)).toHaveLength(0)
     expect(await db.select().from(reservations)).toHaveLength(0)
+  })
+
+  describe('donner une clé', () => {
+    const give = async (id: number, cookie = adminCookie): Promise<Response> =>
+      grantKey(jsonRequest(`http://test/players/${id}/grant-key`, 'POST', undefined, cookie))
+
+    it('reste fermé à un joueur ordinaire', async () => {
+      expect((await give(playerId, await sessionCookieFor(playerId))).status).toBe(403)
+      expect(await db.select().from(bossKeys)).toHaveLength(0)
+    })
+
+    it('refuse un joueur qui n existe pas', async () => {
+      expect((await give(4242)).status).toBe(404)
+    })
+
+    it('donne la clé de l étage courant, à poser', async () => {
+      const climber = await createPlayer(db, { discordId: '555', username: 'radagast', currentFloor: 3 })
+
+      expect((await give(climber)).status).toBe(200)
+
+      expect(await db.select().from(bossKeys)).toEqual([
+        expect.objectContaining({ userId: climber, floor: 3, placedAt: null }),
+      ])
+    })
+
+    it('ne donne qu une clé par étage, même cliqué deux fois', async () => {
+      await give(playerId)
+      expect((await give(playerId)).status).toBe(200)
+
+      expect(await db.select().from(bossKeys)).toHaveLength(1)
+    })
+
+    it('la montre sur la fiche du joueur', async () => {
+      await give(playerId)
+
+      const { players } = await (await list(apiRequest('http://test/players', adminCookie))).json()
+      expect(players.map((card: { username: string, ownsKey: boolean }) => [card.username, card.ownsKey]))
+        .toEqual([['gandalf', true], ['saruman', false]])
+    })
   })
 })

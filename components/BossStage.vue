@@ -15,14 +15,14 @@
       @end="emit('enter')"
     />
 
-    <!-- ponytail: aucune clé à poser, l'introduction rejouée à chaque
-         combat : les clés et l'introduction jouée une fois viennent avec #138
-         à #143 et #39. -->
+    <!-- ponytail: la clé se montre sans se poser, l'introduction rejouée à
+         chaque combat : poser la clé et l'introduction jouée une fois viennent
+         avec #139 à #143 et #39. -->
     <BossDoor
       v-else
       :door="stage.door"
       :keys-placed="door.keyHolders.length"
-      :has-key="false"
+      :has-key="door.hasKey"
       :unlocked="door.unlocked"
       :opened="opened"
       @open-door="openDoor"

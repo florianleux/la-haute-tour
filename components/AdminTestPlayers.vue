@@ -36,6 +36,7 @@
         @send-to-cooldown="act(() => sendToCooldown(testPlayer.userId))"
         @skip-cooldown="act(() => skipCooldown(testPlayer.userId))"
         @grant-life="act(() => grantLife(testPlayer.userId))"
+        @grant-key="act(() => grantKey(testPlayer.userId))"
         @reset="act(() => reset(testPlayer.userId))"
         @remove="act(() => remove(testPlayer.userId))"
       />
@@ -63,6 +64,7 @@ const {
   sendToCooldown,
   skipCooldown,
   grantLife,
+  grantKey,
   setTeam,
   reset,
 } = await useAdminTestPlayers()

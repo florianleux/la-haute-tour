@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, attempts, bossTrials, missedPool, reservations, users } from '../../server/db/schema'
+import { activeEffects, attempts, bossKeys, bossTrials, missedPool, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { enterBoss, openDoor, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -125,7 +125,7 @@ describe('combat de boss', () => {
     it('attend le joueur sans équipe déverrouillée, fermée, sans poseur', async () => {
       const state = await readGameState(db, await reload(), tick())
 
-      expect(state).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, opened: false, keyHolders: [] } })
+      expect(state).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, opened: false, hasKey: false, keyHolders: [] } })
     })
 
     it('retient « Ouvrir » : au retour, la porte est déjà ouverte', async () => {
@@ -136,9 +136,25 @@ describe('combat de boss', () => {
     it('reste verrouillée pour le joueur en équipe : ni « Ouvrir », ni « Entrer »', async () => {
       await set({ team: 'TLM' })
 
-      expect((await open()).door).toEqual({ unlocked: false, opened: false, keyHolders: [] })
+      expect((await open()).door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: [] })
       expect((await enter()).phase).toBe('bossDoor')
       expect(await db.select().from(bossTrials)).toHaveLength(0)
+    })
+
+    it('sert la clé de l étage à poser, pas celle d un autre étage', async () => {
+      await set({ team: 'TLM' })
+      await db.insert(bossKeys).values({ userId: player.id, floor: 2, obtainedAt: NOW })
+      expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ hasKey: false })
+
+      await db.insert(bossKeys).values({ userId: player.id, floor: 1, obtainedAt: NOW })
+      expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ unlocked: false, hasKey: true })
+    })
+
+    it('ne sert plus la clé une fois posée', async () => {
+      await set({ team: 'TLM' })
+      await db.insert(bossKeys).values({ userId: player.id, floor: 1, obtainedAt: NOW, placedAt: NOW })
+
+      expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ hasKey: false })
     })
 
     it('n existe pas au combat, et ne s y ouvre pas', async () => {

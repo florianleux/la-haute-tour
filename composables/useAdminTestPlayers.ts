@@ -23,6 +23,7 @@ export interface AdminTestPlayers {
   sendToCooldown: (userId: number) => Promise<boolean>
   skipCooldown: (userId: number) => Promise<boolean>
   grantLife: (userId: number) => Promise<boolean>
+  grantKey: (userId: number) => Promise<boolean>
   /** Met le joueur test dans une équipe, ou l'en retire avec null. */
   setTeam: (userId: number, team: TeamId | null) => Promise<boolean>
   reset: (userId: number) => Promise<boolean>
@@ -33,7 +34,7 @@ export interface AdminTestPlayers {
  * Les joueurs test et les gestes qu'on exerce sur eux. Admin seulement — la
  * garde serveur est ce qui protège. Voir specs/admin.md#joueurs-test.
  *
- * Rendre une vie, passer l'attente et changer d'équipe passent par les endpoints
+ * Rendre une vie, donner une clé, passer l'attente et changer d'équipe passent par les endpoints
  * joueurs : ce sont exactement les mêmes gestes, et un joueur test est un joueur.
  * L'équipe compte double ici — sans elle, deux joueurs test ne sont ni alliés ni
  * ennemis, et le PvP qu'ils servent à éprouver ne s'applique pas.
@@ -67,6 +68,7 @@ export async function useAdminTestPlayers(): Promise<AdminTestPlayers> {
     sendToCooldown: userId => send(`/api/admin/test-players/${userId}/cooldown`, 'POST'),
     skipCooldown: userId => send(`/api/admin/players/${userId}/skip-cooldown`, 'POST'),
     grantLife: userId => send(`/api/admin/players/${userId}/grant-life`, 'POST'),
+    grantKey: userId => send(`/api/admin/players/${userId}/grant-key`, 'POST'),
     setTeam: (userId, team) => send(`/api/admin/players/${userId}/team`, 'PUT', { team }),
     reset: userId => send(`/api/admin/test-players/${userId}/reset`, 'POST'),
     refresh,

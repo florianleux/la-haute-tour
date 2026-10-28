@@ -22,6 +22,7 @@ const card: PlayerCard = {
   cooldownUntil: '2026-09-04T18:00:00.000Z',
   pendingDisputes: 2,
   team: null,
+  ownsKey: false,
 }
 
 describe('joueurs côté admin', () => {
@@ -40,16 +41,18 @@ describe('joueurs côté admin', () => {
   })
 
   it('relit la liste après un geste, au lieu de deviner son effet', async () => {
-    const { skipCooldown, grantLife } = await useAdminPlayers()
+    const { skipCooldown, grantLife, grantKey } = await useAdminPlayers()
 
     expect(await skipCooldown(7)).toBe(true)
     expect(await grantLife(7)).toBe(true)
+    expect(await grantKey(7)).toBe(true)
     expect(calls()).toEqual([
       'fetch POST /api/admin/players/7/skip-cooldown',
       'fetch POST /api/admin/players/7/grant-life',
+      'fetch POST /api/admin/players/7/grant-key',
     ])
     // La liste et l'identité servie, à chaque geste.
-    expect(refresh).toHaveBeenCalledTimes(4)
+    expect(refresh).toHaveBeenCalledTimes(6)
   })
 
   // Remis à zéro, le joueur que l'admin incarne doit rejouer l'introduction :

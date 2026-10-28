@@ -4,6 +4,7 @@ import {
   achievements,
   activeEffects,
   attempts,
+  bossKeys,
   deckFloors,
   disputes,
   items,
@@ -55,6 +56,8 @@ export interface PlayerCard {
   pendingDisputes: number
   /** Son équipe, null tant que l'admin ne l'a pas placé. Voir specs/equipes.md. */
   team: TeamId | null
+  /** Il a la clé du boss de son étage courant, posée ou non : « Donner une clé » est alors sans objet. */
+  ownsKey: boolean
 }
 
 /**
@@ -117,6 +120,9 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
       pendingDisputes: sql<number>`(select count(*) from ${disputes}
         where ${disputes.userId} = ${users.id}
           and ${disputes.status} = 'pending')`,
+      ownsKey: sql<number>`exists(select 1 from ${bossKeys}
+        where ${bossKeys.userId} = ${users.id}
+          and ${bossKeys.floor} = ${users.currentFloor})`,
     })
     .from(users)
     .leftJoin(deckFloors, eq(deckFloors.floor, users.currentFloor))
@@ -147,6 +153,7 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     cooldownUntil: row.user.cooldownUntil?.toISOString() ?? null,
     pendingDisputes: row.pendingDisputes,
     team: row.user.team,
+    ownsKey: row.ownsKey === 1,
   }))
 }
 
@@ -165,6 +172,7 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
     db.delete(missedPool).where(eq(missedPool.userId, player.id)),
     db.delete(pocketSpells).where(eq(pocketSpells.userId, player.id)),
     db.delete(items).where(eq(items.userId, player.id)),
+    db.delete(bossKeys).where(eq(bossKeys.userId, player.id)),
     db.delete(activeEffects).where(eq(activeEffects.userId, player.id)),
     db.delete(activeEffects).where(eq(activeEffects.casterId, player.id)),
     db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, player.id)),

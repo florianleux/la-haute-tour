@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
-import { achievements, disputes, items, missedPool, settings, users } from '../../server/db/schema'
+import { achievements, bossKeys, disputes, items, missedPool, settings, users } from '../../server/db/schema'
 import { disputableErrors } from '../../server/utils/disputes'
 import { playerRoster, resetPlayer } from '../../server/utils/players'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -49,6 +49,7 @@ describe('fiches joueurs', () => {
       pendingDisputes: 0,
       // Personne n\'est placé tant que l\'admin ne le fait pas.
       team: null,
+      ownsKey: false,
     }])
   })
 
@@ -171,6 +172,14 @@ describe('repartir de zéro', () => {
 
     const [row] = await db.select().from(settings)
     expect(row?.firstAscensionUserId).toBeNull()
+  })
+
+  it('efface ses clés du boss', async () => {
+    await db.insert(bossKeys).values({ userId, floor: 1, obtainedAt: NOW })
+
+    await resetPlayer(db, await loadPlayer(db, userId), NOW)
+
+    expect(await db.select().from(bossKeys)).toHaveLength(0)
   })
 
   // L'introduction rejouée redonne le Fromage, redemande le nom et le genre.

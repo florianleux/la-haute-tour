@@ -36,6 +36,7 @@ import { rulesWithEffects, SPELLS } from './spellbook'
 import {
   acceptedAnswers,
   activeEffects,
+  bossKeys,
   bossTrials,
   deckFloors,
   disputes,
@@ -217,6 +218,8 @@ export interface DoorView {
   unlocked: boolean
   /** Ouverte par ce joueur-là (`openDoor`). */
   opened: boolean
+  /** Le joueur a la clé de cet étage, pas encore posée : il peut la poser (`placeKey`). */
+  hasKey: boolean
   /** Le nom de qui a posé sa clé (ADR 0008). Vide tant que les clés n'existent pas. */
   keyHolders: string[]
 }
@@ -240,6 +243,8 @@ export interface PlayerSnapshot {
   spellDiscovered: boolean
   /** Le premier sort en poche, et rien encore lancé. Lu avec le joueur. */
   firstCastPending: boolean
+  /** La clé du boss de l'étage courant, pas encore posée. Lue avec le joueur. */
+  hasKey: boolean
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
   effects: PlacedEffect[]
   reservation?: Reservation
@@ -333,6 +338,12 @@ function snapshotQueries(db: Database, userId: number) {
           or ${hasCast})`,
         firstCastPending: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(and(eq(pocketSpells.userId, users.id), eq(pocketSpells.spell, FIRST_SPELL))))}
           and not ${hasCast})`,
+        // Lue avec le joueur, pour la même raison : la porte la demande à chaque lecture.
+        hasKey: sql<number>`${exists(db.select({ one: sql`1` }).from(bossKeys).where(and(
+          eq(bossKeys.userId, users.id),
+          eq(bossKeys.floor, users.currentFloor),
+          isNull(bossKeys.placedAt),
+        )))}`,
       })
       .from(users)
       .where(eq(users.id, userId))
@@ -369,6 +380,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials]: BatchResponse
     nextFloorTotal: row.nextFloorTotal,
     spellDiscovered: row.spellDiscovered === 1,
     firstCastPending: row.firstCastPending === 1,
+    hasKey: row.hasKey === 1,
     gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
@@ -918,7 +930,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     ...base,
     phase,
     question: phase === 'cooldown' ? null : base.question,
-    door: phase === 'bossDoor' ? doorView(user) : null,
+    door: phase === 'bossDoor' ? doorView(snapshot) : null,
   }
 }
 
@@ -1270,11 +1282,11 @@ export async function openPlayerChest(
 /**
  * La porte du boss de ce joueur. Déverrouillée pour qui n'a pas d'équipe ;
  * verrouillée pour une équipe tant que ses deux clés ne sont pas posées.
- * ponytail: verrouillée pour toute équipe, les clés viennent avec #138 et #139.
+ * ponytail: verrouillée pour toute équipe, poser la clé vient avec #139.
  */
-function doorView(user: User): DoorView {
+function doorView({ user, hasKey }: PlayerSnapshot): DoorView {
   const unlocked = user.team === null
-  return { unlocked, opened: unlocked && user.doorOpened, keyHolders: [] }
+  return { unlocked, opened: unlocked && user.doorOpened, hasKey, keyHolders: [] }
 }
 
 /**
@@ -1284,7 +1296,7 @@ function doorView(user: User): DoorView {
  */
 export async function openDoor(db: Database, user: User, now: Date): Promise<GameState> {
   const snapshot = await loadSnapshot(db, user.id)
-  const door = phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) === 'bossDoor' ? doorView(snapshot.user) : null
+  const door = phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) === 'bossDoor' ? doorView(snapshot) : null
 
   if (!door?.unlocked || door.opened) {
     return stateFrom(snapshot, now)
@@ -1302,7 +1314,7 @@ export async function openDoor(db: Database, user: User, now: Date): Promise<Gam
 export async function enterBoss(db: Database, user: User, now: Date): Promise<GameState> {
   const snapshot = await loadSnapshot(db, user.id)
 
-  if (phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) !== 'bossDoor' || !doorView(snapshot.user).unlocked) {
+  if (phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) !== 'bossDoor' || !doorView(snapshot).unlocked) {
     return stateFrom(snapshot, now)
   }
 

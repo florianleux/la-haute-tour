@@ -62,6 +62,9 @@
       <BaseButton variant="ghost" :disabled="busy" @click="emit('grantLife')">
         Rendre une vie
       </BaseButton>
+      <BaseButton variant="ghost" :disabled="busy || testPlayer.ownsKey" @click="emit('grantKey')">
+        Donner une clé
+      </BaseButton>
       <BaseButton variant="ghost" :disabled="busy" @click="emit('reset')">
         Repartir de zéro
       </BaseButton>
@@ -95,6 +98,7 @@ const emit = defineEmits<{
   sendToCooldown: []
   skipCooldown: []
   grantLife: []
+  grantKey: []
   reset: []
   remove: []
 }>()

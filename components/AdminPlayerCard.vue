@@ -70,6 +70,14 @@
       </BaseButton>
       <BaseButton
         variant="ghost"
+        :loading="running === 'grantKey'"
+        :disabled="player.ownsKey || busy"
+        @click="$emit('grantKey')"
+      >
+        Donner une clé
+      </BaseButton>
+      <BaseButton
+        variant="ghost"
         :loading="running === 'reset'"
         :disabled="busy"
         @click="$emit('reset')"
@@ -99,12 +107,12 @@ const props = defineProps<{
   /** Un geste est en vol, ici ou sur une autre fiche : tout attend la relecture. */
   busy: boolean
   /** Le geste lancé depuis cette fiche — lui seul montre son loader. */
-  running: 'skipCooldown' | 'grantLife' | 'reset' | null
+  running: 'skipCooldown' | 'grantLife' | 'grantKey' | 'reset' | null
   /** L'horloge de la liste, pour que le délai restant descende tout seul. */
   now: number
 }>()
 
-defineEmits<{ skipCooldown: [], grantLife: [], reset: [], setTeam: [TeamId | null] }>()
+defineEmits<{ skipCooldown: [], grantLife: [], grantKey: [], reset: [], setTeam: [TeamId | null] }>()
 
 // « Sans équipe » est un choix comme un autre : l'appartenance est facultative,
 // et l'admin doit pouvoir l'ôter. Voir specs/equipes.md.

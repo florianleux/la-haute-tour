@@ -16,6 +16,8 @@ export interface AdminPlayers {
   acting: Ref<boolean>
   skipCooldown: (userId: number) => Promise<boolean>
   grantLife: (userId: number) => Promise<boolean>
+  /** Donne au joueur la clé du boss de son étage courant. */
+  grantKey: (userId: number) => Promise<boolean>
   /** Met le joueur dans une équipe, ou l'en retire avec null. */
   setTeam: (userId: number, team: TeamId | null) => Promise<boolean>
   /** Efface la partie du joueur : étage 1, vies pleines, plus rien vu ni raté. */
@@ -49,6 +51,7 @@ export async function useAdminPlayers(): Promise<AdminPlayers> {
     acting,
     skipCooldown: userId => send(`/api/admin/players/${userId}/skip-cooldown`, 'POST'),
     grantLife: userId => send(`/api/admin/players/${userId}/grant-life`, 'POST'),
+    grantKey: userId => send(`/api/admin/players/${userId}/grant-key`, 'POST'),
     setTeam: (userId, team) => send(`/api/admin/players/${userId}/team`, 'PUT', { team }),
     resetPlayer: userId => send(`/api/admin/players/${userId}/reset`, 'POST'),
     refresh,

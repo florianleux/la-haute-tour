@@ -545,6 +545,22 @@ export const items = sqliteTable('items', {
 }, table => [index('items_user_idx').on(table.userId, table.obtainedAt)])
 
 /**
+ * Les clés du boss : une au plus par joueur et par étage, d'où la clé
+ * primaire. À part des sorts en poche, dont l'enum ne l'accepte pas : une clé
+ * ne paraît jamais dans le Grimoire. Une clé obtenue porte déjà déverrouillée
+ * se stocke quand même. Voir specs/boss.md#obtention-de-la-clé.
+ */
+export const bossKeys = sqliteTable('boss_keys', {
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  floor: integer('floor').notNull(),
+  obtainedAt: integer('obtained_at', { mode: 'timestamp' }).notNull(),
+  /** Null tant que le joueur ne l'a pas posée dans une serrure (`placeKey`). */
+  placedAt: integer('placed_at', { mode: 'timestamp' }),
+}, table => [primaryKey({ columns: [table.userId, table.floor] })])
+
+/**
  * Un sort lancé, et ce qu'il attend pour agir. Une ligne par lancer : le sort
  * est consommé des sorts en poche, et ce qu'il devient vit ici.
  *
