@@ -219,6 +219,14 @@ export function isAtCampFromDoor(state: GameState | null): boolean {
 }
 
 /**
+ * La porte du boss encore verrouillée, devant elle ou au camp : le joueur
+ * attend la clé d'un coéquipier. Voir specs/boss.md#attendre-au-camp.
+ */
+export function isDoorLocked(state: GameState | null): boolean {
+  return state?.phase === "bossDoor" && state.door?.unlocked === false;
+}
+
+/**
  * Les boîtes du camp, que ses objets ouvrent par-dessus lui : le Grimoire, le
  * Volumen, les Haut-faits et l'Inventaire. Sans URL : la page de jeu retient
  * laquelle est ouverte. Voir specs/spec.md#glossaire (Boîte du camp).

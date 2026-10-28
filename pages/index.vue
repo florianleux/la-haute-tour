@@ -76,13 +76,15 @@
       @submit="submit"
     />
 
+    <!-- Au camp en attente de porte, l'état se relit toutes les 30 s
+         (useQuestionRun) : pas de « Mise à jour » à chaque relecture. -->
     <CooldownCard
       v-else-if="view?.card === 'cooldown' && state"
       :state="state"
       :screen="view.screen"
       :action="view.action"
       :cooldown-remaining="cooldownRemaining"
-      :loading="loading"
+      :loading="loading && !isAtCampFromDoor(state)"
       :is-admin="isAdmin"
       :skipping="isRunning('skipCooldown')"
       :advancing="isRunning('advance')"

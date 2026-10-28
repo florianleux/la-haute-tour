@@ -1,13 +1,14 @@
 import { effectScope, nextTick, ref } from 'vue'
+import type { Ref } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
-import type { GameState } from '../../server/utils/game'
+import type { DoorView, GameState } from '../../server/utils/game'
 import { demoState } from '../../utils/demo'
 
 const { serve, answerWith, breakNetwork, signIn, calls, refresh, reset } = installAppGlobals()
 
 const { GAME_STATE_KEY } = await import('../../composables/useGameState')
-const { useQuestionRun } = await import('../../composables/useQuestionRun')
+const { DOOR_READ_MS, useQuestionRun } = await import('../../composables/useQuestionRun')
 
 type QuestionRun = Awaited<ReturnType<typeof useQuestionRun>>
 type QuestionRunOptions = Parameters<typeof useQuestionRun>[0]
@@ -161,6 +162,86 @@ describe('déroulé d une question', () => {
     await nextTick()
 
     expect(refresh).toHaveBeenCalledOnce()
+  })
+
+  describe('relit la porte verrouillée, pour qu une clé posée ailleurs se voie', () => {
+    function atDoor(door: Partial<DoorView> = {}): GameState {
+      return gameState({
+        phase: 'bossDoor',
+        door: { unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door', ...door },
+      })
+    }
+
+    async function waitAt(state: GameState, visible = ref(true)): Promise<Ref<number>> {
+      serve(GAME_STATE_KEY, state)
+      const now = ref(NOW)
+      await run({ now, visible })
+      refresh.mockClear()
+      return now
+    }
+
+    it('devant la porte, toutes les 30 s', async () => {
+      const now = await waitAt(atDoor())
+
+      now.value = NOW + DOOR_READ_MS - 1
+      await nextTick()
+      expect(refresh).not.toHaveBeenCalled()
+
+      now.value = NOW + DOOR_READ_MS
+      await nextTick()
+      now.value = NOW + 2 * DOOR_READ_MS
+      await nextTick()
+      expect(refresh).toHaveBeenCalledTimes(2)
+    })
+
+    it('au camp, en attente de la porte', async () => {
+      const now = await waitAt(atDoor({ spot: 'camp' }))
+
+      now.value = NOW + DOOR_READ_MS
+      await nextTick()
+
+      expect(refresh).toHaveBeenCalledOnce()
+    })
+
+    it('plus une fois la porte déverrouillée, ni ailleurs', async () => {
+      for (const state of [atDoor({ unlocked: true }), atDoor({ unlocked: true, spot: 'camp' }), gameState()]) {
+        const now = await waitAt(state)
+
+        now.value = NOW + DOOR_READ_MS
+        await nextTick()
+
+        expect(refresh).not.toHaveBeenCalled()
+      }
+    })
+
+    it('pas sans les yeux du joueur, et dès son retour', async () => {
+      const visible = ref(true)
+      const now = await waitAt(atDoor(), visible)
+
+      visible.value = false
+      now.value = NOW + 2 * DOOR_READ_MS
+      await nextTick()
+      expect(refresh).not.toHaveBeenCalled()
+
+      visible.value = true
+      await nextTick()
+      expect(refresh).toHaveBeenCalledOnce()
+    })
+
+    it('pas pendant un coup en vol, qui rendra l état lui-même', async () => {
+      serve(GAME_STATE_KEY, atDoor({ hasKey: true }))
+      answerWith(atDoor({ unlocked: true }))
+      const now = ref(NOW)
+      const { placeKey } = await run({ now })
+      refresh.mockClear()
+
+      const placing = placeKey()
+      now.value = NOW + DOOR_READ_MS
+      await nextTick()
+      await placing
+
+      expect(refresh).not.toHaveBeenCalled()
+    })
   })
 
   it('rend ses effets à la portée qui l a appelé', async () => {

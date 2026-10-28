@@ -2,7 +2,7 @@ import { useClockTick } from './useClockTick'
 import { useGameState } from './useGameState'
 import { usePlay } from './usePlay'
 import { formatCountdown } from '../utils/date'
-import { isCooldown, runningTimer } from '../utils/phase'
+import { isCooldown, isDoorLocked, runningTimer } from '../utils/phase'
 import type { Ref } from 'vue'
 import type { AnswerSource } from '~~/server/utils/mechanics'
 import type { GameState } from '~~/server/utils/game'
@@ -62,6 +62,9 @@ export interface QuestionRunOptions {
 
 /** Cadence du décompte affiché : assez fine pour que la seconde ne saute pas. */
 const TICK_MS = 250
+
+/** Cadence de relecture de la porte verrouillée. Voir specs/boss.md#attendre-au-camp. */
+export const DOOR_READ_MS = 30_000
 
 /**
  * Ce qu'il faut pour jouer une question : le décompte, l'envoi, le passage à la
@@ -189,6 +192,24 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     // plutôt que de laisser le joueur devant un décompte à zéro.
     watch(cooldownOver, (over) => {
       if (over) {
+        refresh()
+      }
+    })
+
+    // La porte verrouillée, devant elle ou au camp : la clé d'un coéquipier ne
+    // se voit qu'en relisant l'état. Pas sans les yeux du joueur — à son retour,
+    // la relecture due part aussitôt —, ni pendant un coup en vol, qui rend
+    // l'état lui-même.
+    let doorReadAt = now.value
+
+    watch([now, visible], () => {
+      if (!isDoorLocked(state.value)) {
+        doorReadAt = now.value
+        return
+      }
+
+      if (visible.value && !pending.value && now.value - doorReadAt >= DOOR_READ_MS) {
+        doorReadAt = now.value
         refresh()
       }
     })

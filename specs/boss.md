@@ -171,7 +171,8 @@ Le joueur qui finit l'étage arrive devant la porte. Ce qu'il y trouve :
   `crossFloor`.
 - **Porte et camp relisent l'état** environ toutes les 30 s : la porte qui
   se déverrouille pendant que le joueur la regarde lui offre « Ouvrir », sans
-  recharger.
+  recharger. La relecture ne court que porte verrouillée, et s'arrête quand le
+  joueur quitte la fenêtre ; au retour, celle qui était due part aussitôt.
 - **Entre deux combats** : défaite, attente au camp, rattrapage, puis
   « Remonter » face à la porte qu'il a déjà ouverte, et « Entrer ».
 - **Arrivée à 0 vie** (voir [Cas à 0 vie](#cas-à-0-vie)) : « Remonter » attend
