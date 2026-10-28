@@ -1,28 +1,35 @@
 <template>
-  <BaseCard title="La Haute Tour">
-    <template #lead>
-      L'accès se fait par Discord, sur invitation.
-    </template>
-    <BaseButton to="/api/auth/discord" external block class="mt-8">
-      Se connecter avec Discord
-    </BaseButton>
-    <!-- En local seulement : voir server/api/auth/dev.get.ts. -->
-    <BaseButton
-      v-if="isDev"
-      to="/api/auth/dev"
-      external
-      block
-      class="mt-3"
-    >
-      Connexion locale (admin)
-    </BaseButton>
-  </BaseCard>
+  <div class="flex w-full justify-center">
+    <!-- Les nuages flous de l'ascension, sur toute la page : le gabarit centre
+         le contenu, le décor passe dessous. -->
+    <div class="absolute inset-0 bg-[url(/images/play-bg.webp)] bg-cover bg-center" />
+    <div class="relative flex w-full max-w-2xl flex-col items-center">
+      <!-- Bornée en hauteur aussi : sur une fenêtre basse, le bouton reste visible. -->
+      <LoginTitle class="max-w-[72vh]" />
+      <!-- Après la chute du titre : voir LoginTitle. -->
+      <div class="mt-10 flex flex-col items-center motion-safe:animate-fade-in [--enter-delay:1.2s]">
+        <!-- Le médaillon de « Valider », celui de la question. -->
+        <BaseCardButton
+          label="Connexion"
+          anchor="inline"
+          :loading="leaving"
+          @click="signIn"
+        />
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ public: true })
 
-const isDev = import.meta.dev
+// Le médaillon est un bouton, pas un lien : la route serveur s'ouvre en
+// navigation complète, le loader tient la place pendant le départ vers Discord.
+const leaving = ref(false)
+function signIn(): void {
+  leaving.value = true
+  navigateTo('/api/auth/discord', { external: true })
+}
 
 const { user } = await useCurrentUser()
 

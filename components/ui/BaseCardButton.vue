@@ -8,8 +8,8 @@
        (`data-arriving`, voir PlayFrame) : le bouton tombe avec lui et rebondit
        à l'impact. -->
   <div
-    class="absolute z-20 -translate-x-1/2 translate-y-1/2 group-data-arriving:motion-safe:animate-button-bounce"
-    :class="[ANCHORS[anchor].position, ANCHORS[anchor].width]"
+    class="z-20 group-data-arriving:motion-safe:animate-button-bounce"
+    :class="[anchor !== 'inline' && 'absolute -translate-x-1/2 translate-y-1/2', ANCHORS[anchor].position, ANCHORS[anchor].width]"
     :style="{ aspectRatio: face === 'plank' ? '328 / 95' : '634 / 175' }"
   >
     <button
@@ -68,11 +68,13 @@
 // - 'parchment-bottom' : RecoveryCard, où le bouton se pose à cheval sur le bord
 //   bas de la feuille. Il tombe plus haut que 'image-bottom' parce que
 //   l'illustration garde du bois sous le parchemin, que le bouton ne recouvre pas.
+// - 'inline' : aucun cadre sous lui, il se pose dans le flux de la page, à
+//   taille fixe (la page de connexion, sous le titre).
 //
 // `face` choisit l'illustration : le médaillon de parchemin par défaut, ou la
 // planche clouée du camp — bois sombre, donc texte crème plutôt qu'ambre, et pas
 // de `pb-2` puisqu'elle est symétrique là où le médaillon a une lèvre basse.
-type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'parchment-bottom'
+type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'parchment-bottom' | 'inline'
 type Face = 'medallion' | 'plank'
 
 const ANCHORS: Record<Anchor, { position: string, width: string, text: string }> = {
@@ -105,6 +107,13 @@ const ANCHORS: Record<Anchor, { position: string, width: string, text: string }>
     // 28,8 % × 1,4 et 3,3 cqw × 1,4.
     width: 'w-[58.5%] sm:w-[40.5%]',
     text: 'text-[6.6cqw] sm:text-[4.6cqw]',
+  },
+  'inline': {
+    position: 'relative',
+    // Plus petit que les proportions de 'image-bottom' (3,3 cqw pour 28,8 %) :
+    // « Connexion » y touchait les ornements du médaillon.
+    width: 'w-72',
+    text: 'text-[26px]',
   },
 }
 
