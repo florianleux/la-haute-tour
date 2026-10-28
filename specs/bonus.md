@@ -17,7 +17,7 @@ Les équipes sont traitées à part, dans [`equipes.md`](./equipes.md).
 
 Un Sort **se lance uniquement au camp** — l'attente, le rattrapage tant
 qu'il n'a pas commencé, et l'ascension au repos jusqu'au clic sur la corde ;
-jamais pendant une question, ni en rattrapage en cours, ni sur le profil. Un
+jamais pendant une question, ni en rattrapage en cours. Un
 sort lancé sur soi au repos attend son déclencheur, comme sur toute cible qui
 n'est pas en attente (voir [Ancrage et durée de vie](#ancrage-et-durée-de-vie)). L'écran d'attente porte un accès vers
 le **Grimoire**, une boîte ouverte par-dessus le camp, où le lancer se fait réellement.

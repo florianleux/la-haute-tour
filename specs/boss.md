@@ -160,9 +160,11 @@ Le joueur qui finit l'étage arrive devant la porte. Ce qu'il y trouve :
 
 - Porte verrouillée, le joueur **redescend** au camp (`descendToCamp`). Il n'y a
   pas d'écran d'attente devant la porte.
-- Le camp dit l'état de la porte : combien de clés sur 2, et **qui** les a
-  posées (le camp nomme comme la porte, voir ADR 0008 — pas encore affiché,
-  comme sur la porte).
+- Le camp dit l'état de la porte, nommée (« La Porte de la Lune attend
+  toujours sa deuxième clé. », « … ses deux clés. », « … est déverrouillée,
+  tu peux maintenant l'ouvrir. »), et **qui** a posé les clés (le camp
+  nomme comme la porte, voir ADR 0008 — pas encore affiché, comme sur la
+  porte).
 - Le bouton **« Remonter »** (`climbToDoor`) du camp ne s'active que porte
   déverrouillée. Il ramène devant la porte, où « Ouvrir » (ou « Entrer », s'il
   l'a déjà ouverte) attend.

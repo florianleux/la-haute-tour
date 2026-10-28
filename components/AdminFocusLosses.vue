@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-// Les flags de triche, visibles ici et nulle part ailleurs : le profil joueur
-// n'en porte aucune trace. Voir specs/anti-triche.md#flags-côté-admin.
+// Les flags de triche, visibles ici et nulle part ailleurs : le joueur n'en
+// voit aucune trace. Voir specs/anti-triche.md#flags-côté-admin.
 const { players, failed, loading } = await useAdminFocusLosses()
 </script>

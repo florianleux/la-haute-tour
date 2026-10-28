@@ -263,7 +263,7 @@ const bannerQuiet = computed(() => isAtRest(props.state) || door.value !== null)
  */
 function posterLine(): string {
   if (door.value) {
-    return campDoorLine(door.value)
+    return campDoorLine(door.value, props.state.floor)
   }
   if (bannerQuiet.value) {
     return 'Bienvenue au camp de base'

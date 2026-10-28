@@ -26,16 +26,21 @@ describe('objets du camp', () => {
   })
 })
 
-// specs/boss.md#attendre-au-camp : les clés sur deux, sans les noms.
+// specs/boss.md#attendre-au-camp : la porte nommée, les clés qui manquent, sans les poseurs.
 describe('porte vue du camp', () => {
   const door = { unlocked: false, opened: false, hasKey: false, keyHolders: ['frodon'], spot: 'camp' as const }
 
-  it('compte les clés posées, sans nommer les poseurs', () => {
-    expect(campDoorLine(door)).toBe('La porte attend ses clés : 1 sur 2.')
-    expect(campDoorLine({ ...door, keyHolders: [] })).toBe('La porte attend ses clés : 0 sur 2.')
+  it('dit la clé qui manque, sans nommer les poseurs', () => {
+    expect(campDoorLine(door, 1)).toBe('La Porte de la Lune attend toujours sa deuxième clé.')
+    expect(campDoorLine({ ...door, keyHolders: [] }, 1)).toBe('La Porte de la Lune attend toujours ses deux clés.')
   })
 
   it('dit la porte déverrouillée', () => {
-    expect(campDoorLine({ ...door, unlocked: true, keyHolders: ['frodon', 'sam'] })).toBe('La porte est déverrouillée.')
+    expect(campDoorLine({ ...door, unlocked: true, keyHolders: ['frodon', 'sam'] }, 1))
+      .toBe('La Porte de la Lune est déverrouillée, tu peux maintenant l\'ouvrir.')
+  })
+
+  it('dit « la porte » à un étage qui n a pas encore la sienne', () => {
+    expect(campDoorLine({ ...door, keyHolders: [] }, 6)).toBe('La porte attend toujours ses deux clés.')
   })
 })

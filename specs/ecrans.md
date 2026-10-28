@@ -2,7 +2,7 @@
 
 ## Principes
 
-- **Ni barre, ni menu.** Rien n'est permanent à l'écran : pas de barre d'icônes, pas de bandeau, pas de menu déroulant. Chaque écran porte les seules actions qui ont un sens à cet endroit. Le profil et l'administration ne s'atteignent que par leur adresse. Seul le sélecteur d'incarnation, visible du seul admin, reste sur toutes les pages (voir [`admin.md`](./admin.md#incarnation)).
+- **Ni barre, ni menu.** Rien n'est permanent à l'écran : pas de barre d'icônes, pas de bandeau, pas de menu déroulant. Chaque écran porte les seules actions qui ont un sens à cet endroit. L'administration ne s'atteint que par son adresse. Seul le sélecteur d'incarnation, visible du seul admin, reste sur toutes les pages (voir [`admin.md`](./admin.md#incarnation)).
 - **Le jeu est la page d'accueil.** `/` est la partie : c'est là qu'on atterrit en se connectant, là qu'on retombe en rechargeant, et il n'existe pas de vestibule devant. Hors ascension, on y trouve le **camp**, d'où l'on part ; en pleine ascension, l'écran en cours — question, verdict, coffre. Rien à traverser pour jouer. Seule exception : l'**écran de chargement** (voir [`spec.md`](./spec.md#glossaire)), au premier affichage du jeu ou de l'introduction dans un onglet. Il attend que les images du jeu soient téléchargées, au plus 10 s, pour que les animations d'entrée — le cadre de jeu qui tombe, le Grimoire qui monte — ne se jouent pas sur une case vide.
 - **Une seule route de jeu.** Tout ce qui se joue — question, verdict, attente, rattrapage, palier, porte de boss, combat de boss, fin — vit sur cette page, qui affiche la phase renvoyée par le serveur. Le joueur ne choisit jamais son écran et ne peut pas en atteindre un par l'URL.
 - **Étage et vies ne s'affichent que pendant le jeu**, là où ils bougent. Nulle part ailleurs.
@@ -20,7 +20,6 @@
 | Accès refusé | `/refus` | oui |
 | Introduction | `/intro` — imposée tant qu'elle n'est pas finie, fermée ensuite (sauf à un admin). L'Inconnu y lit la guilde du joueur une fois son nom et son genre dits, avant ses questions (voir [`lore.md`](./lore.md#linconnu)) | non |
 | Jeu | `/` — 8 phases, page d'accueil (7 aujourd'hui : `bossDoor` n'est pas encore implémentée, la porte se lit sur `floorEnd`) | non |
-| Profil | `/profil` — par son adresse seulement | non |
 | Grimoire (les Sorts) | boîte sur le camp, sans URL — par le grimoire du camp | non |
 | Haut-faits (les Succès) | boîte sur le camp, sans URL — avec une équipe, par la bannière du camp | non |
 | Volumen (les questions vues) | boîte sur le camp, sans URL — par le parchemin du camp | non |
@@ -40,23 +39,6 @@ Sur une fenêtre au format mobile, aucune de ces pages ne s'affiche : le [mur mo
 
 - **Connexion** : sur les nuages de l'ascension, le logo du jeu tombe du haut de la fenêtre, rebondit puis flotte, un reflet le traverse et ses gemmes scintillent. Dessous, un seul bouton, « Connexion » (le médaillon de « Valider »), qui part vers Discord : l'accès se fait sur invitation. Un joueur déjà connecté est renvoyé vers le jeu.
 - **Accès refusé** : le compte Discord n'est pas sur la whitelist, aucun compte n'a été créé, il faut demander l'accès à l'administrateur. Un retour vers la connexion.
-
-## Profil
-
-Nom d'aventurier (pseudo Discord tant qu'il ne s'est pas nommé), date d'inscription, **parcours**, bouton de déconnexion.
-
-Le parcours dit le chemin déjà fait, jamais l'état de l'instant :
-
-- **Étage** atteint sur les 6, et questions vues dans cet étage sur ce qu'il contient.
-- **Questions vues** depuis le début, **bonnes réponses**, et le taux qui en découle.
-- **Meilleure série** de bonnes réponses d'affilée. Elle traverse les étages : un palier n'interrompt rien.
-- **Tentatives achevées**, avec la **plus longue** et la **plus courte**.
-
-Une tentative se mesure en **questions vues**, l'unité de progression du jeu, et non en heures — une soirée entrecoupée de pauses ne vaut pas une longue ascension. Elle ne s'inscrit qu'une fois **achevée**, c'est-à-dire au moment où la suivante s'ouvre : entre la perte de la dernière vie et la reprise, une contestation acceptée peut rendre une vie et faire repartir la même tentative. Les tentatives closes avant que le profil existe ne sont pas reconstituées : le décompte part de zéro.
-
-S'y ajoute, en une phrase, le nombre de **contestations acceptées** sur celles ouvertes.
-
-Ce que le profil ne montre toujours pas : ni phase, ni vies, ni attente — l'état de l'instant vit dans le jeu — et **jamais** de donnée de triche, les flags étant réservés à l'administration.
 
 ## Jeu
 
@@ -138,7 +120,7 @@ Introduction du boss (apparition, nom, dialogue) jouée ici, une seule fois par 
 
 ### Camp en attente de porte
 
-Le camp habituel, avec l'état de la porte : clés posées sur 2. Le nom de ceux qui les ont posées n'est pas encore affiché, comme sur la porte (voir [`boss.md`](./boss.md#poser-la-clé)). Un bouton « Remonter », actif seulement porte déverrouillée (et, à 0 vie, attente et rattrapage finis). Il relit l'état environ toutes les 30 s. Voir [`boss.md`](./boss.md#attendre-au-camp).
+Le camp habituel, avec l'état de la porte, nommée : « La Porte de la Lune attend toujours sa deuxième clé. » (ou « ses deux clés »), puis « La Porte de la Lune est déverrouillée, tu peux maintenant l'ouvrir. ». Le nom de ceux qui les ont posées n'est pas encore affiché, comme sur la porte (voir [`boss.md`](./boss.md#poser-la-clé)). Un bouton « Remonter », actif seulement porte déverrouillée (et, à 0 vie, attente et rattrapage finis). Il relit l'état environ toutes les 30 s. Voir [`boss.md`](./boss.md#attendre-au-camp).
 
 ### `bossFight` — combat de boss
 
@@ -268,5 +250,4 @@ Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
 - **Aucune réponse hors camp** : le Volumen, seul écran qui relit les réponses des questions vues, ne s'ouvre qu'au camp — le rattrapage tire dans ce qu'il montre.
 - **Aucune cible avant le lancer** : le joueur choisit une catégorie, jamais une personne.
 - **Aucun compteur de triche** : les flags existent, ils sont réservés à l'administration.
-- **Aucun état de jeu sur le profil** : il y montre son parcours, pas sa phase, ses vies ni son attente — celles-là vivent dans le jeu.
 - **Aucune question à venir** : rien n'annonce jamais l'énoncé suivant avant qu'il soit servi.

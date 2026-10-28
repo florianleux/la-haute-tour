@@ -205,7 +205,7 @@ describe('les pages qui passent par l écran de chargement', () => {
     expect(showsAssetsLoadingScreen(path)).toBe(true)
   })
 
-  it.each(['/login', '/profil', '/admin'])('%s s en passe', (path) => {
+  it.each(['/login', '/admin'])('%s s en passe', (path) => {
     expect(showsAssetsLoadingScreen(path)).toBe(false)
   })
 })

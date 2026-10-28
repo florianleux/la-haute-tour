@@ -166,7 +166,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     }, { immediate: true })
 
     // La détection ne tourne que pendant qu'un timer tourne : jamais sur un
-    // verdict, pendant l'attente, sur l'accueil ou le profil.
+    // verdict, pendant l'attente, ou sur l'accueil.
     // Voir specs/anti-triche.md#perte-de-focus.
     const leftAt = ref<number | null>(null)
 

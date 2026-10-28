@@ -25,7 +25,7 @@
 ## Perte de focus
 
 - **Tolérance d'une seconde** : une perte de focus ramenée en moins d'une seconde est ignorée. Un alt-tab accidentel n'est pas de la triche.
-- **La détection ne tourne que pendant qu'un timer tourne** — en ascension et en rattrapage. Jamais sur un écran de verdict, ni pendant l'attente, ni sur le profil : une attente de douze heures sous surveillance n'aurait aucun sens.
+- **La détection ne tourne que pendant qu'un timer tourne** — en ascension et en rattrapage. Jamais sur un écran de verdict, ni pendant l'attente : une attente de douze heures sous surveillance n'aurait aucun sens.
 - **Conséquence : la réponse est soumise en l'état.** Champ vide → réponse fausse et ses conséquences ordinaires. Bonne réponse déjà saisie → elle est validée. La sanction est de perdre la main sur la question, pas une vie retirée d'office.
 - En rattrapage, où le joueur n'a plus de vie à perdre, la question est simplement comptée fausse et son compteur de réussites revient à zéro.
 - **Un flag est enregistré**, visible de l'administration seulement.
@@ -34,7 +34,7 @@
 ## Flags côté admin
 
 - Les soumissions déclenchées par une perte de focus sont **marquées** sur le joueur.
-- **Visibles de l'admin seulement** : le joueur ne consulte pas son propre compteur, et son profil n'en porte aucune trace.
+- **Visibles de l'admin seulement** : le joueur ne consulte pas son propre compteur.
 - Elles servent à repérer les tricheurs systémiques — dix pertes de focus en cinq questions se remarquent, une par soirée non.
 
 ## Whitelist Discord
