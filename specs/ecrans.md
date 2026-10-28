@@ -120,7 +120,7 @@ Introduction du boss (apparition, nom, dialogue) jouée ici, une seule fois par 
 
 ### Camp en attente de porte
 
-Le camp habituel, avec l'état de la porte, nommée : « La Porte de la Lune attend toujours sa deuxième clé. » (ou « ses deux clés »), puis « La Porte de la Lune est déverrouillée, tu peux maintenant l'ouvrir. ». Le nom de ceux qui les ont posées n'est pas encore affiché, comme sur la porte (voir [`boss.md`](./boss.md#poser-la-clé)). Un bouton « Remonter », actif seulement porte déverrouillée (et, à 0 vie, attente et rattrapage finis). Il relit l'état environ toutes les 30 s. Voir [`boss.md`](./boss.md#attendre-au-camp).
+Le camp habituel, avec l'état de la porte, nommée : « La Porte de la Lune attend toujours sa deuxième clé. » (ou « ses deux clés »), puis « La Porte de la Lune est déverrouillée, tu peux maintenant l'ouvrir. ». Le nom de ceux qui les ont posées n'est pas encore affiché, comme sur la porte (voir [`boss.md`](./boss.md#poser-la-clé)). Un bouton « Remonter », actif seulement porte déverrouillée. Après une défaite, l'attente se passe ici, et le poster dit « Reviens … pour remonter à la porte. ». Il relit l'état environ toutes les 30 s. Voir [`boss.md`](./boss.md#attendre-au-camp).
 
 ### `bossFight` — combat de boss
 

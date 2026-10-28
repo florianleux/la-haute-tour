@@ -170,8 +170,8 @@ Un effet s'ancre sur la **prochaine tentative de la cible** et meurt avec elle,
 consommé ou non. Exception : **aucun Sort n'agit en combat de boss** (voir
 [`boss.md`](./boss.md#le-combat-de-boss-est-une-tentative-dascension)) ;
 un effet qui attendait sa tentative saute le combat et reste ancré sur la
-tentative d'ascension suivante. L'attente et le rattrapage entre deux combats,
-eux, restent soumis aux Sorts. Un effet posé sur un joueur en pleine ascension attend donc sa
+tentative d'ascension suivante. L'attente entre deux combats, elle, reste
+soumise aux Sorts ; il n'y a pas de rattrapage au boss. Un effet posé sur un joueur en pleine ascension attend donc sa
 prochaine mort.
 
 Conséquence assumée : le joueur qui ne meurt pas ne subit rien, et occupe ses deux

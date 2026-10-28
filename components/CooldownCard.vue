@@ -269,7 +269,10 @@ function posterLine(): string {
     return 'Bienvenue au camp de base'
   }
   if (inCooldown.value && props.state.cooldownUntil) {
-    return `Reviens ${formatReturnAt(props.state.cooldownUntil, Date.now())} pour tenter le rattrapage.`
+    // Après une défaite au boss, pas de rattrapage : l'attente mène à la porte.
+    // Voir specs/boss.md#tentatives-et-difficulté.
+    const then = props.state.floorSeen >= props.state.floorTotal ? 'remonter à la porte' : 'tenter le rattrapage'
+    return `Reviens ${formatReturnAt(props.state.cooldownUntil, Date.now())} pour ${then}.`
   }
   return 'Tu peux lancer ton rattrapage.'
 }

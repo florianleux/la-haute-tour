@@ -33,7 +33,7 @@ Un déblocage unique, au premier événement rencontré.
 |---|---|
 | Première bonne réponse | Première question juste, tous étages confondus |
 | Première mauvaise réponse | Première question fausse |
-| Première mort | Première perte de la dernière vie d'une tentative |
+| Première mort | Première perte de la dernière vie d'une tentative — sauf sur la dernière question de l'étage, qui mène au palier ([`boss.md`](./boss.md#cas-à-0-vie)) |
 | Premier rattrapage | Première entrée en phase `recovery` |
 
 La mort par Mimic compte comme une mort : elle retire toutes les vies d'un coup et

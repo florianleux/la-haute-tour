@@ -1,6 +1,6 @@
 # Boss
 
-> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente puis au rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés : l'admin en donne une (#138), le joueur la pose, deux clés déverrouillent la porte pour l'équipe (#139), « Redescendre » au camp, position retenue (#140), et le camp en attente de porte, qui compte les clés et offre « Remonter » (#141). Pas encore : la relecture (#142), « Remonter » à 0 vie (#143), le loot forcé de la clé (#38), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas), les reliques (#40). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
+> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente, sans rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés : l'admin en donne une (#138), le joueur la pose, deux clés déverrouillent la porte pour l'équipe (#139), « Redescendre » au camp, position retenue (#140), le camp en attente de porte, qui compte les clés et offre « Remonter » (#141), et la défaite qui attend au camp avant de remonter, comme la dernière vie perdue sur la dernière question qui mène droit à la porte (#143). Pas encore : la relecture (#142), le loot forcé de la clé (#38), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas), les reliques (#40). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
 
 Chaque étage se termine par un boss. Battu, il ouvre le suivant. Contrairement
 aux questions du deck, chaque boss est un mini-jeu propre — le cadre ci-dessous
@@ -41,8 +41,8 @@ joue avec les vies standard et le timer de son boss, sans Vitalité ni
 Chronomancie — sinon une vie de plus ferait déborder les 10 épreuves d'un
 combat. Un effet qui attendait la prochaine tentative de sa cible n'est pas
 consommé par un combat de boss : il est gardé pour la tentative d'ascension
-suivante. L'attente et le rattrapage entre deux combats, eux, restent ceux de
-l'ascension : Répit, Indulgence et Purge y agissent comme d'habitude.
+suivante. L'attente entre deux combats, elle, reste celle de l'ascension :
+Répit y agit comme d'habitude. Il n'y a pas de rattrapage au boss.
 
 Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
 [`architecture.md`](./architecture.md#état-de-jeu)) :
@@ -75,20 +75,17 @@ Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
   porte du boss. Sauf si elles sont à 0, voir « Cas à 0 vie » plus bas.
 - **Combats suivants** : vies pleines standard (3), comme une tentative
   d'ascension normale.
-- **Entre deux combats** : attente (12h par défaut) puis rattrapage, sur le
-  **Pool Échecs de l'étage** — le même mécanisme qu'en ascension, avec la
-  même boucle en cas d'échec du rattrapage (attente réduite, rejoué sans
-  limite). Le Pool Échecs de l'étage reste donc vivant tant que le boss n'est
-  pas réglé.
+- **Entre deux combats** : attente (12h par défaut) au camp, **sans
+  rattrapage** — l'attente échue rend les vies, quel que soit le Pool Échecs
+  de l'étage. Le joueur remonte alors à la porte (« Remonter »).
 
 ## Cas à 0 vie
 
-Si le joueur perd sa dernière vie sur la dernière question de l'étage, il ne
-passe pas par le palier : comme toute chute, il lit son verdict, puis part en
-attente/rattrapage sur le Pool Échecs de l'étage, **avant** le premier combat
-de boss. Une fois les vies restaurées, il arrive au palier, puis entre en
-1er combat à vies pleines — comme les combats suivants, pas de vies héritées
-dans ce cas.
+Si le joueur perd sa dernière vie sur la dernière question de l'étage, ce
+n'est pas une chute : **ni attente ni rattrapage**, et pas de succès de
+première mort. Il lit son verdict au palier, puis arrive devant la porte
+comme tout le monde : poser sa clé, ouvrir, entrer. Il entre en 1er combat à
+vies pleines — comme les combats suivants, pas de vies héritées dans ce cas.
 
 ## Porte à deux clés
 
@@ -175,10 +172,9 @@ Le joueur qui finit l'étage arrive devant la porte. Ce qu'il y trouve :
   se déverrouille pendant que le joueur la regarde lui offre « Ouvrir », sans
   recharger. La relecture ne court que porte verrouillée, et s'arrête quand le
   joueur quitte la fenêtre ; au retour, celle qui était due part aussitôt.
-- **Entre deux combats** : défaite, attente au camp, rattrapage, puis
-  « Remonter » face à la porte qu'il a déjà ouverte, et « Entrer ».
-- **Arrivée à 0 vie** (voir [Cas à 0 vie](#cas-à-0-vie)) : « Remonter » attend
-  deux choses, la porte déverrouillée **et** l'attente et le rattrapage finis.
+- **Entre deux combats** : défaite, attente au camp, puis « Remonter » face à
+  la porte qu'il a déjà ouverte, et « Entrer ». Pas de rattrapage : l'attente
+  échue le laisse au camp, vies rendues.
 - **Une guilde qui n'aura jamais deux clés** : cas accepté, aucun geste admin
   pour déverrouiller une porte.
 

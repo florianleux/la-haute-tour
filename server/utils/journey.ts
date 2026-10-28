@@ -66,6 +66,9 @@ export async function openAttempt(
         // seule traite, et une tentative neuve est justement ce qui coupe la traite.
         // Voir specs/succes.md#série-sans-faute.
         streak: 0,
+        // Au boss, les vies rendues laissent le joueur au camp : il remonte à la
+        // porte de lui-même. Voir specs/boss.md#attendre-au-camp.
+        ...anchorEffects ? {} : { doorSpot: 'camp' as const },
       })
       .where(unchanged),
   ])

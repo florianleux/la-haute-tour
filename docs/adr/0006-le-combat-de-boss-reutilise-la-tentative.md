@@ -56,6 +56,11 @@ et sans code dédié, à un combat de boss.
 demande du code dédié ; l'attente et le rattrapage entre deux combats restent
 ceux de l'ascension. Voir `boss.md`.
 
+**Amendé le 2026-10-29** (#143) : plus de rattrapage au boss. Une défaite
+ouvre l'attente seule, qui rend les vies à son échéance ; la dernière vie
+perdue sur la dernière question de l'étage n'ouvre même pas d'attente. Le
+combat reste une tentative. Voir `boss.md#cas-à-0-vie`.
+
 Le prix : `attempts.seen` devient trompeur sans le marqueur (ADR non résolue
 côté schéma — le marqueur exact, champ ou table, reste à choisir à
 l'implémentation). Et parce que le combat de boss est un `attempt` comme un

@@ -68,9 +68,10 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
     return fight !== 'running' && user.currentFloor >= FLOOR_COUNT ? 'gameOver' : 'bossFight'
   }
 
-  // Sans vie, l'attente puis le rattrapage — en fin d'étage aussi : ils passent
-  // avant le combat, sur le Pool Échecs de l'étage. Voir specs/boss.md#cas-à-0-vie.
-  if (user.lives <= 0) {
+  // Sans vie, l'attente puis le rattrapage. En fin d'étage, seule une défaite au
+  // boss fait attendre : la dernière vie perdue sur la dernière question mène au
+  // palier, sans attente. Voir specs/boss.md#cas-à-0-vie.
+  if (user.lives <= 0 && !(floorDone && user.cooldownUntil === null)) {
     const inCooldown = user.cooldownUntil !== null && now < user.cooldownUntil
     return inCooldown ? 'cooldown' : 'recovery'
   }
@@ -137,7 +138,9 @@ export function bossFightOpening(
   user: Pick<User, 'lives' | 'bossAttemptNumber'>,
   rules: FloorRules,
 ): Pick<User, 'bossHp' | 'bossAttemptNumber' | 'lives'> {
-  return { bossHp: rules.bossHp, bossAttemptNumber: user.bossAttemptNumber + 1, lives: Math.min(user.lives, rules.lives) }
+  // Arrivé sans vie, il entre à vies pleines. Voir specs/boss.md#cas-à-0-vie.
+  const lives = user.lives > 0 ? Math.min(user.lives, rules.lives) : rules.lives
+  return { bossHp: rules.bossHp, bossAttemptNumber: user.bossAttemptNumber + 1, lives }
 }
 
 /**
@@ -284,6 +287,8 @@ export interface AnswerInput {
   acceptedAnswers: string[]
   answer: string
   source: AnswerSource
+  /** La question complète l'étage : y perdre sa dernière vie mène au palier, sans attente. */
+  lastOfFloor: boolean
   rules: FloorRules
 }
 
@@ -320,7 +325,7 @@ export function cooldownFields(
  * n'est en jeu et la progression ne bouge pas — la question était déjà vue.
  */
 export function judgeAnswer(input: AnswerInput, now: Date): AnswerJudgement {
-  const { user, reservation, acceptedAnswers, answer, source, rules } = input
+  const { user, reservation, acceptedAnswers, answer, source, lastOfFloor, rules } = input
 
   const expired = isExpired(reservation.expiresAt, rules, now)
   // En rattrapage, il n'y a pas de vie à prendre : quitter la page y compte faux
@@ -361,7 +366,7 @@ export function judgeAnswer(input: AnswerInput, now: Date): AnswerJudgement {
     expired,
     lifeLost: true,
     livesAfter,
-    cooldownUntil: livesAfter <= 0 ? cooldownFrom(rules, now) : null,
+    cooldownUntil: livesAfter <= 0 && !lastOfFloor ? cooldownFrom(rules, now) : null,
     seenDelta: 1,
     entersPool: true,
   }

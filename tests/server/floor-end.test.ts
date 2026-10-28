@@ -89,7 +89,7 @@ describe('palier et fin de partie', () => {
   })
 
   describe('étage épuisé sans vie', () => {
-    /** Plus de vies, une attente en cours, et un Pool Échecs bien fourni. */
+    /** Plus de vies, une attente en cours — celle d'une défaite au boss —, et un Pool Échecs bien fourni. */
     async function outOfLivesWithPool(floor: number): Promise<void> {
       for (let i = 0; i < 3; i++) {
         const questionId = await seeQuestion(floor)
@@ -108,9 +108,9 @@ describe('palier et fin de partie', () => {
       player = await reload()
     }
 
-    // specs/boss.md#cas-à-0-vie : le boss attend la fin de l'attente et du
-    // rattrapage, sur le Pool Échecs de l'étage qu'il garde.
-    it('mène à l attente, pas au palier : le pool reste pour le rattrapage', async () => {
+    // specs/boss.md#tentatives-et-difficulté : une défaite attend avant de
+    // remonter à la porte.
+    it('mène à l attente, pas au palier', async () => {
       await outOfLivesWithPool(1)
       await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
 
@@ -130,7 +130,9 @@ describe('palier et fin de partie', () => {
       expect(await db.select().from(reservations)).toHaveLength(0)
     })
 
-    it('mène à l attente dès le verdict de la dernière question', async () => {
+    // specs/boss.md#cas-à-0-vie : la dernière vie perdue sur la dernière
+    // question n'est pas une chute, elle mène au palier.
+    it('mène au palier, sans attente, dès le verdict de la dernière question', async () => {
       await createQuestion(db, { floor: 1, statement: 'Dernière de l étage ?' })
       await createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
       await db.update(users).set({ lives: 1 }).where(eq(users.id, player.id))
@@ -138,7 +140,7 @@ describe('palier et fin de partie', () => {
 
       const state = await submitAnswer(db, await reload(), 'Toulouse', new Date(NOW.getTime() + 1_000))
 
-      expect(state).toMatchObject({ phase: 'cooldown', floor: 1, lives: 0 })
+      expect(state).toMatchObject({ phase: 'floorEnd', floor: 1, lives: 0, cooldownUntil: null })
       expect(state.verdict).toMatchObject({ correct: false, lifeLost: true })
     })
 

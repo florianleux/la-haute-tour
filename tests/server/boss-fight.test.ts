@@ -1,6 +1,6 @@
 import { eq, isNotNull } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, attempts, bossKeys, bossTrials, missedPool, reservations, users } from '../../server/db/schema'
+import { activeEffects, attempts, bossKeys, bossTrials, missedPool, recoveryQuestions, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { climbToDoor, descendToCamp, enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { placeKeyIfRoom } from '../../server/utils/bossKeys'
@@ -408,23 +408,25 @@ describe('combat de boss', () => {
     it('rend le joueur au camp, en attente : le boss garde ses PV, le combat s efface', async () => {
       const state = await lose()
 
-      expect(state).toMatchObject({ phase: 'cooldown', lives: 0 })
+      // Sans rattrapage à annoncer : il n'y en a pas au boss.
+      expect(state).toMatchObject({ phase: 'cooldown', lives: 0, recovery: null, nextRecovery: null })
       expect(state.cooldownUntil).not.toBeNull()
       expect(state.boss).toMatchObject({ outcome: 'defeat', hp: rules.bossHp, trial: null })
       expect((await reload()).bossHp).toBeNull()
     })
 
-    it('rouvre le palier au bout de l attente, et le combat suivant à vies pleines', async () => {
+    it('laisse au camp au bout de l attente : « Remonter » face à la porte ouverte, puis le combat suivant à vies pleines', async () => {
       await open()
       await lose()
-      // Pool Échecs trop maigre : l'attente échue rend les vies.
       const afterCooldown = new Date(clock + rules.cooldownMs + 1)
 
-      expect((await readGameState(db, await reload(), afterCooldown)).phase).toBe('bossDoor')
+      const camp = await readGameState(db, await reload(), afterCooldown)
+      expect(camp).toMatchObject({ phase: 'bossDoor', lives: rules.lives })
+      expect(camp.door).toMatchObject({ spot: 'camp', unlocked: true, opened: true })
 
       clock = afterCooldown.getTime()
       // Ouverte avant le premier combat, elle le reste : « Entrer » direct.
-      expect((await readGameState(db, await reload(), afterCooldown)).door).toMatchObject({ opened: true })
+      expect((await climb()).door).toMatchObject({ spot: 'door', opened: true })
       const again = await enter()
       expect(again).toMatchObject({ phase: 'bossFight', lives: rules.lives })
       expect(again.boss).toMatchObject({ hp: rules.bossHp, verdict: null })
@@ -484,15 +486,35 @@ describe('combat de boss', () => {
       expect((await reload()).lives).toBe(rules.lives)
     })
 
-    it('passe par le rattrapage sur le Pool Échecs de l étage quand il est assez fourni', async () => {
+    it('ne passe pas par le rattrapage, même sur un Pool Échecs assez fourni', async () => {
       for (let index = 0; index < rules.poolSizeForRecovery; index++) {
         const missed = await createQuestion(db, { floor: 1 })
         await markSeen(db, player.id, missed, { floor: 1 })
         await db.insert(missedPool).values({ userId: player.id, questionId: missed, floor: 1, lastFailedAt: NOW })
       }
       await lose()
+      clock += rules.cooldownMs
 
-      expect((await readGameState(db, await reload(), new Date(clock + rules.cooldownMs + 1))).phase).toBe('recovery')
+      // « Commencer » au bout de l'attente, avant toute lecture.
+      const resumed = await next()
+
+      expect(resumed).toMatchObject({ phase: 'bossDoor', lives: rules.lives, recovery: null })
+      expect(resumed.door?.spot).toBe('camp')
+      expect((await readGameState(db, await reload(), tick())).phase).toBe('bossDoor')
+    })
+
+    it('efface un rattrapage tiré au boss avant que la règle ne change, et rend les vies', async () => {
+      const missed = await createQuestion(db, { floor: 1 })
+      await markSeen(db, player.id, missed, { floor: 1 })
+      await db.insert(missedPool).values({ userId: player.id, questionId: missed, floor: 1, lastFailedAt: NOW })
+      await lose()
+      clock += rules.cooldownMs
+      await db.insert(recoveryQuestions).values({ userId: player.id, questionId: missed, position: 0, correct: null })
+
+      const resumed = await next()
+
+      expect(resumed).toMatchObject({ phase: 'bossDoor', lives: rules.lives })
+      expect(await db.select().from(recoveryQuestions)).toHaveLength(0)
     })
   })
 
@@ -553,12 +575,18 @@ describe('combat de boss', () => {
     })
   })
 
-  it('attend l attente et le rattrapage avant le combat quand l étage finit sans vie', async () => {
-    await set({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 60_000) })
+  // specs/boss.md#cas-à-0-vie
+  it('mène droit à la porte quand la dernière vie tombe sur la dernière question, puis au combat à vies pleines', async () => {
+    await createQuestion(db, { floor: 1 })
+    await set({ floorCursor: 1, lives: 1 })
+    await serveNextQuestion(db, await reload(), NOW)
 
-    const state = await readGameState(db, await reload(), NOW)
+    const verdict = await answer('Atlantide')
 
-    expect(state.phase).toBe('cooldown')
-    expect((await next()).phase).toBe('cooldown')
+    // Pas une chute : ni rattrapage annoncé, ni leçon de Michel.
+    expect(verdict).toMatchObject({ phase: 'floorEnd', lives: 0, cooldownUntil: null, nextRecovery: null })
+    expect(verdict.unlocked).not.toContain('FIRST_DEATH')
+    expect(await next()).toMatchObject({ phase: 'bossDoor', door: { spot: 'door', unlocked: true } })
+    expect(await enter()).toMatchObject({ phase: 'bossFight', lives: rules.lives })
   })
 })

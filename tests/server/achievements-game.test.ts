@@ -75,6 +75,8 @@ describe('les succès en jeu', () => {
 
     it('annonce la première mort quand la dernière vie tombe', async () => {
       await db.update(users).set({ lives: 1 }).where(eq(users.id, player.id))
+      // Pas sur la dernière question de l'étage, qui mène au palier sans chute.
+      await createQuestion(db)
 
       expect(await answer('Toulouse')).toContain('FIRST_DEATH')
     })

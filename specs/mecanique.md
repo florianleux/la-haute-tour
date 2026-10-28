@@ -8,7 +8,7 @@
 - Un ordre partagé se lit sans rien parcourir — la question suivante est un saut dans l'index, quel que soit le nombre de questions de l'étage. Un tirage au hasard obligeait à parcourir puis trier tout l'étage à chaque question, pour un coût qui grandissait avec le deck.
 - Le joueur dispose de 3 vies par **tentative**. Chaque mauvaise réponse en consomme une.
 - La **bonne réponse est affichée sur échec** (apprentissage immédiat), puis le joueur passe à la suivante par un bouton.
-- À la perte de la dernière vie → **attente**. La position est conservée.
+- À la perte de la dernière vie → **attente**. La position est conservée. Sauf sur la dernière question de l'étage : le joueur arrive au palier, voir [`boss.md`](./boss.md#cas-à-0-vie).
 - Le jeu n'est pas limité dans le temps : le joueur enchaîne tant qu'il lui reste des vies. Pas de palier de durée, pas de quota quotidien.
 - **Timer par question**, arbitré par le serveur. Le timeout est une erreur ordinaire : vie perdue, bonne réponse affichée, question versée au Pool Échecs. Voir [`anti-triche.md`](./anti-triche.md).
 
@@ -52,14 +52,14 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 - **Aucune lecture ne réserve de question.** Le tirage naît d'une action explicite du joueur : commencer, passer à la question suivante, franchir un palier. Une lecture ne fait que rendre ce qui existe — réservation vivante, réservation expirée résolue en échec, ou verdict en attente.
 - `floorEnd` ne coûte aucun stockage : elle se déduit du nombre de questions vues à l'étage courant. `bossDoor` et `bossFight` suivent `floorEnd` jusqu'à ce que le boss soit battu (ou passé automatiquement) — c'est cet instant-là, pas `floorEnd`, qui déclenche `crossFloor`, l'action qui incrémente l'étage. Voir [`boss.md`](./boss.md#franchissement-détage).
 - Pendant `bossDoor`, le joueur est **devant la porte ou au camp**. Ce n'est pas une phase de plus : la phase reste `bossDoor`, une position stockée (`doorSpot`) dit lequel des deux écrans montrer. « Redescendre » (`descendToCamp`) la met au camp, « Remonter » (`climbToDoor`) devant la porte ; `crossFloor` l'efface. Voir [`boss.md`](./boss.md#attendre-au-camp).
-- **L'attente passe avant le boss** : perdre sa dernière vie sur la dernière question de l'étage mène à l'attente, puis au rattrapage sur le Pool Échecs de l'étage — il reste vivant tant que le boss n'est pas battu. Le combat vient ensuite, à vies pleines. Au dernier étage aussi : son boss attend. Voir [`boss.md`](./boss.md#cas-à-0-vie).
+- **Le palier passe avant l'attente** : perdre sa dernière vie sur la dernière question de l'étage ne mène ni à l'attente ni au rattrapage. Le joueur arrive devant la porte, et le combat se joue à vies pleines. Voir [`boss.md`](./boss.md#cas-à-0-vie).
 - **La fin du deck passe avant le boss** : un étage épuisé sous un étage vide s'arrête sur `deckEnd`, sans combat. Le dernier étage n'a jamais d'étage au-dessus : son boss passe quand même.
-- Le combat dure tant que le boss a des PV (`bossHp`, stocké). La victoire se lit sur l'arène ; « Continuer » franchit alors le palier, ou, au dernier étage, la partie est finie. La défaite efface les PV : le joueur sans vie retombe sur l'attente.
+- Le combat dure tant que le boss a des PV (`bossHp`, stocké). La victoire se lit sur l'arène ; « Continuer » franchit alors le palier, ou, au dernier étage, la partie est finie. La défaite efface les PV : le joueur sans vie retombe sur l'attente, sans rattrapage ; échue, elle le laisse au camp de la porte.
 - Un **verdict** ne retient pas le joueur à sa phase : il se lit sur l'écran de celle qui suit — palier, attente ou fin. Seule une question **non résolue** maintient l'ascension.
 
 ## Tentative, attente et rattrapage
 
-1. Dernière vie perdue → **attente**.
+1. Dernière vie perdue → **attente** (sauf sur la dernière question de l'étage, voir [`boss.md`](./boss.md#cas-à-0-vie)).
 2. À l'échéance de l'attente :
    - Pool Échecs **plus petit que le nombre de questions à tirer** → vies restaurées, reprise immédiate, nouvelle tentative.
     - Pool Échecs **assez fourni** → **rattrapage** : des questions distinctes tirées au hasard du Pool Échecs de l'étage courant.
@@ -88,7 +88,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 
 ## Fin d'étage
 
-- Le joueur atteint le palier quand toutes les questions de l'étage courant sont vues. Le Pool Échecs n'est pas abandonné pour autant : il reste vivant tant que le boss de l'étage n'est pas réglé, voir [`boss.md`](./boss.md).
+- Le joueur atteint le palier quand toutes les questions de l'étage courant sont vues. Le Pool Échecs de l'étage ne sert plus : il n'y a pas de rattrapage au boss, voir [`boss.md`](./boss.md).
 - Le palier n'incrémente plus l'étage lui-même : il ouvre la porte du boss (`bossDoor`), puis le combat (`bossFight`). Franchir le palier (`crossFloor`) — qui incrémente l'étage, abandonne le Pool Échecs et réserve la première question du suivant — se déclenche à la victoire sur le boss ou à son passage automatique, pas à `floorEnd`. Voir [`boss.md`](./boss.md#franchissement-détage).
 - La **dernière question restante de l'étage n'est jamais une question loot**. Sans cette règle, un Mimic sur cette question opposerait le palier à l'attente, alors que la règle « l'étage épuisé prime sur les vies » a déjà tranché. Voir [`bonus.md`](./bonus.md#question-loot).
 

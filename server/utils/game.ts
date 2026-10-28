@@ -594,6 +594,7 @@ async function resolve(
     acceptedAnswers: accepted,
     answer,
     source,
+    lastOfFloor: user.floorSeen + 1 >= snapshot.floorTotal,
     rules,
   }, now)
   const { correct } = judgement
@@ -863,9 +864,10 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
   const { user, reservation, question } = snapshot
   const seen = user.floorSeen
   const played = playedRules(snapshot)
-  // Sans vie, le joueur doit un rattrapage — sauf le boss passé, qui franchit
-  // le palier à vies pleines. Voir specs/boss.md#tentatives-et-difficulté.
-  const fallen = user.lives <= 0 && bossFightState(user, snapshot.trials.length > 0) !== 'passed'
+  // Sans vie, le joueur doit un rattrapage — sauf au boss, qui n'en a pas :
+  // ni après une défaite, ni à l'arrivée sans vie, ni au boss passé.
+  // Voir specs/boss.md#tentatives-et-difficulté.
+  const fallen = user.lives <= 0 && !atBoss(snapshot)
 
   const base = {
     floor: user.currentFloor,
@@ -1059,17 +1061,19 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     return stateFrom(snapshot, now)
   }
 
-  await resumeIfPoolTooSmall(db, snapshot.user, snapshot.recoveryRun.length > 0, !atBoss(snapshot), now)
+  await resumeWithoutRecovery(db, snapshot.user, snapshot.recoveryRun.length > 0, !atBoss(snapshot), now)
 
   return buildState(db, user.id, now)
 }
 
 /**
  * A cooldown that ends on a pool too small to draw a recovery from simply gives the
- * lives back. Nothing is reserved and no clock starts — the phase follows from the
- * time having passed. See specs/mecanique.md#tentative-attente-et-rattrapage.
+ * lives back — and so does every cooldown at the boss, which has no recovery.
+ * Nothing is reserved and no clock starts — the phase follows from the time having
+ * passed. See specs/mecanique.md#tentative-attente-et-rattrapage and
+ * specs/boss.md#tentatives-et-difficulté.
  */
-async function resumeIfPoolTooSmall(
+async function resumeWithoutRecovery(
   db: Database,
   user: User,
   /** Un rattrapage est tiré — lu dans l'instantané de l'appelant. */
@@ -1084,7 +1088,7 @@ async function resumeIfPoolTooSmall(
     return
   }
 
-  if (canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
+  if (anchorEffects && canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
     return
   }
 
@@ -1540,6 +1544,17 @@ async function advanceRecovery(
     return buildState(db, user.id, now)
   }
 
+  // Au boss, pas de rattrapage : l'attente échue rend les vies. Un tirage fait
+  // avant que la règle ne change s'efface avec elle.
+  if (atBoss(snapshot)) {
+    await db.batch([
+      db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id)),
+      db.delete(reservations).where(and(eq(reservations.userId, user.id), eq(reservations.mode, 'recovery'))),
+    ])
+    await resumeWithoutRecovery(db, user, false, false, now)
+    return buildState(db, user.id, now)
+  }
+
   let opened: AchievementId[] = []
   // Le tirage vient de l'instantané : un rattrapage déjà tiré ne coûte aucune
   // lecture pour savoir où il en est.
@@ -1551,7 +1566,7 @@ async function advanceRecovery(
     // d'entrée — sinon elle empêcherait le rattrapage qu'elle rallonge.
     if (!canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
       // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
-      await resumeIfPoolTooSmall(db, user, false, !atBoss(snapshot), now)
+      await resumeWithoutRecovery(db, user, false, true, now)
       return buildState(db, user.id, now)
     }
 

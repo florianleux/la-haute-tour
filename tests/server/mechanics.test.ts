@@ -73,8 +73,16 @@ describe('phase', () => {
     expect(phaseOf(held, NOW)).toBe('ascent')
   })
 
-  // specs/boss.md#cas-à-0-vie : l'attente et le rattrapage passent avant le combat.
-  it('fait passer l attente et le rattrapage avant le boss quand l étage finit sans vie', () => {
+  // specs/boss.md#cas-à-0-vie : l'étage fini sans vie mène au palier, sans attente.
+  it('mène au palier puis à la porte quand l étage finit sans vie', () => {
+    const done = { hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
+
+    expect(phaseOf({ ...done, holdsVerdict: true, user: player({ lives: 0 }) }, NOW)).toBe('floorEnd')
+    expect(phaseOf({ ...done, holdsVerdict: false, user: player({ lives: 0 }) }, NOW)).toBe('bossDoor')
+  })
+
+  // specs/boss.md#tentatives-et-difficulté : la défaite attend au camp.
+  it('fait attendre après une défaite au boss', () => {
     const done = { hasLiveReservation: false, holdsVerdict: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
 
     expect(phaseOf({ ...done, user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }) }, NOW)).toBe('cooldown')
@@ -129,6 +137,11 @@ describe('combat de boss', () => {
     expect(bossFightOpening({ lives: 1, bossAttemptNumber: 0 }, rules).lives).toBe(1)
   })
 
+  // specs/boss.md#cas-à-0-vie : arrivé sans vie, il entre à vies pleines.
+  it('s ouvre à vies pleines pour qui arrive sans vie', () => {
+    expect(bossFightOpening({ lives: 0, bossAttemptNumber: 0 }, rules).lives).toBe(rules.lives)
+  })
+
   describe('épreuve jugée', () => {
     const fighting = { bossHp: 5, lives: 2, bossAttemptNumber: 1 }
 
@@ -168,6 +181,7 @@ describe('verdict d une réponse', () => {
     source: 'player' as const,
     acceptedAnswers: ['Bordeaux'],
     answer: 'bordaux',
+    lastOfFloor: false,
     rules,
   }
 
@@ -196,6 +210,13 @@ describe('verdict d une réponse', () => {
 
     expect(verdict.livesAfter).toBe(0)
     expect(verdict.cooldownUntil).toEqual(new Date(NOW.getTime() + rules.cooldownMs))
+  })
+
+  // specs/boss.md#cas-à-0-vie : la dernière question de l'étage mène au palier.
+  it('ne démarre pas l attente quand la dernière vie tombe sur la dernière question de l étage', () => {
+    const verdict = judgeAnswer({ ...input, user: player({ lives: 1 }), answer: 'Toulouse', lastOfFloor: true }, NOW)
+
+    expect(verdict).toMatchObject({ livesAfter: 0, lifeLost: true, entersPool: true, cooldownUntil: null })
   })
 
   it('traite en timeout une bonne réponse arrivée trop tard', () => {
