@@ -230,3 +230,21 @@ export function promptAnswered(prompt: DialoguePrompt, answer: string): boolean 
 export function revealedLength(elapsedMs: number, msPerChar: number, total: number): number {
   return Math.max(0, Math.min(total, Math.floor(elapsedMs / msPerChar)))
 }
+
+/** Un morceau de réplique, en italique ou non. */
+export interface DialogueSegment {
+  text: string
+  emphasis: boolean
+}
+
+/**
+ * Une réplique découpée en morceaux, l'emphase à part : `*Méridiens*` s'écrit
+ * en italique, les `*` ne s'affichent pas. Pendant le défilé, un `*` ouvert et
+ * pas encore refermé met déjà la suite en italique : le mot penche dès sa
+ * première lettre, au lieu de basculer une fois sorti.
+ */
+export function dialogueSegments(text: string): DialogueSegment[] {
+  return text.split('*')
+    .map((part, index) => ({ text: part, emphasis: index % 2 === 1 }))
+    .filter(segment => segment.text !== '')
+}

@@ -54,8 +54,9 @@
          rapetissent avec la fenêtre, et à pleine taille elle leur couvrirait
          le menton. -->
     <div class="min-h-[5lh] text-[4cqw] leading-relaxed text-stone-800 wide:text-lg lg:wide:text-2xl">
+      <!-- L'emphase de la réplique (`*…*`, voir dialogueSegments) en italique. -->
       <p :class="[choices ? '' : 'h-[5lh]', color ? TEXT_COLORS[color] : '']">
-        {{ text }}
+        <template v-for="(segment, index) in dialogueSegments(text)" :key="index"><em v-if="segment.emphasis">{{ segment.text }}</em><template v-else>{{ segment.text }}</template></template>
       </p>
 
       <!-- Les choix. Même règle que l'invite, ils ne paraissent qu'une fois la
@@ -99,6 +100,7 @@
 // réplique, ni combien il en reste : on lui donne ce qu'il y a à lire, elle le
 // met en page. C'est ce qui la laisse servir un dialogue de boss comme
 // n'importe quel autre.
+import { dialogueSegments } from '~~/utils/dialogue'
 import type { DialogueChoices, DialoguePrompt, SpeakerColor, SpeakerPlace } from '~~/utils/dialogue'
 
 // Les classes sont écrites en entier, jamais construites par concaténation :

@@ -262,10 +262,15 @@ const FAREWELL: [DuoLine, ...DuoLine[]] = [
   },
 ]
 
-/** Ce que défend chaque guilde : l'émission dont elle veut le retour. */
-const CREED_OF: Record<TeamId, string> = {
-  MIDI: 'Les 12 coups de midi',
-  TLM: 'Tout le monde veut prendre sa place',
+/**
+ * Ce que défend chaque guilde : l'émission dont elle veut le retour, en
+ * italique (voir dialogueSegments). Deux formes : le titre seul (« par… »), et
+ * précédé de « de », contracté quand le titre commence par « Les » — pas de
+ * « de Les ».
+ */
+const CREED_OF: Record<TeamId, { title: string, ofTitle: string }> = {
+  MIDI: { title: '*Les 12 coups de midi*', ofTitle: 'des *12 coups de midi*' },
+  TLM: { title: '*Tout le monde veut prendre sa place*', ofTitle: 'de *Tout le monde veut prendre sa place*' },
 }
 
 /**
@@ -286,13 +291,13 @@ function guild(team: TeamId | null): DuoLine[] {
   return [
     {
       place: 'right',
-      text: `Je vois à ta bannière que tu es des ${teamLabel(team)}. `
-        + `Tu défends donc « ${CREED_OF[team]} ».`,
+      text: `Je vois à ta bannière que tu fais partie de la Guilde des *${teamLabel(team)}*. `
+        + `J'imagine que tu es plutôt un amateur ${CREED_OF[team].ofTitle}.`,
     },
     {
       place: 'right',
-      text: `Alors tu es en concurrence avec les ${teamLabel(rival)}, `
-        + `qui défendent « ${CREED_OF[rival]} ».`,
+      text: `Alors méfie-toi des *${teamLabel(rival)}*, `
+        + `qui ne jurent que par ${CREED_OF[rival].title}.`,
     },
   ]
 }

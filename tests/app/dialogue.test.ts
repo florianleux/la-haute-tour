@@ -1,7 +1,7 @@
 import { effectScope, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
-import { dialogueGesture, dialogueLineup, promptAnswered, revealedLength } from '../../utils/dialogue'
+import { dialogueGesture, dialogueLineup, dialogueSegments, promptAnswered, revealedLength } from '../../utils/dialogue'
 import type { Dialogue, Speaker } from '../../utils/dialogue'
 import type { Ref } from 'vue'
 
@@ -532,5 +532,22 @@ describe('le déroulé d un dialogue', () => {
 
     expect(ranks).toEqual([0])
     expect(ended).toEqual([true])
+  })
+})
+
+describe('l emphase d une réplique', () => {
+  it('met en italique ce qui est entre astérisques, sans les afficher', () => {
+    expect(dialogueSegments('la Guilde des *Méridiens*.')).toEqual([
+      { text: 'la Guilde des ', emphasis: false },
+      { text: 'Méridiens', emphasis: true },
+      { text: '.', emphasis: false },
+    ])
+  })
+
+  it('penche dès la première lettre pendant le défilé', () => {
+    expect(dialogueSegments('des *Mé')).toEqual([
+      { text: 'des ', emphasis: false },
+      { text: 'Mé', emphasis: true },
+    ])
   })
 })
