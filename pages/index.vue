@@ -121,9 +121,11 @@
     <!-- Le palier, verdict lu : la porte du boss, puis son introduction. Au
          terme, le serveur ouvre le combat. -->
     <BossStage
-      v-else-if="view?.card === 'bossDoor' && bossStage"
+      v-else-if="view?.card === 'bossDoor' && bossStage && state?.door"
       :key="bossStage.floor"
       :stage="bossStage"
+      :door="state.door"
+      @open-door="openDoor"
       @enter="enterBossFight"
     />
 
@@ -224,6 +226,7 @@ const {
   enterBoss,
   skipCooldown,
   openChest,
+  openDoor,
   pending,
   actionFailed,
   readFailed,

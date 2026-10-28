@@ -19,6 +19,8 @@ export function phaseLabel(phase: Phase): string {
       return "Au palier";
     case "deckEnd":
       return "Deck épuisé";
+    case "bossDoor":
+      return "Devant la porte";
     case "bossFight":
       return "Contre le boss";
     case "gameOver":
@@ -318,8 +320,8 @@ export function playView(
     return { screen, card: "bossFight", boss: state.boss, action: state.boss.trial ? null : next };
   }
 
-  // Le palier, verdict lu : le joueur est devant la porte, qui porte ses gestes.
-  if (state.phase === "floorEnd" && !screen.verdict) {
+  // Devant la porte, qui porte ses gestes.
+  if (state.phase === "bossDoor") {
     return { screen, card: "bossDoor", action: null };
   }
 

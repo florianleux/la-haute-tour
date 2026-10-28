@@ -48,7 +48,7 @@ describe('palier et fin de partie', () => {
     it('annonce le palier quand toutes les questions de l étage sont vues', async () => {
       const state = await readGameState(db, player, NOW)
 
-      expect(state).toMatchObject({ phase: 'floorEnd', floor: 1 })
+      expect(state).toMatchObject({ phase: 'bossDoor', floor: 1 })
       expect(state.question).toBeNull()
     })
 
@@ -65,7 +65,7 @@ describe('palier et fin de partie', () => {
       await readGameState(db, player, NOW)
       const again = await readGameState(db, await reload(), new Date(NOW.getTime() + 60_000))
 
-      expect(again).toMatchObject({ phase: 'floorEnd', floor: 1 })
+      expect(again).toMatchObject({ phase: 'bossDoor', floor: 1 })
       expect((await reload()).currentFloor).toBe(1)
       expect(await db.select().from(reservations)).toHaveLength(0)
     })

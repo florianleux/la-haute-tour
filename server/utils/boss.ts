@@ -8,6 +8,12 @@ import type { Database } from '../db/client'
 import type { BossTrial, Flag, User } from '../db/schema'
 
 /**
+ * Le boss d'un étage neuf : ni PV, ni combat compté, porte fermée. Ce que le
+ * franchissement du palier et la remise à zéro d'un joueur écrivent pareil.
+ */
+export const FRESH_BOSS = { bossHp: null, bossAttemptNumber: 0, doorOpened: false } satisfies Partial<User>
+
+/**
  * Le combat de boss : ses épreuves, tirées à l'ouverture et servies une à une,
  * et ce qu'une réponse y coûte. Le reste — vies, attente, rattrapage — est celui
  * de l'ascension : un combat est une tentative de plus (ADR 0006).

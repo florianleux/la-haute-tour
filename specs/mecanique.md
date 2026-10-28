@@ -31,7 +31,7 @@ Jouer sur deux écrans **en même temps** n'est pas supporté : la perte de focu
 
 ## Machine à états
 
-> **En partie implémenté (#34)** : `bossFight` existe. `bossDoor` pas encore (#137) : en attendant, la porte se lit sur `floorEnd` sans verdict, déverrouillée pour tous, et c'est le clic qui suit l'introduction qui ouvre le combat.
+> **En partie implémenté (#34, #137)** : `bossDoor` et `bossFight` existent. La porte est déverrouillée pour qui n'a pas d'équipe, verrouillée pour toute équipe tant que les clés n'existent pas (#138, #139) ; `doorSpot` pas encore (#140).
 
 Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son écran : il affiche celui que la phase désigne. C'est la seule définition de « où en est le joueur » dans tout le projet — aucun autre document ne la reformule.
 
@@ -40,7 +40,7 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 | `ascent` | Vies restantes, questions restantes à l'étage | La réservation en cours (énoncé + échéance), **ou** le verdict de la question qui vient d'être résolue |
 | `cooldown` | Plus de vies, délai d'attente non écoulé | Fin de l'attente et effets en cours. Le Pool Échecs et ses erreurs contestables se lisent à part, par le Volumen (voir [`ecrans.md`](./ecrans.md#volumen)) |
 | `recovery` | Plus de vies, attente écoulée, Pool Échecs assez fourni | Les questions de rattrapage, une à une, avec le même mécanisme de réservation et de verdict qu'en ascension |
-| `floorEnd` | Toutes les questions de l'étage vues | Le palier atteint — prélude du boss de l'étage, plus la fin elle-même. Voir [`boss.md`](./boss.md) |
+| `floorEnd` | Toutes les questions de l'étage vues, verdict de la dernière encore à l'écran | Le palier atteint — prélude du boss de l'étage, plus la fin elle-même. Le verdict quitté, c'est `bossDoor`. Voir [`boss.md`](./boss.md) |
 | `deckEnd` | Toutes les questions de l'étage vues, et l'étage d'au-dessus vide | Le message de fin du deck, sans action. Phase terminale tant que le deck ne change pas. Voir [`spec.md`](./spec.md#glossaire) (Fin du deck) |
 | `bossDoor` | `floorEnd` franchi, boss pas encore battu | La porte du boss — verrouillée (moins de deux clés posées côté équipe) ou déverrouillée, puis ouverte par le joueur (`opened`, par joueur) : des champs, pas des phases. Voir [`boss.md`](./boss.md#porte-à-deux-clés) |
 | `bossFight` | Porte déverrouillée (ou pas d'équipe), combat en cours, ou boss battu dont la victoire reste à lire | Le combat de boss actif — PV du boss, vies du joueur, épreuve en cours (sans ce qui la valide), puis son verdict. Voir [`boss.md`](./boss.md) |

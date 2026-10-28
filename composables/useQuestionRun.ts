@@ -26,6 +26,8 @@ export interface QuestionRun {
   skipCooldown: () => Promise<void>
   /** Ouvre le coffre d'une question loot réussie. */
   openChest: () => Promise<void>
+  /** « Ouvrir » : la porte du boss, retenue côté serveur. */
+  openDoor: () => Promise<void>
   /** « Entrer » : ouvre le combat de boss. */
   enterBoss: () => Promise<void>
   pending: Ref<boolean>
@@ -68,7 +70,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   // après, ni la portée réactive ni l'instance Nuxt ne sont plus les siennes.
   // Un composable Nuxt appelé après l'await lève « called outside of setup ».
   const owner = getCurrentScope()
-  const { next, answer, skipCooldown, openChest, enterBoss, failed: actionFailed, pending } = usePlay()
+  const { next, answer, skipCooldown, openChest, openDoor, enterBoss, failed: actionFailed, pending } = usePlay()
   const now = options.now ?? useClockTick(TICK_MS)
 
   const { state, failed: readFailed, loading, refresh } = await useGameState()
@@ -231,6 +233,7 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
     advance,
     skipCooldown,
     openChest,
+    openDoor,
     enterBoss,
     pending,
     actionFailed,

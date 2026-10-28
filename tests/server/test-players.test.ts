@@ -221,7 +221,7 @@ describe('gestes sur un joueur test', () => {
       await createQuestion(db, { floor: 2 })
       await advanceTestPlayer(db, await reload(), { count: 12, correct: true }, NOW)
 
-      expect((await readGameState(db, await reload(), NOW)).phase).toBe('floorEnd')
+      expect((await readGameState(db, await reload(), NOW)).phase).toBe('bossDoor')
     })
   })
 

@@ -325,7 +325,7 @@ describe('carte de jeu', () => {
 
   // specs/boss.md : la porte, le combat, l'outro de défaite.
   it('mène à la porte une fois le verdict quitté : elle porte ses propres gestes', () => {
-    expect(card({ phase: 'floorEnd' })).toEqual({ card: 'bossDoor', action: null })
+    expect(card({ phase: 'bossDoor' })).toEqual({ card: 'bossDoor', action: null })
   })
 
   it('sert l épreuve sans autre bouton que répondre, puis la suite', () => {

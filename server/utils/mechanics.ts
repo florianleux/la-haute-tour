@@ -21,7 +21,7 @@ import type { MissedPoolEntry, Reservation, User } from '../db/schema'
 export type AnswerSource = 'player' | 'focusLoss'
 
 /** Voir specs/mecanique.md#machine-à-états — la seule définition de « où en est le joueur ». */
-export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'deckEnd' | 'bossFight' | 'gameOver'
+export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'deckEnd' | 'bossDoor' | 'bossFight' | 'gameOver'
 
 export interface PhaseInput {
   user: Pick<User, 'lives' | 'currentFloor' | 'cooldownUntil' | 'bossHp'>
@@ -30,6 +30,11 @@ export interface PhaseInput {
    * verdict, lui, n'en est plus une : il se lit sur l'écran de la phase suivante.
    */
   hasLiveReservation: boolean
+  /**
+   * Un verdict encore à lire : la réservation résolue, pas encore quittée. Au
+   * palier, il sépare le verdict de la dernière question de la porte du boss.
+   */
+  holdsVerdict: boolean
   /** Questions vues à l'étage courant. */
   seen: number
   /** Questions que l'étage courant contient. */
@@ -43,7 +48,7 @@ export interface PhaseInput {
  * réservation, de la fin d'attente et du décompte des questions vues.
  */
 export function phaseOf(input: PhaseInput, now: Date): Phase {
-  const { user, hasLiveReservation, seen, floorTotal, nextFloorTotal } = input
+  const { user, hasLiveReservation, holdsVerdict, seen, floorTotal, nextFloorTotal } = input
   const floorDone = !hasLiveReservation && seen >= floorTotal
 
   // Un deck réduit, importé sur un seul étage : il s'arrête là, avant le boss —
@@ -67,8 +72,13 @@ export function phaseOf(input: PhaseInput, now: Date): Phase {
     return inCooldown ? 'cooldown' : 'recovery'
   }
 
-  // Le palier : l'étage vu en entier, le boss pas encore affronté.
-  return floorDone ? 'floorEnd' : 'ascent'
+  if (!floorDone) {
+    return 'ascent'
+  }
+
+  // Le palier : l'étage vu en entier, le boss pas encore affronté. Son verdict
+  // quitté, le joueur est devant la porte. Voir specs/boss.md#arriver-devant-la-porte.
+  return holdsVerdict ? 'floorEnd' : 'bossDoor'
 }
 
 /** Ce qu'il faut d'un effet pour dire s'il est encore porté. */

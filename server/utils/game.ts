@@ -25,7 +25,7 @@ import {
   playedToday,
   unlock,
 } from './achievements'
-import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
+import { bossView, enterBossFight, FRESH_BOSS, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
@@ -204,6 +204,21 @@ export interface GameState {
    * verdict et terme. Null hors combat. Voir specs/boss.md.
    */
   boss: BossView | null
+  /**
+   * La porte du boss, null ailleurs que devant elle. Voir
+   * specs/boss.md#arriver-devant-la-porte.
+   */
+  door: DoorView | null
+}
+
+/** La porte du boss telle que le joueur la trouve. */
+export interface DoorView {
+  /** Deux clés posées par l'équipe ; toujours vrai pour un joueur sans équipe. */
+  unlocked: boolean
+  /** Ouverte par ce joueur-là (`openDoor`). */
+  opened: boolean
+  /** Le nom de qui a posé sa clé (ADR 0008). Vide tant que les clés n'existent pas. */
+  keyHolders: string[]
 }
 
 /**
@@ -245,6 +260,7 @@ function phaseOfSnapshot(snapshot: PlayerSnapshot, hasLiveReservation: boolean, 
   return phaseOf({
     user: snapshot.user,
     hasLiveReservation,
+    holdsVerdict: snapshot.reservation !== undefined && !hasLiveReservation,
     seen: snapshot.user.floorSeen,
     floorTotal: snapshot.floorTotal,
     nextFloorTotal: snapshot.nextFloorTotal,
@@ -859,6 +875,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     // un état construit sans rien débloquer n'annonce rien.
     unlocked: [] as AchievementId[],
     boss: bossView(user, snapshot.trials, rulesForFloor(user.currentFloor)),
+    door: null as DoorView | null,
   }
 
   if (reservation && question) {
@@ -897,7 +914,12 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
 
   // Rien du jeu n'est servi pendant l'attente : le pool se lit à part, comme la
   // fiche de révision qu'il est censé être.
-  return { ...base, phase, question: phase === 'cooldown' ? null : base.question }
+  return {
+    ...base,
+    phase,
+    question: phase === 'cooldown' ? null : base.question,
+    door: phase === 'bossDoor' ? doorView(user) : null,
+  }
 }
 
 /**
@@ -949,11 +971,11 @@ async function buildState(db: Database, userId: number, now: Date): Promise<Game
  * son étage contient et si celui d'au-dessus en contient. Voir server/utils/deck.ts.
  */
 export async function readPhase(db: Database, user: User, now: Date): Promise<Phase> {
-  const [holding, deckFloor, nextDeckFloor] = await db.batch([
+  const [[held], deckFloor, nextDeckFloor] = await db.batch([
     db
-      .select({ userId: reservations.userId })
+      .select({ resolvedAt: reservations.resolvedAt })
       .from(reservations)
-      .where(and(eq(reservations.userId, user.id), isNull(reservations.resolvedAt)))
+      .where(eq(reservations.userId, user.id))
       .limit(1),
     floorSizeQuery(db, user.currentFloor),
     floorSizeQuery(db, user.currentFloor + 1),
@@ -961,7 +983,8 @@ export async function readPhase(db: Database, user: User, now: Date): Promise<Ph
 
   return phaseOf({
     user,
-    hasLiveReservation: holding.length > 0,
+    hasLiveReservation: held !== undefined && held.resolvedAt === null,
+    holdsVerdict: held !== undefined && held.resolvedAt !== null,
     seen: user.floorSeen,
     floorTotal: sizeOf(deckFloor),
     nextFloorTotal: sizeOf(nextDeckFloor),
@@ -1117,7 +1140,9 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // repasse. Voir specs/succes.md#progression.
   // La fin du deck aussi : rien à tirer, et surtout pas de palier vers un étage
   // vide. Voir specs/spec.md#glossaire (Fin du deck).
-  if (phase === 'gameOver' || phase === 'deckEnd') {
+  // Devant la porte non plus : seul « Entrer » (`enterBoss`) en sort, et un
+  // « Suivant » en retard ne doit pas tirer de question sous elle.
+  if (phase === 'gameOver' || phase === 'deckEnd' || phase === 'bossDoor') {
     return withUnlocked(stateFrom(current, now), unlocked)
   }
 
@@ -1243,14 +1268,41 @@ export async function openPlayerChest(
 }
 
 /**
+ * La porte du boss de ce joueur. Déverrouillée pour qui n'a pas d'équipe ;
+ * verrouillée pour une équipe tant que ses deux clés ne sont pas posées.
+ * ponytail: verrouillée pour toute équipe, les clés viennent avec #138 et #139.
+ */
+function doorView(user: User): DoorView {
+  const unlocked = user.team === null
+  return { unlocked, opened: unlocked && user.doorOpened, keyHolders: [] }
+}
+
+/**
+ * « Ouvrir » : écarte les battants de la porte déverrouillée, et le serveur s'en
+ * souvient. Sans effet ailleurs que devant elle, ou sur une porte verrouillée.
+ * Voir specs/boss.md#arriver-devant-la-porte.
+ */
+export async function openDoor(db: Database, user: User, now: Date): Promise<GameState> {
+  const snapshot = await loadSnapshot(db, user.id)
+  const door = phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) === 'bossDoor' ? doorView(snapshot.user) : null
+
+  if (!door?.unlocked || door.opened) {
+    return stateFrom(snapshot, now)
+  }
+
+  await db.update(users).set({ doorOpened: true }).where(eq(users.id, user.id))
+  return stateFrom({ ...snapshot, user: { ...snapshot.user, doorOpened: true } }, now)
+}
+
+/**
  * « Entrer », au terme de la porte et de l'introduction : ouvre le combat de
- * boss. Sans effet hors du palier, verdict quitté — la porte s'atteint par
- * `serveNextQuestion`. Voir specs/boss.md.
+ * boss. Sans effet ailleurs que devant la porte (`bossDoor`), qui s'atteint
+ * par `serveNextQuestion`. Voir specs/boss.md.
  */
 export async function enterBoss(db: Database, user: User, now: Date): Promise<GameState> {
   const snapshot = await loadSnapshot(db, user.id)
 
-  if (phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) !== 'floorEnd' || snapshot.reservation) {
+  if (phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) !== 'bossDoor' || !doorView(snapshot.user).unlocked) {
     return stateFrom(snapshot, now)
   }
 
@@ -1308,7 +1360,7 @@ async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date
     // interrompu laisserait le joueur au palier suivant avec ceux du précédent.
     db
       .update(users)
-      .set({ currentFloor, floorSeen: 0, bossHp: null, bossAttemptNumber: 0 })
+      .set({ currentFloor, floorSeen: 0, ...FRESH_BOSS })
       .where(eq(users.id, user.id)),
   ])
 

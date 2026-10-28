@@ -230,6 +230,8 @@ function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion, pastFirstA
   const phase = phaseOf({
     user,
     hasLiveReservation: heldQuestion !== null,
+    // Seule la fin de partie écarte : palier ou porte, le verdict n'y change rien.
+    holdsVerdict: false,
     seen: user.floorSeen,
     floorTotal: floorTotal ?? 0,
     nextFloorTotal,

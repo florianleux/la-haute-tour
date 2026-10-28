@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `door_opened` integer DEFAULT false NOT NULL;

@@ -254,7 +254,7 @@ describe('boucle d ascension', () => {
 
       const state = await readGameState(db, player, NOW)
 
-      expect(state.phase).toBe('floorEnd')
+      expect(state.phase).toBe('bossDoor')
     })
 
     it('atteint la fin de partie au dernier étage, boss battu', async () => {

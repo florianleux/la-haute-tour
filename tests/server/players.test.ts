@@ -81,7 +81,7 @@ describe('fiches joueurs', () => {
     const userId = await createPlayer(db, { currentFloor: 1 })
     await markSeen(db, userId, questionIds, { floor: 1, seenAt: NOW })
 
-    expect((await playerRoster(db, NOW))[0]).toMatchObject({ phase: 'floorEnd', floorSeen: 2 })
+    expect((await playerRoster(db, NOW))[0]).toMatchObject({ phase: 'bossDoor', floorSeen: 2 })
   })
 
   it('ne compte que les contestations encore à arbitrer', async () => {

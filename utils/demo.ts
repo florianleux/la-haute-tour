@@ -101,6 +101,7 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     effects: [],
     unlocked: [],
     boss: null,
+    door: null,
     ...overrides,
   }
 }

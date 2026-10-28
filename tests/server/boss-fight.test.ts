@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, attempts, bossTrials, missedPool, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { enterBoss, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { enterBoss, openDoor, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { rewindTestPlayer, sendToCooldown } from '../../server/utils/testPlayers'
 import { seedFlags } from '../../scripts/seed-flags'
@@ -50,6 +50,8 @@ describe('combat de boss', () => {
   /** « Entrer », au terme de la porte et de l'introduction. */
   const enter = async (): Promise<GameState> => enterBoss(db, await reload(), tick())
   const answer = async (text: string): Promise<GameState> => submitAnswer(db, await reload(), text, tick())
+  /** « Ouvrir », devant la porte déverrouillée. */
+  const open = async (): Promise<GameState> => openDoor(db, await reload(), tick())
 
   async function set(values: Partial<User>): Promise<void> {
     await db.update(users).set(values).where(eq(users.id, player.id))
@@ -96,16 +98,16 @@ describe('combat de boss', () => {
     await set({ floorCursor: 1 })
     await serveNextQuestion(db, await reload(), NOW)
     const verdict = await submitAnswer(db, await reload(), 'BORDEAUX', tick())
-    expect(verdict).toMatchObject({ phase: 'floorEnd' })
+    expect(verdict).toMatchObject({ phase: 'floorEnd', door: null })
     expect(verdict.verdict?.questionId).toBe(last)
 
     const door = await next()
 
-    expect(door).toMatchObject({ phase: 'floorEnd', verdict: null, boss: null })
+    expect(door).toMatchObject({ phase: 'bossDoor', verdict: null, boss: null })
     expect(await db.select().from(reservations)).toHaveLength(0)
     // Un « Suivant » en retard ne lance pas le combat sous la porte : seul
     // « Entrer » l'ouvre.
-    expect((await next()).phase).toBe('floorEnd')
+    expect((await next()).phase).toBe('bossDoor')
     expect((await enter()).phase).toBe('bossFight')
   })
 
@@ -116,6 +118,35 @@ describe('combat de boss', () => {
     expect((await enter()).phase).toBe('bossFight')
     expect(await db.select().from(bossTrials)).toEqual(before)
     expect((await reload()).bossAttemptNumber).toBe(1)
+  })
+
+  // specs/boss.md#arriver-devant-la-porte
+  describe('porte', () => {
+    it('attend le joueur sans équipe déverrouillée, fermée, sans poseur', async () => {
+      const state = await readGameState(db, await reload(), tick())
+
+      expect(state).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, opened: false, keyHolders: [] } })
+    })
+
+    it('retient « Ouvrir » : au retour, la porte est déjà ouverte', async () => {
+      expect((await open()).door).toMatchObject({ opened: true })
+      expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ opened: true })
+    })
+
+    it('reste verrouillée pour le joueur en équipe : ni « Ouvrir », ni « Entrer »', async () => {
+      await set({ team: 'TLM' })
+
+      expect((await open()).door).toEqual({ unlocked: false, opened: false, keyHolders: [] })
+      expect((await enter()).phase).toBe('bossDoor')
+      expect(await db.select().from(bossTrials)).toHaveLength(0)
+    })
+
+    it('n existe pas au combat, et ne s y ouvre pas', async () => {
+      expect((await enter()).door).toBeNull()
+      // Ouvrir en plein combat n'écrit rien.
+      await open()
+      expect((await reload()).doorOpened).toBe(false)
+    })
   })
 
   it('inscrit au parcours l ascension qui a mené au palier', async () => {
@@ -199,13 +230,16 @@ describe('combat de boss', () => {
     })
 
     it('rouvre le palier au bout de l attente, et le combat suivant à vies pleines', async () => {
+      await open()
       await lose()
       // Pool Échecs trop maigre : l'attente échue rend les vies.
       const afterCooldown = new Date(clock + rules.cooldownMs + 1)
 
-      expect((await readGameState(db, await reload(), afterCooldown)).phase).toBe('floorEnd')
+      expect((await readGameState(db, await reload(), afterCooldown)).phase).toBe('bossDoor')
 
       clock = afterCooldown.getTime()
+      // Ouverte avant le premier combat, elle le reste : « Entrer » direct.
+      expect((await readGameState(db, await reload(), afterCooldown)).door).toMatchObject({ opened: true })
       const again = await enter()
       expect(again).toMatchObject({ phase: 'bossFight', lives: rules.lives })
       expect(again.boss).toMatchObject({ hp: rules.bossHp, verdict: null })
@@ -281,6 +315,7 @@ describe('combat de boss', () => {
     it('se lit sur l arène, puis « Continuer » franchit le palier sur une tentative neuve', async () => {
       await pendingVitality()
       await set({ lives: 1 })
+      await open()
 
       const won = await winTrials(rules.bossHp, await enter())
 
@@ -292,7 +327,7 @@ describe('combat de boss', () => {
       expect(climbed).toMatchObject({ phase: 'ascent', floor: 2, lives: rules.lives + 1 })
       expect(climbed.question?.statement).toBe('Question de l étage 2 ?')
       expect(climbed.boss).toBeNull()
-      expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0 })
+      expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0, doorOpened: false })
       // La « tentative suivante » de l'effet, c'est celle-ci.
       expect((await db.select().from(activeEffects))[0]?.anchoredAt).not.toBeNull()
     })
@@ -322,10 +357,11 @@ describe('combat de boss', () => {
       expect((await reload()).bossHp).toBeNull()
     })
 
-    it('reculé sous son palier, il n a plus de boss devant lui', async () => {
+    it('reculé sous son palier, il n a plus de boss ni de porte ouverte devant lui', async () => {
+      await set({ doorOpened: true })
       await rewindTestPlayer(db, await reload(), 1)
 
-      expect(await reload()).toMatchObject({ bossHp: null })
+      expect(await reload()).toMatchObject({ bossHp: null, doorOpened: false })
       expect(await db.select().from(bossTrials)).toHaveLength(0)
     })
   })

@@ -180,6 +180,12 @@ export const users = sqliteTable('users', {
    */
   bossAttemptNumber: integer('boss_attempt_number').notNull().default(0),
   /**
+   * Le joueur a ouvert la porte du boss de son étage (`openDoor`) : il la
+   * retrouve ouverte, d'un combat à l'autre. Remis à faux au franchissement du
+   * palier. Voir specs/boss.md#arriver-devant-la-porte.
+   */
+  doorOpened: integer('door_opened', { mode: 'boolean' }).notNull().default(false),
+  /**
    * Questions vues depuis la dernière remise à zéro du joueur, tous étages et
    * toutes tentatives confondus. Ne redescend jamais d'ici là.
    *

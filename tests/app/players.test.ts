@@ -111,6 +111,7 @@ describe('phase en français', () => {
     expect(phaseLabel('cooldown')).toBe('En attente')
     expect(phaseLabel('recovery')).toBe('En rattrapage')
     expect(phaseLabel('floorEnd')).toBe('Au palier')
+    expect(phaseLabel('bossDoor')).toBe('Devant la porte')
     expect(phaseLabel('gameOver')).toBe('Partie terminée')
   })
 })

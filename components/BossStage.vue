@@ -15,17 +15,17 @@
       @end="emit('enter')"
     />
 
-    <!-- ponytail: la porte déverrouillée pour tous, ouverte à chaque arrivée,
-         l'introduction rejouée à chaque combat : les clés, la porte retenue
-         et l'introduction jouée une fois viennent avec #137 à #143 et #39. -->
+    <!-- ponytail: aucune clé à poser, l'introduction rejouée à chaque
+         combat : les clés et l'introduction jouée une fois viennent avec #138
+         à #143 et #39. -->
     <BossDoor
       v-else
       :door="stage.door"
-      :keys-placed="0"
+      :keys-placed="door.keyHolders.length"
       :has-key="false"
-      unlocked
+      :unlocked="door.unlocked"
       :opened="opened"
-      @open-door="opened = true"
+      @open-door="openDoor"
       @enter="enter"
     />
   </div>
@@ -33,17 +33,25 @@
 
 <script setup lang="ts">
 // Le chemin du palier au combat (specs/boss.md) : la porte, puis
-// l'introduction du boss. Tout se joue côté client ; `enter`, au terme, rend la
-// main à la page, qui demande au serveur d'ouvrir le combat.
+// l'introduction du boss. La porte se lit au serveur ; `openDoor` lui dit que
+// le joueur l'a ouverte, `enter`, au terme, qu'il ouvre le combat.
+import type { DoorView } from '~~/server/utils/game'
 import type { BossStage } from '~~/utils/bossStage'
 
-const props = defineProps<{ stage: BossStage }>()
+const props = defineProps<{ stage: BossStage, door: DoorView }>()
 
-const emit = defineEmits<{ enter: [] }>()
+const emit = defineEmits<{ openDoor: [], enter: [] }>()
 
 const assets = useBossAssetsLoadingScreen(props.stage.floor)
-const opened = ref(false)
+// Les battants s'écartent au clic, sans attendre le serveur : il retient le
+// geste pour le retour, l'animation n'a pas à l'attendre.
+const opened = ref(props.door.opened)
 const introPlaying = ref(false)
+
+function openDoor(): void {
+  opened.value = true
+  emit('openDoor')
+}
 
 /** « Entrer » : l'introduction s'il y en a une, sinon le combat tout de suite. */
 function enter(): void {

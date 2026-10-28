@@ -16,6 +16,7 @@ import {
   settings,
   users,
 } from '../db/schema'
+import { FRESH_BOSS } from './boss'
 import { nextFloorTotal } from './deck'
 import { phaseOf, startOfGame } from './mechanics'
 import { numericRouteId } from './routes'
@@ -110,6 +111,9 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
       liveReservations: sql<number>`(select count(*) from ${reservations}
         where ${reservations.userId} = ${users.id}
           and ${reservations.resolvedAt} is null)`,
+      verdicts: sql<number>`(select count(*) from ${reservations}
+        where ${reservations.userId} = ${users.id}
+          and ${reservations.resolvedAt} is not null)`,
       pendingDisputes: sql<number>`(select count(*) from ${disputes}
         where ${disputes.userId} = ${users.id}
           and ${disputes.status} = 'pending')`,
@@ -133,6 +137,7 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     phase: phaseOf({
       user: row.user,
       hasLiveReservation: row.liveReservations > 0,
+      holdsVerdict: row.verdicts > 0,
       seen: row.user.floorSeen,
       floorTotal: row.floorTotal ?? 0,
       nextFloorTotal: row.nextFloorTotal,
@@ -177,8 +182,7 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         cooldownBaseMs: null,
         floorCursor: 0,
         floorSeen: 0,
-        bossHp: null,
-        bossAttemptNumber: 0,
+        ...FRESH_BOSS,
         attemptSeen: 0,
         attemptStartedAt: now,
         streak: 0,

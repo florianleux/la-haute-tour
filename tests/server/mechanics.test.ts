@@ -13,7 +13,7 @@ function player(overrides: Partial<{ lives: number, currentFloor: number, cooldo
 }
 
 describe('phase', () => {
-  const ascent = { user: player(), hasLiveReservation: true, seen: 2, floorTotal: 10, nextFloorTotal: 10 }
+  const ascent = { user: player(), hasLiveReservation: true, holdsVerdict: false, seen: 2, floorTotal: 10, nextFloorTotal: 10 }
 
   it('est l ascension tant qu il reste des vies et des questions', () => {
     expect(phaseOf(ascent, NOW)).toBe('ascent')
@@ -38,48 +38,56 @@ describe('phase', () => {
   })
 
   it('est le palier quand tout l étage est vu, au dernier étage aussi : le boss vient avant la fin', () => {
-    const done = { user: player(), hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
+    const done = { user: player(), hasLiveReservation: false, holdsVerdict: true, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
 
     expect(phaseOf(done, NOW)).toBe('floorEnd')
     expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('floorEnd')
   })
 
+  // specs/boss.md#arriver-devant-la-porte : le verdict de la dernière question quitté.
+  it('est la porte du boss une fois le verdict du palier quitté', () => {
+    const door = { user: player(), hasLiveReservation: false, holdsVerdict: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
+
+    expect(phaseOf(door, NOW)).toBe('bossDoor')
+    expect(phaseOf({ ...door, user: player({ currentFloor: 6 }) }, NOW)).toBe('bossDoor')
+  })
+
   it('ne conclut pas l étage tant qu une question est en jeu', () => {
-    const held = { user: player(), hasLiveReservation: true, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
+    const held = { user: player(), hasLiveReservation: true, holdsVerdict: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
 
     expect(phaseOf(held, NOW)).toBe('ascent')
   })
 
   // specs/boss.md#cas-à-0-vie : l'attente et le rattrapage passent avant le combat.
   it('fait passer l attente et le rattrapage avant le boss quand l étage finit sans vie', () => {
-    const done = { hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
+    const done = { hasLiveReservation: false, holdsVerdict: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
 
     expect(phaseOf({ ...done, user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }) }, NOW)).toBe('cooldown')
     expect(phaseOf({ ...done, user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() - 1) }) }, NOW)).toBe('recovery')
   })
 
   it('est le combat tant que le boss a des PV, et le reste sur la victoire à lire', () => {
-    const done = { hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
+    const done = { hasLiveReservation: false, holdsVerdict: false, seen: 10, floorTotal: 10, nextFloorTotal: 10 }
 
     expect(phaseOf({ ...done, user: player({ bossHp: 7 }) }, NOW)).toBe('bossFight')
     expect(phaseOf({ ...done, user: player({ bossHp: 0 }) }, NOW)).toBe('bossFight')
   })
 
   it('finit la partie sur le boss du dernier étage battu', () => {
-    const done = { hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 0 }
+    const done = { hasLiveReservation: false, holdsVerdict: false, seen: 10, floorTotal: 10, nextFloorTotal: 0 }
 
     expect(phaseOf({ ...done, user: player({ currentFloor: 6, bossHp: 0 }) }, NOW)).toBe('gameOver')
     expect(phaseOf({ ...done, user: player({ currentFloor: 6, bossHp: 3 }) }, NOW)).toBe('bossFight')
   })
 
   it('est la fin du deck quand l étage d au-dessus est vide, vies ou pas', () => {
-    const done = { user: player(), hasLiveReservation: false, seen: 10, floorTotal: 10, nextFloorTotal: 0 }
+    const done = { user: player(), hasLiveReservation: false, holdsVerdict: false, seen: 10, floorTotal: 10, nextFloorTotal: 0 }
 
     expect(phaseOf(done, NOW)).toBe('deckEnd')
     expect(phaseOf({ ...done, user: player({ lives: 0, cooldownUntil: new Date(NOW.getTime() + 1_000) }) }, NOW)).toBe('deckEnd')
     expect(phaseOf({ ...done, hasLiveReservation: true }, NOW)).toBe('ascent')
     // Le dernier étage n'a jamais d'étage au-dessus : son boss passe quand même.
-    expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('floorEnd')
+    expect(phaseOf({ ...done, user: player({ currentFloor: 6 }) }, NOW)).toBe('bossDoor')
   })
 })
 
