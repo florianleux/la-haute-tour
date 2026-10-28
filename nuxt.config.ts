@@ -20,6 +20,14 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // Le rendu serveur laisse `shared/` hors du lot, importé par son chemin.
+      // Par défaut, Rollup rend relatif un tel import quand le premier qui le
+      // croise l'écrit en relatif (`../../shared/utils/floors` dans
+      // server/utils) — et le chemin produit ne résout plus : la build casse
+      // selon l'ordre des pages. Le chemin reste donc absolu.
+      rollupOptions: { makeAbsoluteExternalsRelative: false },
+    },
     server: {
       // pnpm range les dépendances dans une forêt de liens symboliques sous
       // `node_modules/.pnpm`. Le watcher les suit, ouvre un descripteur par
