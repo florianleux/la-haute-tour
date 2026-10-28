@@ -9,7 +9,7 @@
        à l'impact. -->
   <div
     class="z-20 group-data-arriving:motion-safe:animate-button-bounce"
-    :class="[anchor !== 'inline' && 'absolute -translate-x-1/2 translate-y-1/2', ANCHORS[anchor].position, ANCHORS[anchor].width]"
+    :class="[ANCHORS[anchor].position, ANCHORS[anchor].width]"
     :style="{ aspectRatio: face === 'plank' ? '328 / 95' : '634 / 175' }"
   >
     <button
@@ -77,19 +77,23 @@
 type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'parchment-bottom' | 'inline'
 type Face = 'medallion' | 'plank'
 
+// Posé à cheval sur un bord : centré sur son point d'ancrage, descendu d'une
+// demi-hauteur. Toutes les ancres sauf 'inline', qui reste dans le flux.
+const ON_EDGE = 'absolute -translate-x-1/2 translate-y-1/2'
+
 const ANCHORS: Record<Anchor, { position: string, width: string, text: string }> = {
   'image-bottom': {
-    position: 'bottom-0 left-1/2',
+    position: `${ON_EDGE} bottom-0 left-1/2`,
     width: 'w-[58.5%] sm:w-[28.8%]',
     text: 'text-[6.6cqw] sm:text-[3.3cqw]',
   },
   'card-bottom': {
-    position: 'top-[62%] left-1/2 sm:top-[76%] sm:bottom-0',
+    position: `${ON_EDGE} top-[62%] left-1/2 sm:top-[76%] sm:bottom-0`,
     width: 'w-[58.5%] sm:w-[28.8%]',
     text: 'text-[6.6cqw] sm:text-[3.3cqw]',
   },
   'poster': {
-    position: 'top-[63%] left-[54%]',
+    position: `${ON_EDGE} top-[63%] left-[54%]`,
     width: 'w-[46.8%] sm:w-[30.6%]',
     text: 'text-[4cqw] sm:text-[3cqw]',
   },
@@ -100,7 +104,7 @@ const ANCHORS: Record<Anchor, { position: string, width: string, text: string }>
     // mesurés sous la largeur du bouton — moins la hauteur du bouton (13,2% du
     // cadre en mobile, 17,3% en desktop), pour qu'il tombe à cheval sur ce bord
     // et non entièrement dessous.
-    position: 'top-[78%] left-1/2 sm:top-[72%]',
+    position: `${ON_EDGE} top-[78%] left-1/2 sm:top-[72%]`,
     // Le même bouton, à l'œil, que celui de l'ascension. En mobile les deux
     // cadres ont la même largeur, donc mêmes valeurs ; en desktop le cadre du
     // rattrapage est 1,4 fois plus étroit (640 px contre 896, mesurés), d'où

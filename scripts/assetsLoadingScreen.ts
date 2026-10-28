@@ -10,18 +10,17 @@ import { join, relative, sep } from 'node:path'
  * qui monte) se jouent avant que leur image arrive.
  *
  * Exclus :
- * - `images/boss/` : ce qui ne s'affiche que dans les phases de boss (porte,
- *   introduction, combat, épreuves) n'a pas à rallonger l'écran de tous —
- *   l'écran de chargement du boss l'attend (bossAssetsLoadingScreenFiles) ;
- * - `images/login/` : la page de connexion, hors de l'écran de chargement, attend
- *   elle-même son image (LoginTitle) ;
+ * - les sous-dossiers de `images/` : un dossier y est à un seul écran, qui
+ *   attend ses fichiers lui-même. `images/boss/` va à l'écran de chargement du
+ *   boss (bossAssetsLoadingScreenFiles), `images/login/` à la page de
+ *   connexion, hors de l'écran de chargement (LoginTitle) ;
  * - les fichiers et dossiers cachés (`.DS_Store`...) : jamais demandés par le jeu.
  *
  * Lu par nuxt.config.ts au démarrage. Voir la section Images de CLAUDE.md.
  */
 export function assetsLoadingScreenFiles(publicDir: string): string[] {
   return publicFiles(publicDir)
-    .filter(parts => !(parts[0] === 'images' && (parts[1] === 'boss' || parts[1] === 'login')))
+    .filter(parts => !(parts[0] === 'images' && parts.length > 2))
     .map(parts => `/${parts.join('/')}`)
 }
 

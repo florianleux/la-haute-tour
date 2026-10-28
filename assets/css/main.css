@@ -240,52 +240,23 @@
   }
 
 
-  /* Le sort qui flotte au-dessus du coffre, en lévitation lente. */
+  /* Le sort qui flotte au-dessus du coffre, en lévitation lente. La hauteur
+     se règle par `--float-rise` : le titre de la connexion, grand, monte moins. */
   --animate-float: float 2.4s ease-in-out infinite;
 
   @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6%); }
+    50% { transform: translateY(var(--float-rise, -6%)); }
   }
 
-  /* Le titre (LoginTitle) tombe du haut de la fenêtre, hors champ, et
-     rebondit sur sa place : `drop-in`, sur une chute d'un écran. */
-  --animate-title-drop: title-drop 0.9s linear 0.2s both;
-
-  /* Puis il flotte, plus doucement que `float` : la boîte est grande. */
-  --animate-title-float: title-float 3.2s ease-in-out 1.1s infinite;
-
-  @keyframes title-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-2%); }
-  }
-
-  /* Un reflet traverse le titre de gauche à droite, puis le laisse reposer. */
-  --animate-title-sheen: title-sheen 5s ease-in-out 1.4s infinite;
+  /* Un reflet traverse le titre (LoginTitle) de gauche à droite, puis le
+     laisse reposer. Une bande qui glisse (`transform`), dans une boîte
+     découpée à la forme du logo : rien à repeindre pendant le passage. */
+  --animate-title-sheen: title-sheen 5s ease-in-out calc(var(--landed, 0s) + 0.3s) infinite both;
 
   @keyframes title-sheen {
-    0% { background-position: 100% 0; }
-    30%, 100% { background-position: 0 0; }
-  }
-
-  @keyframes title-drop {
-    0% {
-      transform: translateY(-100vh) scale(0.92, 1.12);
-      animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
-    }
-    45% {
-      transform: translateY(0) scale(1.12, 0.86);
-      animation-timing-function: ease-out;
-    }
-    62% {
-      transform: translateY(-4%) scale(0.95, 1.06);
-      animation-timing-function: ease-in-out;
-    }
-    80% {
-      transform: translateY(0) scale(1.03, 0.98);
-      animation-timing-function: ease-in-out;
-    }
-    100% { transform: none; }
+    0% { transform: translateX(-100%); }
+    30%, 100% { transform: translateX(250%); }
   }
 
   /* Une gemme du titre (LoginTitle) qui brille, sur place : l'étoile naît,
@@ -693,13 +664,15 @@
      --enter-delay : un `[animation-delay:…]` à côté serait écrasé par le
      raccourci `animation` des `animate-*` préfixés, émis après lui. */
 
-  /* Le cadre de l'ascension tombe d'en haut et rebondit sur sa base. */
+  /* Le cadre de l'ascension tombe d'en haut et rebondit sur sa base. D'où il
+     part se règle par `--drop-from` : le titre de la connexion (LoginTitle)
+     tombe d'un écran entier, hors champ. */
   --animate-drop-in: drop-in 0.65s linear both;
 
   @keyframes drop-in {
     0% {
       opacity: 0;
-      transform: translateY(-110%) scale(0.92, 1.12);
+      transform: translateY(var(--drop-from, -110%)) scale(0.92, 1.12);
       animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
     }
     6% { opacity: 1; }

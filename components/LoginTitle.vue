@@ -1,52 +1,59 @@
 <template>
-  <div
-    class="relative w-full"
-    :class="ready ? 'motion-safe:animate-title-drop' : 'invisible'"
-    :style="{ aspectRatio: `${LOGO.width} / ${LOGO.height}` }"
-    role="img"
-    aria-label="La Haute Tour"
-  >
+  <!-- `--landed` : l'instant où le logo se pose, 0,2 s d'attente + 0,9 s de
+       chute. Tout ce qui suit la chute (flottement, reflet, gemmes, contenu du
+       slot) part de là. -->
+  <div class="flex w-full flex-col items-center [--landed:1.1s]">
     <div
-      class="absolute inset-0"
-      :class="ready && 'motion-safe:animate-title-float'"
+      class="relative w-full"
+      :class="ready ? 'motion-safe:animate-[drop-in_0.9s_linear_0.2s_both] [--drop-from:-100vh]' : 'invisible'"
+      :style="{ aspectRatio: `${LOGO.width} / ${LOGO.height}` }"
+      role="img"
+      aria-label="La Haute Tour"
     >
-      <img
-        ref="image"
-        :src="SRC"
-        alt=""
-        class="block w-full"
-      >
-      <!-- Le reflet, découpé à la forme du logo par son propre alpha. -->
       <div
-        v-if="ready"
-        class="absolute inset-0 bg-[linear-gradient(110deg,transparent_40%,rgb(255_255_255/0.7)_50%,transparent_60%)] bg-size-[300%_100%] [mask-size:100%_100%] motion-safe:animate-title-sheen motion-reduce:hidden"
-        :style="{ maskImage: `url(${SRC})` }"
-      />
-      <template v-if="ready">
-        <SparkleStar
-          v-for="gem in GEMS"
-          :key="gem.delay"
-          glow="#fff7d6"
-          class="w-[5%] opacity-0 motion-safe:animate-twinkle"
-          :style="{
-            left: `calc(${(gem.x / LOGO.width) * 100}% - 2.5%)`,
-            top: `calc(${(gem.y / LOGO.height) * 100}% - 2.5% * ${LOGO.width / LOGO.height})`,
-            animationDelay: `${1.2 + gem.delay}s`,
-          }"
-        />
-      </template>
+        class="absolute inset-0"
+        :class="ready && 'motion-safe:animate-[float_3.2s_ease-in-out_var(--landed)_infinite] [--float-rise:-2%]'"
+      >
+        <img
+          ref="image"
+          :src="SRC"
+          alt=""
+          class="block w-full"
+        >
+        <template v-if="ready">
+          <!-- Le reflet : une bande qui glisse, dans une boîte découpée à la
+               forme du logo par son propre alpha. -->
+          <div
+            class="absolute inset-0 overflow-hidden [mask-size:100%_100%] motion-reduce:hidden"
+            :style="{ maskImage: `url(${SRC})` }"
+          >
+            <div class="absolute inset-y-0 left-0 w-2/5 bg-[linear-gradient(110deg,transparent,rgb(255_255_255/0.7),transparent)] motion-safe:animate-title-sheen" />
+          </div>
+          <SparkleStar
+            v-for="gem in GEMS"
+            :key="gem.delay"
+            glow="#fff7d6"
+            class="w-[5%] opacity-0 motion-safe:animate-twinkle"
+            :style="{
+              left: `calc(${(gem.x / LOGO.width) * 100}% - 2.5%)`,
+              top: `calc(${(gem.y / LOGO.height) * 100}% - 2.5% * ${LOGO.width / LOGO.height})`,
+              animationDelay: `calc(var(--landed) + 0.1s + ${gem.delay}s)`,
+            }"
+          />
+        </template>
+      </div>
     </div>
+    <!-- Ce que la page pose sous le logo : n'apparaît qu'avec lui. -->
+    <slot v-if="ready" />
   </div>
 </template>
 
 <script setup lang="ts">
 // Le titre de la page de connexion : le logo tombe du haut de la fenêtre et
-// rebondit (`title-drop`), puis flotte (`title-float`) ; un reflet le
-// traverse (`title-sheen`) et les gemmes scintillent tour à tour (`twinkle`).
+// rebondit (`drop-in`), puis flotte (`float`) ; un reflet le traverse
+// (`title-sheen`) et les gemmes scintillent tour à tour (`twinkle`).
 // La page n'a pas d'écran de chargement : le logo attend sa propre image avant
-// de tomber, et le dit (`ready`) pour que la page cale la suite dessus.
-
-const emit = defineEmits<{ ready: [] }>()
+// de tomber, et le contenu du slot l'attend avec lui.
 
 const SRC = '/images/login/title.webp'
 
@@ -65,13 +72,16 @@ const image = useTemplateRef<HTMLImageElement>('image')
 const ready = ref(false)
 
 // Rendue côté serveur, l'image peut être arrivée avant l'hydratation : son
-// `load` est passé, `complete` le dit.
+// `load` est passé, `complete` le dit. Une image en erreur compte comme
+// arrivée, comme à l'écran de chargement : la page ne reste pas vide.
 onMounted(async () => {
   const img = image.value
   if (img && !img.complete) {
-    await new Promise(resolve => img.addEventListener('load', resolve, { once: true }))
+    await new Promise((resolve) => {
+      img.addEventListener('load', resolve, { once: true })
+      img.addEventListener('error', resolve, { once: true })
+    })
   }
   ready.value = true
-  emit('ready')
 })
 </script>

@@ -18,14 +18,14 @@
       >
         <div
           class="h-full rounded-full bg-[linear-gradient(180deg,#fff9c4_0%,#ffd60a_40%,#f5a300_100%)] shadow-[0_0_12px_rgb(255_214_10/0.85)] transition-[width] duration-200"
-          :style="{ width: `${(loaded / total) * 100}%` }"
+          :style="{ width: `${percent}%` }"
         />
       </div>
       <!-- L'étincelle qui court en tête de la barre, au bout de l'or. -->
       <SparkleStar
         glow="#fef3c7"
         class="top-1/2 w-10 -translate-1/2 transition-[left] duration-200 motion-safe:animate-[spin_3s_linear_infinite]"
-        :style="{ left: `${(loaded / total) * 100}%` }"
+        :style="{ left: `${percent}%` }"
       />
       <SparkleField
         :sparks="SPARKS"
@@ -39,10 +39,13 @@
 // Ce que montre l'écran de chargement : le titre doré, la barre et ses
 // étincelles. La mécanique (quels fichiers, combien arrivés) vit dans
 // AssetsLoadingScreen ; pages/test/loading.vue le montre figé.
-defineProps<{
+const props = defineProps<{
   loaded: number
   total: number
 }>()
+
+/** Où en est la barre, et l'étincelle qui court en tête. */
+const percent = computed(() => (props.loaded / props.total) * 100)
 
 /** Les étincelles qui scintillent au-dessus et au-dessous de la barre. */
 const SPARKS = [

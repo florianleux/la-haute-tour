@@ -5,28 +5,24 @@
     <div class="absolute inset-0 bg-[url(/images/play-bg.webp)] bg-cover bg-center" />
     <div class="relative flex w-full max-w-2xl flex-col items-center">
       <!-- Bornée en hauteur aussi : sur une fenêtre basse, le bouton reste visible. -->
-      <LoginTitle class="max-w-[72vh]" @ready="titleReady = true" />
-      <!-- Après la chute du titre, comptée depuis l'arrivée de son image : voir LoginTitle. -->
-      <div
-        v-if="titleReady"
-        class="mt-10 flex flex-col items-center motion-safe:animate-fade-in [--enter-delay:1.2s]"
-      >
-        <!-- Le médaillon de « Valider », celui de la question. -->
-        <BaseCardButton
-          label="Connexion"
-          anchor="inline"
-          :loading="leaving"
-          @click="signIn"
-        />
-      </div>
+      <LoginTitle class="max-w-[72vh]">
+        <!-- Le médaillon de « Valider », celui de la question, juste après la
+             chute du titre (`--landed`, voir LoginTitle). -->
+        <div class="mt-10 motion-safe:animate-fade-in [--enter-delay:calc(var(--landed)+0.1s)]">
+          <BaseCardButton
+            label="Connexion"
+            anchor="inline"
+            :loading="leaving"
+            @click="signIn"
+          />
+        </div>
+      </LoginTitle>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ public: true })
-
-const titleReady = ref(false)
 
 // Le médaillon est un bouton, pas un lien : la route serveur s'ouvre en
 // navigation complète, le loader tient la place pendant le départ vers Discord.

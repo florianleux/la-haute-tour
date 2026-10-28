@@ -19,7 +19,7 @@ describe('les fichiers que l écran de chargement attend', () => {
 
   afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-  it('garde le jeu courant et laisse les fichiers cachés, les phases de boss et la connexion', () => {
+  it('garde le jeu courant et laisse les fichiers cachés et les sous-dossiers d images (boss, connexion)', () => {
     dir = mkdtempSync(join(tmpdir(), 'assets-'))
     mkdirSync(join(dir, 'images', 'boss'), { recursive: true })
     mkdirSync(join(dir, 'images', 'login'))
