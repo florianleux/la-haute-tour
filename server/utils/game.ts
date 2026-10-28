@@ -223,6 +223,8 @@ export interface DoorView {
   hasKey: boolean
   /** Le nom de qui a posé sa clé, dans l'ordre de pose (ADR 0008). Vide sans équipe. */
   keyHolders: string[]
+  /** Où se tient le joueur (`doorSpot`) : devant la porte, ou au camp après « Redescendre ». */
+  spot: User['doorSpot']
 }
 
 /**
@@ -1291,7 +1293,7 @@ export async function openPlayerChest(
  */
 function doorView({ user, hasKey, keyHolders }: PlayerSnapshot): DoorView {
   const unlocked = user.team === null || keyHolders.length >= KEYS_TO_UNLOCK
-  return { unlocked, opened: unlocked && user.doorOpened, hasKey, keyHolders }
+  return { unlocked, opened: unlocked && user.doorOpened, hasKey, keyHolders, spot: user.doorSpot }
 }
 
 /** La porte, si le joueur est devant elle (`bossDoor`) ; null ailleurs. */
@@ -1314,6 +1316,23 @@ export async function placeKey(db: Database, user: User, now: Date): Promise<Gam
 
   await placeKeyIfRoom(db, snapshot.user, now)
   return buildState(db, user.id, now)
+}
+
+/**
+ * « Redescendre » : quitte la porte verrouillée pour attendre au camp, et le
+ * serveur s'en souvient. Sans effet ailleurs que devant elle, ou sur une porte
+ * déverrouillée, ou déjà au camp. Voir specs/boss.md#attendre-au-camp.
+ */
+export async function descendToCamp(db: Database, user: User, now: Date): Promise<GameState> {
+  const snapshot = await loadSnapshot(db, user.id)
+  const door = doorOf(snapshot, now)
+
+  if (!door || door.unlocked || door.spot === 'camp') {
+    return stateFrom(snapshot, now)
+  }
+
+  await db.update(users).set({ doorSpot: 'camp' }).where(eq(users.id, user.id))
+  return stateFrom({ ...snapshot, user: { ...snapshot.user, doorSpot: 'camp' } }, now)
 }
 
 /**

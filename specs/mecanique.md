@@ -31,7 +31,7 @@ Jouer sur deux écrans **en même temps** n'est pas supporté : la perte de focu
 
 ## Machine à états
 
-> **En partie implémenté (#34, #137, #139)** : `bossDoor` et `bossFight` existent. La porte est déverrouillée pour qui n'a pas d'équipe, et pour une équipe dès deux clés posées (#138, #139) ; `doorSpot` pas encore (#140).
+> **En partie implémenté (#34, #137, #139)** : `bossDoor` et `bossFight` existent. La porte est déverrouillée pour qui n'a pas d'équipe, et pour une équipe dès deux clés posées (#138, #139) ; `doorSpot` retenu (#140), « Remonter » pas encore.
 
 Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son écran : il affiche celui que la phase désigne. C'est la seule définition de « où en est le joueur » dans tout le projet — aucun autre document ne la reformule.
 

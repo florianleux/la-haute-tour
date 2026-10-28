@@ -186,6 +186,13 @@ export const users = sqliteTable('users', {
    */
   doorOpened: integer('door_opened', { mode: 'boolean' }).notNull().default(false),
   /**
+   * Où se tient le joueur pendant la porte du boss (`doorSpot`) : devant elle,
+   * ou au camp après « Redescendre ». Pas une phase : la phase reste `bossDoor`.
+   * Remis devant la porte au franchissement du palier.
+   * Voir specs/boss.md#attendre-au-camp.
+   */
+  doorSpot: text('door_spot', { enum: ['door', 'camp'] }).notNull().default('door'),
+  /**
    * Questions vues depuis la dernière remise à zéro du joueur, tous étages et
    * toutes tentatives confondus. Ne redescend jamais d'ici là.
    *

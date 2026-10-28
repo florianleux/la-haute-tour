@@ -221,6 +221,7 @@ export async function rewindTestPlayer(db: Database, testPlayer: User, count: nu
       .set({
         bossHp: null,
         doorOpened: false,
+        doorSpot: 'door',
         floorCursor: cursor,
         floorSeen: sql`max(0, ${users.floorSeen} - ${erased.length})`,
         attemptSeen: sql`max(0, ${users.attemptSeen} - ${erased.length})`,

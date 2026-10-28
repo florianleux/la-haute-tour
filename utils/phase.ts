@@ -193,8 +193,8 @@ export function dueLesson(state: GameState | null): LessonId | null {
 }
 
 /**
- * Le camp : l'attente, le rattrapage tant qu'il n'a ni question ni tirage, et
- * l'ascension au repos.
+ * Le camp : l'attente, le rattrapage tant qu'il n'a ni question ni tirage,
+ * l'ascension au repos, et la porte du boss dont le joueur est redescendu.
  * C'est l'écran d'attente, et le seul moment où les Sorts existent, donc le seul
  * d'où la boîte qui les porte s'ouvre. Dit ici, comme isAnswering, plutôt qu'à
  * chaque endroit qui en dépend — la carte de jeu et les boîtes du camp, qui se
@@ -205,8 +205,17 @@ export function isAtCamp(state: GameState | null): boolean {
   return (
     isCooldown(state) ||
     (state?.phase === "recovery" && !state.question && !state.recovery) ||
-    isAtRest(state)
+    isAtRest(state) ||
+    isAtCampFromDoor(state)
   );
+}
+
+/**
+ * Redescendu de la porte du boss (`descendToCamp`) : la phase reste `bossDoor`,
+ * la position (`doorSpot`) le met au camp. Voir specs/boss.md#attendre-au-camp.
+ */
+export function isAtCampFromDoor(state: GameState | null): boolean {
+  return state?.phase === "bossDoor" && state.door?.spot === "camp";
 }
 
 /**
@@ -320,9 +329,10 @@ export function playView(
     return { screen, card: "bossFight", boss: state.boss, action: state.boss.trial ? null : next };
   }
 
-  // Devant la porte, qui porte ses gestes.
+  // Devant la porte, qui porte ses gestes. Redescendu, au camp : « Remonter »
+  // n'existe pas encore, le camp n'avance rien.
   if (state.phase === "bossDoor") {
-    return { screen, card: "bossDoor", action: null };
+    return { screen, card: isAtCampFromDoor(state) ? "cooldown" : "bossDoor", action: null };
   }
 
   // Avant l'attente : le rattrapage tiré porte sa question et son verdict.

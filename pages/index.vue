@@ -127,6 +127,7 @@
       :door="state.door"
       @place-key="placeKey"
       @open-door="openDoor"
+      @descend-to-camp="descendToCamp"
       @enter="enterBossFight"
     />
 
@@ -229,6 +230,7 @@ const {
   openChest,
   placeKey,
   openDoor,
+  descendToCamp,
   pending,
   actionFailed,
   readFailed,

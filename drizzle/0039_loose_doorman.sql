@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `door_spot` text DEFAULT 'door' NOT NULL;

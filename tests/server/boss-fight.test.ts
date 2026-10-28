@@ -2,15 +2,20 @@ import { eq, isNotNull } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, attempts, bossKeys, bossTrials, missedPool, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { descendToCamp, enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { placeKeyIfRoom } from '../../server/utils/bossKeys'
+import { requireCamp } from '../../server/utils/camp'
 import { rulesForFloor } from '../../server/utils/rules'
 import { rewindTestPlayer, sendToCooldown } from '../../server/utils/testPlayers'
 import { seedFlags } from '../../scripts/seed-flags'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
+import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { GameState } from '../../server/utils/game'
 import type { User } from '../../server/db/schema'
+
+// La garde du camp refuse avec createError, comme un handler.
+installNitroGlobals()
 
 const NOW = new Date('2026-09-03T12:00:00.000Z')
 const rules = rulesForFloor(1)
@@ -53,6 +58,8 @@ describe('combat de boss', () => {
   const answer = async (text: string): Promise<GameState> => submitAnswer(db, await reload(), text, tick())
   /** « Ouvrir », devant la porte déverrouillée. */
   const open = async (): Promise<GameState> => openDoor(db, await reload(), tick())
+  /** « Redescendre », devant la porte verrouillée. */
+  const descend = async (): Promise<GameState> => descendToCamp(db, await reload(), tick())
 
   async function set(values: Partial<User>): Promise<void> {
     await db.update(users).set(values).where(eq(users.id, player.id))
@@ -126,7 +133,7 @@ describe('combat de boss', () => {
     it('attend le joueur sans équipe déverrouillée, fermée, sans poseur', async () => {
       const state = await readGameState(db, await reload(), tick())
 
-      expect(state).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, opened: false, hasKey: false, keyHolders: [] } })
+      expect(state).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, opened: false, hasKey: false, keyHolders: [], spot: 'door' } })
     })
 
     it('retient « Ouvrir » : au retour, la porte est déjà ouverte', async () => {
@@ -137,7 +144,7 @@ describe('combat de boss', () => {
     it('reste verrouillée pour le joueur en équipe : ni « Ouvrir », ni « Entrer »', async () => {
       await set({ team: 'TLM' })
 
-      expect((await open()).door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: [] })
+      expect((await open()).door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door' })
       expect((await enter()).phase).toBe('bossDoor')
       expect(await db.select().from(bossTrials)).toHaveLength(0)
     })
@@ -177,13 +184,13 @@ describe('combat de boss', () => {
       it('pose la première clé : une serrure allumée, la porte reste verrouillée', async () => {
         const state = await place()
 
-        expect(state.door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: ['gandalf'] })
+        expect(state.door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: ['gandalf'], spot: 'door' })
       })
 
       it('pose la deuxième clé : la porte se déverrouille, « Ouvrir » tout de suite', async () => {
         await teammate('frodon')
 
-        expect((await place()).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'gandalf'] })
+        expect((await place()).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'gandalf'], spot: 'door' })
         expect((await open()).door).toMatchObject({ opened: true })
       })
 
@@ -192,7 +199,7 @@ describe('combat de boss', () => {
         await teammate('frodon')
         await teammate('sam')
 
-        expect((await readGameState(db, await reload(), tick())).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'sam'] })
+        expect((await readGameState(db, await reload(), tick())).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'sam'], spot: 'door' })
       })
 
       it('laisse sa clé stockée, sans effet, devant une porte déjà déverrouillée', async () => {
@@ -242,6 +249,44 @@ describe('combat de boss', () => {
         await placeKeyIfRoom(db, await reload(), NOW)
 
         expect(await db.select().from(bossKeys).where(isNotNull(bossKeys.placedAt))).toHaveLength(2)
+      })
+    })
+
+    // specs/boss.md#attendre-au-camp
+    describe('redescendre au camp', () => {
+      it('attend devant la porte tant que le joueur n a pas redescendu', async () => {
+        await set({ team: 'TLM' })
+
+        expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ spot: 'door' })
+      })
+
+      it('retient le camp : au retour, le joueur y est encore', async () => {
+        await set({ team: 'TLM' })
+
+        expect(await descend()).toMatchObject({ phase: 'bossDoor', door: { spot: 'camp' } })
+        expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ spot: 'camp' })
+      })
+
+      // Les boîtes du camp s'y ouvrent comme à l'attente ; devant la porte, non.
+      it('ouvre le camp au joueur redescendu, pas à celui qui reste devant la porte', async () => {
+        await set({ team: 'TLM' })
+        await expect(requireCamp(db, await reload(), tick())).rejects.toMatchObject({ statusCode: 403 })
+
+        await descend()
+
+        await expect(requireCamp(db, await reload(), tick())).resolves.toBeUndefined()
+      })
+
+      it('ne quitte pas une porte déverrouillée', async () => {
+        expect((await descend()).door).toMatchObject({ unlocked: true, spot: 'door' })
+        expect((await reload()).doorSpot).toBe('door')
+      })
+
+      it('n a pas de sens au combat', async () => {
+        await enter()
+
+        expect((await descend()).phase).toBe('bossFight')
+        expect((await reload()).doorSpot).toBe('door')
       })
     })
 
@@ -420,6 +465,8 @@ describe('combat de boss', () => {
       await pendingVitality()
       await set({ lives: 1 })
       await open()
+      // Remonté du camp avant d'entrer : le palier franchi l'efface.
+      await set({ doorSpot: 'camp' })
 
       const won = await winTrials(rules.bossHp, await enter())
 
@@ -431,7 +478,7 @@ describe('combat de boss', () => {
       expect(climbed).toMatchObject({ phase: 'ascent', floor: 2, lives: rules.lives + 1 })
       expect(climbed.question?.statement).toBe('Question de l étage 2 ?')
       expect(climbed.boss).toBeNull()
-      expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0, doorOpened: false })
+      expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0, doorOpened: false, doorSpot: 'door' })
       // La « tentative suivante » de l'effet, c'est celle-ci.
       expect((await db.select().from(activeEffects))[0]?.anchoredAt).not.toBeNull()
     })
@@ -462,10 +509,10 @@ describe('combat de boss', () => {
     })
 
     it('reculé sous son palier, il n a plus de boss ni de porte ouverte devant lui', async () => {
-      await set({ doorOpened: true })
+      await set({ doorOpened: true, doorSpot: 'camp' })
       await rewindTestPlayer(db, await reload(), 1)
 
-      expect(await reload()).toMatchObject({ bossHp: null, doorOpened: false })
+      expect(await reload()).toMatchObject({ bossHp: null, doorOpened: false, doorSpot: 'door' })
       expect(await db.select().from(bossTrials)).toHaveLength(0)
     })
   })

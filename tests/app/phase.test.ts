@@ -19,6 +19,9 @@ const fight = {
   outcome: null,
 }
 
+/** La porte du boss verrouillée, le joueur devant elle. */
+const lockedDoor = { unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door' as const }
+
 const question = {
   id: 'q1',
   statement: 'Capitale de la Gironde ?',
@@ -166,6 +169,12 @@ describe('camp (écran d attente)', () => {
   it('laisse l ascension en cours, question servie comme verdict à lire', () => {
     expect(isAtCamp(state({ phase: 'ascent', question }))).toBe(false)
     expect(isAtCamp(state({ phase: 'ascent', verdict }))).toBe(false)
+  })
+
+  // Redescendu de la porte verrouillée. Voir specs/boss.md#attendre-au-camp.
+  it('accueille le joueur redescendu de la porte, pas celui qui s y tient', () => {
+    expect(isAtCamp(state({ phase: 'bossDoor', door: { ...lockedDoor, spot: 'camp' } }))).toBe(true)
+    expect(isAtCamp(state({ phase: 'bossDoor', door: lockedDoor }))).toBe(false)
   })
 })
 
@@ -325,7 +334,12 @@ describe('carte de jeu', () => {
 
   // specs/boss.md : la porte, le combat, l'outro de défaite.
   it('mène à la porte une fois le verdict quitté : elle porte ses propres gestes', () => {
-    expect(card({ phase: 'bossDoor' })).toEqual({ card: 'bossDoor', action: null })
+    expect(card({ phase: 'bossDoor', door: lockedDoor })).toEqual({ card: 'bossDoor', action: null })
+  })
+
+  // « Remonter » viendra avec climbToDoor : d'ici là, le camp n'avance rien.
+  it('montre le camp sans bouton au joueur redescendu de la porte', () => {
+    expect(card({ phase: 'bossDoor', door: { ...lockedDoor, spot: 'camp' } })).toEqual({ card: 'cooldown', action: null })
   })
 
   it('sert l épreuve sans autre bouton que répondre, puis la suite', () => {

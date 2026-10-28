@@ -5,8 +5,8 @@ import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 
 /**
- * Réservé au camp : l'attente, le rattrapage tant qu'il n'est pas tiré, et
- * l'ascension au repos.
+ * Réservé au camp : l'attente, le rattrapage tant qu'il n'est pas tiré,
+ * l'ascension au repos, et la porte du boss dont le joueur est redescendu.
  * Les Sorts ne se lancent que là, et le Volumen ne relit ses réponses que là —
  * le rattrapage tire dans le Pool Échecs, les lire pendant qu'il tourne serait
  * tricher. Le refus vit ici : l'écran n'ouvre ses boîtes qu'au camp, mais
@@ -32,6 +32,10 @@ export async function requireCamp(db: Database, user: User, now: Date): Promise<
   }
 
   if (phase === 'ascent' && !await hasReservation(db, user.id)) {
+    return
+  }
+
+  if (phase === 'bossDoor' && user.doorSpot === 'camp') {
     return
   }
 
