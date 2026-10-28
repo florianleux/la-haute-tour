@@ -1,6 +1,6 @@
 # Boss
 
-> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente puis au rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés existent en base : l'admin en donne une (#138), la porte propose alors de la poser. Pas encore : poser la clé et la suite de la porte (#139 à #143), le loot forcé de la clé (#38), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas), les reliques (#40). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
+> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente puis au rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés : l'admin en donne une (#138), le joueur la pose, deux clés déverrouillent la porte pour l'équipe (#139). Pas encore : la suite de la porte, camp et relecture (#140 à #143), le loot forcé de la clé (#38), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas), les reliques (#40). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
 
 Chaque étage se termine par un boss. Battu, il ouvre le suivant. Contrairement
 aux questions du deck, chaque boss est un mini-jeu propre — le cadre ci-dessous
@@ -136,7 +136,7 @@ chacun posant sa clé, pour la déverrouiller.
   des coéquipiers (`equipes.md`), au même titre que le journal des Sorts : la
   porte est une action coopérative, le joueur doit savoir qui il attend, pas
   seulement combien. Voir [ADR 0008](../docs/adr/0008-la-porte-du-boss-nomme-qui-a-pose-sa-cle.md).
-  **Pas encore affiché** : l'état de jeu servira les noms (#139), mais la porte et le
+  **Pas encore affiché** : l'état de jeu sert les noms (`keyHolders`), mais la porte et le
   camp ne montrent pour l'instant que les clés posées dans leurs serrures (choix de design
   du 2026-10-25). La règle reste, l'affichage viendra.
 

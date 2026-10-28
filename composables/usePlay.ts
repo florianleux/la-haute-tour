@@ -17,6 +17,8 @@ export interface Play {
   skipCooldown: () => Promise<void>
   /** Ouvrir le coffre d'une question loot réussie. Le dé se jette côté serveur. */
   openChest: () => Promise<void>
+  /** « Utiliser la clé » : poser la clé du joueur sur la porte verrouillée. Le serveur garde la règle. */
+  placeKey: () => Promise<void>
   /** « Ouvrir » : la porte du boss déverrouillée, retenue côté serveur. */
   openDoor: () => Promise<void>
   /** « Entrer » : ouvrir le combat de boss, au terme de la porte et de l'introduction. */
@@ -81,6 +83,7 @@ export function usePlay(): Play {
     answer: (text, source = 'player') => move('/api/game/answer', { answer: text, source }, judgingHold()),
     skipCooldown: () => move('/api/game/skip-cooldown'),
     openChest: () => move('/api/game/chest'),
+    placeKey: () => move('/api/game/door/key'),
     openDoor: () => move('/api/game/door/open'),
     enterBoss: () => move('/api/game/boss'),
     failed,

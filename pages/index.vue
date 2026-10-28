@@ -125,6 +125,7 @@
       :key="bossStage.floor"
       :stage="bossStage"
       :door="state.door"
+      @place-key="placeKey"
       @open-door="openDoor"
       @enter="enterBossFight"
     />
@@ -226,6 +227,7 @@ const {
   enterBoss,
   skipCooldown,
   openChest,
+  placeKey,
   openDoor,
   pending,
   actionFailed,

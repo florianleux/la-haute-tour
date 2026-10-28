@@ -15,9 +15,9 @@
       @end="emit('enter')"
     />
 
-    <!-- ponytail: la clé se montre sans se poser, l'introduction rejouée à
-         chaque combat : poser la clé et l'introduction jouée une fois viennent
-         avec #139 à #143 et #39. -->
+    <!-- ponytail: l'introduction rejouée à chaque combat, « Redescendre »
+         sans effet : l'introduction jouée une fois et le camp viennent avec
+         #140 à #143 et #39. -->
     <BossDoor
       v-else
       :door="stage.door"
@@ -25,6 +25,7 @@
       :has-key="door.hasKey"
       :unlocked="door.unlocked"
       :opened="opened"
+      @place-key="emit('placeKey')"
       @open-door="openDoor"
       @enter="enter"
     />
@@ -33,14 +34,15 @@
 
 <script setup lang="ts">
 // Le chemin du palier au combat (specs/boss.md) : la porte, puis
-// l'introduction du boss. La porte se lit au serveur ; `openDoor` lui dit que
-// le joueur l'a ouverte, `enter`, au terme, qu'il ouvre le combat.
+// l'introduction du boss. La porte se lit au serveur ; `placeKey` lui dit
+// que le joueur y pose sa clé, `openDoor` qu'il l'a ouverte, `enter`, au
+// terme, qu'il ouvre le combat.
 import type { DoorView } from '~~/server/utils/game'
 import type { BossStage } from '~~/utils/bossStage'
 
 const props = defineProps<{ stage: BossStage, door: DoorView }>()
 
-const emit = defineEmits<{ openDoor: [], enter: [] }>()
+const emit = defineEmits<{ placeKey: [], openDoor: [], enter: [] }>()
 
 const assets = useBossAssetsLoadingScreen(props.stage.floor)
 // Les battants s'écartent au clic, sans attendre le serveur : il retient le

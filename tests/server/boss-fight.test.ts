@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm'
+import { eq, isNotNull } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, attempts, bossKeys, bossTrials, missedPool, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { enterBoss, openDoor, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { placeKeyIfRoom } from '../../server/utils/bossKeys'
 import { rulesForFloor } from '../../server/utils/rules'
 import { rewindTestPlayer, sendToCooldown } from '../../server/utils/testPlayers'
 import { seedFlags } from '../../scripts/seed-flags'
@@ -155,6 +156,93 @@ describe('combat de boss', () => {
       await db.insert(bossKeys).values({ userId: player.id, floor: 1, obtainedAt: NOW, placedAt: NOW })
 
       expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ hasKey: false })
+    })
+
+    // specs/boss.md#poser-la-clé
+    describe('poser sa clé', () => {
+      const place = async (): Promise<GameState> => placeKey(db, await reload(), tick())
+
+      /** Un coéquipier devant la même porte, sa clé déjà posée ou non. */
+      async function teammate(username: string, { placed = true, team = 'TLM' as User['team'], isTest = false, floor = 1 } = {}): Promise<User> {
+        const [mate] = await db.insert(users).values({ discordId: username, username, team, isTest, currentFloor: 1 }).returning()
+        await db.insert(bossKeys).values({ userId: mate!.id, floor, obtainedAt: NOW, placedAt: placed ? NOW : null })
+        return mate!
+      }
+
+      beforeEach(async () => {
+        await set({ team: 'TLM' })
+        await db.insert(bossKeys).values({ userId: player.id, floor: 1, obtainedAt: NOW })
+      })
+
+      it('pose la première clé : une serrure allumée, la porte reste verrouillée', async () => {
+        const state = await place()
+
+        expect(state.door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: ['gandalf'] })
+      })
+
+      it('pose la deuxième clé : la porte se déverrouille, « Ouvrir » tout de suite', async () => {
+        await teammate('frodon')
+
+        expect((await place()).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'gandalf'] })
+        expect((await open()).door).toMatchObject({ opened: true })
+      })
+
+      it('déverrouille la porte pour le coéquipier qui arrive sans clé', async () => {
+        await db.delete(bossKeys)
+        await teammate('frodon')
+        await teammate('sam')
+
+        expect((await readGameState(db, await reload(), tick())).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'sam'] })
+      })
+
+      it('laisse sa clé stockée, sans effet, devant une porte déjà déverrouillée', async () => {
+        await teammate('frodon')
+        await teammate('sam')
+
+        expect((await place()).door).toMatchObject({ unlocked: true, hasKey: true, keyHolders: ['frodon', 'sam'] })
+        expect((await db.select().from(bossKeys).where(eq(bossKeys.userId, player.id)))[0]!.placedAt).toBeNull()
+      })
+
+      it('ne compte que les clés de son équipe, de son étage, de son monde', async () => {
+        await teammate('saroumane', { team: 'MIDI' })
+        await teammate('frodon', { floor: 2 })
+        await teammate('testeur', { isTest: true })
+        await teammate('boromir', { placed: false })
+
+        expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ unlocked: false, keyHolders: [] })
+      })
+
+      it('ne pose rien sans clé, ni hors de la porte', async () => {
+        await db.delete(bossKeys)
+        await db.insert(bossKeys).values({ userId: player.id, floor: 2, obtainedAt: NOW })
+        expect((await place()).door).toMatchObject({ keyHolders: [] })
+
+        await db.delete(bossKeys)
+        await db.insert(bossKeys).values({ userId: player.id, floor: 1, obtainedAt: NOW })
+        await set({ team: null })
+        await enter()
+        await set({ team: 'TLM' })
+        await place()
+        expect((await db.select().from(bossKeys))[0]!.placedAt).toBeNull()
+      })
+
+      // Deux requêtes simultanées lisent la même porte, puis écrivent toutes deux :
+      // la garde est dans l'écriture, c'est elle qu'on éprouve, état périmé compris.
+      it('ne pose pas deux fois la même clé, même sur un état périmé', async () => {
+        await placeKeyIfRoom(db, await reload(), NOW)
+        await placeKeyIfRoom(db, await reload(), tick())
+
+        expect(await db.select().from(bossKeys)).toEqual([expect.objectContaining({ placedAt: NOW })])
+      })
+
+      it('ne pose pas de troisième clé, même sur un état périmé', async () => {
+        await teammate('frodon')
+        await teammate('sam')
+
+        await placeKeyIfRoom(db, await reload(), NOW)
+
+        expect(await db.select().from(bossKeys).where(isNotNull(bossKeys.placedAt))).toHaveLength(2)
+      })
     })
 
     it('n existe pas au combat, et ne s y ouvre pas', async () => {

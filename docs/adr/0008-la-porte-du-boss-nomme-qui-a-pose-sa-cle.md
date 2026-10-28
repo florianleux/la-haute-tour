@@ -48,4 +48,4 @@ Cette dernière phrase remplace celle des Conséquences (« pas de porte »).
 
 La décision tient, mais les noms ne s'affichent pas encore : la porte et le
 camp ne montrent que les serrures allumées, choix de design. L'état de jeu
-les servira (#139) ; les afficher ne demandera alors que l'écran.
+les sert (`keyHolders`, #139) ; les afficher ne demandera que l'écran.

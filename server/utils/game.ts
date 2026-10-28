@@ -25,6 +25,7 @@ import {
   playedToday,
   unlock,
 } from './achievements'
+import { KEYS_TO_UNLOCK, keyHoldersQuery, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, FRESH_BOSS, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
@@ -220,7 +221,7 @@ export interface DoorView {
   opened: boolean
   /** Le joueur a la clé de cet étage, pas encore posée : il peut la poser (`placeKey`). */
   hasKey: boolean
-  /** Le nom de qui a posé sa clé (ADR 0008). Vide tant que les clés n'existent pas. */
+  /** Le nom de qui a posé sa clé, dans l'ordre de pose (ADR 0008). Vide sans équipe. */
   keyHolders: string[]
 }
 
@@ -245,6 +246,8 @@ export interface PlayerSnapshot {
   firstCastPending: boolean
   /** La clé du boss de l'étage courant, pas encore posée. Lue avec le joueur. */
   hasKey: boolean
+  /** Qui a posé sa clé sur la porte de son équipe, à son étage. Lus dans le même lot. */
+  keyHolders: string[]
   /** Les Sorts posés sur le joueur, morts exclus. Lus avec la réservation. */
   effects: PlacedEffect[]
   reservation?: Reservation
@@ -364,12 +367,14 @@ function snapshotQueries(db: Database, userId: number) {
       .orderBy(recoveryQuestions.position),
     // Vide hors combat de boss, pour la même raison.
     trialsQuery(db, userId),
+    // Vide hors équipe ; ailleurs, deux lignes au plus.
+    keyHoldersQuery(db, userId),
   ] as const
 }
 
 type SnapshotQueries = ReturnType<typeof snapshotQueries>
 
-function toSnapshot([[row], [held], effects, recoveryRun, trials]: BatchResponse<SnapshotQueries>): PlayerSnapshot {
+function toSnapshot([[row], [held], effects, recoveryRun, trials, keyHolders]: BatchResponse<SnapshotQueries>): PlayerSnapshot {
   return {
     // Le joueur porte ses deux décomptes de questions vues, il ne les compte
     // plus : les compter coûtait une ligne par question déjà vue, à chaque
@@ -381,6 +386,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials]: BatchResponse
     spellDiscovered: row.spellDiscovered === 1,
     firstCastPending: row.firstCastPending === 1,
     hasKey: row.hasKey === 1,
+    keyHolders: keyHolders.map(holder => holder.username),
     gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
@@ -1281,12 +1287,33 @@ export async function openPlayerChest(
 
 /**
  * La porte du boss de ce joueur. Déverrouillée pour qui n'a pas d'équipe ;
- * verrouillée pour une équipe tant que ses deux clés ne sont pas posées.
- * ponytail: verrouillée pour toute équipe, poser la clé vient avec #139.
+ * pour une équipe, dès que deux clés sont posées, et pour de bon.
  */
-function doorView({ user, hasKey }: PlayerSnapshot): DoorView {
-  const unlocked = user.team === null
-  return { unlocked, opened: unlocked && user.doorOpened, hasKey, keyHolders: [] }
+function doorView({ user, hasKey, keyHolders }: PlayerSnapshot): DoorView {
+  const unlocked = user.team === null || keyHolders.length >= KEYS_TO_UNLOCK
+  return { unlocked, opened: unlocked && user.doorOpened, hasKey, keyHolders }
+}
+
+/** La porte, si le joueur est devant elle (`bossDoor`) ; null ailleurs. */
+function doorOf(snapshot: PlayerSnapshot, now: Date): DoorView | null {
+  return phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) === 'bossDoor' ? doorView(snapshot) : null
+}
+
+/**
+ * « Utiliser la clé » : pose la clé du joueur sur la porte verrouillée de son
+ * équipe. Sans effet sans clé à poser, ailleurs que devant la porte, ou sur une
+ * porte déjà déverrouillée : la clé y reste stockée. Voir specs/boss.md#poser-la-clé.
+ */
+export async function placeKey(db: Database, user: User, now: Date): Promise<GameState> {
+  const snapshot = await loadSnapshot(db, user.id)
+  const door = doorOf(snapshot, now)
+
+  if (!door?.hasKey || door.unlocked) {
+    return stateFrom(snapshot, now)
+  }
+
+  await placeKeyIfRoom(db, snapshot.user, now)
+  return buildState(db, user.id, now)
 }
 
 /**
@@ -1296,7 +1323,7 @@ function doorView({ user, hasKey }: PlayerSnapshot): DoorView {
  */
 export async function openDoor(db: Database, user: User, now: Date): Promise<GameState> {
   const snapshot = await loadSnapshot(db, user.id)
-  const door = phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) === 'bossDoor' ? doorView(snapshot) : null
+  const door = doorOf(snapshot, now)
 
   if (!door?.unlocked || door.opened) {
     return stateFrom(snapshot, now)
@@ -1314,7 +1341,7 @@ export async function openDoor(db: Database, user: User, now: Date): Promise<Gam
 export async function enterBoss(db: Database, user: User, now: Date): Promise<GameState> {
   const snapshot = await loadSnapshot(db, user.id)
 
-  if (phaseOfSnapshot(snapshot, holdsQuestion(snapshot), now) !== 'bossDoor' || !doorView(snapshot).unlocked) {
+  if (!doorOf(snapshot, now)?.unlocked) {
     return stateFrom(snapshot, now)
   }
 
