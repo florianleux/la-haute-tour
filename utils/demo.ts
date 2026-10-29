@@ -73,7 +73,7 @@ export function randomChest(): ChestView | null {
   const opened = Math.random() < 0.6
   const mimic = opened && Math.random() < 0.2
 
-  return { opened, mimic, spell: opened && !mimic ? pick(SPELL_IDS) : null }
+  return { opened, mimic, spell: opened && !mimic ? pick(SPELL_IDS) : null, key: false }
 }
 
 /** Une partie au repos — étage 1, vies pleines, rien en cours — que chaque page

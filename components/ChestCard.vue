@@ -103,10 +103,10 @@
                fait jaillir ; il n'est là qu'une fois elle refermée, posé à sa
                place sans rejouer son jaillissement. -->
           <div
-            v-if="chest.spell && spellImage(chest.spell) && (stage !== 'open' || spellSeen)"
+            v-if="(chest.spell && spellImage(chest.spell) || keyItem) && (stage !== 'open' || lootSeen)"
             :style="{ width: `calc(${percent(SPELL_WIDTH)} * var(--peak))` }"
             class="absolute left-1/2 top-[0%] -translate-x-1/2 -translate-y-[calc(50%-50%/var(--peak))] [--peak:4] @container"
-            :class="spellSeen
+            :class="lootSeen
               ? '[transform:scale(calc(1/var(--peak)))] motion-safe:animate-fade-in'
               : 'motion-safe:animate-emerge motion-reduce:[transform:scale(calc(1/var(--peak)))]'"
           >
@@ -118,13 +118,21 @@
                  tombent donc sur les mêmes instants. Ils grossissent avec le
                  médaillon, d'où leur place dans cette boîte. -->
             <RaysHalo
-              v-if="!spellSeen"
+              v-if="!lootSeen"
               color="rgb(254 243 199 / 0.9)"
               class="w-[230%] opacity-0 motion-safe:animate-rays"
             />
 
             <div class="relative motion-safe:animate-float">
+              <!-- La clé du boss sort du coffre comme un sort, sans médaillon. -->
+              <img
+                v-if="keyItem"
+                :src="keyItem.image"
+                :alt="keyItem.name"
+                class="w-full"
+              >
               <SpellMedallion
+                v-else-if="chest.spell"
                 :spell="chest.spell"
                 face="mixed"
                 :alt="spellLabel(chest.spell)"
@@ -132,12 +140,12 @@
                 shadow-class="shadow-[0_calc(6px*var(--peak))_calc(10px*var(--peak))_rgb(0_0_0/0.5),0_0_calc(12px*var(--peak))_#fde68a]"
               />
               <div
-                v-if="!spellSeen"
+                v-if="!lootSeen && chest.spell"
                 class="absolute inset-[5%] overflow-hidden rounded-full"
               >
                 <div class="absolute inset-0 bg-[linear-gradient(110deg,transparent_35%,rgb(255_255_255/0.85)_50%,transparent_65%)] motion-safe:animate-sheen motion-reduce:hidden" />
               </div>
-              <template v-if="!spellSeen">
+              <template v-if="!lootSeen">
                 <SparkleStar
                   glow="#fef3c7"
                   class="left-[62%] top-[-4%] w-[38%] opacity-0 motion-safe:animate-glint"
@@ -157,7 +165,7 @@
             <!-- La gerbe, au moment où il retombe à sa place : les étincelles
                  partent du centre dans toutes les directions, une seule fois. -->
             <SparkleSpray
-              v-if="!spellSeen"
+              v-if="!lootSeen"
               :sparks="SPELL_SPRAY"
               glow="#fde68a"
             />
@@ -205,6 +213,15 @@
           >
             Le coffre contenait <strong><SpellMention :subject="chest.spell" /></strong>. Il rejoint ton Grimoire.
           </PlayText>
+          <!-- La clé ne rejoint jamais le Grimoire : une clé n'est pas un sort.
+               Voir specs/boss.md#obtention-de-la-clé. -->
+          <PlayText
+            v-else-if="keyItem"
+            role="recall"
+            class="font-semibold text-emerald-700"
+          >
+            Le coffre contenait <strong>{{ keyDoor?.keyName }}</strong>. Elle rejoint ton Inventaire.
+          </PlayText>
         </div>
       </div>
 
@@ -212,10 +229,18 @@
            de l'écran, et s'y montre pour lui seul jusqu'au OK. Seulement à
            l'ouverture, pas sur un coffre déjà ouvert quand l'écran arrive. -->
       <ItemReveal
-        v-if="stage === 'open' && looted && chest.spell && !spellSeen"
+        v-if="stage === 'open' && looted && keyItem && !lootSeen"
+        :label="keyItem.name"
+        :from="spellFrom"
+        @close="lootSeen = true"
+      >
+        <img :src="keyItem.image" alt="" class="size-full object-contain">
+      </ItemReveal>
+      <ItemReveal
+        v-else-if="stage === 'open' && looted && chest.spell && !lootSeen"
         :label="spellLabel(chest.spell)"
         :from="spellFrom"
-        @close="spellSeen = true"
+        @close="lootSeen = true"
       >
         <SpellMedallion
           :spell="chest.spell"
@@ -322,8 +347,12 @@ const SPELL_SPRAY = Array.from({ length: 10 }, (_, index) => {
 })
 
 const stage = ref<'idle' | 'bursting' | 'open'>('idle')
-/** Le sort obtenu a été vu, et son apparition refermée par OK. */
-const spellSeen = ref(false)
+
+/** La porte de l'étage, dont le coffre donne la clé : son nom et son image. Null sur tout autre coffre. */
+const keyDoor = computed(() => props.chest.key ? bossStageOf(props.state.floor).door : null)
+const keyItem = computed(() => keyDoor.value?.keyItem ?? null)
+/** Le sort ou la clé obtenus ont été vus, et leur apparition refermée par OK. */
+const lootSeen = ref(false)
 
 /**
  * La géométrie du coffre, en part de sa boîte : le gabarit s'en sert pour
@@ -445,7 +474,7 @@ watch(() => props.opening, (opening, wasOpening) => {
 watch(() => props.chest.opened, (opened) => {
   if (!opened) {
     stage.value = 'idle'
-    spellSeen.value = false
+    lootSeen.value = false
   }
 })
 </script>

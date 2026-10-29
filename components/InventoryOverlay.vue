@@ -45,9 +45,9 @@
             :class="item && item === selected ? 'border-amber-950/70' : 'border-amber-950/25'"
           >
             <template v-if="item">
-              <img :src="itemLabel(item).image" alt="" class="size-full object-contain p-[12%]">
+              <img :src="labelOf(item).image" alt="" class="size-full object-contain p-[12%]">
               <BaseSurfaceButton
-                :label="itemLabel(item).name"
+                :label="labelOf(item).name"
                 :aria-pressed="item === selected"
                 class="rounded-md"
                 @click="selected = item"
@@ -103,6 +103,7 @@
 // Grimoire. Voir specs/ecrans.md#inventaire.
 import type { ItemUseView } from '~~/server/api/game/items/use.post'
 import type { ItemId } from '~~/shared/utils/items'
+import type { ItemLabel } from '~~/utils/items'
 import type { LessonLine } from '~~/utils/lessons'
 
 defineProps<{
@@ -124,15 +125,27 @@ const emit = defineEmits<{
 /** Les cases de la grille : 5 de large sur 20 de haut. */
 const SLOTS = 5 * 20
 
-const { items, failed, replace } = await useItems()
+const { items, key, failed, replace } = await useItems()
+
+/**
+ * Ce qu'une case contient : un Objet, ou la clé du boss qui attend sa
+ * serrure — au sac, jamais au Grimoire. Voir specs/boss.md#obtention-de-la-clé.
+ */
+type BagEntry = ItemId | 'key'
+
+function labelOf(entry: BagEntry): ItemLabel {
+  return entry === 'key' ? bossStageOf(key.value ?? 1).door.keyItem : itemLabel(entry)
+}
 const announce = useAchievementAnnouncer()
 
 /** L'Objet montré par la page de détail. Aucun tant que le joueur n'a pas cliqué. */
-const selected = ref<ItemId | null>(null)
+const selected = ref<BagEntry | null>(null)
 
 /** Une case par place de la grille : l'Objet qui l'occupe, ou rien. */
-const cells = computed<(ItemId | null)[]>(() =>
-  Array.from({ length: SLOTS }, (_, cell) => items.value[cell] ?? null))
+const cells = computed<(BagEntry | null)[]>(() => {
+  const entries: BagEntry[] = key.value === null ? items.value : [...items.value, 'key']
+  return Array.from({ length: SLOTS }, (_, cell) => entries[cell] ?? null)
+})
 
 const using = ref(false)
 const useFailed = ref(false)
@@ -171,7 +184,7 @@ async function bagAfterRefusal(): Promise<ItemUseView | null> {
 }
 
 /** Ce que la page de détail dit de l'Objet choisi. */
-const shown = computed(() => selected.value && itemLabel(selected.value))
+const shown = computed(() => selected.value && labelOf(selected.value))
 
 // TODO(texte) : phrases provisoires, Flo les écrira.
 const hint = computed(() => {
@@ -179,7 +192,7 @@ const hint = computed(() => {
     return 'Impossible de fouiller le sac. Recharge la page.'
   }
 
-  return items.value.length === 0
+  return cells.value[0] === null
     ? 'Rien qu\'un peu de poussière au fond du sac.'
     : 'Choisis un objet pour le regarder de plus près.'
 })

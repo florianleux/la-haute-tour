@@ -406,6 +406,24 @@ export function isLootQuestion(input: LootQuestionInput, rules: FloorRules): boo
   return position % rules.questionsPerChest === 0
 }
 
+export interface KeyDueInput {
+  /** Questions vues de l'étage, celle du coffre comprise. */
+  floorSeen: number
+  /** Questions que l'étage courant contient. */
+  floorTotal: number
+  /** Le joueur a déjà la clé de cet étage. */
+  hasKey: boolean
+}
+
+/**
+ * Le coffre doit-il donner la clé du boss ? Passé la moitié de l'étage, tant
+ * que le joueur ne l'a pas : le tirage ne s'applique plus, ni sort ni Mimic —
+ * pas même Vitalité. Voir specs/boss.md#obtention-de-la-clé.
+ */
+export function keyDue({ floorSeen, floorTotal, hasKey }: KeyDueInput): boolean {
+  return !hasKey && floorSeen * 2 >= floorTotal
+}
+
 export interface ChestOutcome {
   mimic: boolean
   /** Le sort obtenu, null sur un Mimic. */

@@ -1,5 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm'
-import { items } from '../db/schema'
+import { keyToPlace } from './bossKeys'
+import { bossKeys, items } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { AchievementId } from '../../shared/utils/achievements'
@@ -23,15 +24,32 @@ export const ITEM_USES: Record<ItemId, {
   CHEESE: { usableBy: user => user.campLessonAt === null, earns: ['CHEESE_GIVEN'] },
 }
 
-/** Les Objets du joueur, dans l'ordre où il les a reçus. */
-export async function readItems(db: Database, userId: number): Promise<ItemId[]> {
-  const rows = await db
-    .select({ item: items.item })
-    .from(items)
-    .where(eq(items.userId, userId))
-    .orderBy(asc(items.obtainedAt), asc(items.id))
+export interface ItemsView {
+  /** Les Objets du joueur, dans l'ordre où il les a reçus. */
+  items: ItemId[]
+  /**
+   * L'étage de la clé du boss qui attend sa serrure, null sans clé à poser.
+   * Au sac, pas au Grimoire : une clé n'est pas un sort.
+   * Voir specs/boss.md#obtention-de-la-clé.
+   */
+  key: number | null
+}
 
-  return rows.map(row => row.item)
+/** Le sac du joueur : ses Objets, dans l'ordre où il les a reçus, et sa clé pas encore posée. */
+export async function readItems(db: Database, user: User): Promise<ItemsView> {
+  const [rows, [key]] = await db.batch([
+    db
+      .select({ item: items.item })
+      .from(items)
+      .where(eq(items.userId, user.id))
+      .orderBy(asc(items.obtainedAt), asc(items.id)),
+    db
+      .select({ floor: bossKeys.floor })
+      .from(bossKeys)
+      .where(keyToPlace(user.id, user.currentFloor)),
+  ])
+
+  return { items: rows.map(row => row.item), key: key?.floor ?? null }
 }
 
 /**

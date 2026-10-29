@@ -82,9 +82,10 @@ export interface SpellEffect {
 
 /**
  * Ce qu'un coffre devient, de sa pose à son ouverture : `closed` tant que le dé
- * n'est pas jeté, puis `mimic` ou le sort trouvé. Un seul champ pour tout le
- * cycle — deux ne pourraient que se contredire.
+ * n'est pas jeté, puis `mimic`, `key` (la clé du boss, voir specs/boss.md#obtention-de-la-clé)
+ * ou le sort trouvé. Un seul champ pour tout le cycle — deux ne pourraient que
+ * se contredire.
  */
-export const CHEST_STATES = ['closed', 'mimic', ...SPELL_IDS] as const
+export const CHEST_STATES = ['closed', 'mimic', 'key', ...SPELL_IDS] as const
 
 export type ChestState = typeof CHEST_STATES[number]

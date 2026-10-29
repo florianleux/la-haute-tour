@@ -12,6 +12,7 @@ import {
   judgeTrial,
   movePoolCounter,
   rollChest,
+  keyDue,
   phaseOf,
   sealedRecovery,
 } from '../../server/utils/mechanics'
@@ -380,6 +381,23 @@ describe('question loot', () => {
 
   it('ignore le rattrapage : ses questions sont déjà vues', () => {
     expect(at(step, { mode: 'recovery' })).toBe(false)
+  })
+})
+
+// Voir specs/boss.md#obtention-de-la-clé.
+describe('clé due par le coffre', () => {
+  it('est due à partir de la moitié de l étage parcouru', () => {
+    expect(keyDue({ floorSeen: 50, floorTotal: 100, hasKey: false })).toBe(true)
+    expect(keyDue({ floorSeen: 51, floorTotal: 101, hasKey: false })).toBe(true)
+  })
+
+  it('n est pas due avant la moitié', () => {
+    expect(keyDue({ floorSeen: 49, floorTotal: 100, hasKey: false })).toBe(false)
+    expect(keyDue({ floorSeen: 50, floorTotal: 101, hasKey: false })).toBe(false)
+  })
+
+  it('n est plus due une fois la clé obtenue', () => {
+    expect(keyDue({ floorSeen: 80, floorTotal: 100, hasKey: true })).toBe(false)
   })
 })
 

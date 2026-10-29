@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { disputes, pocketSpells, users } from '../../server/db/schema'
+import { bossKeys, disputes, pocketSpells, users } from '../../server/db/schema'
+import { grantKey } from '../../server/utils/bossKeys'
 import { openDispute, settleDispute } from '../../server/utils/disputes'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -55,7 +56,7 @@ describe('coffre de loot', () => {
 
       const state = await readGameState(db, await reload(), NOW)
 
-      expect(state.chest).toEqual({ opened: false, mimic: false, spell: null })
+      expect(state.chest).toEqual({ opened: false, mimic: false, spell: null, key: false })
       expect(state.verdict).toMatchObject({ correct: true })
     })
 
@@ -83,7 +84,7 @@ describe('coffre de loot', () => {
 
       const state = await openPlayerChest(db, await reload(), NOW, givesSpell())
 
-      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0], key: false })
       expect(await stock()).toEqual([{ spell: SPELL_IDS[0] }])
     })
 
@@ -93,7 +94,7 @@ describe('coffre de loot', () => {
 
       const state = await openPlayerChest(db, await reload(), NOW, rolls(0.999, 0.999))
 
-      expect(state.chest).toEqual({ opened: true, mimic: false, spell: 'VITALITY' })
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: 'VITALITY', key: false })
       expect(await stock()).toEqual([{ spell: 'VITALITY' }])
     })
 
@@ -104,7 +105,7 @@ describe('coffre de loot', () => {
       // Un second clic, ou un appareil en retard : le dé ne se rejoue pas.
       const again = await openPlayerChest(db, await reload(), NOW, givesMimic())
 
-      expect(again.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
+      expect(again.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0], key: false })
       expect(await stock()).toHaveLength(1)
       expect((await reload()).lives).toBe(rules.lives)
     })
@@ -123,7 +124,7 @@ describe('coffre de loot', () => {
       expect(await stock()).toHaveLength(1)
 
       const state = await readGameState(db, await reload(), NOW)
-      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0], key: false })
       expect(state.lives).toBe(rules.lives)
     })
 
@@ -133,7 +134,7 @@ describe('coffre de loot', () => {
 
       const later = await readGameState(db, await reload(), new Date(NOW.getTime() + 5_000))
 
-      expect(later.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
+      expect(later.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0], key: false })
     })
 
     it('ignore une ouverture quand il n y a pas de coffre', async () => {
@@ -143,6 +144,64 @@ describe('coffre de loot', () => {
 
       expect(state.chest).toBeNull()
       expect(await stock()).toHaveLength(0)
+    })
+  })
+
+  // Le coffre réussi passé la moitié de l'étage donne la clé du boss, tant que
+  // le joueur ne l'a pas. Voir specs/boss.md#obtention-de-la-clé.
+  describe('clé du boss', () => {
+    // 75 questions à l'étage : la question loot du rang 50 tombe passé la moitié.
+    const PAST_HALF = 2 * STEP - 1
+    const keys = (): Promise<{ floor: number }[]> =>
+      db.select({ floor: bossKeys.floor }).from(bossKeys).where(eq(bossKeys.userId, player.id))
+
+    it('donne la clé, ni sort ni Mimic, passé la moitié de l étage', async () => {
+      await db.insert(pocketSpells).values({ userId: player.id, spell: 'VITALITY', obtainedAt: NOW })
+      await db.update(users).set({ lastChest: 'spell' }).where(eq(users.id, player.id))
+      await playLootQuestion('Bordeaux', PAST_HALF)
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
+
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: null, key: true })
+      expect(state.lives).toBe(rules.lives)
+      expect(await keys()).toEqual([{ floor: 1 }])
+      expect(await stock()).toEqual([{ spell: 'VITALITY' }])
+    })
+
+    it('passe avant Vitalité, et arme le Mimic comme un sort', async () => {
+      await playLootQuestion('Bordeaux', PAST_HALF)
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesSpell())
+
+      expect(state.chest).toMatchObject({ key: true })
+      expect(await stock()).toHaveLength(0)
+      expect((await reload()).lastChest).toBe('spell')
+    })
+
+    it('revient au tirage normal une fois la clé obtenue', async () => {
+      await grantKey(db, await reload(), NOW)
+      await playLootQuestion('Bordeaux', PAST_HALF)
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesSpell())
+
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: 'VITALITY', key: false })
+    })
+
+    it('ne la donne pas avant la moitié de l étage', async () => {
+      await playLootQuestion('Bordeaux')
+
+      await openPlayerChest(db, await reload(), NOW, givesSpell())
+
+      expect(await keys()).toHaveLength(0)
+    })
+
+    it('garde la clé à l ouverture suivante d un coffre déjà ouvert', async () => {
+      await playLootQuestion('Bordeaux', PAST_HALF)
+      await openPlayerChest(db, await reload(), NOW, givesSpell())
+
+      const later = await readGameState(db, await reload(), NOW)
+
+      expect(later.chest).toMatchObject({ opened: true, key: true })
     })
   })
 
@@ -158,7 +217,7 @@ describe('coffre de loot', () => {
 
       const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
 
-      expect(state.chest).toEqual({ opened: true, mimic: true, spell: null })
+      expect(state.chest).toEqual({ opened: true, mimic: true, spell: null, key: false })
       expect(await stock()).toEqual([{ spell: 'RESPITE' }])
       expect(state.lives).toBe(0)
     })
@@ -186,7 +245,7 @@ describe('coffre de loot', () => {
 
       const state = await openPlayerChest(db, await reload(), NOW, rolls(0, 0))
 
-      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0], key: false })
       expect((await reload()).lastChest).toBe('spell')
     })
 
@@ -197,11 +256,13 @@ describe('coffre de loot', () => {
 
       // Le coffre suivant, sur une attente déjà passée.
       await db.update(users).set({ lives: rules.lives, cooldownUntil: null, cooldownStartedAt: null }).where(eq(users.id, player.id))
+      // Passé la moitié de l'étage : la clé déjà en main, le coffre retombe au tirage.
+      await grantKey(db, await reload(), NOW)
       await playLootQuestion('Bordeaux', STEP * 2 - 1)
 
       const state = await openPlayerChest(db, await reload(), NOW, rolls(0, 0))
 
-      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0] })
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: SPELL_IDS[0], key: false })
     })
   })
 
@@ -230,7 +291,7 @@ describe('coffre de loot', () => {
       const state = await serveNextQuestion(db, await reload(), NOW)
 
       expect(state.question).toBeNull()
-      expect(state.chest).toEqual({ opened: false, mimic: false, spell: null })
+      expect(state.chest).toEqual({ opened: false, mimic: false, spell: null, key: false })
     })
 
     it('sert la suivante une fois le coffre ouvert', async () => {

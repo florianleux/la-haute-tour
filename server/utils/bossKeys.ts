@@ -1,4 +1,5 @@
 import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm'
+import type { SQL, SQLWrapper } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
 import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
 import { bossKeys, users } from '../db/schema'
@@ -6,14 +7,31 @@ import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 
 /**
- * Donner au joueur la clé du boss de son étage courant. Sans effet s'il l'a
- * déjà : une clé au plus par joueur et par étage. Voir specs/boss.md#obtention-de-la-clé.
+ * La clé du joueur qui attend sa serrure : celle de son étage, pas encore
+ * posée. Le joueur et l'étage se donnent en valeurs, ou en colonnes pour une
+ * sous-requête corrélée.
  */
-export async function grantKey(db: Database, player: User, now: Date): Promise<void> {
-  await db
+export function keyToPlace(userId: number | SQLWrapper, floor: number | SQLWrapper): SQL {
+  return and(eq(bossKeys.userId, userId), eq(bossKeys.floor, floor), isNull(bossKeys.placedAt))!
+}
+
+function buildGrantKeyQuery(db: Database, player: User, now: Date) {
+  return db
     .insert(bossKeys)
     .values({ userId: player.id, floor: player.currentFloor, obtainedAt: now })
     .onConflictDoNothing()
+}
+
+type GrantKeyQuery = ReturnType<typeof buildGrantKeyQuery>
+
+/**
+ * Donner au joueur la clé du boss de son étage courant. Sans effet s'il l'a
+ * déjà : une clé au plus par joueur et par étage. Une requête, à attendre ou à
+ * mettre en lot — le coffre la passe avec le Mimic qu'il arme.
+ * Voir specs/boss.md#obtention-de-la-clé.
+ */
+export function grantKey(db: Database, player: User, now: Date): GrantKeyQuery {
+  return buildGrantKeyQuery(db, player, now)
 }
 
 /**
@@ -56,9 +74,7 @@ export async function placeKeyIfRoom(db: Database, player: User, now: Date): Pro
     .update(bossKeys)
     .set({ placedAt: now })
     .where(and(
-      eq(bossKeys.userId, player.id),
-      eq(bossKeys.floor, player.currentFloor),
-      isNull(bossKeys.placedAt),
+      keyToPlace(player.id, player.currentFloor),
       sql`(select count(*) from (${keyHoldersQuery(db, player.id)})) < ${KEYS_TO_UNLOCK}`,
     ))
 }

@@ -51,7 +51,7 @@ describe('utiliser un Objet', () => {
     const response = await useItem(useRequest({ item: 'CHEESE' }, await sessionCookieFor(playerId)))
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ items: [], unlocked: ['CHEESE_GIVEN'] })
+    expect(await response.json()).toEqual({ items: [], key: null, unlocked: ['CHEESE_GIVEN'] })
     expect(await itemsOf(db, playerId)).toEqual([])
   })
 

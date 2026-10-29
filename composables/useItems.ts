@@ -1,10 +1,12 @@
 import type { Ref } from 'vue'
-import type { ItemsView } from '~~/server/api/game/items.get'
+import type { ItemsView } from '~~/server/utils/items'
 import type { ItemId } from '~~/shared/utils/items'
 
 export interface ItemsRead {
   /** Les Objets du joueur, dans l'ordre où il les a reçus. */
   items: Ref<ItemId[]>
+  /** L'étage de la clé du boss qui attend sa serrure, null sans clé à poser. */
+  key: Ref<number | null>
   /** Vrai quand la lecture a échoué : un sac vide n'est pas la même nouvelle. */
   failed: Ref<boolean>
   /** Le sac qu'une écriture vient de rendre, à la place de celui qu'on avait lu. */
@@ -25,6 +27,7 @@ export async function useItems(): Promise<ItemsRead> {
 
   return {
     items: computed(() => data.value?.items ?? []),
+    key: computed(() => data.value?.key ?? null),
     failed: computed<boolean>(() => Boolean(error.value)),
     replace: (view) => {
       data.value = view

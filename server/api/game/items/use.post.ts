@@ -4,7 +4,7 @@ import { unlock } from '~~/server/utils/achievements'
 import { requireCamp } from '~~/server/utils/camp'
 import { ITEM_USES, readItems, takeItem } from '~~/server/utils/items'
 import { ITEM_IDS } from '~~/shared/utils/items'
-import type { ItemsView } from '~~/server/api/game/items.get'
+import type { ItemsView } from '~~/server/utils/items'
 import type { AchievementId } from '~~/shared/utils/achievements'
 
 const bodySchema = z.object({ item: z.enum(ITEM_IDS) })
@@ -34,10 +34,10 @@ export default defineEventHandler(async (event): Promise<ItemUseView> => {
     throw createError({ statusCode: 409, statusMessage: 'Objet inutilisable' })
   }
 
-  const [items, unlocked] = await Promise.all([
-    readItems(db, user.id),
+  const [bag, unlocked] = await Promise.all([
+    readItems(db, user),
     unlock(db, user, ITEM_USES[item].earns, now),
   ])
 
-  return { items, unlocked }
+  return { ...bag, unlocked }
 })

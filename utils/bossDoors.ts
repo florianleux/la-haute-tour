@@ -1,3 +1,5 @@
+import type { ItemLabel } from './items'
+
 /** Une entrée du catalogue des portes (`bossDoors`) : ce que l'écran de porte affiche pour un étage. */
 export interface BossDoorEntry {
   /** Son nom côté joueur, celui de l'étage suivant (specs/lore.md#étages). */
@@ -39,6 +41,12 @@ export interface BossDoorEntry {
   /** La clé posée dans une serrure, détourée : la même image pour les deux. */
   key: string
   /**
+   * La clé comme Objet : ce que le coffre qui la donne et l'Inventaire en
+   * montrent. Son image, à même public/images/ : le coffre la montre en plein
+   * étage, l'écran de chargement du jeu l'attend d'office.
+   */
+  keyItem: ItemLabel
+  /**
    * Ses deux serrures, gauche puis droite, chacune sur son battant : le centre
    * et la largeur de la clé qu'on y pose, en classes Tailwind (`left-[x%]
    * top-[y%] w-[w%]`) en % du battant. La clé suit ainsi le battant qui pivote.
@@ -62,6 +70,12 @@ export const BOSS_DOORS: Readonly<Partial<Record<number, BossDoorEntry>>> = {
     leaves: ['/images/boss/1/door-moon-left.webp', '/images/boss/1/door-moon-right.webp'],
     doorway: 'left-[36.2%] top-[19.17%] w-[27.29%] h-[79.35%]',
     key: '/images/boss/1/door-moon-key.webp',
+    keyItem: {
+      name: 'Clé de la Lune',
+      // TODO(texte) : description provisoire, Flo l'écrira.
+      description: 'Une clé d\'or et de lune. Quelque part là-haut, une porte l\'attend.',
+      image: '/images/key-moon.webp',
+    },
     keyholes: ['left-[61.6%] top-[48.4%] w-[8.78%]', 'left-[41.2%] top-[48.4%] w-[8.78%]'],
   },
 }

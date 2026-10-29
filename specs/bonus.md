@@ -372,7 +372,8 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
   [`ecrans.md`](./ecrans.md#leçons-de-michel)).
 - **Exception, à partir de 50 % de l'étage parcouru et tant que le joueur n'a
   pas sa clé de boss** : le tirage 95/5 ne s'applique plus, le coffre est
-  **forcé** de donner la clé — ni Sort, ni Mimic. Voir
+  **forcé** de donner la clé — ni Sort, ni Mimic, pas même Vitalité au tout
+  premier coffre. La clé arme le Mimic comme un Sort (`lastChest`). Voir
   [`boss.md`](./boss.md#obtention-de-la-clé).
 - Le résultat s'affiche sur l'écran de coffre, sort comme Mimic. Le Mimic bascule
   aussitôt la partie en attente côté serveur, mais l'écran le montre d'abord : il

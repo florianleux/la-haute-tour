@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { items, pocketSpells, recoveryQuestions } from '../../server/db/schema'
+import { bossKeys, items, pocketSpells, recoveryQuestions } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -37,7 +37,7 @@ describe('l Inventaire', () => {
     const response = await itemsRead(apiRequest('http://test/items', await sessionCookieFor(userId)))
 
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ items: ['CHEESE'] })
+    expect(await response.json()).toEqual({ items: ['CHEESE'], key: null })
   })
 
   it('montre un sac vide au joueur qui n a rien', async () => {
@@ -45,7 +45,7 @@ describe('l Inventaire', () => {
 
     const response = await itemsRead(apiRequest('http://test/items', await sessionCookieFor(userId)))
 
-    expect(await response.json()).toEqual({ items: [] })
+    expect(await response.json()).toEqual({ items: [], key: null })
   })
 
   it('ne montre pas les Objets d un autre joueur', async () => {
@@ -55,7 +55,31 @@ describe('l Inventaire', () => {
 
     const response = await itemsRead(apiRequest('http://test/items', await sessionCookieFor(userId)))
 
-    expect(await response.json()).toEqual({ items: [] })
+    expect(await response.json()).toEqual({ items: [], key: null })
+  })
+
+  // La clé du boss se montre au sac tant qu'elle attend sa serrure, jamais au
+  // Grimoire. Voir specs/boss.md#obtention-de-la-clé.
+  it('montre la clé de l étage tant qu elle n est pas posée', async () => {
+    const userId = await createPlayer(db, IN_COOLDOWN)
+    await db.insert(bossKeys).values({ userId, floor: 1, obtainedAt: new Date(1_000) })
+
+    const response = await itemsRead(apiRequest('http://test/items', await sessionCookieFor(userId)))
+
+    expect(await response.json()).toEqual({ items: [], key: 1 })
+  })
+
+  it('ne montre plus la clé posée, ni celle d un autre étage', async () => {
+    await createQuestion(db, { floor: 2 })
+    const userId = await createPlayer(db, { ...IN_COOLDOWN, currentFloor: 2 })
+    await db.insert(bossKeys).values([
+      { userId, floor: 1, obtainedAt: new Date(1_000) },
+      { userId, floor: 2, obtainedAt: new Date(1_000), placedAt: new Date(2_000) },
+    ])
+
+    const response = await itemsRead(apiRequest('http://test/items', await sessionCookieFor(userId)))
+
+    expect(await response.json()).toEqual({ items: [], key: null })
   })
 
   // Consultable au camp seulement. Voir specs/spec.md (glossaire, « Inventaire »).

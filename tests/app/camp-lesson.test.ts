@@ -23,8 +23,8 @@ type CampLesson = ReturnType<typeof useCampLesson>
 const NEWCOMER = demoState({ lessonsDone: [] })
 
 /** Le sac lu par la leçon : le Fromage encore dedans, ou déjà donné. */
-const WITH_CHEESE = { items: ['CHEESE'] }
-const WITHOUT_CHEESE = { items: [] }
+const WITH_CHEESE = { items: ['CHEESE'], key: null }
+const WITHOUT_CHEESE = { items: [], key: null }
 
 let scope = effectScope()
 

@@ -15,6 +15,7 @@ import {
   movePoolCounter,
   phaseOf,
   recoveryThreshold,
+  keyDue,
   rollChest,
   resumesRecovery,
   sealedRecovery,
@@ -28,7 +29,7 @@ import {
   unlock,
 } from './achievements'
 import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
-import { keyHoldersQuery, placeKeyIfRoom } from './bossKeys'
+import { grantKey, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
@@ -108,8 +109,10 @@ export interface ChestView {
   /** Vrai quand le coffre ouvert était piégé. Dit une fois, plutôt que déduit
    * d'un sort absent à chaque endroit qui le lit. */
   mimic: boolean
-  /** Le sort obtenu. Null sur un coffre fermé comme sur un Mimic. */
+  /** Le sort obtenu. Null sur un coffre fermé, un Mimic ou une clé. */
   spell: SpellId | null
+  /** Vrai quand le coffre ouvert donnait la clé du boss. Voir specs/boss.md#obtention-de-la-clé. */
+  key: boolean
 }
 
 export interface RecoveryProgress {
@@ -347,11 +350,7 @@ function snapshotQueries(db: Database, userId: number) {
         firstCastPending: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(and(eq(pocketSpells.userId, users.id), eq(pocketSpells.spell, FIRST_SPELL))))}
           and not ${hasCast})`,
         // Lue avec le joueur, pour la même raison : la porte la demande à chaque lecture.
-        hasKey: sql<number>`${exists(db.select({ one: sql`1` }).from(bossKeys).where(and(
-          eq(bossKeys.userId, users.id),
-          eq(bossKeys.floor, users.currentFloor),
-          isNull(bossKeys.placedAt),
-        )))}`,
+        hasKey: sql<number>`${exists(db.select({ one: sql`1` }).from(bossKeys).where(keyToPlace(users.id, users.currentFloor)))}`,
       })
       .from(users)
       .where(eq(users.id, userId))
@@ -830,14 +829,14 @@ function chestOf(reservation: Reservation): ChestView | null {
   }
 
   if (chest === 'closed') {
-    return { opened: false, mimic: false, spell: null }
+    return { opened: false, mimic: false, spell: null, key: false }
   }
 
-  if (chest === 'mimic') {
-    return { opened: true, mimic: true, spell: null }
+  if (chest === 'mimic' || chest === 'key') {
+    return { opened: true, mimic: chest === 'mimic', spell: null, key: chest === 'key' }
   }
 
-  return { opened: true, mimic: false, spell: chest }
+  return { opened: true, mimic: false, spell: chest, key: false }
 }
 
 /**
@@ -1244,8 +1243,12 @@ export async function openPlayerChest(
     return stateFrom(snapshot, now)
   }
 
-  const outcome = rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered)
-  const chest: ChestState = outcome.spell ?? 'mimic'
+  // La clé n'est due qu'en montant : une clé posée l'a été devant la porte,
+  // l'étage fini, plus aucun coffre ne s'y ouvre. Celle qui attend sa serrure
+  // suffit donc à dire que le joueur l'a.
+  const key = keyDue({ floorSeen: snapshot.user.floorSeen, floorTotal: snapshot.floorTotal, hasKey: snapshot.hasKey })
+  const outcome = key ? null : rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered)
+  const chest: ChestState = key ? 'key' : outcome?.spell ?? 'mimic'
 
   // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures
   // simultanées jetteraient deux dés, et la seconde écraserait la première —
@@ -1263,17 +1266,22 @@ export async function openPlayerChest(
 
   const opened: Reservation = { ...reservation, chest }
 
-  if (outcome.spell) {
+  if (chest !== 'mimic') {
     // Une ligne par exemplaire : le tirage ignore le stock, les doublons sont
-    // illimités. Le sort arme le Mimic pour le coffre suivant.
+    // illimités. Le sort arme le Mimic pour le coffre suivant, la clé aussi.
     const armed = { lastChest: 'spell' as const }
+    const loot = chest === 'key'
+      ? grantKey(db, snapshot.user, now)
+      : db.insert(pocketSpells).values({ userId: user.id, spell: chest, obtainedAt: now })
 
-    await db.batch([
-      db.insert(pocketSpells).values({ userId: user.id, spell: outcome.spell, obtainedAt: now }),
-      db.update(users).set(armed).where(eq(users.id, user.id)),
-    ])
+    await db.batch([loot, db.update(users).set(armed).where(eq(users.id, user.id))])
 
-    return stateFrom({ ...snapshot, user: { ...snapshot.user, ...armed }, reservation: opened }, now)
+    return stateFrom({
+      ...snapshot,
+      user: { ...snapshot.user, ...armed },
+      hasKey: snapshot.hasKey || chest === 'key',
+      reservation: opened,
+    }, now)
   }
 
   // Le Mimic retire toutes les vies d'un coup, traité comme une perte de dernière

@@ -29,7 +29,7 @@ definePageMeta({ admin: true })
 // l'écran.
 const QUESTION_ID = 'test-chest'
 
-const CLOSED: ChestView = { opened: false, mimic: false, spell: null }
+const CLOSED: ChestView = { opened: false, mimic: false, spell: null, key: false }
 
 const chest = ref<ChestView>(CLOSED)
 
@@ -62,13 +62,17 @@ const view = computed(() => playView(state.value, { chestOf: QUESTION_ID, fallen
 provideGameState(state)
 
 function openChest(): void {
-  // Le mimic pèse 5% en vrai (specs/bonus.md#coffre-et-mimic) — trop rare
-  // pour se voir en rejouant, donc gonflé ici pour ce banc.
-  const mimic = Math.random() < 0.3
+  // Le mimic pèse 5% en vrai (specs/bonus.md#coffre-et-mimic), la clé un
+  // coffre par étage (specs/boss.md#obtention-de-la-clé) — trop rares pour se
+  // voir en rejouant, donc gonflés ici pour ce banc.
+  const roll = Math.random()
+  const mimic = roll < 0.3
+  const key = !mimic && roll < 0.6
   chest.value = {
     opened: true,
     mimic,
-    spell: mimic ? null : SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
+    spell: mimic || key ? null : SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
+    key,
   }
 }
 

@@ -4,6 +4,7 @@ import { achievements, missedPool, pocketSpells, settings, users } from '../../s
 import { STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { unlock } from '../../server/utils/achievements'
+import { grantKey } from '../../server/utils/bossKeys'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -344,6 +345,8 @@ describe('les succès en jeu', () => {
       // Un sort déjà sorti d'un coffre, toujours en poche : le Mimic peut attaquer.
       await db.update(users).set({ streak: 12, lastChest: 'spell' }).where(eq(users.id, player.id))
       await db.insert(pocketSpells).values({ userId: player.id, spell: 'RESPITE', obtainedAt: NOW })
+      // La clé déjà en main : passé la moitié de l'étage, le coffre la donnerait.
+      await grantKey(db, player, NOW)
 
       // Une de plus que le seuil : la dernière question restante de l étage ne
       // porte jamais de coffre, un Mimic y opposerait le palier à l attente.
