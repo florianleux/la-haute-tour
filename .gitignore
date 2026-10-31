@@ -24,3 +24,6 @@ tmp/
 
 # Sauvegardes de la prod (deck complet, dump SQL) : données réelles, jamais dans git.
 backups/
+
+# Source locale du skill prepare-questions
+QPUC.txt
