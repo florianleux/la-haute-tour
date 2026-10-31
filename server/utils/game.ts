@@ -29,6 +29,7 @@ import {
   unlock,
 } from './achievements'
 import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
+import { BOSS_RELICS } from '../../shared/utils/items'
 import { grantKey, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
@@ -45,6 +46,7 @@ import {
   bossTrials,
   deckFloors,
   disputes,
+  items,
   missedPool,
   questions,
   recoveryQuestions,
@@ -1436,6 +1438,8 @@ async function advanceBossFight(db: Database, snapshot: PlayerSnapshot, user: Us
  */
 async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date): Promise<void> {
   const currentFloor = user.currentFloor + 1
+  // Battu ou passé, le boss laisse sa relique au sac. Voir specs/boss.md#récompense.
+  const relic = BOSS_RELICS[user.currentFloor]
 
   // Franchir est un seul acte : en écritures séparées, une interruption au
   // milieu abandonnerait le Pool Échecs d'un étage que le joueur n'a pas
@@ -1454,6 +1458,7 @@ async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date
       .update(users)
       .set({ currentFloor, floorSeen: 0, ...FRESH_BOSS })
       .where(eq(users.id, user.id)),
+    ...relic ? [db.insert(items).values({ userId: user.id, item: relic, obtainedAt: now })] : [],
   ])
 
   // Étage neuf : le curseur repart de zéro, donc la première question de

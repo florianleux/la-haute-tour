@@ -1,6 +1,6 @@
 import { eq, isNotNull } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, attempts, bossKeys, bossTrials, missedPool, recoveryQuestions, reservations, users } from '../../server/db/schema'
+import { activeEffects, attempts, bossKeys, bossTrials, items, missedPool, recoveryQuestions, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { climbToDoor, descendToCamp, enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { placeKeyIfRoom } from '../../server/utils/bossKeys'
@@ -51,6 +51,8 @@ describe('combat de boss', () => {
   })
 
   const reload = (): Promise<User> => loadPlayer(db, player.id)
+  const bag = async (): Promise<string[]> =>
+    (await db.select({ item: items.item }).from(items).where(eq(items.userId, player.id))).map(row => row.item)
   const tick = (): Date => new Date(clock += 1_000)
   const next = async (): Promise<GameState> => serveNextQuestion(db, await reload(), tick())
   /** « Entrer », au terme de la porte et de l'introduction. */
@@ -456,6 +458,8 @@ describe('combat de boss', () => {
       expect(climbed).toMatchObject({ phase: 'ascent', floor: 2, lives: rules.lives })
       expect(climbed.question?.statement).toBe('Question de l étage 2 ?')
       expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0 })
+      // Passé ou battu, le boss laisse sa relique. Voir specs/boss.md#récompense.
+      expect(await bag()).toEqual(['JULIEN_CARD'])
     })
 
     it('rouvre encore le dernier combat à qui en a déjà perdu six, plutôt que de le bloquer au palier', async () => {
@@ -539,6 +543,17 @@ describe('combat de boss', () => {
       expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0, doorOpened: false, doorSpot: 'door' })
       // La « tentative suivante » de l'effet, c'est celle-ci.
       expect((await db.select().from(activeEffects))[0]?.anchoredAt).not.toBeNull()
+      // Sa relique rejoint le sac. Voir specs/boss.md#récompense.
+      expect(await bag()).toEqual(['JULIEN_CARD'])
+    })
+
+    it('ne laisse sa relique qu une fois, même si « Continuer » part deux fois', async () => {
+      await winTrials(rules.bossHp, await enter())
+      const player = await reload()
+
+      await Promise.all([serveNextQuestion(db, player, tick()), serveNextQuestion(db, player, tick())])
+
+      expect(await bag()).toEqual(['JULIEN_CARD'])
     })
 
     it('finit la partie au dernier étage', async () => {
