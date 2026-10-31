@@ -22,8 +22,6 @@ export const ITEM_USES: Record<ItemId, {
   earns: AchievementId[]
 }> = {
   CHEESE: { usableBy: user => user.campLessonAt === null, earns: ['CHEESE_GIVEN'] },
-  // Une relique ne s'utilise pas, pour l'instant. Voir specs/boss.md#récompense.
-  JULIEN_CARD: { usableBy: () => false, earns: [] },
 }
 
 export interface ItemsView {

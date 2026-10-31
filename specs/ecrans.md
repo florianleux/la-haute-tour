@@ -155,7 +155,7 @@ La **question d'essai** (voir [`spec.md`](./spec.md#glossaire)) a l'écran d'une
 
 ## Inventaire
 
-Nommé **Inventaire** côté joueur, ouvert par le sac du camp. Il montre les **Objets** du joueur — le Fromage, tant qu'il ne l'a pas donné à Michel, et les reliques des boss battus (voir [`boss.md`](./boss.md#récompense)) — puis la clé du boss de l'étage tant qu'elle n'est pas posée (voir [`boss.md`](./boss.md#obtention-de-la-clé)), et rien des sorts, qui vivent au Grimoire. Vide, il le dit dans l'univers du jeu.
+Nommé **Inventaire** côté joueur, ouvert par le sac du camp. Il montre les **Objets** du joueur — le Fromage, tant qu'il ne l'a pas donné à Michel — puis la clé du boss de l'étage tant qu'elle n'est pas posée (voir [`boss.md`](./boss.md#obtention-de-la-clé)), et rien des sorts, qui vivent au Grimoire. Vide, il le dit dans l'univers du jeu.
 
 Il s'ouvre **par-dessus le camp**, comme le Grimoire : un sac vu de face qui jaillit du bas et rebondit en se posant, son titre « Inventaire » au-dessus. Échap, la croix ou un clic à côté le referment. Tout se passe dans son volet ouvert, au-dessus du nœud, en deux parties :
 

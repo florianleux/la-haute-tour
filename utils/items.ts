@@ -19,12 +19,6 @@ const ITEM_LABELS: Record<ItemId, ItemLabel> = {
     description: 'Un bout de fromage que L\'Inconnu t\'a tendu au départ, sans dire pourquoi. Il sent fort.',
     image: '/images/item-cheese.webp',
   },
-  JULIEN_CARD: {
-    name: 'Fiche de Julien',
-    // TODO(texte) : description provisoire, Flo l'écrira.
-    description: 'Une fiche d\'animateur, roussie et trouée, que Julien Le Perse a laissée derrière lui.',
-    image: '/images/item-julien-card.webp',
-  },
 }
 
 export function itemLabel(item: ItemId): ItemLabel {
