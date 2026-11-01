@@ -8,15 +8,13 @@
     />
 
     <BossIntro
-      v-else-if="introPlaying && stage.intro"
+      v-else-if="introPlaying && intro"
       :boss="stage.boss"
-      :intro="stage.intro"
+      :intro="intro"
       :backdrop="stage.door.archColor"
       @end="emit('enter')"
     />
 
-    <!-- ponytail: l'introduction rejouée à chaque combat : jouée une fois
-         avec #39. -->
     <BossDoor
       v-else
       :door="stage.door"
@@ -38,6 +36,7 @@
 // que le joueur y pose sa clé, `openDoor` qu'il l'a ouverte, `descendToCamp`
 // qu'il redescend l'attendre au camp, `enter`, au terme, qu'il ouvre le combat.
 import type { DoorView } from '~~/server/utils/game'
+import { introFor } from '~~/utils/bossIntros'
 import type { BossStage } from '~~/utils/bossStage'
 
 const props = defineProps<{ stage: BossStage, door: DoorView }>()
@@ -49,15 +48,17 @@ const assets = useBossAssetsLoadingScreen(props.stage.floor)
 // geste pour le retour, l'animation n'a pas à l'attendre.
 const opened = ref(props.door.opened)
 const introPlaying = ref(false)
+/** Entière au premier combat, une réplique de relance aux suivants. */
+const intro = computed(() => introFor(props.stage.intro, props.door.bossAttemptNumber))
 
 function openDoor(): void {
   opened.value = true
   emit('openDoor')
 }
 
-/** « Entrer » : l'introduction s'il y en a une, sinon le combat tout de suite. */
+/** « Entrer » : l'introduction s'il y en a une pour ce combat, sinon le combat tout de suite. */
 function enter(): void {
-  if (props.stage.intro) {
+  if (intro.value) {
     introPlaying.value = true
   }
   else {

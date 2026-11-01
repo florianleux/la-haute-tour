@@ -168,7 +168,7 @@ describe('déroulé d une question', () => {
     function atDoor(door: Partial<DoorView> = {}): GameState {
       return gameState({
         phase: 'bossDoor',
-        door: { unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door', ...door },
+        door: { unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door', bossAttemptNumber: 0, ...door },
       })
     }
 

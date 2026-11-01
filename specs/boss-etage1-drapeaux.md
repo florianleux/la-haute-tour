@@ -34,6 +34,17 @@ Sur le fond sombre de l'arche, après « Entrer » :
    cartes passent derrière lui, trois ou quatre à la fois, plus petites :
    plus loin que lui.
 
+Aux combats relancés, Julien paraît seul, sérieux, sans nuée ni titre, et dit
+la réplique de ce combat, puis le combat :
+
+| Combat | Réplique |
+| --- | --- |
+| 2e | « Encore toi ? Allez, on reprend du début. Top ! » |
+| 3e | « Jamais deux sans trois, candidat ! Top ! » |
+| 4e | « Quatrième passage... Tu commences à faire partie des meubles. Top ! » |
+| 5e | « Cinq fois ! Je ne sais pas si j'admire ta ténacité ou si je m'inquiète. Top ! » |
+| 6e | « Dernière chance, candidat. Après, je te laisse passer, mais sans gloire. Top ! » |
+
 ## Déroulement d'une épreuve
 
 - Le drapeau s'affiche, avec un **timer de 30 secondes**.

@@ -137,7 +137,14 @@ describe('combat de boss', () => {
     it('attend le joueur sans équipe déverrouillée, fermée, sans poseur', async () => {
       const state = await readGameState(db, await reload(), tick())
 
-      expect(state).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, opened: false, hasKey: false, keyHolders: [], spot: 'door' } })
+      expect(state).toMatchObject({ phase: 'bossDoor', door: { unlocked: true, opened: false, hasKey: false, keyHolders: [], spot: 'door', bossAttemptNumber: 0 } })
+    })
+
+    // specs/boss.md#introduction-et-animations
+    it('compte les combats déjà ouverts : un retry ne rejoue pas l introduction entière', async () => {
+      await set({ bossAttemptNumber: 1 })
+
+      expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ bossAttemptNumber: 1 })
     })
 
     it('retient « Ouvrir » : au retour, la porte est déjà ouverte', async () => {
@@ -148,7 +155,7 @@ describe('combat de boss', () => {
     it('reste verrouillée pour le joueur en équipe : ni « Ouvrir », ni « Entrer »', async () => {
       await set({ team: 'TLM' })
 
-      expect((await open()).door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door' })
+      expect((await open()).door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door', bossAttemptNumber: 0 })
       expect((await enter()).phase).toBe('bossDoor')
       expect(await db.select().from(bossTrials)).toHaveLength(0)
     })
@@ -188,13 +195,13 @@ describe('combat de boss', () => {
       it('pose la première clé : une serrure allumée, la porte reste verrouillée', async () => {
         const state = await place()
 
-        expect(state.door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: ['gandalf'], spot: 'door' })
+        expect(state.door).toEqual({ unlocked: false, opened: false, hasKey: false, keyHolders: ['gandalf'], spot: 'door', bossAttemptNumber: 0 })
       })
 
       it('pose la deuxième clé : la porte se déverrouille, « Ouvrir » tout de suite', async () => {
         await teammate('frodon')
 
-        expect((await place()).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'gandalf'], spot: 'door' })
+        expect((await place()).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'gandalf'], spot: 'door', bossAttemptNumber: 0 })
         expect((await open()).door).toMatchObject({ opened: true })
       })
 
@@ -203,7 +210,7 @@ describe('combat de boss', () => {
         await teammate('frodon')
         await teammate('sam')
 
-        expect((await readGameState(db, await reload(), tick())).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'sam'], spot: 'door' })
+        expect((await readGameState(db, await reload(), tick())).door).toEqual({ unlocked: true, opened: false, hasKey: false, keyHolders: ['frodon', 'sam'], spot: 'door', bossAttemptNumber: 0 })
       })
 
       it('laisse sa clé stockée, sans effet, devant une porte déjà déverrouillée', async () => {

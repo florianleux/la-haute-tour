@@ -56,7 +56,7 @@
 // (BossIntro) s'il en a une au catalogue, puis le banc du combat.
 import { BOSS_DOORS, type BossDoorEntry } from '~~/utils/bossDoors'
 import { BOSSES } from '~~/utils/bosses'
-import { BOSS_INTROS } from '~~/utils/bossIntros'
+import { BOSS_INTROS, introFor } from '~~/utils/bossIntros'
 
 definePageMeta({ admin: true })
 
@@ -117,7 +117,8 @@ const bossAssets = useBossAssetsLoadingScreen(floor)
 const router = useRouter()
 
 const boss = BOSSES[floor]
-const intro = BOSS_INTROS[floor]
+/** `?fought=N` : N combats déjà ouverts, la réplique de relance du suivant au lieu de l'introduction. */
+const intro = introFor(BOSS_INTROS[floor], Number(useRoute().query.fought ?? 0))
 /** La phase du boss que montre le banc : la porte, puis l'introduction. */
 const stage = ref<'door' | 'intro'>('door')
 

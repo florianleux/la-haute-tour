@@ -1,6 +1,6 @@
 # Boss
 
-> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente, sans rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés : l'admin en donne une (#138), le joueur la pose, deux clés déverrouillent la porte pour l'équipe (#139), « Redescendre » au camp, position retenue (#140), le camp en attente de porte, qui compte les clés et offre « Remonter » (#141), et la défaite qui attend au camp avant de remonter, comme la dernière vie perdue sur la dernière question qui mène droit à la porte (#143). Les reliques aussi (#40), Objets de l'Inventaire. Pas encore : la relecture (#142), le loot forcé de la clé (#38), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
+> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente, sans rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés : l'admin en donne une (#138), le joueur la pose, deux clés déverrouillent la porte pour l'équipe (#139), « Redescendre » au camp, position retenue (#140), le camp en attente de porte, qui compte les clés et offre « Remonter » (#141), et la défaite qui attend au camp avant de remonter, comme la dernière vie perdue sur la dernière question qui mène droit à la porte (#143). Les reliques aussi (#40), Objets de l'Inventaire, et l'introduction jouée une seule fois (#39). Pas encore : la relecture (#142), le loot forcé de la clé (#38), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
 
 Chaque étage se termine par un boss. Battu, il ouvre le suivant. Contrairement
 aux questions du deck, chaque boss est un mini-jeu propre — le cadre ci-dessous
@@ -215,8 +215,9 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
 
 - **Trois phases** à chaque boss : la porte, l'introduction, le combat.
 - **Première rencontre d'un boss** : introduction (`bossIntro`), jouée une
-  seule fois (pas encore implémenté : le banc la rejoue à chaque entrée, #34
-  à #44). Elle part du fond uni de l'arche où « Entrer » vient de plonger,
+  seule fois : dès qu'un combat contre ce boss est ouvert (`bossAttemptNumber`
+  au-dessus de zéro), « Entrer » ne joue plus que sa réplique de relance
+  (`retryLines`). Elle part du fond uni de l'arche où « Entrer » vient de plonger,
   et déroule ses temps : répliques du joueur (fenêtre de la porte) ou du boss
   (fenêtre à ses couleurs), qui avancent seules ou au clic, et des effets
   déclenchés au début d'un temps — une nuée d'objets qui traverse l'écran
@@ -241,8 +242,11 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
   [`ecrans.md`](./ecrans.md) —
   phase `bossFight`, active jusqu'à ce que le boss soit à 0 PV ou le joueur à
   0 vie.
-- **Un combat relancé** (retry après échec) va directement au combat, sans
-  rejouer l'introduction.
+- **Un combat relancé** (retry après échec) ne rejoue pas l'introduction : le
+  boss paraît sur le fond de l'arche, sans nuée ni titre, dit sa réplique de
+  relance pour ce combat (`retryLines`, une par combat, du 2e au 6e), et le
+  clic ouvre le combat. Un boss sans réplique pour ce combat mène droit au
+  combat.
 
 ## Franchissement d'étage
 

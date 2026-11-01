@@ -76,6 +76,11 @@ export interface BossIntroEntry {
    */
   levitation?: string[]
   beats: [BossIntroBeat, ...BossIntroBeat[]]
+  /**
+   * Ses répliques de relance (`retryLines`), une par combat relancé, du 2e au
+   * 6e : à « Entrer », il paraît et dit seulement celle de ce combat.
+   */
+  retryLines?: string[]
 }
 
 /**
@@ -126,5 +131,33 @@ export const BOSS_INTROS: Readonly<Partial<Record<number, BossIntroEntry>>> = {
       { speaker: 'boss', text: 'Sept fois tu devras me répondre juste. Un faux pas, et c\'est toi qui tombes.' },
       { speaker: 'boss', text: 'Top !' },
     ],
+    retryLines: [
+      'Encore toi ? Allez, on reprend du début. Top !',
+      'Jamais deux sans trois, candidat ! Top !',
+      'Quatrième passage... Tu commences à faire partie des meubles. Top !',
+      'Cinq fois ! Je ne sais pas si j\'admire ta ténacité ou si je m\'inquiète. Top !',
+      'Dernière chance, candidat. Après, je te laisse passer, mais sans gloire. Top !',
+    ],
   },
+}
+
+/**
+ * L'introduction que joue « Entrer », selon les combats déjà ouverts contre ce
+ * boss (`bossAttemptNumber`) : entière au premier ; ensuite, le boss paraît, sans
+ * nuée ni titre, et dit sa réplique de relance pour ce combat. Aucune, sans
+ * introduction ni réplique : droit au combat.
+ */
+export function introFor(intro: BossIntroEntry | undefined, fought: number): BossIntroEntry | undefined {
+  if (!intro || fought === 0) {
+    return intro
+  }
+  const line = intro.retryLines?.[fought - 1]
+  if (line === undefined) {
+    return undefined
+  }
+  return {
+    figureBox: intro.figureBox,
+    windowColors: intro.windowColors,
+    beats: [{ cue: 'appear', holdMs: 800 }, { speaker: 'boss', text: line }],
+  }
 }

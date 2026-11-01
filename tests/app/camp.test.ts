@@ -28,7 +28,7 @@ describe('objets du camp', () => {
 
 // specs/boss.md#attendre-au-camp : la porte nommée, les clés qui manquent, sans les poseurs.
 describe('porte vue du camp', () => {
-  const door = { unlocked: false, opened: false, hasKey: false, keyHolders: ['frodon'], spot: 'camp' as const }
+  const door = { unlocked: false, opened: false, hasKey: false, keyHolders: ['frodon'], spot: 'camp' as const, bossAttemptNumber: 0 }
 
   it('dit la clé qui manque, sans nommer les poseurs', () => {
     expect(campDoorLine(door, 1)).toBe('La Porte de la Lune attend toujours sa deuxième clé.')

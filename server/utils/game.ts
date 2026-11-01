@@ -231,6 +231,12 @@ export interface DoorView {
   keyHolders: string[]
   /** Où se tient le joueur (`doorSpot`) : devant la porte, ou au camp après « Redescendre ». */
   spot: User['doorSpot']
+  /**
+   * Les combats déjà ouverts contre ce boss : zéro, « Entrer » joue
+   * l'introduction entière ; ensuite, la seule réplique de relance de ce combat.
+   * Voir specs/boss.md#introduction-et-animations.
+   */
+  bossAttemptNumber: number
 }
 
 /**
@@ -1308,7 +1314,7 @@ export async function openPlayerChest(
  */
 function doorView({ user, hasKey, keyHolders }: PlayerSnapshot): DoorView {
   const unlocked = user.team === null || keyHolders.length >= KEYS_TO_UNLOCK
-  return { unlocked, opened: unlocked && user.doorOpened, hasKey, keyHolders, spot: user.doorSpot }
+  return { unlocked, opened: unlocked && user.doorOpened, hasKey, keyHolders, spot: user.doorSpot, bossAttemptNumber: user.bossAttemptNumber }
 }
 
 /** La porte, si le joueur est devant elle (`bossDoor`) ; null ailleurs. */

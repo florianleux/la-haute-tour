@@ -21,7 +21,7 @@ const fight = {
 }
 
 /** La porte du boss verrouillée, le joueur devant elle. */
-const lockedDoor = { unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door' as const }
+const lockedDoor = { unlocked: false, opened: false, hasKey: false, keyHolders: [], spot: 'door' as const, bossAttemptNumber: 0 }
 
 const question = {
   id: 'q1',
