@@ -55,6 +55,8 @@
           <span>{{ formatDay(entry.createdAt) }}</span>
           <BaseButton
             variant="ghost"
+            :disabled="entry.self"
+            :title="entry.self ? 'Tu ne peux pas te retirer toi-même' : undefined"
             :loading="removing === entry.discordId"
             @click="drop(entry.discordId)"
           >

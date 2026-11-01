@@ -97,9 +97,16 @@ describe('whitelist admin', () => {
     expect(response.status).toBe(200)
     const { entries } = await response.json() as { entries: { discordId: string }[] }
     expect(entries.filter(entry => entry.discordId !== ADMIN_ID)).toEqual([
-      { discordId: '222', team: null, username: null, createdAt: '2026-09-02T10:00:00.000Z' },
-      { discordId: '111', team: null, username: null, createdAt: '2026-09-01T10:00:00.000Z' },
+      { discordId: '222', team: null, username: null, createdAt: '2026-09-02T10:00:00.000Z', self: false },
+      { discordId: '111', team: null, username: null, createdAt: '2026-09-01T10:00:00.000Z', self: false },
     ])
+  })
+
+  it('marque la ligne de l admin qui lit : il ne peut pas la retirer', async () => {
+    const response = await list(apiRequest('http://test/whitelist', adminCookie))
+
+    const { entries } = await response.json() as { entries: { discordId: string, self: boolean }[] }
+    expect(entries.filter(entry => entry.self).map(entry => entry.discordId)).toEqual([ADMIN_ID])
   })
 
   it('donne le pseudo d un invité dès qu il s est connecté', async () => {

@@ -10,6 +10,8 @@ export interface WhitelistEntry {
   username: string | null
   /** ISO 8601: a `Date` doesn't survive the trip to the client. */
   createdAt: string
+  /** L'admin qui lit la liste : il ne peut pas se retirer. Voir [discordId].delete.ts. */
+  self: boolean
 }
 
 export interface WhitelistResponse {
@@ -17,7 +19,7 @@ export interface WhitelistResponse {
 }
 
 export default defineEventHandler(async (event): Promise<WhitelistResponse> => {
-  await requireAdmin(event)
+  const admin = await requireAdmin(event)
 
   const rows = await useDatabase()
     .select({ entry: whitelist, username: users.username })
@@ -31,6 +33,7 @@ export default defineEventHandler(async (event): Promise<WhitelistResponse> => {
       team: entry.team,
       username,
       createdAt: entry.createdAt.toISOString(),
+      self: entry.discordId === admin.discordId,
     })),
   }
 })
