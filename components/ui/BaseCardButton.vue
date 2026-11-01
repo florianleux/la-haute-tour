@@ -128,7 +128,7 @@ const FACES: Record<Face, string> = {
   // panneau clair (lignes 10 à 77 sur 94) porte haut dans l'image, et la police
   // porte bas, comme sur le médaillon (`pb-2`) : le libellé remonte d'autant,
   // en em pour suivre la taille de l'ancre.
-  moon: 'bg-[url(/images/boss/1/trial-button.webp)] pb-[0.45em] text-amber-700',
+  moon: 'bg-[url(/images/boss/1/trial-button.webp)] pb-[0.45em] text-[#0D304E]',
 }
 
 /** Le format de chaque dessin, largeur / hauteur de l'image. */

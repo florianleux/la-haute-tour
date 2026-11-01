@@ -53,6 +53,13 @@
         >
           {{ headline.text }}
         </PlayText>
+        <!-- Le drapeau rappelé, comme l'énoncé au verdict d'une question
+             (VerdictLines) : plus petit, pour laisser la place à la réponse. -->
+        <img
+          :src="`/images/boss/1/flags/${image}.webp`"
+          alt="Le drapeau de l'épreuve"
+          class="aspect-2/1 w-[24dvh] object-contain drop-shadow-md"
+        >
         <PlayText
           role="answer"
           class="text-amber-800"
