@@ -34,6 +34,10 @@ export interface BossEntry {
   arena: { pose: BossPose, box: string }
   /** Sa réplique à l'outro de défaite, quand le joueur vient de tomber. */
   defeatLine: string
+  /** Sa réplique à l'outro de victoire, quand le joueur l'a battu. */
+  victoryLine: string
+  /** Sa réplique à l'outro de victoire, quand il laisse passer le joueur au 6e combat perdu. */
+  passLine: string
 }
 
 /**
@@ -67,5 +71,7 @@ export const BOSSES: Readonly<Partial<Record<number, BossEntry>>> = {
     // retranchés pour que son bord gauche reste à -5vw.
     arena: { pose: 'back', box: '-left-[calc(5vw+20.1dvh)] h-[71.3dvh]' },
     defeatLine: 'Tu n\'es pas encore au niveau, reviens dans quelques heures si tu l\'oses.',
+    victoryLine: 'Je m\'incline, tu peux continuer ton ascension. Mais ne te fais pas d\'illusions, ce n\'était qu\'un échauffement...',
+    passLine: 'Ta persévérance force le respect, je veux voir jusqu\'où elle te mènera... Je te laisse monter plus haut.',
   },
 }

@@ -1,6 +1,7 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import { keyToPlace } from './bossKeys'
-import { bossKeys, items } from '../db/schema'
+import { bossKeys, items, users } from '../db/schema'
+import type { SQL } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { AchievementId } from '../../shared/utils/achievements'
@@ -22,6 +23,8 @@ export const ITEM_USES: Record<ItemId, {
   earns: AchievementId[]
 }> = {
   CHEESE: { usableBy: user => user.campLessonAt === null, earns: ['CHEESE_GIVEN'] },
+  // Une relique ne s'utilise pas, pour l'instant. Voir specs/boss.md#récompense.
+  JULIEN_CARD: { usableBy: () => false, earns: [] },
 }
 
 export interface ItemsView {
@@ -68,4 +71,35 @@ export async function takeItem(db: Database, userId: number, item: ItemId): Prom
   const taken = await db.delete(items).where(eq(items.id, oldest)).returning({ id: items.id })
 
   return taken.length > 0
+}
+
+function buildGrantItem(db: Database, userId: number, item: ItemId, now: Date, condition: SQL | undefined) {
+  return db.insert(items).select(
+    db
+      .select({
+        id: sql<number>`null`.as('id'),
+        userId: users.id,
+        item: sql<ItemId>`${item}`.as('item'),
+        obtainedAt: sql<Date>`${Math.floor(now.getTime() / 1000)}`.as('obtained_at'),
+      })
+      .from(users)
+      .where(and(eq(users.id, userId), condition)),
+  )
+}
+
+/**
+ * Donne un Objet au joueur si la condition tient, à l'écriture. Un INSERT …
+ * SELECT plutôt qu'un INSERT … VALUES : c'est lui qui porte la condition, et il
+ * part dans le même lot que ce qu'elle garde. Drizzle veut toutes les colonnes,
+ * dans l'ordre du schéma, et n'encode plus la date : en secondes, comme
+ * `mode: 'timestamp'` (tenu par tests/server/intro.test.ts).
+ */
+export function grantItemWhere(
+  db: Database,
+  userId: number,
+  item: ItemId,
+  now: Date,
+  condition: SQL | undefined,
+): ReturnType<typeof buildGrantItem> {
+  return buildGrantItem(db, userId, item, now, condition)
 }

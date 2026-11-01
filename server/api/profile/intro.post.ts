@@ -1,8 +1,7 @@
-import { sql } from 'drizzle-orm'
 import { useDatabase } from '~~/server/db/client'
-import { items, users } from '~~/server/db/schema'
+import { users } from '~~/server/db/schema'
 import { introUnfinished } from '~~/server/utils/intro'
-import type { ItemId } from '~~/shared/utils/items'
+import { grantItemWhere } from '~~/server/utils/items'
 
 /**
  * Le joueur a pris le Fromage que L'Inconnu lui tend : l'introduction est
@@ -22,21 +21,7 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   const unfinished = introUnfinished(user.id)
 
   await db.batch([
-    // Un INSERT … SELECT plutôt qu'un INSERT … VALUES : c'est lui qui porte
-    // la condition. Drizzle veut toutes les colonnes, dans l'ordre du schéma,
-    // et n'encode plus la date : en secondes, comme `mode: 'timestamp'`
-    // (tenu par tests/server/intro.test.ts).
-    db.insert(items).select(
-      db
-        .select({
-          id: sql<number>`null`.as('id'),
-          userId: users.id,
-          item: sql<ItemId>`${'CHEESE' satisfies ItemId}`.as('item'),
-          obtainedAt: sql<Date>`${Math.floor(now.getTime() / 1000)}`.as('obtained_at'),
-        })
-        .from(users)
-        .where(unfinished),
-    ),
+    grantItemWhere(db, user.id, 'CHEESE', now, unfinished),
     db.update(users).set({ introDoneAt: now }).where(unfinished),
   ])
 

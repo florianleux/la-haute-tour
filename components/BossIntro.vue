@@ -88,7 +88,7 @@
             {{ boss.name }}
           </p>
           <div
-            class="mt-[0.4cqw] h-[0.15cqw] w-[48cqw] origin-left bg-linear-to-r from-transparent via-[#e6c878] to-transparent motion-safe:animate-title-rule"
+            :class="TITLE_RULE"
             :style="nameDelay"
           />
         </div>

@@ -1,12 +1,15 @@
-import { and, asc, eq, exists, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, exists, isNull, notExists, sql } from 'drizzle-orm'
 import { isAnswerAccepted } from '../../shared/utils/answers'
+import { BOSS_RELICS } from '../../shared/utils/items'
 import { closeAttempt } from './journey'
-import { BOSS_FIGHT_COUNT, bossFightOpening, bossFightState, bossOutcome, isExpired, judgeTrial } from './mechanics'
-import { bossTrials, flags, users } from '../db/schema'
+import { grantItemWhere } from './items'
+import { BOSS_FIGHT_COUNT, bossBeaten, bossFightOpening, bossFightState, bossOutcome, isExpired, judgeTrial } from './mechanics'
+import { bossTrials, flags, items, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { BossOutcome } from './mechanics'
 import type { BossTrial, Flag, User } from '../db/schema'
+import type { ItemId } from '../../shared/utils/items'
 
 /**
  * Le combat de boss : ses épreuves, tirées à l'ouverture et servies une à une,
@@ -43,6 +46,8 @@ export interface BossView {
   verdict: BossVerdict | null
   /** Le terme du combat, null tant qu'il dure. */
   outcome: BossOutcome | null
+  /** La relique que le combat gagné ou passé a laissée au sac, null sinon. */
+  relic: ItemId | null
 }
 
 /**
@@ -98,6 +103,7 @@ export function bossView(user: User, trials: HeldTrial[], rules: FloorRules): Bo
 
   const served = servedTrial(trials)
   const judged = trials.filter(trial => trial.resolvedAt !== null).at(-1)
+  const outcome = bossOutcome(bossFightState(user, true))
 
   return {
     // Les PV se relisent dans les épreuves : la défaite efface la colonne, le
@@ -115,8 +121,17 @@ export function bossView(user: User, trials: HeldTrial[], rules: FloorRules): Bo
           submittedAnswer: judged.submittedAnswer ?? '',
         }
       : null,
-    outcome: bossOutcome(bossFightState(user, true)),
+    outcome,
+    relic: relicOf(user.currentFloor, outcome),
   }
+}
+
+/**
+ * La relique du boss de l'étage, à qui l'a battu ou que le boss a laissé passer.
+ * Voir specs/boss.md#récompense.
+ */
+function relicOf(floor: number, outcome: BossOutcome | null): ItemId | null {
+  return bossBeaten(outcome) ? BOSS_RELICS[floor] ?? null : null
 }
 
 /**
@@ -230,11 +245,23 @@ export async function resolveTrial(
   )
   const whileOpen = exists(db.select({ one: sql`1` }).from(bossTrials).where(stillOpen))
 
+  const judgement = judgeTrial(user, correct, rules, now)
+  const relic = relicOf(user.currentFloor, bossOutcome(bossFightState({ ...user, ...judgement }, true)))
+
   await db.batch([
     db
       .update(users)
-      .set(judgeTrial(user, correct, rules, now))
+      .set(judgement)
       .where(and(eq(users.id, user.id), whileOpen)),
+    // Le verdict qui achève le combat laisse la relique, sous la même garde :
+    // deux réponses simultanées n'en laissent qu'une, et un boss rebattu (le
+    // joueur test reculé) n'en laisse pas une deuxième.
+    ...relic
+      ? [grantItemWhere(db, user.id, relic, now, and(whileOpen, notExists(db
+          .select({ one: sql`1` })
+          .from(items)
+          .where(and(eq(items.userId, user.id), eq(items.item, relic))))))]
+      : [],
     db.update(bossTrials).set({ resolvedAt: now, correct, submittedAnswer: answer }).where(stillOpen),
   ])
 }

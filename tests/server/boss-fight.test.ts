@@ -1,6 +1,6 @@
 import { eq, isNotNull } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, attempts, bossKeys, bossTrials, missedPool, recoveryQuestions, reservations, users } from '../../server/db/schema'
+import { activeEffects, attempts, bossKeys, bossTrials, items, missedPool, recoveryQuestions, reservations, users } from '../../server/db/schema'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { climbToDoor, descendToCamp, enterBoss, openDoor, placeKey, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { placeKeyIfRoom } from '../../server/utils/bossKeys'
@@ -51,6 +51,8 @@ describe('combat de boss', () => {
   })
 
   const reload = (): Promise<User> => loadPlayer(db, player.id)
+  const bag = async (): Promise<string[]> =>
+    (await db.select({ item: items.item }).from(items).where(eq(items.userId, player.id))).map(row => row.item)
   const tick = (): Date => new Date(clock += 1_000)
   const next = async (): Promise<GameState> => serveNextQuestion(db, await reload(), tick())
   /** « Entrer », au terme de la porte et de l'introduction. */
@@ -413,6 +415,9 @@ describe('combat de boss', () => {
       expect(state.cooldownUntil).not.toBeNull()
       expect(state.boss).toMatchObject({ outcome: 'defeat', hp: rules.bossHp, trial: null })
       expect((await reload()).bossHp).toBeNull()
+      // Vaincu, le joueur ne repart pas avec la relique.
+      expect(state.boss?.relic).toBeNull()
+      expect(await bag()).toEqual([])
     })
 
     it('laisse au camp au bout de l attente : « Remonter » face à la porte ouverte, puis le combat suivant à vies pleines', async () => {
@@ -449,7 +454,9 @@ describe('combat de boss', () => {
       const passed = await lose()
 
       expect(passed).toMatchObject({ phase: 'bossFight', lives: 0, cooldownUntil: null, recovery: null, nextRecovery: null })
-      expect(passed.boss).toMatchObject({ outcome: 'passed', hp: rules.bossHp, trial: null })
+      expect(passed.boss).toMatchObject({ outcome: 'passed', hp: rules.bossHp, trial: null, relic: 'JULIEN_CARD' })
+      // Passé comme battu, le boss laisse sa relique. Voir specs/boss.md#récompense.
+      expect(await bag()).toEqual(['JULIEN_CARD'])
 
       const climbed = await next()
 
@@ -529,7 +536,9 @@ describe('combat de boss', () => {
       const won = await winTrials(rules.bossHp, await enter())
 
       expect(won).toMatchObject({ phase: 'bossFight' })
-      expect(won.boss).toMatchObject({ hp: 0, outcome: 'victory', trial: null })
+      expect(won.boss).toMatchObject({ hp: 0, outcome: 'victory', trial: null, relic: 'JULIEN_CARD' })
+      // Sa relique rejoint le sac au verdict qui l'abat. Voir specs/boss.md#récompense.
+      expect(await bag()).toEqual(['JULIEN_CARD'])
 
       const climbed = await next()
 
@@ -539,6 +548,30 @@ describe('combat de boss', () => {
       expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0, doorOpened: false, doorSpot: 'door' })
       // La « tentative suivante » de l'effet, c'est celle-ci.
       expect((await db.select().from(activeEffects))[0]?.anchoredAt).not.toBeNull()
+    })
+
+    it('ne laisse sa relique qu une fois, même si le dernier verdict part deux fois', async () => {
+      const state = await winTrials(rules.bossHp - 1, await enter())
+      const user = await reload()
+
+      await Promise.all([submitAnswer(db, user, answerOf(state), tick()), submitAnswer(db, user, answerOf(state), tick())])
+
+      expect(await bag()).toEqual(['JULIEN_CARD'])
+    })
+
+    it('ne laisse pas une relique déjà acquise : un joueur test reculé rebat le même boss', async () => {
+      await db.insert(items).values({ userId: player.id, item: 'JULIEN_CARD', obtainedAt: NOW })
+
+      await winTrials(rules.bossHp, await enter())
+
+      expect(await bag()).toEqual(['JULIEN_CARD'])
+    })
+
+    it('ne laisse rien en cours de combat', async () => {
+      const state = await winTrials(rules.bossHp - 1, await enter())
+
+      expect(state.boss?.relic).toBeNull()
+      expect(await bag()).toEqual([])
     })
 
     it('finit la partie au dernier étage', async () => {

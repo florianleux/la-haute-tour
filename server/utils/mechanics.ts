@@ -124,6 +124,11 @@ export function bossFightState(user: Pick<User, 'bossHp' | 'lives'>, holdsTrials
   return user.lives > 0 ? 'victory' : 'passed'
 }
 
+/** Le boss battu : vraie victoire, ou passage au 6e combat perdu. Voir specs/boss.md#récompense. */
+export function bossBeaten(outcome: BossOutcome | null): outcome is 'victory' | 'passed' {
+  return outcome === 'victory' || outcome === 'passed'
+}
+
 /** Le terme du combat, null tant qu'il n'en a pas. */
 export function bossOutcome(state: BossFightState): BossOutcome | null {
   return state === 'none' || state === 'running' ? null : state

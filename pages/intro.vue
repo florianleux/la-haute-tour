@@ -12,16 +12,12 @@
     <ItemReveal
       v-if="gifted"
       :label="CHEESE.name"
+      :image="CHEESE.image"
       @close="leave"
     >
       <template v-if="leaveFailed" #notice>
         L'entrée dans la Tour a échoué. Réessaie.
       </template>
-      <img
-        :src="CHEESE.image"
-        :alt="CHEESE.name"
-        class="size-full object-contain"
-      >
     </ItemReveal>
   </div>
 </template>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockedByMaintenance, dueLesson, fallQuestionId, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView } from '../../utils/phase'
+import { blockedByMaintenance, dueLesson, fallQuestionId, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView, victoryOnScreen } from '../../utils/phase'
 import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
@@ -17,6 +17,7 @@ const fight = {
   trial: { image: '0000000000000001', expiresAt: '2026-09-03T12:00:30.000Z', focusGraceMs: 1_000 },
   verdict: null,
   outcome: null,
+  relic: null,
 }
 
 /** La porte du boss verrouillée, le joueur devant elle. */
@@ -352,6 +353,35 @@ describe('carte de jeu', () => {
     expect(card({ phase: 'bossFight', boss: fight })).toEqual({ card: 'bossFight', action: null })
     expect(card({ phase: 'bossFight', boss: { ...fight, trial: null } }))
       .toEqual({ card: 'bossFight', action: { label: 'Suivant', move: 'advance' } })
+  })
+
+  // specs/boss.md#récompense : la relique se montre entre « Continuer » et le palier.
+  it('montre la relique du boss abattu avant de franchir le palier, une fois', () => {
+    const won = { phase: 'bossFight' as const, floor: 1, boss: { ...fight, hp: 0, trial: null, outcome: 'victory' as const, relic: 'JULIEN_CARD' as const } }
+
+    expect(playView(state(won))).toMatchObject({ card: 'bossFight', relic: null, action: { label: 'Continuer', move: 'revealRelic', relicOf: 1 } })
+    expect(playView(state(won), { chestOf: null, fallenOn: null, relicOf: 1 }))
+      .toMatchObject({ card: 'bossFight', relic: 'JULIEN_CARD', action: { label: 'Continuer', move: 'advance' } })
+    // La relique d'un autre étage ne vaut pas pour celui-ci.
+    expect(playView(state(won), { chestOf: null, fallenOn: null, relicOf: 2 })).toMatchObject({ relic: null, action: { move: 'revealRelic' } })
+  })
+
+  // L'outro de victoire tient Entrée tant que sa fenêtre n'a pas paru : la page
+  // la lui laisse, et la reprend pour l'écran de la relique.
+  it('laisse Entrée à l outro de victoire, pas à l écran de la relique', () => {
+    const won = state({ phase: 'bossFight', floor: 1, boss: { ...fight, hp: 0, trial: null, outcome: 'victory', relic: 'JULIEN_CARD' } })
+
+    expect(victoryOnScreen(playView(won))).toBe(true)
+    expect(victoryOnScreen(playView(won, { chestOf: null, fallenOn: null, relicOf: 1 }))).toBe(false)
+    expect(victoryOnScreen(playView(state({ phase: 'bossFight', boss: { ...fight, trial: null } })))).toBe(false)
+    const lastFloor = state({ phase: 'gameOver', boss: { ...fight, hp: 0, trial: null, outcome: 'victory' } })
+    expect(victoryOnScreen(playView(lastFloor, { chestOf: null, fallenOn: null, bossEndOn: 'victory' }))).toBe(true)
+  })
+
+  it('franchit droit sans relique à montrer', () => {
+    const won = { phase: 'bossFight' as const, boss: { ...fight, hp: 0, trial: null, outcome: 'victory' as const } }
+
+    expect(playView(state(won))).toMatchObject({ card: 'bossFight', relic: null, action: { label: 'Continuer', move: 'advance' } })
   })
 
   it('montre l outro de la défaite que la page retient, puis le camp', () => {

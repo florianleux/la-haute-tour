@@ -51,6 +51,12 @@ const TITLE_REVEAL = 'uppercase tracking-[0.2em] [mask-image:linear-gradient(to_
 export const TITLE_GOLD = `bg-[linear-gradient(100deg,#a8741a_0%,#f6dc8c_30%,#fffbe8_45%,#f6dc8c_60%,#a8741a_100%)] bg-size-[250%_100%] bg-clip-text [-webkit-background-clip:text] text-transparent ${TITLE_REVEAL}`
 
 /**
+ * Le filet d'or sous un grand titre doré (le nom du boss, « VICTOIRE ») : il
+ * s'étire de gauche à droite avec lui, au rythme de `--title-ms`.
+ */
+export const TITLE_RULE = 'mt-[0.4cqw] h-[0.15cqw] w-[48cqw] origin-left bg-linear-to-r from-transparent via-[#e6c878] to-transparent motion-safe:animate-title-rule'
+
+/**
  * Le rouge de « DÉFAITE » (BossOutro) : le même dégradé balayé d'un reflet que
  * l'or du nom du boss, dans le sang.
  */

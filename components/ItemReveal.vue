@@ -16,7 +16,7 @@
           class="-mb-[0.3cqw] text-[1.6cqw] leading-none"
           :class="TITLE_YELLOW"
         >
-          Obtenu
+          {{ title }}
         </p>
         <p
           class="text-[4.6cqw]"
@@ -47,7 +47,9 @@
             class="w-[240%] motion-safe:animate-item-rays"
           />
           <div class="relative size-full motion-safe:animate-float">
-            <slot />
+            <slot>
+              <img :src="image" alt="" class="size-full object-contain">
+            </slot>
             <SparkleField
               :sparks="SPARKS"
               :glow="glow"
@@ -82,8 +84,12 @@
 // tout seul : le joueur lit, puis clique OK. Voir specs/ecrans.md.
 
 const props = withDefaults(defineProps<{
-  /** Le nom de l'objet, sous « Obtenu ». */
+  /** Le nom de l'objet, sous le titre. */
   label: string
+  /** Le titre au-dessus du nom : « Obtenu », « Relique obtenue ». */
+  title?: string
+  /** L'image de l'objet, quand le slot ne le dessine pas lui-même (un sort, son médaillon). */
+  image?: string
   /** La lueur des rayons et des étincelles. */
   glow?: string
   /**
@@ -92,7 +98,7 @@ const props = withDefaults(defineProps<{
    * coffre). Sans lui, il jaillit de rien, sur place (le Fromage).
    */
   from?: { x: number, y: number, width: number }
-}>(), { glow: 'rgb(254 243 199 / 0.9)', from: undefined })
+}>(), { title: 'Obtenu', image: undefined, glow: 'rgb(254 243 199 / 0.9)', from: undefined })
 
 defineEmits<{ close: [] }>()
 

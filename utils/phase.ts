@@ -1,6 +1,8 @@
 import type { ChestView, GameState, ServedQuestion } from "~~/server/utils/game";
+import { bossBeaten } from "~~/server/utils/mechanics";
 import type { Phase } from "~~/server/utils/mechanics";
 import type { LessonId } from "~~/shared/utils/lessons";
+import type { ItemId } from "~~/shared/utils/items";
 
 /**
  * La phase, dite en français. L'onglet Joueurs de l'administration l'affiche
@@ -255,12 +257,14 @@ export function gameScreen(state: GameState): GameScreen {
 /**
  * Le bouton qui avance et ce qu'il fait : demander la suite au serveur, quitter
  * pour le poster l'écran que la page retenait (la chute, le Mimic), entrer
- * dans l'écran du coffre de telle question, ou remonter du camp à la porte du
- * boss. Quitter et entrer dans le coffre sont des allers purement client.
+ * dans l'écran du coffre de telle question, montrer la relique du boss de tel
+ * étage, ou remonter du camp à la porte du boss. Quitter, entrer dans le coffre
+ * et montrer la relique sont des allers purement client.
  */
 export type PlayAction =
   | { label: string; move: "advance" | "leave" | "climbToDoor" }
-  | { label: string; move: "enterChest"; chestOf: string };
+  | { label: string; move: "enterChest"; chestOf: string }
+  | { label: string; move: "revealRelic"; relicOf: number };
 
 /**
  * Ce que la page retient seule, que le serveur ne sait pas. Chacun désigne la
@@ -274,6 +278,8 @@ export interface PlayClientState {
   fallenOn: string | null;
   /** La fin de combat que le joueur lit encore (bossEndId). */
   bossEndOn?: string | null;
+  /** L'étage dont le joueur regarde la relique, entre « Continuer » et le palier. */
+  relicOf?: number | null;
 }
 
 const NO_DETOUR: PlayClientState = { chestOf: null, fallenOn: null };
@@ -290,7 +296,12 @@ export type PlayView = {
   | { card: "question"; question: ServedQuestion }
   | { card: "chest"; chest: ChestView }
   | { card: "recovery" | "cooldown" | "result" | "bossDoor" | "bossOutro" }
-  | { card: "bossFight"; boss: NonNullable<GameState["boss"]> }
+  | {
+      card: "bossFight";
+      boss: NonNullable<GameState["boss"]>;
+      /** La relique montrée par-dessus l'arène. */
+      relic?: ItemId | null;
+    }
 );
 
 /**
@@ -332,9 +343,20 @@ export function playView(
       : { screen, card: "bossFight", boss: state.boss, action: { label: "Continuer", move: "leave" } };
   }
 
-  // Le combat : l'arène sert l'épreuve, puis son verdict et la suite.
+  // Le combat : l'arène sert l'épreuve, puis son verdict et la suite. Abattu
+  // ou passé, le boss montre d'abord sa relique, dont l'OK franchit le palier.
+  // Voir specs/boss.md#récompense.
   if (state.phase === "bossFight" && state.boss) {
-    return { screen, card: "bossFight", boss: state.boss, action: state.boss.trial ? null : next };
+    const { relic, trial } = state.boss;
+    const revealing = relic !== null && client.relicOf === state.floor;
+    const fight = { screen, card: "bossFight", boss: state.boss, relic: revealing ? relic : null } as const;
+    if (trial) {
+      return { ...fight, action: null };
+    }
+    if (relic && !revealing) {
+      return { ...fight, action: { label: next.label, move: "revealRelic", relicOf: state.floor } };
+    }
+    return { ...fight, action: next };
   }
 
   // Devant la porte, qui porte ses gestes. Redescendu, au camp : « Remonter »,
@@ -412,6 +434,17 @@ export function playView(
     card: "result",
     action: state.phase === "gameOver" || state.phase === "deckEnd" ? null : next,
   };
+}
+
+/**
+ * L'outro de victoire est à l'écran, et pas encore la relique par-dessus :
+ * c'est elle qui tient Entrée, une fois sa fenêtre parue — la page ne la lui
+ * prend pas pendant que la nuit monte. Voir components/BossVictory.vue.
+ */
+export function victoryOnScreen(view: PlayView): boolean {
+  return view.card === "bossFight"
+    && bossBeaten(view.boss.outcome)
+    && !view.relic;
 }
 
 /**

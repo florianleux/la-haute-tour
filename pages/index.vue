@@ -146,6 +146,7 @@
       :submitting="pending"
       :action="view.action"
       :advancing="isRunning('advance')"
+      :relic="view.relic"
       @update:model-value="typed = $event"
       @submit="submit"
       @advance="goNext"
@@ -303,10 +304,13 @@ const fallenOn = ref<string | null>(null)
 // défaite, la victoire du dernier étage) : un troisième aller client, armé
 // comme la chute.
 const bossEndOn = ref<string | null>(null)
+// La relique du boss abattu, montrée entre « Continuer » et le palier : un
+// quatrième aller client, désigné par l'étage.
+const relicOf = ref<number | null>(null)
 
 const view = computed(() =>
   state.value
-    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value, bossEndOn: bossEndOn.value })
+    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value, bossEndOn: bossEndOn.value, relicOf: relicOf.value })
     : null,
 )
 
@@ -427,7 +431,8 @@ async function leaveForAscent(): Promise<void> {
 // Ni quand une boîte du camp est ouverte : Entrée y lirait, pas remonter. Ni
 // pendant que Michel parle : Entrée fait avancer sa bulle, et une leçon ne se
 // passe pas.
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && campOverlay.value === null && !lesson.line.value && !practice.question.value)
+// L'outro de victoire tient Entrée elle-même, une fois sa fenêtre parue.
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && !(view.value && victoryOnScreen(view.value)) && campOverlay.value === null && !lesson.line.value && !practice.question.value)
 
 // Au verdict de la question d'essai, Entrée fait « Suivant » — une fois Michel tu.
 useAdvanceOnEnter(practice.leave, () => Boolean(practice.verdict.value) && !practice.line.value)
@@ -445,6 +450,9 @@ async function goNext(): Promise<void> {
       return
     case 'enterChest':
       chestOf.value = action.chestOf
+      return
+    case 'revealRelic':
+      relicOf.value = action.relicOf
       return
     case 'advance':
       // Seuls les allers serveur attendent la fin d'un envoi en vol : entrer

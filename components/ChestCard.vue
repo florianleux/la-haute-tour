@@ -231,11 +231,10 @@
       <ItemReveal
         v-if="stage === 'open' && looted && keyItem && !lootSeen"
         :label="keyItem.name"
+        :image="keyItem.image"
         :from="spellFrom"
         @close="lootSeen = true"
-      >
-        <img :src="keyItem.image" alt="" class="size-full object-contain">
-      </ItemReveal>
+      />
       <ItemReveal
         v-else-if="stage === 'open' && looted && chest.spell && !lootSeen"
         :label="spellLabel(chest.spell)"

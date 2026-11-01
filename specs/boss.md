@@ -1,6 +1,6 @@
 # Boss
 
-> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente, sans rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés : l'admin en donne une (#138), le joueur la pose, deux clés déverrouillent la porte pour l'équipe (#139), « Redescendre » au camp, position retenue (#140), le camp en attente de porte, qui compte les clés et offre « Remonter » (#141), et la défaite qui attend au camp avant de remonter, comme la dernière vie perdue sur la dernière question qui mène droit à la porte (#143). Pas encore : la relecture (#142), le loot forcé de la clé (#38), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas), les reliques (#40). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
+> **En partie implémenté.** Le combat (#34) existe : épreuves tirées et jugées par le serveur, victoire qui franchit le palier, défaite qui mène à l'attente, sans rattrapage. Les paliers de difficulté et le passage automatique aussi (#35) : le combat N sert les 10 drapeaux du combat N, et le 6e combat perdu franchit le palier. La porte retenue (#137) aussi, et les clés : l'admin en donne une (#138), le joueur la pose, deux clés déverrouillent la porte pour l'équipe (#139), « Redescendre » au camp, position retenue (#140), le camp en attente de porte, qui compte les clés et offre « Remonter » (#141), et la défaite qui attend au camp avant de remonter, comme la dernière vie perdue sur la dernière question qui mène droit à la porte (#143). Les reliques aussi (#40), Objets de l'Inventaire. Pas encore : la relecture (#142), le loot forcé de la clé (#38), l'introduction jouée une seule fois (#39), le profil qui distingue un combat (#36 : une tentative de combat, sans question vue, ne s'écrit pas). Les étages 2 à 6 rejouent Julien Le Perse en attendant leur boss.
 
 Chaque étage se termine par un boss. Battu, il ouvre le suivant. Contrairement
 aux questions du deck, chaque boss est un mini-jeu propre — le cadre ci-dessous
@@ -237,6 +237,8 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
   boss vibre. Une épreuve fausse retire une vie au joueur sans animation
   particulière pour l'instant — juste l'affichage qui baisse.
 - **Chaque combat** se termine par une animation de victoire ou de défaite —
+  l'outro de victoire (`bossVictory`) ou celle de défaite (`bossOutro`), voir
+  [`ecrans.md`](./ecrans.md) —
   phase `bossFight`, active jusqu'à ce que le boss soit à 0 PV ou le joueur à
   0 vie.
 - **Un combat relancé** (retry après échec) va directement au combat, sans
@@ -262,14 +264,26 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
 ## Récompense
 
 Battre un boss (vraie victoire ou passage automatique après 6 échecs) laisse
-une **relique** — objet cosmétique, sans effet, une par boss (6 au total).
+une **relique** — une par boss (6 au total).
 
-**Même patron que les Succès** (`succes.md`) : catalogue fixe écrit dans le
-code, jamais administrable, débloqué en jouant, acquis à vie. Page dédiée
-listant les 6 reliques, obtenues et à obtenir — le mur de tuiles qui fait
-déjà ses preuves pour les Succès. Contenu exact des tuiles (nom, image,
-flaveur) à écrire au moment de l'intégration, comme le catalogue des Succès
-l'a été.
+- **Un Objet de l'Inventaire**, comme le Fromage : rien qu'un Objet de plus
+  dans le sac, avec son image, son nom et sa description. Pas de page dédiée,
+  pas de section à part ; une relique pas encore obtenue ne se montre nulle
+  part.
+- **Laissée au verdict qui achève le combat** — la dernière épreuve juste, ou
+  la dernière vie du 6e combat —, une seule fois, même si deux réponses
+  partent ensemble. Ce moment vaut pour le dernier étage aussi, qui finit la
+  partie sans franchir de palier.
+- **Montrée** par le geste de l'outro de victoire : l'écran d'objet obtenu,
+  celui du Fromage et des sorts du coffre, titré « Relique obtenue » ; son OK
+  franchit le palier.
+- **Inutilisable pour l'instant**, et sans effet de jeu : ni vie, ni règle
+  modulée.
+- **Catalogue fixe** dans le code (`BOSS_RELICS`, `shared/utils/items.ts`) :
+  la relique de chaque étage. Seule celle de Julien Le Perse existe, la
+  **Fiche carbonisée** (`JULIEN_CARD`, ses fiches d'animateur, voir
+  [`lore.md`](./lore.md)) ; un étage sans relique au catalogue n'en laisse
+  pas. Chaque relique arrive avec son boss.
 
 ## Points encore à spécifier
 
