@@ -50,15 +50,15 @@
     <table v-if="rows.length" class="mt-6 w-full text-left">
       <thead class="text-xs uppercase tracking-wide text-slate-500">
         <tr>
-          <th class="py-2 pr-4 font-medium">
+          <BaseSortHeader :direction="directionOf('player')" @sort="sortBy('player')">
             Joueur
-          </th>
-          <th class="py-2 pr-4 font-medium">
+          </BaseSortHeader>
+          <BaseSortHeader :direction="directionOf('team')" @sort="sortBy('team')">
             Équipe
-          </th>
-          <th class="py-2 pr-4 font-medium">
+          </BaseSortHeader>
+          <BaseSortHeader :direction="directionOf('floor')" @sort="sortBy('floor')">
             Étage
-          </th>
+          </BaseSortHeader>
           <th class="py-2 pr-4 font-medium">
             Phase
           </th>
@@ -68,9 +68,9 @@
           <th class="py-2 pr-4 font-medium" title="Contestations en attente">
             Cont.
           </th>
-          <th class="py-2 pr-4 font-medium">
+          <BaseSortHeader :direction="directionOf('lastPlayed')" @sort="sortBy('lastPlayed')">
             Dernier jeu
-          </th>
+          </BaseSortHeader>
           <th class="py-2 pr-4 font-medium">
             Invité le
           </th>
@@ -100,6 +100,7 @@
 import { TEAM_IDS } from '~~/shared/utils/teams'
 import type { TeamId } from '~~/shared/utils/teams'
 import type { PlayerAction, PlayerRow } from '~/components/AdminPlayerRow.vue'
+import type { SortDirection } from '~/components/ui/BaseSortHeader.vue'
 
 const [roster, whitelist] = await Promise.all([useAdminPlayers(), useWhitelist()])
 const { players, active, acting, skipCooldown, grantLife, grantKey, setTeam, resetPlayer } = roster
@@ -145,11 +146,58 @@ const teamTotals = computed(() => [...TEAM_IDS, null].map(id => ({
   count: entries.value.filter(entry => entry.team === id).length,
 })))
 
+// Le tri, au clic sur un en-tête : un second clic inverse le sens. Le dernier
+// jeu part du plus récent, le reste de A à Z ou du bas de la Tour. Sans tri,
+// l'ordre des invitations.
+type SortKey = 'player' | 'team' | 'floor' | 'lastPlayed'
+const sort = ref<{ key: SortKey, direction: SortDirection } | null>(null)
+
+function directionOf(key: SortKey): SortDirection | null {
+  return sort.value?.key === key ? sort.value.direction : null
+}
+
+function sortBy(key: SortKey): void {
+  const first: SortDirection = key === 'lastPlayed' ? 'desc' : 'asc'
+  const flipped: SortDirection = sort.value?.direction === 'asc' ? 'desc' : 'asc'
+  sort.value = { key, direction: sort.value?.key === key ? flipped : first }
+  page.value = 1
+}
+
+/** Ce qu'une ligne vaut pour une colonne. Null : sans valeur, toujours en bas. */
+function sortValue(row: PlayerRow, key: SortKey): string | number | null {
+  const player = row.player
+  switch (key) {
+    case 'player': return (player?.username ?? row.username ?? row.discordId).toLowerCase()
+    case 'team': return teamLabel(player ? player.team : row.invitedTeam)
+    // L'étage, puis l'avancée dedans : 2 · 40/1000 passe devant 2 · 10/1000.
+    case 'floor': return player ? player.floor + player.floorSeen / Math.max(1, player.floorTotal) : null
+    case 'lastPlayed': return player?.lastPlayedDay ?? null
+  }
+}
+
+const sortedRows = computed(() => {
+  const current = sort.value
+  if (!current) {
+    return rows.value
+  }
+  const sign = current.direction === 'asc' ? 1 : -1
+  return [...rows.value].sort((a, b) => {
+    const left = sortValue(a, current.key)
+    const right = sortValue(b, current.key)
+    if (left === null || right === null) {
+      return left === right ? 0 : left === null ? 1 : -1
+    }
+    return sign * (typeof left === 'number' && typeof right === 'number'
+      ? left - right
+      : String(left).localeCompare(String(right), 'fr'))
+  })
+})
+
 // ponytail: pagination côté client, les deux listes arrivent entières ; paginer le serveur si elles grossissent trop
 const PAGE_SIZE = 20
 const page = ref(1)
 const pageCount = computed(() => Math.max(1, Math.ceil(rows.value.length / PAGE_SIZE)))
-const pageRows = computed(() => rows.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
+const pageRows = computed(() => sortedRows.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
 // Un retrait peut vider la dernière page : on recule plutôt que d'afficher du vide.
 watch(pageCount, (count) => {
   page.value = Math.min(page.value, count)
