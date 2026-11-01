@@ -1,8 +1,8 @@
 <template>
   <!-- Posée par-dessus l'arène, qui s'efface dessous dans un fondu lent au
        noir. Puis, temps après temps (`step`) : le boss paraît en fondu, sur
-       place, comme à l'introduction ; « DÉFAITE » se révèle lentement
-       au-dessus de lui ; enfin sa fenêtre monte, avec « Redescendre ». -->
+       place, comme à l'introduction, pendant que « DÉFAITE » se révèle
+       lentement au-dessus de lui ; enfin sa fenêtre monte, avec « Redescendre ». -->
   <div class="fixed inset-0 z-30 overflow-hidden @container-size">
     <div
       class="absolute inset-0 bg-black motion-safe:transition-opacity motion-safe:duration-[2500ms] motion-safe:ease-in"
@@ -15,14 +15,15 @@
         :class="BACKDROP_SCENE"
       >
         <!-- Le boss, à la place de son introduction, bras écartés, qui rit
-             du joueur tombé. Il paraît en fondu, sans bouger. -->
+             du joueur tombé. Il paraît en fondu, sans bouger, au rythme de
+             son titre. -->
         <BossFigure
           :figure="boss.figure"
           pose="open"
           expression="laugh"
           :talking="false"
-          class="absolute motion-safe:transition-opacity motion-safe:duration-[1500ms]"
-          :class="[figureBox ?? FALLBACK_BOX, reached('figure') ? 'opacity-100' : 'opacity-0']"
+          class="absolute motion-safe:transition-opacity motion-safe:duration-[3000ms] motion-safe:ease-out"
+          :class="[figureBox ?? FALLBACK_BOX, reached('title') ? 'opacity-100' : 'opacity-0']"
         />
 
         <!-- « DÉFAITE », en grand titre comme le nom du boss à l'introduction,
@@ -83,15 +84,13 @@ const FALLBACK_BOX = 'left-1/2 top-[22%] w-[42%] -translate-x-1/2'
 
 /**
  * Les temps de l'outro, dans l'ordre, et quand chacun commence : le noir dès
- * l'image suivante (sa transition part de l'arène visible), le boss une fois
- * le noir fait, son titre quand il est là, sa fenêtre quand le titre s'est
- * révélé.
+ * l'image suivante (sa transition part de l'arène visible), le boss et son
+ * titre ensemble une fois le noir fait, sa fenêtre quand le titre s'est révélé.
  */
 const STEPS = [
   { step: 'black', atMs: 0 },
-  { step: 'figure', atMs: 2600 },
-  { step: 'title', atMs: 4300 },
-  { step: 'window', atMs: 7800 },
+  { step: 'title', atMs: 2600 },
+  { step: 'window', atMs: 6100 },
 ] as const
 
 type Step = typeof STEPS[number]['step'] | 'arena'
