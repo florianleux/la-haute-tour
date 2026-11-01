@@ -13,9 +13,9 @@
 ## Whitelist Discord
 
 - Seuls les **Discord IDs whitelistés en base** peuvent s'inscrire.
-- L'admin liste les Discord IDs autorisés et en ajoute, depuis `/admin` ou directement en base.
+- L'admin liste les Discord IDs autorisés et en ajoute, depuis l'onglet Joueurs de `/admin` (la whitelist et les joueurs y forment un seul tableau) ou directement en base.
 - **L'ajout porte l'équipe d'arrivée, obligatoire** : c'est là que l'appartenance se décide, et le compte la reprend à sa première connexion. Le formulaire ne présélectionne aucune équipe, et refuse l'ajout tant qu'aucune n'est choisie. Elle se change ensuite depuis la fiche joueur. Voir [`equipes.md`](./equipes.md).
-- **Le retrait ferme la porte tout de suite**, session en cours comprise : un joueur désinvité n'est plus servi dès la requête suivante, sans attendre l'expiration de son cookie. Un admin ne peut pas se retirer lui-même — il se verrouillerait dehors : le serveur refuse, et le bouton « Retirer » de sa propre ligne est grisé.
+- **Le retrait ferme la porte tout de suite**, session en cours comprise : un joueur désinvité n'est plus servi dès la requête suivante, sans attendre l'expiration de son cookie. Un admin ne peut pas se retirer lui-même — il se verrouillerait dehors : le serveur refuse, et « Retirer de la whitelist » est grisé dans le menu de sa propre ligne.
 - Le retrait ne touche pas à la partie : compte, étage, vies, Pool Échecs et succès restent en place, et ré-inviter l'ID rouvre l'accès sur la partie telle qu'elle était.
 - Pas de whitelist → pas d'inscription possible.
 - Voir [`anti-triche.md`](./anti-triche.md).
@@ -40,11 +40,11 @@
 
 ## Gestion des joueurs
 
-- **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son nom d'aventurier s'il s'est nommé, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
+- **Tableau des joueurs** : une ligne par Discord ID, whitelist et comptes fusionnés — l'invité pas encore venu (« Pas encore connecté »), le joueur, et le compte retiré de la whitelist dont la partie reste (« Hors whitelist »). Chaque ligne porte l'avatar Discord, le pseudo, le nom d'aventurier s'il s'est nommé, l'équipe, l'étage et sa progression dedans (`4/8`), la phase et le délai restant s'il attend, les vies, les contestations en attente, le dernier jour joué et la date d'invitation. Les gestes vivent dans un menu « ⋯ » en fin de ligne.
 - **Joueurs actifs** : au-dessus des fiches, le nombre de joueurs qui ont répondu aujourd'hui, et sur les 7 derniers jours. Se lit sur `lastPlayedDay`, au jour du jeu : un joueur qui ouvre le site sans répondre n'y compte pas.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
 - **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
-- **Quatre gestes** : *passer l'attente*, *rendre une vie*, *donner une clé*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
+- **Quatre gestes**, plus le changement d'équipe et le retrait de la whitelist, dans le menu de la ligne : *passer l'attente*, *rendre une vie*, *donner une clé*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
 - **Donner une clé** (`grantKey`) donne au joueur la clé du boss de son étage courant, en attendant le loot forcé (#38). Grisé s'il l'a déjà : une clé au plus par joueur et par étage. Voir [`boss.md`](./boss.md#obtention-de-la-clé).
 - **Repartir de zéro** efface la partie du joueur (étage, vies, sorts en poche, Objets, nom d'aventurier, genre, leçons de Michel, questions vues et ratées, effets, contestations n'y survivent pas) et le remet à l'étage 1, vies pleines, devant l'introduction à rejouer — c'est elle qui redonne le Fromage — même geste que pour un joueur test (voir plus bas), sans le monde scellé qui les sépare : celui-ci touche un vrai compte. Pensé pour un joueur bloqué ou testé en solo, pas pour un usage courant en partie live.
   - Les effets effacés sont ceux qu'il subit **et** les sorts qu'il a lancés sur d'autres joueurs : ceux-là perdent les effets qu'il leur avait posés.

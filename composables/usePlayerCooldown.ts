@@ -9,15 +9,16 @@ export interface PlayerCooldown {
 }
 
 /**
- * L'attente d'une fiche joueur, dite une fois pour les deux fiches qui la
- * portent. « Terminée » plutôt qu'un délai quand l'échéance vient de passer :
- * la phase du serveur ne bougera qu'à la prochaine lecture du joueur.
+ * L'attente d'un joueur, dite une fois pour la ligne du tableau et la fiche
+ * d'un joueur test. Null : un invité pas encore venu, qui n'attend rien.
+ * « Terminée » plutôt qu'un délai quand l'échéance vient de passer : la phase
+ * du serveur ne bougera qu'à la prochaine lecture du joueur.
  */
-export function usePlayerCooldown(player: Ref<PlayerCard>, now: Ref<number>): PlayerCooldown {
+export function usePlayerCooldown(player: Ref<PlayerCard | null>, now: Ref<number>): PlayerCooldown {
   return {
-    inCooldown: computed(() => player.value.phase === 'cooldown'),
+    inCooldown: computed(() => player.value?.phase === 'cooldown'),
     remaining: computed(() =>
-      (player.value.cooldownUntil ? formatCooldownMinutes(player.value.cooldownUntil, now.value) : null),
+      (player.value?.cooldownUntil ? formatCooldownMinutes(player.value.cooldownUntil, now.value) : null),
     ),
   }
 }

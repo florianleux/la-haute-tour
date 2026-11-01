@@ -10,10 +10,7 @@
       <AdminDisputes v-if="tab === 'disputes'" />
       <AdminQuestions v-else-if="tab === 'questions'" />
       <AdminTestPlayers v-else-if="tab === 'testPlayers'" />
-      <div v-else-if="tab === 'players'" class="space-y-12">
-        <AdminPlayers />
-        <AdminWhitelist />
-      </div>
+      <AdminPlayers v-else-if="tab === 'players'" />
       <AdminFocusLosses v-else-if="tab === 'cheat'" />
       <AdminMaintenance v-else-if="tab === 'maintenance'" />
     </div>
