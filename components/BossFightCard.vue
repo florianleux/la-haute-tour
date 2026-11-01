@@ -17,6 +17,7 @@
       :model-value="modelValue"
       :action-label="ended ? null : action?.label ?? null"
       :busy="submitting || advancing"
+      :motion="submitting ? 'judging' : advancing ? 'leaving' : undefined"
       @update:model-value="emit('update:modelValue', $event)"
       @submit="emit('submit')"
       @advance="emit('advance')"
