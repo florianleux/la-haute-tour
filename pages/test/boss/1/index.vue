@@ -1,25 +1,47 @@
 <template>
-  <BossArena
-    :boss="BOSS"
-    :boss-hp="FULL_BOSS_HP - hits"
-    :boss-max-hp="FULL_BOSS_HP"
-    :player-name="user?.displayName ?? ''"
-    :portrait="portrait"
-    :lives="fighter.lives"
-    :max-lives="rules.lives"
-  >
-    <BossFlagTrial
-      :image="flag.image"
-      :seconds-left="secondsLeft"
-      :verdict="verdict === null ? null : { correct: verdict, answerLabel: flag.answerLabel, submittedAnswer: typed }"
-      :outcome="bossOutcome(fightState)"
-      :model-value="typed"
-      :action-label="over ? 'Rejouer' : 'Suivant'"
-      @update:model-value="typed = $event"
-      @submit="answer"
-      @advance="next"
+  <div class="contents">
+    <!-- La défaite, après le verdict de la dernière épreuve et « Suivant »,
+         comme au jeu. Rien ne la quitte : on recharge pour rejouer. -->
+    <BossOutro
+      v-if="defeatOutro"
+      :boss="BOSS"
+      :colors="COLORS"
+      @leave="() => {}"
     />
-  </BossArena>
+
+    <BossArena
+      v-else
+      :boss="BOSS"
+      :boss-hp="FULL_BOSS_HP - hits"
+      :boss-max-hp="FULL_BOSS_HP"
+      :player-name="user?.displayName ?? ''"
+      :portrait="portrait"
+      :lives="fighter.lives"
+      :max-lives="rules.lives"
+    >
+      <BossFlagTrial
+        :image="flag.image"
+        :seconds-left="secondsLeft"
+        :verdict="verdict === null ? null : { correct: verdict, answerLabel: flag.answerLabel, submittedAnswer: typed }"
+        :outcome="bossOutcome(fightState)"
+        :model-value="typed"
+        :action-label="beaten ? null : 'Suivant'"
+        @update:model-value="typed = $event"
+        @submit="answer"
+        @advance="next"
+      />
+    </BossArena>
+
+    <!-- Gagné : l'outro de victoire monte par-dessus l'arène, comme au jeu
+         (BossFightCard). Son « Continuer » ne mène nulle part ici. -->
+    <BossVictory
+      v-if="beaten"
+      :boss="BOSS"
+      :outcome="beaten"
+      :colors="COLORS"
+      @next="() => {}"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -36,9 +58,10 @@ import { isAnswerAccepted } from '~~/shared/utils/answers'
 // requête : le banc le lit tel quel, faute de partie servie.
 import { rulesForFloor } from '~~/server/utils/rules'
 // La mécanique du combat, pure elle aussi : le banc juge comme le jeu.
-import { bossFightOpening, bossFightState, bossOutcome, judgeTrial } from '~~/server/utils/mechanics'
+import { bossBeaten, bossFightOpening, bossFightState, bossOutcome, judgeTrial } from '~~/server/utils/mechanics'
 import type { User } from '~~/server/db/schema'
 import { BOSSES } from '~~/utils/bosses'
+import { BOSS_INTROS } from '~~/utils/bossIntros'
 
 definePageMeta({ admin: true })
 
@@ -46,6 +69,8 @@ const rules = rulesForFloor(1)
 const FULL_BOSS_HP = rules.bossHp
 /** Julien Le Perse. */
 const BOSS = BOSSES[1]!
+/** Les couleurs de sa fenêtre, celles de son introduction. */
+const COLORS = BOSS_INTROS[1]?.windowColors
 const SECONDS = rules.bossTrialTimerMs / 1000
 
 const { data: fight } = await useAsyncData(
@@ -53,13 +78,9 @@ const { data: fight } = await useAsyncData(
   () => $fetch<BossFlagsResponse>('/api/admin/boss-flags', useApiFetchOptions()),
 )
 
-// ponytail: drapeau forcé en tête pour régler la taille : le seul en 2:1 du
-// combat, donc le plus large (la Transnistrie). À retirer une fois le cadre dessiné.
-const FORCED_FLAG = '419dd040b5e72e1a'
-
 function shuffled(): BossFlag[] {
   return (fight.value?.flags ?? [])
-    .map(entry => ({ entry, key: entry.image === FORCED_FLAG ? -1 : Math.random() }))
+    .map(entry => ({ entry, key: Math.random() }))
     .sort((a, b) => a.key - b.key)
     .map(({ entry }) => entry)
 }
@@ -86,6 +107,13 @@ const secondsLeft = ref(SECONDS)
 const flag = computed(() => order.value[index.value])
 const fightState = computed(() => bossFightState(fighter.value, true))
 const over = computed(() => fightState.value !== 'running')
+/** Gagné ou passé : l'outro de victoire. Null sinon. */
+const beaten = computed(() => {
+  const outcome = bossOutcome(fightState.value)
+  return bossBeaten(outcome) ? outcome : null
+})
+/** « Suivant » quitté le verdict de la dernière épreuve perdue. */
+const defeatOutro = ref(false)
 
 function answer(): void {
   if (verdict.value !== null) {
@@ -100,14 +128,10 @@ function answer(): void {
 
 function next(): void {
   if (over.value) {
-    order.value = shuffled()
-    index.value = 0
-    fighter.value = opening()
-    hits.value = 0
+    defeatOutro.value = true
+    return
   }
-  else {
-    index.value++
-  }
+  index.value++
 
   typed.value = ''
   verdict.value = null
