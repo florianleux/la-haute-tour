@@ -124,8 +124,11 @@ const ANCHORS: Record<Anchor, { position: string, width: string, text: string }>
 const FACES: Record<Face, string> = {
   medallion: 'bg-[url(/images/submit-button.webp)] pb-2 text-amber-600',
   plank: 'bg-[url(/images/recovery-modal-button.webp)] text-amber-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]',
-  // Le bouton de l'épreuve du boss de l'étage 1, aux lunes de sa porte.
-  moon: 'bg-[url(/images/boss/1/trial-button.webp)] text-amber-700',
+  // Le bouton de l'épreuve du boss de l'étage 1, aux lunes de sa porte. Son
+  // panneau clair (lignes 10 à 77 sur 94) porte haut dans l'image, et la police
+  // porte bas, comme sur le médaillon (`pb-2`) : le libellé remonte d'autant,
+  // en em pour suivre la taille de l'ancre.
+  moon: 'bg-[url(/images/boss/1/trial-button.webp)] pb-[0.45em] text-amber-700',
 }
 
 /** Le format de chaque dessin, largeur / hauteur de l'image. */
