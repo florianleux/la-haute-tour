@@ -33,7 +33,7 @@
           v-if="verdict === null"
           role="timer"
           as="span"
-          class="text-amber-600"
+          class="text-[#0D304E]"
         >
           {{ secondsLeft }}
         </PlayText>
@@ -58,6 +58,7 @@
         <BaseParchmentInput
           :key="image"
           :model-value="modelValue"
+          tone="moon"
           @update:model-value="emit('update:modelValue', $event)"
           @submit="emit('submit')"
         />
@@ -82,7 +83,7 @@
         >
         <PlayText
           role="answer"
-          class="text-amber-800 sm:text-[5.04cqw]!"
+          class="text-[#2B8390] sm:text-[5.04cqw]!"
         >
           {{ answer?.name }}
         </PlayText>
@@ -91,14 +92,14 @@
         <PlayText
           v-if="answer?.detail"
           role="aside"
-          class="-mt-[1.4dvh] text-amber-800/80 sm:text-[3.84cqw]!"
+          class="-mt-[1.4dvh] text-[#2B8390]/80 sm:text-[3.84cqw]!"
         >
           {{ answer?.detail }}
         </PlayText>
         <!-- Comme au verdict d'une question (VerdictLines). -->
         <PlayText
           role="aside"
-          class="text-amber-800/80 sm:text-[3.24cqw]!"
+          class="text-[#2B8390]/80 sm:text-[3.24cqw]!"
         >
           Ta réponse : {{ verdict.submittedAnswer || '(rien)' }}
         </PlayText>
