@@ -50,6 +50,7 @@ describe('fiches joueurs', () => {
       // Personne n\'est placé tant que l\'admin ne le fait pas.
       team: null,
       ownsKey: false,
+      lastPlayedDay: null,
     }])
   })
 

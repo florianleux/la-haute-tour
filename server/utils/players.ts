@@ -57,6 +57,8 @@ export interface PlayerCard {
   team: TeamId | null
   /** Il a la clé du boss de son étage courant, posée ou non : « Donner une clé » est alors sans objet. */
   ownsKey: boolean
+  /** Dernier jour du jeu où il a répondu (`YYYY-MM-DD`), null s'il n'a jamais répondu. */
+  lastPlayedDay: string | null
 }
 
 /**
@@ -153,6 +155,7 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     pendingDisputes: row.pendingDisputes,
     team: row.user.team,
     ownsKey: row.ownsKey === 1,
+    lastPlayedDay: row.user.lastPlayedDay,
   }))
 }
 

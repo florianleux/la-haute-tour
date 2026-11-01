@@ -23,6 +23,7 @@ const card: PlayerCard = {
   pendingDisputes: 2,
   team: null,
   ownsKey: false,
+  lastPlayedDay: null,
 }
 
 describe('joueurs côté admin', () => {

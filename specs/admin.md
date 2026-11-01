@@ -41,6 +41,7 @@
 ## Gestion des joueurs
 
 - **Fiches joueurs** : une par joueur, avec son avatar Discord, son pseudo, son nom d'aventurier s'il s'est nommé, son étage et sa progression dedans (`4/8 vues`), sa phase, ses vies, le délai restant s'il attend, et le nombre de ses contestations en attente.
+- **Joueurs actifs** : au-dessus des fiches, le nombre de joueurs qui ont répondu aujourd'hui, et sur les 7 derniers jours. Se lit sur `lastPlayedDay`, au jour du jeu : un joueur qui ouvre le site sans répondre n'y compte pas.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
 - **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
 - **Quatre gestes** : *passer l'attente*, *rendre une vie*, *donner une clé*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).

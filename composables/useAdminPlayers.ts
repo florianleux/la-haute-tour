@@ -9,6 +9,8 @@ export const ADMIN_PLAYERS_KEY = 'admin-players'
 
 export interface AdminPlayers {
   players: Ref<PlayerCard[]>
+  /** Joueurs qui ont répondu aujourd'hui, et sur les 7 derniers jours. */
+  active: Ref<PlayersResponse['active']>
   /** True when the roster could not be read: an empty roster would be a lie. */
   failed: Ref<boolean>
   loading: Ref<boolean>
@@ -33,7 +35,7 @@ export async function useAdminPlayers(): Promise<AdminPlayers> {
   const { data, error, status, refresh } = await useAsyncData<PlayersResponse>(
     ADMIN_PLAYERS_KEY,
     () => $fetch<PlayersResponse>('/api/admin/players', useApiFetchOptions()),
-    { default: (): PlayersResponse => ({ players: [] }) },
+    { default: (): PlayersResponse => ({ players: [], active: { today: 0, week: 0 } }) },
   )
 
   // L'identité servie est relue avec la liste : un geste sur le joueur que
@@ -46,6 +48,7 @@ export async function useAdminPlayers(): Promise<AdminPlayers> {
 
   return {
     players: computed<PlayerCard[]>(() => data.value?.players ?? []),
+    active: computed<PlayersResponse['active']>(() => data.value?.active ?? { today: 0, week: 0 }),
     failed: computed<boolean>(() => Boolean(error.value)),
     loading: computed<boolean>(() => status.value === 'pending'),
     acting,

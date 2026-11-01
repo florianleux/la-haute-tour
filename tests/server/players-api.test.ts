@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
 import { bossKeys, recoveryQuestions, reservations } from '../../server/db/schema'
+import { dayKey } from '../../server/utils/achievements'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import {
   apiRequest,
@@ -62,6 +63,17 @@ describe('joueurs admin', () => {
     expect(response.status).toBe(200)
     expect((await response.json()).players.map((card: { username: string }) => card.username))
       .toEqual(['gandalf', 'saruman'])
+  })
+
+  it('compte les joueurs actifs du jour et des 7 derniers jours', async () => {
+    const daysAgo = (days: number): string => dayKey(new Date(Date.now() - days * 24 * HOUR_MS))
+    await createPlayer(db, { discordId: '1', username: 'frodon', lastPlayedDay: daysAgo(0) })
+    await createPlayer(db, { discordId: '2', username: 'sam', lastPlayedDay: daysAgo(6) })
+    await createPlayer(db, { discordId: '3', username: 'pippin', lastPlayedDay: daysAgo(7) })
+
+    const response = await list(apiRequest('http://test/players', adminCookie))
+
+    expect((await response.json()).active).toEqual({ today: 1, week: 2 })
   })
 
   it('refuse un joueur qui n existe pas', async () => {

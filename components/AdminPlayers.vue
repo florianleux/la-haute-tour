@@ -4,6 +4,11 @@
       Où en est chacun, et les deux gestes qui peuvent le débloquer.
     </template>
 
+    <p v-if="players.length" class="mt-2 text-sm text-slate-400">
+      <span class="mr-4">Actifs aujourd'hui : <span class="font-semibold text-slate-200">{{ active.today }}</span></span>
+      <span>Sur 7 jours : <span class="font-semibold text-slate-200">{{ active.week }}</span></span>
+    </p>
+
     <BaseNotice v-if="actionFailed">
       L'action a échoué. Réessaie.
     </BaseNotice>
@@ -39,7 +44,7 @@
 // aucune partie. Voir specs/admin.md#gestion-des-joueurs.
 import type { TeamId } from '~~/shared/utils/teams'
 
-const { players, failed, loading, acting, skipCooldown, grantLife, grantKey, setTeam, resetPlayer } = await useAdminPlayers()
+const { players, active, failed, loading, acting, skipCooldown, grantLife, grantKey, setTeam, resetPlayer } = await useAdminPlayers()
 
 const actionFailed = ref(false)
 
