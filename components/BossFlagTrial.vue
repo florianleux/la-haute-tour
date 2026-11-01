@@ -7,21 +7,28 @@
   <div class="fixed left-1/2 top-[14dvh] z-10 w-[101.8dvh] -translate-x-1/2 @container text-center">
     <!-- Le cadre visible, en portrait 8:9 : 54,5dvh de large, soit 480×540 px.
          Ses textes, en `cqw`, se règlent sur lui, marges de 0,9dvh déduites
-         (464 px). Le drapeau y fait 43,3dvh (381 px). Le vide en haut et en
-         bas attend le chrono rond et un message. -->
-    <div class="mx-auto flex aspect-8/9 w-[54.5dvh] flex-col items-center justify-center gap-[1.8dvh] rounded-[1.8dvh] bg-amber-100 px-[0.9dvh] @container">
-      <PlayText
-        v-if="verdict === null"
-        role="timer"
-        as="span"
-        class="text-[4cqw] text-amber-600"
+         (464 px). Le drapeau y fait 43,3dvh (381 px). -->
+    <div class="relative mx-auto flex aspect-8/9 w-[54.5dvh] flex-col items-center justify-center gap-[1.8dvh] rounded-[1.8dvh] bg-amber-100 px-[0.9dvh] @container">
+      <!-- Le médaillon de l'ascension, à la même taille à l'écran (22,95 % de
+           ses 896 px, soit 23,4dvh) : chrono, puis juste/faux. -->
+      <PlayMedallion
+        ratio="616 / 357"
+        ink="top-[66%] text-[12cqw]"
+        class="top-0 w-[23.4dvh] bg-[url(/images/game-timer.webp)]"
       >
-        {{ secondsLeft }}
-      </PlayText>
-      <VerdictMark
-        v-else
-        :correct="verdict.correct"
-      />
+        <PlayText
+          v-if="verdict === null"
+          role="timer"
+          as="span"
+          class="text-amber-600"
+        >
+          {{ secondsLeft }}
+        </PlayText>
+        <VerdictMark
+          v-else
+          :correct="verdict.correct"
+        />
+      </PlayMedallion>
 
       <template v-if="verdict === null">
         <img
@@ -59,6 +66,13 @@
         >
           {{ answer?.detail }}
         </PlayText>
+        <!-- Comme au verdict d'une question (VerdictLines). -->
+        <PlayText
+          role="aside"
+          class="text-amber-800/80"
+        >
+          Ta réponse : {{ verdict.submittedAnswer || '(rien)' }}
+        </PlayText>
       </template>
     </div>
 
@@ -86,7 +100,7 @@ const props = defineProps<{
   image: string
   secondsLeft: number | null
   /** Null tant que le drapeau attend sa réponse. */
-  verdict: Pick<BossVerdict, 'correct' | 'answerLabel'> | null
+  verdict: Pick<BossVerdict, 'correct' | 'answerLabel' | 'submittedAnswer'> | null
   /** Le terme du combat, que le verdict annonce à la place de juste ou faux. */
   outcome: BossOutcome | null
   modelValue: string

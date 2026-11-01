@@ -11,7 +11,7 @@
     <BossFlagTrial
       :image="flag.image"
       :seconds-left="secondsLeft"
-      :verdict="verdict === null ? null : { correct: verdict, answerLabel: flag.answerLabel }"
+      :verdict="verdict === null ? null : { correct: verdict, answerLabel: flag.answerLabel, submittedAnswer: typed }"
       :outcome="bossOutcome(fightState)"
       :model-value="typed"
       :action-label="over ? 'Rejouer' : 'Suivant'"

@@ -56,27 +56,18 @@
         :class="[SKINS[skin].art, shade(null)]"
       />
 
-      <!-- Le médaillon, à cheval sur le bord haut : chrono pendant la question,
-           juste/faux sur le verdict. Même rôle des deux côtés, deux dessins.
-           Son tremblement de jugement passe en `!` : un cadre arrivé garde sa
-           classe d'arrivée tant qu'il est monté, et elle l'emporterait sinon. -->
-      <div
+      <!-- Même rôle des deux côtés, deux dessins. Son tremblement de jugement
+           passe en `!` : un cadre arrivé garde sa classe d'arrivée tant qu'il
+           est monté, et elle l'emporterait sinon. -->
+      <PlayMedallion
         v-if="$slots.medallion"
-        class="absolute left-1/2 z-20 origin-bottom -translate-x-1/2 -translate-y-1/2 @container bg-contain bg-center bg-no-repeat group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
+        :ratio="SKINS[skin].medallionRatio"
+        :ink="SKINS[skin].medallionInk"
+        class="group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
         :class="[SKINS[skin].medallion, motion && MOTIONS[motion].medallion, shade('timer')]"
-        :style="{ aspectRatio: SKINS[skin].medallionRatio }"
       >
-        <!-- Le chiffre au centre du disque, dont la hauteur n'est pas la même
-             d'un dessin à l'autre : mesurée sur l'image, pas estimée. `leading-none`
-             pour que la boîte de ligne colle aux chiffres — sans lui, l'espace
-             réservé aux jambages la fait porter haut dans le disque. -->
-        <div
-          class="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 leading-none"
-          :class="SKINS[skin].medallionInk"
-        >
-          <slot name="medallion" />
-        </div>
-      </div>
+        <slot name="medallion" />
+      </PlayMedallion>
 
       <!-- Le panneau où tout le texte s'empile. Une seule façon d'empiler pour
            les deux habillages : les lignes se suivent dans l'ordre du template,
