@@ -50,6 +50,7 @@ const state = ref(demoState({
         answerLabel: 'Le Kilimandjaro',
         submittedAnswer: 'Le Mont Blanc',
         lifeLost: true,
+        leftThePage: false,
       },
   cooldownUntil: atRest ? null : new Date(Date.now() + 252_000).toISOString(),
   floorSeen: 544,

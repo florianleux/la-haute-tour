@@ -45,5 +45,6 @@ export function judgePractice(answer: string): Verdict {
     answerLabel: PRACTICE_QUESTION.answerLabel,
     submittedAnswer: answer,
     lifeLost: false,
+    leftThePage: false,
   }
 }

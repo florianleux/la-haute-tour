@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { focusLosses, missedPool, seenQuestions, users } from '../../server/db/schema'
 import { disputableErrors } from '../../server/utils/disputes'
-import { serveNextQuestion, submitAnswer } from '../../server/utils/game'
+import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { resetPlayer } from '../../server/utils/players'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -66,6 +66,21 @@ describe('perte de focus', () => {
     expect(await db.select().from(focusLosses)).toMatchObject([
       { userId: player.id, questionId, mode: 'ascent', lostAt: new Date(NOW.getTime() + 2_000) },
     ])
+  })
+
+  // specs/anti-triche.md#perte-de-focus
+  it('dit au verdict que la réponse est partie avec la page, rechargement compris', async () => {
+    await serveNextQuestion(db, await reload(), NOW)
+    const later = new Date(NOW.getTime() + 2_000)
+
+    expect((await submitAnswer(db, await reload(), '', later, 'focusLoss')).verdict).toMatchObject({ leftThePage: true })
+    expect((await readGameState(db, await reload(), later)).verdict).toMatchObject({ leftThePage: true })
+  })
+
+  it('ne le dit pas quand le joueur répond lui-même', async () => {
+    await serveNextQuestion(db, player, NOW)
+
+    expect((await submitAnswer(db, await reload(), '', new Date(NOW.getTime() + 2_000))).verdict).toMatchObject({ leftThePage: false })
   })
 
   it('n enregistre rien quand le joueur répond lui-même', async () => {

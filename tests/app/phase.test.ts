@@ -9,7 +9,7 @@ describe('entrée dans la partie', () => {
   })
 })
 
-const verdict = { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true }
+const verdict = { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true, leftThePage: false }
 /** Un combat de boss en cours, son épreuve servie. */
 const fight = {
   hp: 7,

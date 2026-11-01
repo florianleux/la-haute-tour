@@ -101,6 +101,11 @@ export interface Verdict {
   answerLabel: string
   submittedAnswer: string
   lifeLost: boolean
+  /**
+   * La réponse est partie parce que le joueur a quitté la page : il doit le
+   * lire, sinon il croit à un bug. Voir specs/anti-triche.md#perte-de-focus.
+   */
+  leftThePage: boolean
 }
 
 export interface ChestView {
@@ -267,6 +272,8 @@ export interface PlayerSnapshot {
   reservation?: Reservation
   /** The reserved question, loaded with the reservation. */
   question?: Question
+  /** La réservation a été résolue par une perte de focus. Lue avec elle. */
+  leftThePage: boolean
   /** Le tirage du rattrapage en cours, vide hors rattrapage. Lu dans le même lot. */
   recoveryRun: RecoveryQuestion[]
   /** Les épreuves du combat de boss, vides hors combat. Lues dans le même lot. */
@@ -362,7 +369,17 @@ function snapshotQueries(db: Database, userId: number) {
       .where(eq(users.id, userId))
       .limit(1),
     db
-      .select({ reservation: reservations, question: questions })
+      .select({
+        reservation: reservations,
+        question: questions,
+        // La réponse est partie avec la page : la perte de focus s'écrit au même
+        // instant que la résolution. Lue ici, le message tient au rechargement.
+        leftThePage: sql<number>`${exists(db.select({ one: sql`1` }).from(focusLosses).where(and(
+          eq(focusLosses.userId, reservations.userId),
+          eq(focusLosses.questionId, reservations.questionId),
+          eq(focusLosses.lostAt, reservations.resolvedAt),
+        )))}`,
+      })
       .from(reservations)
       .innerJoin(questions, eq(questions.id, reservations.questionId))
       .where(eq(reservations.userId, userId))
@@ -400,6 +417,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials, keyHolders]: B
     gameClosed: row.gameClosed === 1,
     reservation: held?.reservation,
     question: held?.question,
+    leftThePage: held?.leftThePage === 1,
     recoveryRun,
     trials: toHeldTrials(trials),
   }
@@ -923,6 +941,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
         // Le rattrapage ne coûte aucune vie : seule une erreur d'ascension en
         // fait perdre une.
         lifeLost: reservation.mode === 'ascent' && !reservation.correct,
+        leftThePage: snapshot.leftThePage,
       }
       base.chest = chestOf(reservation)
     }
@@ -1945,6 +1964,7 @@ export async function submitAnswer(
   }
 
   const resolution = await resolve(db, snapshot, reservation, answer, now, source, accepted.map(row => row.text))
+  const resolved = { ...resolution.snapshot, leftThePage: source === 'focusLoss' }
 
-  return withUnlocked(stateFrom(resolution.snapshot, now), resolution.unlocked)
+  return withUnlocked(stateFrom(resolved, now), resolution.unlocked)
 }

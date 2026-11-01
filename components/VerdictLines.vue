@@ -47,6 +47,18 @@
     Ta réponse : {{ verdict.submittedAnswer || '(rien)' }}
   </PlayText>
 
+  <!-- La réponse est partie avec la page : dit comme l'avertissement d'une
+       réponse vide (EmptyAnswerNotice), à la même place sous la saisie. Sans
+       lui, le joueur honnête croit à un bug. Voir specs/anti-triche.md#perte-de-focus. -->
+  <PlayText
+    v-if="!review && verdict.leftThePage"
+    role="notice"
+    :class="shade"
+    class="text-amber-700"
+  >
+    Tu as quitté la page, ta réponse a été envoyée.
+  </PlayText>
+
   <!-- La vie perdue, le cas échéant : les rubans montrent le compte d'après,
        pas le fait qu'on vienne d'en perdre une. Voir specs/ecrans.md#ascent--verdict.
        Toujours faux en rattrapage, qui ne coûte aucune vie — la ligne s'efface

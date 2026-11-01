@@ -85,6 +85,7 @@ const state = ref(demoState({
         submittedAnswer: correct ? 'Kilimandjaro' : 'Le Mont Blanc',
         // Le rattrapage ne coûte aucune vie. Voir server/utils/game.ts.
         lifeLost: false,
+        leftThePage: false,
       },
   // `resumes` suit le quota atteint, pas la dernière réponse : un tirage scellé
   // sur trop peu de succès ne reprend jamais. Le banc fait donc varier les
