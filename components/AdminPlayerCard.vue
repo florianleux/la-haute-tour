@@ -6,6 +6,9 @@
         <p class="truncate font-semibold text-slate-100">
           {{ player.username }}
         </p>
+        <BaseHint class="font-mono">
+          {{ player.discordId }}
+        </BaseHint>
         <BaseHint v-if="player.adventurerName">
           En jeu : {{ player.adventurerName }}
         </BaseHint>

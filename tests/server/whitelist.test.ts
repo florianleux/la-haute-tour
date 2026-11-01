@@ -97,9 +97,18 @@ describe('whitelist admin', () => {
     expect(response.status).toBe(200)
     const { entries } = await response.json() as { entries: { discordId: string }[] }
     expect(entries.filter(entry => entry.discordId !== ADMIN_ID)).toEqual([
-      { discordId: '222', team: null, createdAt: '2026-09-02T10:00:00.000Z' },
-      { discordId: '111', team: null, createdAt: '2026-09-01T10:00:00.000Z' },
+      { discordId: '222', team: null, username: null, createdAt: '2026-09-02T10:00:00.000Z' },
+      { discordId: '111', team: null, username: null, createdAt: '2026-09-01T10:00:00.000Z' },
     ])
+  })
+
+  it('donne le pseudo d un invité dès qu il s est connecté', async () => {
+    await playerCookie()
+
+    const response = await list(apiRequest('http://test/whitelist', adminCookie))
+
+    const { entries } = await response.json() as { entries: { discordId: string, username: string | null }[] }
+    expect(entries.find(entry => entry.discordId === PLAYER_ID)?.username).toBe('frodo')
   })
 
   it('refuse l ajout à un joueur sans le flag admin', async () => {

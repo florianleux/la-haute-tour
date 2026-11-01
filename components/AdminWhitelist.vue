@@ -4,6 +4,12 @@
       Seuls ces Discord IDs peuvent créer un compte.
     </template>
 
+    <p class="mt-2 text-sm text-slate-400">
+      <span v-for="total in teamTotals" :key="total.label" class="mr-4">
+        {{ total.label }} : <span class="font-semibold text-slate-200">{{ total.count }}</span>
+      </span>
+    </p>
+
     <form class="mt-4 flex items-end gap-3" @submit.prevent="submit">
       <BaseInput
         v-model="discordId"
@@ -36,11 +42,14 @@
 
     <BaseList :empty="emptyMessage" class="mt-6">
       <li
-        v-for="entry in entries"
+        v-for="entry in pageEntries"
         :key="entry.discordId"
         class="flex items-center justify-between px-4 py-3 text-sm"
       >
-        <span class="font-mono">{{ entry.discordId }}</span>
+        <span>
+          <span class="font-mono">{{ entry.discordId }}</span>
+          <span v-if="entry.username" class="ml-2 text-slate-400">{{ entry.username }}</span>
+        </span>
         <span class="flex items-center gap-3 text-slate-500">
           <span>{{ teamLabel(entry.team) }}</span>
           <span>{{ formatDay(entry.createdAt) }}</span>
@@ -54,6 +63,7 @@
         </span>
       </li>
     </BaseList>
+    <BasePagination v-model="page" :page-count="pageCount" class="mt-4" />
   </BaseSection>
 </template>
 
@@ -66,6 +76,23 @@ import type { TeamId } from '~~/shared/utils/teams'
 const { entries, failed, add, adding, remove, removing, loading } = await useWhitelist()
 
 const discordId = ref('')
+
+// L'équipe d'arrivée portée par la whitelist, pas celle du compte : ce sont
+// les invitations qu'on compte ici.
+const teamTotals = computed(() => [...TEAM_IDS, null].map(id => ({
+  label: teamLabel(id),
+  count: entries.value.filter(entry => entry.team === id).length,
+})))
+
+// ponytail: pagination côté client, la liste arrive entière ; paginer le serveur si elle grossit trop
+const PAGE_SIZE = 20
+const page = ref(1)
+const pageCount = computed(() => Math.max(1, Math.ceil(entries.value.length / PAGE_SIZE)))
+const pageEntries = computed(() => entries.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE))
+// Un retrait peut vider la dernière page : on recule plutôt que d'afficher du vide.
+watch(pageCount, (count) => {
+  page.value = Math.min(page.value, count)
+})
 
 // Aucune équipe présélectionnée : l'admin la choisit à chaque invitation, au
 // lieu d'envoyer par mégarde tout le monde dans la première.
