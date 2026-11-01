@@ -133,11 +133,12 @@
       @enter="enterBossFight"
     />
 
+    <!-- Le combat, et son outro de défaite par-dessus l'arène. -->
     <BossFightCard
-      v-else-if="view?.card === 'bossFight' && state && bossStage"
+      v-else-if="(view?.card === 'bossFight' || view?.card === 'bossOutro') && state?.boss && bossStage"
       :lives="state.lives"
       :max-lives="state.maxLives"
-      :boss="view.boss"
+      :boss="view.card === 'bossFight' ? view.boss : state.boss"
       :stage="bossStage"
       :player-name="user?.displayName ?? ''"
       :portrait="playerPortrait(user?.gender ?? null)"
@@ -146,17 +147,11 @@
       :submitting="pending"
       :action="view.action"
       :advancing="isRunning('advance')"
-      :relic="view.relic"
+      :relic="view.card === 'bossFight' ? view.relic : null"
+      :defeated="view.card === 'bossOutro'"
       @update:model-value="typed = $event"
       @submit="submit"
       @advance="goNext"
-    />
-
-    <BossOutro
-      v-else-if="view?.card === 'bossOutro' && bossStage"
-      :boss="bossStage.boss"
-      :colors="bossStage.intro?.windowColors"
-      @leave="goNext"
     />
 
     <BaseCard v-else>

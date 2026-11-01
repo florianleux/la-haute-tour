@@ -15,7 +15,7 @@
       :verdict="boss.trial ? null : boss.verdict"
       :outcome="boss.outcome"
       :model-value="modelValue"
-      :action-label="ended ? null : action?.label ?? null"
+      :action-label="ended || defeated ? null : action?.label ?? null"
       :busy="submitting || advancing"
       :motion="submitting ? 'judging' : advancing ? 'leaving' : undefined"
       @update:model-value="emit('update:modelValue', $event)"
@@ -23,6 +23,16 @@
       @advance="emit('advance')"
     />
   </BossArena>
+
+  <!-- Perdu, verdict lu : l'arène s'efface au noir sous l'outro de défaite,
+       qui porte « Redescendre ». -->
+  <BossOutro
+    v-if="defeated"
+    :boss="stage.boss"
+    :colors="stage.intro?.windowColors"
+    :figure-box="stage.intro?.figureBox"
+    @leave="emit('advance')"
+  />
 
   <!-- Gagné ou passé : la nuit monte, et c'est elle qui porte le geste. -->
   <BossVictory
@@ -69,6 +79,8 @@ const props = defineProps<{
   advancing: boolean
   /** La relique du boss abattu, montrée avant le palier ; null sinon. */
   relic?: ItemId | null
+  /** La défaite, son dernier verdict quitté : l'outro de défaite par-dessus l'arène. */
+  defeated?: boolean
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string], 'submit': [], 'advance': [] }>()

@@ -1,16 +1,6 @@
 <template>
   <div class="contents">
-    <!-- La défaite, après le verdict de la dernière épreuve et « Suivant »,
-         comme au jeu. Rien ne la quitte : on recharge pour rejouer. -->
-    <BossOutro
-      v-if="defeatOutro"
-      :boss="BOSS"
-      :colors="COLORS"
-      @leave="() => {}"
-    />
-
     <BossArena
-      v-else
       :boss="BOSS"
       :boss-hp="FULL_BOSS_HP - hits"
       :boss-max-hp="FULL_BOSS_HP"
@@ -31,6 +21,17 @@
         @advance="next"
       />
     </BossArena>
+
+    <!-- La défaite, après le verdict de la dernière épreuve et « Suivant »,
+         par-dessus l'arène, comme au jeu. Rien ne la quitte : on recharge
+         pour rejouer. -->
+    <BossOutro
+      v-if="defeatOutro"
+      :boss="BOSS"
+      :colors="COLORS"
+      :figure-box="BOSS_INTROS[1]?.figureBox"
+      @leave="() => {}"
+    />
 
     <!-- Gagné : l'outro de victoire monte par-dessus l'arène, comme au jeu
          (BossFightCard). Son « Continuer » ne mène nulle part ici. -->
