@@ -48,7 +48,15 @@
           role="answer"
           class="text-amber-800"
         >
-          {{ verdict.answerLabel }}
+          {{ answer?.name }}
+        </PlayText>
+        <!-- Ce qui situe le drapeau, plus petit, à la ligne (splitFlagLabel). -->
+        <PlayText
+          v-if="answer?.detail"
+          role="aside"
+          class="text-amber-800/80"
+        >
+          {{ answer?.detail }}
         </PlayText>
       </template>
     </div>
@@ -69,6 +77,7 @@
 // (pages/test/boss/1.vue). Elle ne juge rien : le verdict vient de l'appelant.
 // Voir specs/boss-etage1-drapeaux.md.
 import type { BossVerdict } from '~~/server/utils/boss'
+import { splitFlagLabel } from '~~/utils/flagLabel'
 import type { BossOutcome } from '~~/server/utils/mechanics'
 
 const props = defineProps<{
@@ -86,6 +95,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string], 'submit': [], 'advance': [] }>()
+
+const answer = computed(() => (props.verdict ? splitFlagLabel(props.verdict.answerLabel) : null))
 
 const headline = computed(() => {
   if (props.outcome === 'victory') {

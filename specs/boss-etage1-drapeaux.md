@@ -52,6 +52,12 @@ la réplique de ce combat, puis le combat :
   (Levenshtein ≤ 2).
 - **Verdict immédiat** après chaque drapeau — juste ou faux, réponse affichée
   — avant de passer au suivant. Même mécanique qu'en ascension.
+- La réponse affichée tient sur deux lignes quand elle a une virgule : le nom,
+  puis, plus petit, à la ligne, ce qui suivait la virgule, la date au bout.
+  « État du Katanga (1960-1963), sécession du Congo » se lit « État du
+  Katanga », puis « Sécession du Congo (1960-1963) ».
+- Un tiret tapé comme une espace passe (« Saint Vincent et les Grenadines »),
+  comme partout : la ponctuation ne compte pas.
 
 ## Contenu
 

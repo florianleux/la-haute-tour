@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { flags } from '../../server/db/schema'
 import { parseFlags, seedFlags } from '../../scripts/seed-flags'
+import { isAnswerAccepted } from '../../shared/utils/answers'
 import { createTestDatabase } from '../helpers/db'
 import type { Database } from '../../server/db/client'
 
@@ -56,6 +57,18 @@ describe('seed des drapeaux', () => {
     for (const flag of parseFlags(source)) {
       expect(flag.image).toMatch(/^[0-9a-f]{16}$/)
       expect(existsSync(`public/images/boss/1/flags/${flag.image}.webp`)).toBe(true)
+    }
+  })
+})
+
+// specs/validation.md : la ponctuation ne compte pas, un tiret vaut une espace.
+describe('réponses des drapeaux', () => {
+  it('acceptent un tiret tapé comme une espace, ou sans accents', () => {
+    for (const flag of parseFlags(source)) {
+      for (const accepted of flag.acceptedAnswers) {
+        const typed = accepted.replaceAll('-', ' ').normalize('NFD').replace(/[̀-ͯ]/g, '')
+        expect(isAnswerAccepted(typed, flag.acceptedAnswers), `${flag.slug} : « ${typed} »`).toBe(true)
+      }
     }
   })
 })
