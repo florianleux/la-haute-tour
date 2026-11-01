@@ -30,6 +30,16 @@ export function phaseLabel(phase: Phase): string {
   }
 }
 
+/**
+ * Ce que dit le verdict d'une réponse partie avec la page (perte de focus),
+ * sous la saisie du joueur — en ascension, en rattrapage, et sur la Chute :
+ * sans lui, le joueur honnête croit à un bug. Null sur tout autre verdict.
+ * Voir specs/anti-triche.md#perte-de-focus.
+ */
+export function focusLossNotice(verdict: Pick<NonNullable<GameState["verdict"]>, "focusLoss">): string | null {
+  return verdict.focusLoss ? "Tu as quitté la page, ta réponse a été envoyée." : null;
+}
+
 /** Le libellé qui passe à la suite, du verdict comme du coffre ouvert. */
 const NEXT = "Suivant";
 
@@ -262,10 +272,9 @@ export function gameScreen(state: GameState): GameScreen {
  * et montrer la relique sont des allers purement client.
  */
 export type PlayAction =
-  | { label: string; move: "advance" | "leave" | "climbToDoor" }
+  | { label: string; move: "advance" | "leave" | "climbToDoor" | "showBossOutro" }
   | { label: string; move: "enterChest"; chestOf: string }
-  | { label: string; move: "revealRelic"; relicOf: number }
-  | { label: string; move: "showBossOutro"; bossOutroOn: string };
+  | { label: string; move: "revealRelic"; relicOf: number };
 
 /**
  * Ce que la page retient seule, que le serveur ne sait pas. Chacun désigne la
@@ -279,8 +288,12 @@ export interface PlayClientState {
   fallenOn: string | null;
   /** La fin de combat que le joueur lit encore (bossEndId). */
   bossEndOn?: string | null;
-  /** La défaite dont le joueur a quitté le verdict pour l'outro (bossEndId). */
-  bossOutroOn?: string | null;
+  /**
+   * La défaite lue (`bossEndOn`), le joueur en a quitté le verdict pour l'outro.
+   * Un drapeau, pas un id : il ne vaut que pour la fin que `bossEndOn` désigne,
+   * et la page le remet à faux à chaque nouvelle fin.
+   */
+  bossOutro?: boolean;
   /** L'étage dont le joueur regarde la relique, entre « Continuer » et le palier. */
   relicOf?: number | null;
 }
@@ -298,9 +311,10 @@ export type PlayView = {
 } & (
   | { card: "question"; question: ServedQuestion }
   | { card: "chest"; chest: ChestView }
-  | { card: "recovery" | "cooldown" | "result" | "bossDoor" | "bossOutro" }
+  | { card: "recovery" | "cooldown" | "result" | "bossDoor" }
   | {
-      card: "bossFight";
+      /** Le combat, ou son outro de défaite posée par-dessus l'arène. */
+      card: "bossFight" | "bossOutro";
       boss: NonNullable<GameState["boss"]>;
       /** La relique montrée par-dessus l'arène. */
       relic?: ItemId | null;
@@ -346,9 +360,9 @@ export function playView(
     if (state.boss.outcome !== "defeat") {
       return { screen, card: "bossFight", boss: state.boss, action: { label: "Continuer", move: "leave" } };
     }
-    return ended === client.bossOutroOn
-      ? { screen, card: "bossOutro", action: { label: "Redescendre", move: "leave" } }
-      : { screen, card: "bossFight", boss: state.boss, action: { label: NEXT, move: "showBossOutro", bossOutroOn: ended } };
+    return client.bossOutro
+      ? { screen, card: "bossOutro", boss: state.boss, relic: null, action: { label: "Redescendre", move: "leave" } }
+      : { screen, card: "bossFight", boss: state.boss, action: { label: NEXT, move: "showBossOutro" } };
   }
 
   // Le combat : l'arène sert l'épreuve, puis son verdict et la suite. Abattu

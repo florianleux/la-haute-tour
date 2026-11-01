@@ -74,6 +74,7 @@
 // `face` choisit l'illustration : le médaillon de parchemin par défaut, ou la
 // planche clouée du camp — bois sombre, donc texte crème plutôt qu'ambre, et pas
 // de `pb-2` puisqu'elle est symétrique là où le médaillon a une lèvre basse.
+import { MOON_INK } from '~~/utils/typography'
 type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'parchment-bottom' | 'inline'
 type Face = 'medallion' | 'plank' | 'moon'
 
@@ -128,7 +129,7 @@ const FACES: Record<Face, string> = {
   // panneau clair (lignes 10 à 77 sur 94) porte haut dans l'image, et la police
   // porte bas, comme sur le médaillon (`pb-2`) : le libellé remonte d'autant,
   // en em pour suivre la taille de l'ancre.
-  moon: 'bg-[url(/images/boss/1/trial-button.webp)] pb-[0.45em] text-[#0D304E]',
+  moon: `bg-[url(/images/boss/1/trial-button.webp)] pb-[0.45em] ${MOON_INK.navy}`,
 }
 
 /** Le format de chaque dessin, largeur / hauteur de l'image. */

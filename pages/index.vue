@@ -135,10 +135,10 @@
 
     <!-- Le combat, et son outro de défaite par-dessus l'arène. -->
     <BossFightCard
-      v-else-if="(view?.card === 'bossFight' || view?.card === 'bossOutro') && state?.boss && bossStage"
+      v-else-if="(view?.card === 'bossFight' || view?.card === 'bossOutro') && state && bossStage"
       :lives="state.lives"
       :max-lives="state.maxLives"
-      :boss="view.card === 'bossFight' ? view.boss : state.boss"
+      :boss="view.boss"
       :stage="bossStage"
       :player-name="user?.displayName ?? ''"
       :portrait="playerPortrait(user?.gender ?? null)"
@@ -147,7 +147,7 @@
       :submitting="pending"
       :action="view.action"
       :advancing="isRunning('advance')"
-      :relic="view.card === 'bossFight' ? view.relic : null"
+      :relic="view.relic"
       :defeated="view.card === 'bossOutro'"
       @update:model-value="typed = $event"
       @submit="submit"
@@ -300,14 +300,14 @@ const fallenOn = ref<string | null>(null)
 // comme la chute.
 const bossEndOn = ref<string | null>(null)
 // La défaite dont le joueur a quitté le verdict pour l'outro.
-const bossOutroOn = ref<string | null>(null)
+const bossOutro = ref(false)
 // La relique du boss abattu, montrée entre « Continuer » et le palier : un
 // quatrième aller client, désigné par l'étage.
 const relicOf = ref<number | null>(null)
 
 const view = computed(() =>
   state.value
-    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value, bossEndOn: bossEndOn.value, bossOutroOn: bossOutroOn.value, relicOf: relicOf.value })
+    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value, bossEndOn: bossEndOn.value, bossOutro: bossOutro.value, relicOf: relicOf.value })
     : null,
 )
 
@@ -354,6 +354,7 @@ watch(() => state.value && bossEndId(state.value), (ended) => {
   if (ended && ended !== lastBossEnd) {
     lastBossEnd = ended
     bossEndOn.value = ended
+    bossOutro.value = false
   }
 })
 
@@ -444,10 +445,10 @@ async function goNext(): Promise<void> {
       fallenOn.value = null
       chestOf.value = null
       bossEndOn.value = null
-      bossOutroOn.value = null
+      bossOutro.value = false
       return
     case 'showBossOutro':
-      bossOutroOn.value = action.bossOutroOn
+      bossOutro.value = true
       return
     case 'enterChest':
       chestOf.value = action.chestOf

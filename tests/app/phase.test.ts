@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockedByMaintenance, dueLesson, fallQuestionId, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView, victoryOnScreen } from '../../utils/phase'
+import { blockedByMaintenance, dueLesson, fallQuestionId, focusLossNotice, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView, victoryOnScreen } from '../../utils/phase'
 import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
@@ -9,7 +9,7 @@ describe('entrée dans la partie', () => {
   })
 })
 
-const verdict = { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true, leftThePage: false }
+const verdict = { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true, focusLoss: false }
 /** Un combat de boss en cours, son épreuve servie. */
 const fight = {
   hp: 7,
@@ -30,6 +30,25 @@ const question = {
   focusGraceMs: 1_000,
   lootQuestion: false,
 }
+
+// specs/anti-triche.md#perte-de-focus
+describe('réponse partie avec la page', () => {
+  const left = { ...verdict, focusLoss: true }
+
+  it('le dit au verdict, en ascension, en rattrapage et sur la Chute', () => {
+    for (const shown of [
+      state({ phase: 'ascent', verdict: left }),
+      state({ phase: 'recovery', lives: 0, verdict: { ...left, lifeLost: false } }),
+      state({ phase: 'cooldown', lives: 0, verdict: left }),
+    ]) {
+      expect(focusLossNotice(gameScreen(shown).verdict!)).toBe('Tu as quitté la page, ta réponse a été envoyée.')
+    }
+  })
+
+  it('ne dit rien d une réponse envoyée par le joueur', () => {
+    expect(focusLossNotice(verdict)).toBeNull()
+  })
+})
 
 describe('écran de jeu', () => {
   it('ne montre que la question tant qu elle est servie', () => {
@@ -389,8 +408,8 @@ describe('carte de jeu', () => {
     const ended = defeated.cooldownUntil
 
     expect(card(defeated, { chestOf: null, fallenOn: null, bossEndOn: ended }))
-      .toEqual({ card: 'bossFight', action: { label: 'Suivant', move: 'showBossOutro', bossOutroOn: ended } })
-    expect(card(defeated, { chestOf: null, fallenOn: null, bossEndOn: ended, bossOutroOn: ended }))
+      .toEqual({ card: 'bossFight', action: { label: 'Suivant', move: 'showBossOutro' } })
+    expect(card(defeated, { chestOf: null, fallenOn: null, bossEndOn: ended, bossOutro: true }))
       .toEqual({ card: 'bossOutro', action: { label: 'Redescendre', move: 'leave' } })
     expect(card(defeated).card).toBe('cooldown')
   })

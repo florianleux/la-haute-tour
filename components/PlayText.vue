@@ -1,7 +1,7 @@
 <template>
   <component
     :is="as"
-    :class="(long && LONG_ROLES[role]) || ROLES[role]"
+    :class="(long && LONG_ROLES[role]) || (large && LARGE_ROLES[role]) || ROLES[role]"
   >
     <slot />
   </component>
@@ -37,6 +37,8 @@ type Role =
   | 'headline'
   // La bonne réponse, en capitales.
   | 'answer'
+  // Ce qui situe la bonne réponse, à la ligne sous elle : entre elle et l'aparté.
+  | 'detail'
   // Ce que le joueur avait tapé, et les explications qui suivent un titre.
   | 'aside'
   // Une annonce brève : coffre gagné, question loot, sort du rattrapage.
@@ -57,6 +59,7 @@ const ROLES: Record<Role, string> = {
   recall: 'text-[6.2cqw] sm:text-[3.5cqw]',
   headline: 'text-[8.3cqw] font-bold sm:text-[4.8cqw]',
   answer: 'text-[4.5cqw] font-bold uppercase sm:text-[4.2cqw]',
+  detail: 'text-[3.9cqw] sm:text-[3.2cqw]',
   aside: 'text-[3.9cqw] sm:text-[2.7cqw]',
   notice: 'text-[3.6cqw] font-semibold sm:text-[2.5cqw]',
   link: 'text-[3.3cqw] font-semibold underline underline-offset-2 sm:text-[2.5cqw]',
@@ -80,11 +83,23 @@ const LONG_ROLES: Partial<Record<Role, string>> = {
   answer: 'text-[4.5cqw] font-bold uppercase sm:text-[3.4cqw]',
 } satisfies Record<keyof typeof LONG_CHARS, string>
 
+// Les tailles agrandies d'un cinquième, pour le verdict d'une carte plus étroite
+// que le panneau de l'ascension : celle de l'épreuve du boss (BossFlagTrial).
+// Desktop seulement, comme LONG_ROLES : le reste du rôle recopié de ROLES.
+const LARGE_ROLES: Partial<Record<Role, string>> = {
+  headline: 'text-[8.3cqw] font-bold sm:text-[5.76cqw]',
+  answer: 'text-[4.5cqw] font-bold uppercase sm:text-[5.04cqw]',
+  detail: 'text-[3.9cqw] sm:text-[3.84cqw]',
+  aside: 'text-[3.9cqw] sm:text-[3.24cqw]',
+}
+
 withDefaults(defineProps<{
   role: Role
   /** La balise rendue : un paragraphe sauf quand la ligne est un geste. */
   as?: 'p' | 'span' | 'button'
   /** Trop long pour la taille du rôle : la taille réduite, s'il en a une. */
   long?: boolean
+  /** Agrandi d'un cinquième, s'il a une taille agrandie (LARGE_ROLES). */
+  large?: boolean
 }>(), { as: 'p' })
 </script>

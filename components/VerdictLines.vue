@@ -37,15 +37,15 @@
   </PlayText>
 
   <!-- La réponse est partie avec la page : dit comme l'avertissement d'une
-       réponse vide (EmptyAnswerNotice), à la même place sous la saisie. Sans
-       lui, le joueur honnête croit à un bug. Voir specs/anti-triche.md#perte-de-focus. -->
+       réponse vide (EmptyAnswerNotice), à la même place sous la saisie
+       (focusLossNotice). -->
   <PlayText
-    v-if="!review && verdict.leftThePage"
+    v-if="!review && focusNotice"
     role="notice"
     :class="shade"
     class="text-amber-700"
   >
-    Tu as quitté la page, ta réponse a été envoyée.
+    {{ focusNotice }}
   </PlayText>
 
   <!-- La vie perdue, le cas échéant : les rubans montrent le compte d'après,
@@ -100,6 +100,7 @@
 // qui suit ces lignes diffère d'un écran à l'autre — coffre gagné d'un côté,
 // sort du rattrapage de l'autre — et reste donc chez l'appelant.
 import type { Verdict } from '~~/server/utils/game'
+import { focusLossNotice } from '~~/utils/phase'
 
 const props = defineProps<{
   verdict: Verdict
@@ -118,6 +119,8 @@ const props = defineProps<{
    */
   disputeLit?: boolean
 }>()
+
+const focusNotice = computed(() => focusLossNotice(props.verdict))
 
 const shade = computed(() => (props.disputeLit ? LESSON_SHADE : ''))
 

@@ -73,14 +73,14 @@ describe('perte de focus', () => {
     await serveNextQuestion(db, await reload(), NOW)
     const later = new Date(NOW.getTime() + 2_000)
 
-    expect((await submitAnswer(db, await reload(), '', later, 'focusLoss')).verdict).toMatchObject({ leftThePage: true })
-    expect((await readGameState(db, await reload(), later)).verdict).toMatchObject({ leftThePage: true })
+    expect((await submitAnswer(db, await reload(), '', later, 'focusLoss')).verdict).toMatchObject({ focusLoss: true })
+    expect((await readGameState(db, await reload(), later)).verdict).toMatchObject({ focusLoss: true })
   })
 
   it('ne le dit pas quand le joueur répond lui-même', async () => {
     await serveNextQuestion(db, player, NOW)
 
-    expect((await submitAnswer(db, await reload(), '', new Date(NOW.getTime() + 2_000))).verdict).toMatchObject({ leftThePage: false })
+    expect((await submitAnswer(db, await reload(), '', new Date(NOW.getTime() + 2_000))).verdict).toMatchObject({ focusLoss: false })
   })
 
   it('n enregistre rien quand le joueur répond lui-même', async () => {

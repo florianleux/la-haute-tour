@@ -53,7 +53,7 @@ const state = computed(() => demoState({
     answerLabel: 'Le Kilimandjaro',
     submittedAnswer: 'Le Kilimandjaro',
     lifeLost: false,
-    leftThePage: false,
+    focusLoss: false,
   },
   chest: chest.value,
 }))

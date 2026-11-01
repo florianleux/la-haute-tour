@@ -141,7 +141,7 @@ function submit(): void {
       // Dit comme en jeu, pour voir le cadre encaisser ; les vies, elles, ne
       // bougent pas.
       lifeLost: !correct,
-      leftThePage: false,
+      focusLoss: false,
     },
   }
 }

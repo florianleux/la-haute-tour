@@ -11,11 +11,12 @@
     :colors="colors"
     :figure-box="figureBox"
     :gestures="[{ label: 'Redescendre', run: () => emit('leave') }]"
-    :title-ms="3500"
+    :title-ms="TITLE_MS"
   >
     <template #title>
       <p
-        class="text-[5.5cqw] [--title-ms:4500ms]"
+        class="text-[5.5cqw]"
+        :style="{ '--title-ms': `${TITLE_MS}ms` }"
         :class="TITLE_RED"
       >
         Défaite
@@ -41,4 +42,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ leave: [] }>()
+
+/** La révélation lente de « DÉFAITE » : sa fenêtre attend qu'elle soit finie. */
+const TITLE_MS = 4500
 </script>

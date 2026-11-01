@@ -67,7 +67,7 @@ describe('déroulé d une question', () => {
   })
 
   it('ne décompte rien hors question', async () => {
-    serve(GAME_STATE_KEY, gameState({ verdict: { questionId: 'q1', statement: 'Capitale ?', correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false, leftThePage: false } }))
+    serve(GAME_STATE_KEY, gameState({ verdict: { questionId: 'q1', statement: 'Capitale ?', correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false, focusLoss: false } }))
 
     const { secondsLeft } = await run({ now: ref(NOW) })
 
@@ -291,7 +291,7 @@ describe('déroulé d une question', () => {
 
   it('ne surveille rien hors question : verdict, attente, accueil', async () => {
     serve(GAME_STATE_KEY, gameState({
-      verdict: { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true, leftThePage: false },
+      verdict: { questionId: 'q1', statement: 'Capitale ?', correct: false, answerLabel: 'BORDEAUX', submittedAnswer: 'Toulouse', lifeLost: true, focusLoss: false },
     }))
     const now = ref(NOW)
     const visible = ref(true)

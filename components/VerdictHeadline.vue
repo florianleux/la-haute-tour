@@ -4,6 +4,7 @@
        couleur arrive par `class`, avec le texte. -->
   <PlayText
     role="headline"
+    :large="large"
     :class="[cheer ? 'relative motion-safe:animate-cheer' : 'motion-safe:animate-shake', '[--enter-delay:0.1s]']"
   >
     <slot />
@@ -21,6 +22,8 @@
 defineProps<{
   /** Une bonne nouvelle : il jaillit, sinon il secoue la tête. */
   cheer: boolean
+  /** Agrandi d'un cinquième (PlayText). */
+  large?: boolean
 }>()
 
 /**

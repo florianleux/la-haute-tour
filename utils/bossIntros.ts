@@ -141,6 +141,9 @@ export const BOSS_INTROS: Readonly<Partial<Record<number, BossIntroEntry>>> = {
   },
 }
 
+/** Le boss paru (son fondu, `duration-[800ms]` de BossIntro), avant sa réplique de relance. */
+const RETRY_APPEAR_MS = 800
+
 /**
  * L'introduction que joue « Entrer », selon les combats déjà ouverts contre ce
  * boss (`bossAttemptNumber`) : entière au premier ; ensuite, le boss paraît, sans
@@ -158,6 +161,6 @@ export function introFor(intro: BossIntroEntry | undefined, fought: number): Bos
   return {
     figureBox: intro.figureBox,
     windowColors: intro.windowColors,
-    beats: [{ cue: 'appear', holdMs: 800 }, { speaker: 'boss', text: line }],
+    beats: [{ cue: 'appear', holdMs: RETRY_APPEAR_MS }, { speaker: 'boss', text: line }],
   }
 }

@@ -98,7 +98,7 @@ describe('l attente du jugement', () => {
   const judged: GameState = {
     ...served,
     question: null,
-    verdict: { questionId: 'q1', statement: 'Capitale de la Gironde ?', correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false, leftThePage: false },
+    verdict: { questionId: 'q1', statement: 'Capitale de la Gironde ?', correct: true, answerLabel: 'BORDEAUX', submittedAnswer: 'bordeaux', lifeLost: false, focusLoss: false },
   }
 
   beforeEach(() => {

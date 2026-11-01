@@ -18,7 +18,7 @@ const TIMER_MS = 60_000
 const QUESTION = { id: 'practice', statement: 'De quelle couleur était le cheval blanc d\'Henri IV ?', lootQuestion: false, timerMs: TIMER_MS }
 
 function verdict(correct: boolean): Verdict {
-  return { questionId: 'practice', statement: QUESTION.statement, correct, answerLabel: 'Blanc', submittedAnswer: 'x', lifeLost: false, leftThePage: false }
+  return { questionId: 'practice', statement: QUESTION.statement, correct, answerLabel: 'Blanc', submittedAnswer: 'x', lifeLost: false, focusLoss: false }
 }
 
 let scope = effectScope()

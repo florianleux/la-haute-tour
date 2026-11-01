@@ -31,6 +31,7 @@
 // quand le clavier virtuel s'ouvre. Un seul champ à l'écran à la fois, jamais
 // deux cartes montées ensemble.
 import { ANSWER_MAX_LENGTH } from '~~/shared/utils/answers'
+import { MOON_INK } from '~~/utils/typography'
 
 withDefaults(defineProps<{
   modelValue: string
@@ -40,7 +41,7 @@ withDefaults(defineProps<{
 
 const TONES = {
   parchment: 'border-[#d2860070] text-amber-800 placeholder:text-[#ecd6b3] focus:border-amber-0',
-  moon: 'border-[#C1FFFE] text-[#0D304E] placeholder:text-[#2B8390]/50',
+  moon: `border-[#C1FFFE] ${MOON_INK.navy} placeholder:text-[#2B8390]/50`,
 } as const
 
 defineEmits<{ 'update:modelValue': [string], submit: [] }>()

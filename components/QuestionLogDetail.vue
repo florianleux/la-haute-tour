@@ -66,7 +66,7 @@ const verdict = computed((): Verdict => ({
   ...props.entry,
   submittedAnswer: props.entry.submittedAnswer ?? '',
   lifeLost: false,
-  leftThePage: false,
+  focusLoss: false,
 }))
 
 // Le serveur seul dit ce qui est contestable : une erreur encore au pool de

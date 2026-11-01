@@ -19,7 +19,7 @@
        bulle, hors du cadre, est la seule à répondre. -->
   <div
     class="relative z-10 mx-auto w-full"
-    :class="[SKINS[skin].wrapper, reaction && REACTIONS[reaction]]"
+    :class="[SKINS[skin].wrapper, reaction && CARD_REACTIONS[reaction]]"
     :inert="shaded || undefined"
   >
     <!-- container-type (@container) fait de la largeur du cadre l'unité `cqw`
@@ -64,7 +64,7 @@
         :ratio="SKINS[skin].medallionRatio"
         :ink="SKINS[skin].medallionInk"
         class="group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
-        :class="[SKINS[skin].medallion, motion && MOTIONS[motion].medallion, shade('timer')]"
+        :class="[SKINS[skin].medallion, motion && CARD_MOTIONS[motion].medallion, shade('timer')]"
       >
         <slot name="medallion" />
       </PlayMedallion>
@@ -82,7 +82,7 @@
            mesure de hauteur de clavier, juste l'état du focus. -->
       <div
         class="absolute flex flex-col items-center justify-center gap-[0.7cqw] overflow-hidden @container text-center transition-all"
-        :class="[SKINS[skin].panel, motion && MOTIONS[motion].panel, shade('dispute')]"
+        :class="[SKINS[skin].panel, motion && CARD_MOTIONS[motion].panel, shade('dispute')]"
       >
         <slot />
       </div>
@@ -101,6 +101,8 @@
 
 <script lang="ts">
 import type { LessonLine, PlayTarget } from '~~/utils/lessons'
+import { CARD_MOTIONS, CARD_REACTIONS } from '~/composables/useCardMotion'
+import type { CardMotion } from '~/composables/useCardMotion'
 
 // L'habillage du dernier cadre démonté, le temps du patch en cours. Chaque card
 // monte son propre PlayFrame : passer de la question au verdict démonte l'un
@@ -231,7 +233,7 @@ const props = defineProps<{
    * telle qu'avant le clic — c'est ce qu'on veut sur un envoi refusé.
    * Voir specs/ecrans.md.
    */
-  motion?: 'judging' | 'leaving'
+  motion?: CardMotion
   /**
    * La réplique de Michel, à la question d'essai : ce qu'elle éclaire échappe
    * à l'ombre, le reste s'assombrit. Le panneau s'éclaire avec « Contester »,
@@ -248,60 +250,17 @@ function shade(part: PlayTarget | null): string {
   return (part ? spotlightOn(props.lesson, part).dimmed : shaded.value) ? LESSON_SHADE : ''
 }
 
-// Chaque attente décrite d'un seul endroit, panneau et médaillon ensemble.
-const MOTIONS = {
-  judging: { panel: 'motion-safe:animate-ink-lift', medallion: 'motion-safe:animate-judge-quiver!' },
-  leaving: { panel: 'motion-safe:animate-verdict-leave', medallion: '' },
-} as const
-
-const REACTIONS = {
-  hit: 'motion-safe:animate-hit',
-  hop: 'motion-safe:animate-hop',
-  mauled: 'motion-safe:animate-mauled',
-  quake: 'motion-safe:animate-quake',
-  pop: 'motion-safe:animate-pop',
-} as const
-
 // Le bord rouge de chaque coup : un éclair sur `hit`, plus dense et qui reste
 // en battant sous le Mimic.
-const VIGNETTES: Partial<Record<keyof typeof REACTIONS, string>> = {
+const VIGNETTES: Partial<Record<keyof typeof CARD_REACTIONS, string>> = {
   hit: HIT_VIGNETTE,
   mauled: 'bg-[radial-gradient(ellipse_at_center,transparent_20%,rgb(220_38_38/0.5)_55%,rgb(127_29_29/0.95)_100%)] motion-safe:animate-vignette-hold',
 }
 
-// L'arrivée ne se joue qu'une fois : l'attribut tombe quand elle est finie.
-// Le rattrapage garde son cadre de la question au verdict ; sans ça, la fin du
-// jugement rendait au médaillon (et au cadre) leur animation d'arrivée, qui
-// repartait de zéro — le chrono disparaissait, puis retombait.
-// ponytail: durée fixe, plus longue que toutes les entrées (la plus longue,
-// le bouton, 1,35 s) ; à lire sur animationend si une entrée s'allonge.
-const ARRIVAL_MS = 2000
-const arriving = ref(leaving !== props.skin)
-
-onMounted(() => {
-  if (arriving.value) {
-    setTimeout(() => {
-      arriving.value = false
-    }, ARRIVAL_MS)
-  }
-})
-
-// Retombe à l'arrivée s'il prend la suite d'un cadre soulevé (la question
-// d'ascension remplacée par son verdict), ou sur place quand le jugement
-// s'achève sans démontage (le rattrapage garde son cadre, et un envoi refusé
-// laisse la question).
-const settling = ref(liftedOnLeave)
-
-watch(() => props.motion, (now, before) => {
-  settling.value = before === 'judging' && now !== 'judging'
-})
-
-const lift = computed(() => {
-  if (props.motion === 'judging') {
-    return 'motion-safe:animate-frame-lift!'
-  }
-  return settling.value ? 'motion-safe:animate-frame-settle!' : ''
-})
+// L'arrivée ne se joue qu'une fois, et pas quand le cadre prend la suite d'un
+// cadre du même habillage ; il retombe s'il prend la suite d'un cadre soulevé
+// (la question d'ascension remplacée par son verdict).
+const { arriving, lift } = useCardMotion(() => props.motion, { arriving: leaving !== props.skin, settling: liftedOnLeave })
 
 onBeforeUnmount(() => {
   leaving = props.skin

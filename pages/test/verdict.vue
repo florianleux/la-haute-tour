@@ -45,7 +45,7 @@ const state = useState<GameState>('test-verdict-state', () => {
       submittedAnswer: correct ? picked.acceptedAnswers[0] : picked.wrongAnswer,
       lifeLost: !correct,
       // `?left` : la réponse partie avec la page.
-      leftThePage: useRoute().query.left !== undefined,
+      focusLoss: useRoute().query.left !== undefined,
     },
     // Palier 545, sur un étage qui en compte largement plus.
     floorSeen: 544,

@@ -67,3 +67,15 @@ export const TITLE_RED = `bg-[linear-gradient(100deg,#6b0f0f_0%,#e04848_30%,#ffd
  * ombre noire nette, sans or ni reflet.
  */
 export const TITLE_YELLOW = `text-[#fcd400] [text-shadow:0_2px_1px_rgb(0_0_0/0.85),0_0_4px_rgb(0_0_0/0.5)] ${TITLE_REVEAL}`
+
+/**
+ * Les encres de l'épreuve du boss de l'étage 1, aux lunes de son cadre : le
+ * bleu nuit du bouton, du chrono et de la saisie, le bleu canard du verdict.
+ * Écrites une fois pour la carte (BossFlagTrial), son bouton (BaseCardButton,
+ * face `moon`) et son champ (BaseParchmentInput, ton `moon`).
+ */
+export const MOON_INK = {
+  navy: 'text-[#0D304E]',
+  teal: 'text-[#2B8390]',
+  tealSoft: 'text-[#2B8390]/80',
+} as const

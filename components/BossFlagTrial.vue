@@ -27,13 +27,13 @@
         ratio="378 / 216"
         ink="top-[45%] text-[17cqw]"
         class="top-0 w-[29.1dvh] bg-[url(/images/boss/1/trial-timer.webp)] group-data-arriving:motion-safe:animate-medallion-drop [--enter-delay:0.3s]"
-        :class="motion === 'judging' && 'motion-safe:animate-judge-quiver!'"
+        :class="motion && CARD_MOTIONS[motion].medallion"
       >
         <PlayText
           v-if="verdict === null"
           role="timer"
           as="span"
-          class="text-[#0D304E]"
+          :class="MOON_INK.navy"
         >
           {{ secondsLeft }}
         </PlayText>
@@ -47,9 +47,13 @@
            s'efface sur « Suivant » (`motion`). -->
       <div
         class="flex h-full flex-col items-center justify-center gap-[1.8dvh] px-[2.5dvh]"
-        :class="motion && PANEL_MOTIONS[motion]"
+        :class="motion && CARD_MOTIONS[motion].panel"
       >
       <template v-if="verdict === null">
+        <!-- Les drapeaux en `drop-shadow`, pas en `box-shadow` : dix sont
+             détourés (transparence), et l'ombre doit suivre leur contour, pas
+             leur boîte. Le cadre grossit (chute, saut) : à vérifier sur iPad
+             (CLAUDE.md, Styling). -->
         <img
           :src="`/images/boss/1/flags/${image}.webp`"
           alt="Le drapeau à reconnaître"
@@ -71,7 +75,7 @@
              question : la carte du boss est plus étroite. -->
         <VerdictHeadline
           :cheer="headline.cheer"
-          class="sm:text-[5.76cqw]!"
+          large
           :class="headline.ink"
         >
           {{ headline.text }}
@@ -85,7 +89,8 @@
         >
         <PlayText
           role="answer"
-          class="text-[#2B8390] sm:text-[5.04cqw]!"
+          large
+          :class="MOON_INK.teal"
         >
           {{ answer?.name }}
         </PlayText>
@@ -93,15 +98,18 @@
              collé au nom, sous l'écart des autres lignes de la carte. -->
         <PlayText
           v-if="answer?.detail"
-          role="aside"
-          class="-mt-[1.4dvh] text-[#2B8390]/80 sm:text-[3.84cqw]!"
+          role="detail"
+          large
+          class="-mt-[1.4dvh]"
+          :class="MOON_INK.tealSoft"
         >
           {{ answer?.detail }}
         </PlayText>
         <!-- Comme au verdict d'une question (VerdictLines). -->
         <PlayText
           role="aside"
-          class="text-[#2B8390]/80 sm:text-[3.24cqw]!"
+          large
+          :class="MOON_INK.tealSoft"
         >
           Ta réponse : {{ verdict.submittedAnswer || '(rien)' }}
         </PlayText>
@@ -127,7 +135,10 @@
 // Voir specs/boss-etage1-drapeaux.md.
 import type { BossVerdict } from '~~/server/utils/boss'
 import { splitFlagLabel } from '~~/utils/flagLabel'
+import { MOON_INK } from '~~/utils/typography'
 import type { SendMethod } from '~/composables/useEmptyAnswerHold'
+import { CARD_MOTIONS, CARD_REACTIONS } from '~/composables/useCardMotion'
+import type { CardMotion } from '~/composables/useCardMotion'
 import type { BossOutcome } from '~~/server/utils/mechanics'
 
 const props = defineProps<{
@@ -146,7 +157,7 @@ const props = defineProps<{
   actionLabel: string | null
   busy?: boolean
   /** L'attente d'un geste, comme sur PlayFrame : `judging` sur Valider, `leaving` sur Suivant. */
-  motion?: 'judging' | 'leaving'
+  motion?: CardMotion
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string], 'submit': [], 'advance': [] }>()
@@ -174,36 +185,15 @@ const headline = computed(() => {
     : { text: 'Incorrect...', ink: 'text-rose-700', cheer: false }
 })
 
-/** Les gestes du panneau, ceux de PlayFrame. */
-const PANEL_MOTIONS = { judging: 'motion-safe:animate-ink-lift', leaving: 'motion-safe:animate-verdict-leave' } as const
-
 /** Le cadre saute de joie sur le juste, encaisse un coup sur le faux. */
 const reaction = computed(() => {
   if (!props.verdict) {
     return ''
   }
-  return props.verdict.correct ? 'motion-safe:animate-hop' : 'motion-safe:animate-hit'
+  return CARD_REACTIONS[props.verdict.correct ? 'hop' : 'hit']
 })
 
-// Il monte pendant le jugement, et retombe quand le verdict arrive. En `!` :
-// la classe d'arrivée reste tant que le cadre est monté. Voir PlayFrame.
-const settling = ref(false)
-watch(() => props.motion, (now, before) => {
-  settling.value = before === 'judging' && now !== 'judging'
-})
-const lift = computed(() => {
-  if (props.motion === 'judging') {
-    return 'motion-safe:animate-frame-lift!'
-  }
-  return settling.value ? 'motion-safe:animate-frame-settle!' : ''
-})
-
-/** L'arrivée du cadre, le temps de sa chute (`ARRIVAL_MS` de PlayFrame). */
-const ARRIVAL_MS = 2000
-const arriving = ref(true)
-onMounted(() => {
-  setTimeout(() => {
-    arriving.value = false
-  }, ARRIVAL_MS)
-})
+// Les gestes de l'ascension (useCardMotion) : il tombe à l'arrivée, monte au
+// jugement et retombe au verdict.
+const { arriving, lift } = useCardMotion(() => props.motion, { arriving: true, settling: false })
 </script>
