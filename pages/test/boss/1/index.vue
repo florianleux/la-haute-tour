@@ -40,6 +40,7 @@
       :boss="BOSS"
       :outcome="beaten"
       :colors="COLORS"
+      :figure-box="BOSS_INTROS[1]?.figureBox"
       @next="() => {}"
     />
   </div>

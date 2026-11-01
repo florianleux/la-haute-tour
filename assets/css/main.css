@@ -1641,11 +1641,6 @@
     40%, 100% { transform: scaleX(1); }
   }
 
-  /* La nuit de l'outro de victoire qui monte sur l'arène : le verdict se lit
-     (--night-hold), puis elle tombe (--night-fall). Les deux viennent de
-     components/BossVictory.vue, qui cale le reste de la scène sur eux. */
-  --animate-victory-fall: fade-in var(--night-fall) ease-in-out var(--night-hold) both;
-
   /* Un fondu d'entrée, retardable par --enter-delay ; et sa sortie. */
   /* Le détail du Grimoire qui apparaît sur le papier comme de l'encre, flou
      puis net. Le délai, posé par l'appelant, fait la cascade. Voir

@@ -40,6 +40,7 @@
     :boss="stage.boss"
     :outcome="ended"
     :colors="stage.intro?.windowColors"
+    :figure-box="stage.intro?.figureBox"
     :veiled="relicItem !== null"
     @next="emit('advance')"
   />
