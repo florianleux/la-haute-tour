@@ -238,7 +238,8 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
   boss vibre. Une épreuve fausse retire une vie au joueur sans animation
   particulière pour l'instant — juste l'affichage qui baisse.
 - **Chaque combat** se termine par une animation de victoire ou de défaite —
-  l'outro de victoire (`bossVictory`) ou celle de défaite (`bossOutro`), voir
+  l'outro de victoire (`bossVictory`) ou celle de défaite (`bossOutro`) — la
+  défaite après le verdict ordinaire de la dernière épreuve et « Suivant » —, voir
   [`ecrans.md`](./ecrans.md) —
   phase `bossFight`, active jusqu'à ce que le boss soit à 0 PV ou le joueur à
   0 vie.

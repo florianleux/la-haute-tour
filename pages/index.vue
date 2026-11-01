@@ -304,13 +304,15 @@ const fallenOn = ref<string | null>(null)
 // défaite, la victoire du dernier étage) : un troisième aller client, armé
 // comme la chute.
 const bossEndOn = ref<string | null>(null)
+// La défaite dont le joueur a quitté le verdict pour l'outro.
+const bossOutroOn = ref<string | null>(null)
 // La relique du boss abattu, montrée entre « Continuer » et le palier : un
 // quatrième aller client, désigné par l'étage.
 const relicOf = ref<number | null>(null)
 
 const view = computed(() =>
   state.value
-    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value, bossEndOn: bossEndOn.value, relicOf: relicOf.value })
+    ? playView(state.value, { chestOf: chestOf.value, fallenOn: fallenOn.value, bossEndOn: bossEndOn.value, bossOutroOn: bossOutroOn.value, relicOf: relicOf.value })
     : null,
 )
 
@@ -447,6 +449,10 @@ async function goNext(): Promise<void> {
       fallenOn.value = null
       chestOf.value = null
       bossEndOn.value = null
+      bossOutroOn.value = null
+      return
+    case 'showBossOutro':
+      bossOutroOn.value = action.bossOutroOn
       return
     case 'enterChest':
       chestOf.value = action.chestOf

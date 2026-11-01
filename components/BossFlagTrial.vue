@@ -60,8 +60,10 @@
           :model-value="modelValue"
           tone="moon"
           @update:model-value="emit('update:modelValue', $event)"
-          @submit="emit('submit')"
+          @submit="send('enter')"
         />
+
+        <EmptyAnswerNotice :method="heldEmptySend" />
       </template>
 
       <template v-else>
@@ -113,7 +115,7 @@
       :loading="busy"
       anchor="image-bottom"
       face="moon"
-      @click="verdict === null ? emit('submit') : emit('advance')"
+      @click="verdict === null ? send('click') : emit('advance')"
     />
   </div>
 </template>
@@ -125,6 +127,7 @@
 // Voir specs/boss-etage1-drapeaux.md.
 import type { BossVerdict } from '~~/server/utils/boss'
 import { splitFlagLabel } from '~~/utils/flagLabel'
+import type { SendMethod } from '~/composables/useEmptyAnswerHold'
 import type { BossOutcome } from '~~/server/utils/mechanics'
 
 const props = defineProps<{
@@ -133,7 +136,10 @@ const props = defineProps<{
   secondsLeft: number | null
   /** Null tant que le drapeau attend sa réponse. */
   verdict: Pick<BossVerdict, 'correct' | 'answerLabel' | 'submittedAnswer'> | null
-  /** Le terme du combat, que le verdict annonce à la place de juste ou faux. */
+  /**
+   * Le terme du combat, que le verdict annonce à la place de juste ou faux. La
+   * défaite, elle, garde le verdict ordinaire : son outro (BossOutro) suit.
+   */
   outcome: BossOutcome | null
   modelValue: string
   /** Le bouton sous le verdict ; absent, aucun. Sous le drapeau, c'est « Valider ». */
@@ -145,6 +151,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'update:modelValue': [value: string], 'submit': [], 'advance': [] }>()
 
+// Une réponse vide attend d'être confirmée, comme à l'ascension (QuestionCard).
+const { heldEmptySend, holds } = useEmptyAnswerHold(() => props.modelValue, () => props.image)
+
+function send(method: SendMethod): void {
+  if (props.busy || !holds(method)) {
+    emit('submit')
+  }
+}
+
 const answer = computed(() => (props.verdict ? splitFlagLabel(props.verdict.answerLabel) : null))
 
 const headline = computed(() => {
@@ -153,9 +168,6 @@ const headline = computed(() => {
   }
   if (props.outcome === 'passed') {
     return { text: 'Le boss te laisse passer', ink: 'text-amber-700', cheer: false }
-  }
-  if (props.outcome === 'defeat') {
-    return { text: 'Défaite...', ink: 'text-rose-700', cheer: false }
   }
   return props.verdict?.correct
     ? { text: 'Correct !', ink: 'text-emerald-700', cheer: true }

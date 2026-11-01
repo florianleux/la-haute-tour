@@ -384,10 +384,13 @@ describe('carte de jeu', () => {
     expect(playView(state(won))).toMatchObject({ card: 'bossFight', relic: null, action: { label: 'Continuer', move: 'advance' } })
   })
 
-  it('montre l outro de la défaite que la page retient, puis le camp', () => {
+  it('montre le verdict de la dernière épreuve, puis l outro de la défaite, puis le camp', () => {
     const defeated = { phase: 'cooldown' as const, lives: 0, cooldownUntil: '2026-09-03T12:00:00.000Z', boss: { ...fight, trial: null, outcome: 'defeat' as const } }
+    const ended = defeated.cooldownUntil
 
-    expect(card(defeated, { chestOf: null, fallenOn: null, bossEndOn: defeated.cooldownUntil }))
+    expect(card(defeated, { chestOf: null, fallenOn: null, bossEndOn: ended }))
+      .toEqual({ card: 'bossFight', action: { label: 'Suivant', move: 'showBossOutro', bossOutroOn: ended } })
+    expect(card(defeated, { chestOf: null, fallenOn: null, bossEndOn: ended, bossOutroOn: ended }))
       .toEqual({ card: 'bossOutro', action: { label: 'Redescendre', move: 'leave' } })
     expect(card(defeated).card).toBe('cooldown')
   })

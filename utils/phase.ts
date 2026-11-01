@@ -264,7 +264,8 @@ export function gameScreen(state: GameState): GameScreen {
 export type PlayAction =
   | { label: string; move: "advance" | "leave" | "climbToDoor" }
   | { label: string; move: "enterChest"; chestOf: string }
-  | { label: string; move: "revealRelic"; relicOf: number };
+  | { label: string; move: "revealRelic"; relicOf: number }
+  | { label: string; move: "showBossOutro"; bossOutroOn: string };
 
 /**
  * Ce que la page retient seule, que le serveur ne sait pas. Chacun désigne la
@@ -278,6 +279,8 @@ export interface PlayClientState {
   fallenOn: string | null;
   /** La fin de combat que le joueur lit encore (bossEndId). */
   bossEndOn?: string | null;
+  /** La défaite dont le joueur a quitté le verdict pour l'outro (bossEndId). */
+  bossOutroOn?: string | null;
   /** L'étage dont le joueur regarde la relique, entre « Continuer » et le palier. */
   relicOf?: number | null;
 }
@@ -337,10 +340,15 @@ export function playView(
   // poster : la défaite sur son outro, la victoire ou le passage du dernier étage sur
   // l'arène. Voir specs/spec.md#glossaire (Outro de défaite).
   const ended = bossEndId(state);
+  // La défaite montre d'abord le verdict de la dernière épreuve, comme les
+  // autres, et « Suivant » mène à l'outro.
   if (ended !== null && ended === client.bossEndOn && state.boss) {
-    return state.boss.outcome === "defeat"
+    if (state.boss.outcome !== "defeat") {
+      return { screen, card: "bossFight", boss: state.boss, action: { label: "Continuer", move: "leave" } };
+    }
+    return ended === client.bossOutroOn
       ? { screen, card: "bossOutro", action: { label: "Redescendre", move: "leave" } }
-      : { screen, card: "bossFight", boss: state.boss, action: { label: "Continuer", move: "leave" } };
+      : { screen, card: "bossFight", boss: state.boss, action: { label: NEXT, move: "showBossOutro", bossOutroOn: ended } };
   }
 
   // Le combat : l'arène sert l'épreuve, puis son verdict et la suite. Abattu
