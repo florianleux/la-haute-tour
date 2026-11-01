@@ -50,11 +50,12 @@
         >
           {{ answer?.name }}
         </PlayText>
-        <!-- Ce qui situe le drapeau, plus petit, à la ligne (splitFlagLabel). -->
+        <!-- Ce qui situe le drapeau, plus petit, à la ligne (splitFlagLabel) :
+             collé au nom, sous l'écart des autres lignes de la carte. -->
         <PlayText
           v-if="answer?.detail"
           role="aside"
-          class="text-amber-800/80"
+          class="-mt-[1.4dvh] text-amber-800/80 sm:text-[3.2cqw]"
         >
           {{ answer?.detail }}
         </PlayText>
