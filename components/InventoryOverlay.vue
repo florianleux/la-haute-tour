@@ -186,7 +186,6 @@ async function bagAfterRefusal(): Promise<ItemUseView | null> {
 /** Ce que la page de détail dit de l'Objet choisi. */
 const shown = computed(() => selected.value && labelOf(selected.value))
 
-// TODO(texte) : phrases provisoires, Flo les écrira.
 const hint = computed(() => {
   if (failed.value) {
     return 'Impossible de fouiller le sac. Recharge la page.'

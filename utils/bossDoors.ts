@@ -72,8 +72,7 @@ export const BOSS_DOORS: Readonly<Partial<Record<number, BossDoorEntry>>> = {
     key: '/images/boss/1/door-moon-key.webp',
     keyItem: {
       name: 'Clé de la Lune',
-      // TODO(texte) : description provisoire, Flo l'écrira.
-      description: 'Une clé d\'or et de lune. Quelque part là-haut, une porte l\'attend.',
+      description: 'Une clé mystérieuse, ornée du motif de la Lune. Reste plus qu\'à trouver une Porte.',
       image: '/images/key-moon.webp',
     },
     keyholes: ['left-[61.6%] top-[48.4%] w-[8.78%]', 'left-[41.2%] top-[48.4%] w-[8.78%]'],

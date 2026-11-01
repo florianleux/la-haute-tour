@@ -126,10 +126,9 @@ export const BOSS_INTROS: Readonly<Partial<Record<number, BossIntroEntry>>> = {
       // Le titre suit seul, la secousse finie (`shout-window`, 3 s).
       { speaker: 'boss', text: 'OUI OUI OUI !', cue: 'shout', expression: 'shout', holdMs: 3200 },
       { cue: 'title', expression: 'stern', holdMs: 5500 },
-      // TODO(texte) : monologue provisoire, Flo l'écrira.
-      { speaker: 'boss', text: 'Bienvenue, candidat, dans mon royaume des drapeaux !' },
-      { speaker: 'boss', text: 'Sept fois tu devras me répondre juste. Un faux pas, et c\'est toi qui tombes.' },
-      { speaker: 'boss', text: 'Top !' },
+      { speaker: 'boss', text: 'Halte là ! On ne se débarrasse pas de moi comme ça !' },
+      { speaker: 'boss', text: 'Personne ne fera revenir QPUC, il aurait déjà dû mourir à mon départ !' },
+      { speaker: 'boss', text: 'J\'espère que tu t\'y connais en drapeaux.' },
     ],
     retryLines: [
       'Encore toi ? Allez, on reprend du début. Top !',

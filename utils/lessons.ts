@@ -69,7 +69,6 @@ const MICHEL_ENTRANCE: LessonLine[] = [
  * de la guilde puis la corde. Sans équipe, ni bannière ni Haut-faits.
  */
 export function campLesson({ team }: { team: TeamId | null }): LessonLine[] {
-  // TODO(texte) : répliques provisoires, Flo les écrira.
   return [
     ...MICHEL_ENTRANCE,
     { text: 'Je sens du fromage, non ??', spotlight: 'michel' },
@@ -97,7 +96,6 @@ export function campLesson({ team }: { team: TeamId | null }): LessonLine[] {
  * l'échéance (recoveryLesson). Voir specs/ecrans.md#leçons-de-michel.
  */
 export function fallLesson(): LessonLine[] {
-  // TODO(texte) : répliques provisoires, Flo les écrira.
   return [
     ...MICHEL_ENTRANCE,
     { text: 'Aïe, plus de vies ! Ça arrive aux meilleurs.', spotlight: 'michel' },
@@ -115,7 +113,6 @@ export function fallLesson(): LessonLine[] {
  * se tait et le joueur répond. Voir specs/ecrans.md#leçons-de-michel (Camp, 5).
  */
 export function practiceLesson(): LessonLine[] {
-  // TODO(texte) : répliques provisoires, Flo les écrira.
   return [
     { text: 'Avant d\'y aller, une question pour t\'entraîner : elle ne compte pas !', spotlight: null },
     { text: 'Tes rubans : l\'étage où tu es, les questions vues, ta série de bonnes réponses, et tes vies.', spotlight: 'ribbons' },
@@ -130,7 +127,6 @@ export function practiceLesson(): LessonLine[] {
  * « Suivant » se clique après. Voir specs/ecrans.md#leçons-de-michel (Camp, 6).
  */
 export function practiceVerdictLesson({ correct }: { correct: boolean }): LessonLine[] {
-  // TODO(texte) : répliques provisoires, Flo les écrira.
   return [
     { text: correct ? 'Bien joué !' : 'Raté !', spotlight: null },
     ...correct
@@ -149,7 +145,6 @@ export function practiceVerdictLesson({ correct }: { correct: boolean }): Lesson
  * Voir specs/ecrans.md#leçons-de-michel (Grimoire).
  */
 export function spellbookLesson({ team, guided }: { team: TeamId | null, guided: boolean }): LessonLine[] {
-  // TODO(texte) : répliques provisoires, Flo les écrira.
   const others: LessonLine = { text: 'Tu peux aussi lancer un sort sur un allié ou sur un ennemi : la cible est tirée au hasard, et tu sauras après qui tu as touché.', spotlight: null, overlay: 'spellbook' }
   return [
     ...MICHEL_ENTRANCE,
@@ -188,7 +183,6 @@ function inWords(count: number): string {
  * Voir specs/ecrans.md#leçons-de-michel.
  */
 export function recoveryLesson({ total, required }: NonNullable<GameState['nextRecovery']>): LessonLine[] {
-  // TODO(texte) : répliques provisoires, Flo les écrira.
   return [
     ...MICHEL_ENTRANCE,
     { text: 'Ton attente est finie : place au rattrapage !', spotlight: 'michel' },
