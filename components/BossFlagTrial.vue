@@ -1,20 +1,22 @@
 <template>
-  <!-- ponytail: cadre provisoire, en attendant son dessin. Au milieu : le
-       chrono, le drapeau, le champ, puis le verdict. Tout est en `dvh`, réglé
+  <!-- Le cadre de l'épreuve, son médaillon et son bouton, dessinés pour le
+       boss (public/images/boss/1/trial-*.webp). Au milieu : le drapeau, le
+       champ, puis le verdict. Tout est en `dvh`, réglé
        sur une fenêtre de 880 px de haut (1dvh = 8,8 px) : le cadre garde sa
        place et sa part de l'écran à toute taille. L'enveloppe, invisible, fait
        101,8dvh (896 px) : le bouton, dimensionné en `cqw`, s'y ancre. -->
   <div class="fixed left-1/2 top-[14dvh] z-10 w-[101.8dvh] -translate-x-1/2 @container text-center">
-    <!-- Le cadre visible, en portrait 8:9 : 54,5dvh de large, soit 480×540 px.
-         Ses textes, en `cqw`, se règlent sur lui, marges de 0,9dvh déduites
-         (464 px). Le drapeau y fait 43,3dvh (381 px). -->
-    <div class="relative mx-auto flex aspect-8/9 w-[54.5dvh] flex-col items-center justify-center gap-[1.8dvh] rounded-[1.8dvh] bg-amber-100 px-[0.9dvh] @container">
-      <!-- Le médaillon de l'ascension, à la même taille à l'écran (22,95 % de
-           ses 896 px, soit 23,4dvh) : chrono, puis juste/faux. -->
+    <!-- Le cadre visible (638×795) : 49,2dvh de large, la hauteur de l'ancien
+         cadre provisoire (61,3dvh). Ses textes, en `cqw`, se règlent sur lui,
+         bordure dorée déduite (2,5 % de chaque côté). Le drapeau y fait 39dvh. -->
+    <div class="relative mx-auto flex aspect-638/795 w-[49.2dvh] flex-col items-center justify-center gap-[1.8dvh] bg-[url(/images/boss/1/trial-frame.webp)] bg-contain bg-center bg-no-repeat px-[2.5dvh] @container">
+      <!-- Le médaillon aux deux lunes, à cheval sur le bord haut, dans les
+           proportions de son dessin (378 px pour un cadre de 638) : chrono, puis
+           juste/faux, au centre du grand disque (45 % de sa hauteur). -->
       <PlayMedallion
-        ratio="616 / 357"
-        ink="top-[66%] text-[12cqw]"
-        class="top-0 w-[23.4dvh] bg-[url(/images/game-timer.webp)]"
+        ratio="378 / 216"
+        ink="top-[45%] text-[17cqw]"
+        class="top-0 w-[29.1dvh] bg-[url(/images/boss/1/trial-timer.webp)]"
       >
         <PlayText
           v-if="verdict === null"
@@ -34,7 +36,7 @@
         <img
           :src="`/images/boss/1/flags/${image}.webp`"
           alt="Le drapeau à reconnaître"
-          class="aspect-2/1 w-[43.3dvh] object-contain drop-shadow-md"
+          class="aspect-2/1 w-[39dvh] object-contain drop-shadow-md"
         >
         <BaseParchmentInput
           :key="image"
@@ -81,6 +83,7 @@
       :label="verdict === null ? 'Valider' : actionLabel!"
       :loading="busy"
       anchor="image-bottom"
+      face="moon"
       @click="verdict === null ? emit('submit') : emit('advance')"
     />
   </div>

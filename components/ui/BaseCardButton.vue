@@ -10,7 +10,7 @@
   <div
     class="z-20 group-data-arriving:motion-safe:animate-button-bounce"
     :class="[ANCHORS[anchor].position, ANCHORS[anchor].width]"
-    :style="{ aspectRatio: face === 'plank' ? '328 / 95' : '634 / 175' }"
+    :style="{ aspectRatio: FACE_RATIOS[face] }"
   >
     <button
       type="button"
@@ -75,7 +75,7 @@
 // planche clouée du camp — bois sombre, donc texte crème plutôt qu'ambre, et pas
 // de `pb-2` puisqu'elle est symétrique là où le médaillon a une lèvre basse.
 type Anchor = 'image-bottom' | 'card-bottom' | 'poster' | 'parchment-bottom' | 'inline'
-type Face = 'medallion' | 'plank'
+type Face = 'medallion' | 'plank' | 'moon'
 
 // Posé à cheval sur un bord : centré sur son point d'ancrage, descendu d'une
 // demi-hauteur. Toutes les ancres sauf 'inline', qui reste dans le flux.
@@ -124,7 +124,12 @@ const ANCHORS: Record<Anchor, { position: string, width: string, text: string }>
 const FACES: Record<Face, string> = {
   medallion: 'bg-[url(/images/submit-button.webp)] pb-2 text-amber-600',
   plank: 'bg-[url(/images/recovery-modal-button.webp)] text-amber-50 drop-shadow-[0_1px_1px_rgba(0,0,0,0.45)]',
+  // Le bouton de l'épreuve du boss de l'étage 1, aux lunes de sa porte.
+  moon: 'bg-[url(/images/boss/1/trial-button.webp)] text-amber-700',
 }
+
+/** Le format de chaque dessin, largeur / hauteur de l'image. */
+const FACE_RATIOS: Record<Face, string> = { medallion: '634 / 175', plank: '328 / 95', moon: '368 / 94' }
 
 const props = withDefaults(defineProps<{
   label: string
