@@ -9,6 +9,7 @@ import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen 
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
+import type { AchievementId } from '../../shared/utils/achievements'
 import type { SpellId } from '../../shared/utils/spells'
 
 installNitroGlobals()
@@ -53,9 +54,9 @@ describe('magie noire, sur un ennemi', () => {
   }
 
   /** Un exemplaire en poche, puis lancé sur la catégorie Ennemi. */
-  async function strike(spell: SpellId): Promise<void> {
+  async function strike(spell: SpellId): Promise<AchievementId[]> {
     await db.insert(pocketSpells).values({ userId: caster.id, spell, obtainedAt: NOW })
-    await castSpell(db, await loadPlayer(db, caster.id), spell, 'foe', NOW)
+    return castSpell(db, await loadPlayer(db, caster.id), spell, 'foe', NOW)
   }
 
   it('grave la face noire sur la cible tirée', async () => {
@@ -75,10 +76,13 @@ describe('magie noire, sur un ennemi', () => {
   it('ouvre la prochaine tentative de la cible avec une vie de moins', async () => {
     const target = await enemy()
 
-    await strike('VITALITY')
+    expect(await strike('VITALITY')).toEqual(['FIRST_CAST', 'FOE_CURSE'])
+    // Pas encore subie : elle attend l'ancrage. Voir specs/succes.md#sorts.
+    expect((await loadPlayer(db, target.id)).achievementsHeld).not.toContain('CURSED')
 
     const opened = await openAttempt(db, await loadPlayer(db, target.id), NOW)
     expect(opened?.lives).toBe(rules.lives - 1)
+    expect((await loadPlayer(db, target.id)).achievementsHeld).toContain('CURSED')
   })
 
   // Répit noir : l'attente en cours de la cible, rallongée du même facteur que
@@ -91,6 +95,8 @@ describe('magie noire, sur un ennemi', () => {
     const struck = await loadPlayer(db, target.id)
     expect(struck.cooldownUntil?.getTime())
       .toBe(target.cooldownStartedAt!.getTime() + rules.cooldownMs * rules.respiteFactor)
+    // Lié à l'attente, il agit au lancer : c'est là qu'il se subit.
+    expect(struck.achievementsHeld).toContain('CURSED')
   })
 
   // Purge noire : elle ne sort rien du Pool Échecs, elle remet à zéro le

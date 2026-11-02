@@ -1,6 +1,7 @@
 import { and, asc, eq, exists, isNull, notExists, sql } from 'drizzle-orm'
 import { isAnswerAccepted } from '../../shared/utils/answers'
 import { BOSS_RELICS } from '../../shared/utils/items'
+import { earnedByTrial, unlock } from './achievements'
 import { closeAttempt } from './journey'
 import { grantItemWhere } from './items'
 import { BOSS_FIGHT_COUNT, bossBeaten, bossFightOpening, bossFightState, bossOutcome, isExpired, judgeTrial } from './mechanics'
@@ -9,6 +10,7 @@ import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { BossOutcome } from './mechanics'
 import type { BossTrial, Flag, User } from '../db/schema'
+import type { AchievementId } from '../../shared/utils/achievements'
 import type { ItemId } from '../../shared/utils/items'
 
 /**
@@ -226,6 +228,8 @@ export async function serveNextTrial(db: Database, user: User, trials: HeldTrial
  * Toutes les écritures partent dans un lot gardé sur l'épreuve encore ouverte,
  * celle qui la ferme en dernier : une seconde réponse partie en même temps
  * n'écrit rien. Voir `resolve` dans server/utils/game.ts.
+ *
+ * Rend les succès que l'épreuve vient de graver, pour le toast.
  */
 export async function resolveTrial(
   db: Database,
@@ -234,7 +238,7 @@ export async function resolveTrial(
   answer: string,
   rules: FloorRules,
   now: Date,
-): Promise<void> {
+): Promise<AchievementId[]> {
   const expired = trial.expiresAt === null || isExpired(trial.expiresAt, rules, now)
   const correct = !expired && isAnswerAccepted(answer, trial.acceptedAnswers)
 
@@ -246,9 +250,10 @@ export async function resolveTrial(
   const whileOpen = exists(db.select({ one: sql`1` }).from(bossTrials).where(stillOpen))
 
   const judgement = judgeTrial(user, correct, rules, now)
-  const relic = relicOf(user.currentFloor, bossOutcome(bossFightState({ ...user, ...judgement }, true)))
+  const outcome = bossOutcome(bossFightState({ ...user, ...judgement }, true))
+  const relic = relicOf(user.currentFloor, outcome)
 
-  await db.batch([
+  const [judged] = await db.batch([
     db
       .update(users)
       .set(judgement)
@@ -264,4 +269,16 @@ export async function resolveTrial(
       : [],
     db.update(bossTrials).set({ resolvedAt: now, correct, submittedAnswer: answer }).where(stillOpen),
   ])
+
+  // Arrivée seconde, la réponse n'a rien jugé : rien à graver.
+  if (!judged.rowsAffected) {
+    return []
+  }
+
+  return unlock(db, user, earnedByTrial({
+    outcome,
+    position: trial.position,
+    bossHp: rules.bossHp,
+    bossAttemptNumber: user.bossAttemptNumber,
+  }), now)
 }

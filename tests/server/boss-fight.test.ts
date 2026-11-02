@@ -462,6 +462,7 @@ describe('combat de boss', () => {
 
       expect(passed).toMatchObject({ phase: 'bossFight', lives: 0, cooldownUntil: null, recovery: null, nextRecovery: null })
       expect(passed.boss).toMatchObject({ outcome: 'passed', hp: rules.bossHp, trial: null, relic: 'JULIEN_CARD' })
+      expect(passed.unlocked).toEqual(['BOSS_PASSED'])
       // Passé comme battu, le boss laisse sa relique. Voir specs/boss.md#récompense.
       expect(await bag()).toEqual(['JULIEN_CARD'])
 
@@ -544,6 +545,8 @@ describe('combat de boss', () => {
 
       expect(won).toMatchObject({ phase: 'bossFight' })
       expect(won.boss).toMatchObject({ hp: 0, outcome: 'victory', trial: null, relic: 'JULIEN_CARD' })
+      // Aucune épreuve ratée, au premier combat. Voir specs/succes.md#porte-et-boss.
+      expect(won.unlocked).toEqual(expect.arrayContaining(['BOSS_BEATEN', 'BOSS_PERFECT', 'BOSS_FIRST_TRY']))
       // Sa relique rejoint le sac au verdict qui l'abat. Voir specs/boss.md#récompense.
       expect(await bag()).toEqual(['JULIEN_CARD'])
 
@@ -551,6 +554,8 @@ describe('combat de boss', () => {
 
       expect(climbed).toMatchObject({ phase: 'ascent', floor: 2, lives: rules.lives + 1 })
       expect(climbed.question?.statement).toBe('Question de l étage 2 ?')
+      // L'étage 2 s'atteint à sa première question. Voir ADR 0013.
+      expect(climbed.unlocked).toContain('REACHED_FLOOR_2')
       expect(climbed.boss).toBeNull()
       expect(await reload()).toMatchObject({ bossHp: null, bossAttemptNumber: 0, doorOpened: false, doorSpot: 'door' })
       // La « tentative suivante » de l'effet, c'est celle-ci.

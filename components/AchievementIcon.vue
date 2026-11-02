@@ -1,5 +1,5 @@
 <template>
-  <AchievementImage v-if="unlocked" :id="id" :alt="alt" class="aspect-square rounded-sm" />
+  <AchievementShield v-if="unlocked" :alt="alt" class="aspect-square rounded-sm" />
   <!-- Pas encore obtenu : un point d'interrogation, rien de plus, le cadre
        serré sur lui. Sa couleur et sa marge viennent de l'appelant, par
        `class`. -->
@@ -9,12 +9,9 @@
 </template>
 
 <script setup lang="ts">
-// Ce qu'un succès montre de lui : son dessin une fois obtenu, un « ? » avant.
+// Ce qu'un succès montre de lui : l'écu de la guilde une fois obtenu, un « ? » avant.
 // Écrit une fois pour la tuile du mur et pour son infobulle.
-import type { AchievementId } from '~~/shared/utils/achievements'
-
 defineProps<{
-  id: AchievementId
   unlocked: boolean
   alt?: string
 }>()

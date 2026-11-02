@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { installAppGlobals, testUser } from '../helpers/app'
-import type { PocketSpellsView } from '../../server/utils/pocketSpells'
+import type { CastResultView, PocketSpellsView } from '../../server/utils/pocketSpells'
 
 const { answerWith, breakNetwork, calls, reset, serve, signIn } = installAppGlobals()
 
@@ -21,7 +21,7 @@ const owned: PocketSpellsView = {
  * Ce que le serveur rend après le lancer : un exemplaire en moins, le journal en
  * plus — et, ici, le joueur arrivé à son plafond d'effets positifs.
  */
-const afterCast: PocketSpellsView = {
+const afterCast: CastResultView = {
   entries: [{ spell: 'VITALITY', count: 1 }],
   discovered: ['VITALITY', 'PURGE'],
   log: [{ spell: 'VITALITY', face: 'boon', targetName: 'samsagace', castAt: '2026-09-06T09:00:00.000Z' }],
@@ -30,6 +30,7 @@ const afterCast: PocketSpellsView = {
   canTargetOthers: true,
   canTargetAlly: true,
   canTargetFoe: false,
+  unlocked: [],
 }
 
 describe('sorts en poche du joueur', () => {

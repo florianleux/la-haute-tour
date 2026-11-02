@@ -13,6 +13,7 @@ import { SPELL_IDS } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { CastView, ReceivedView } from './effects'
+import type { AchievementId } from '../../shared/utils/achievements'
 import type { SpellId } from '../../shared/utils/spells'
 import type { TargetKind } from '../../shared/utils/teams'
 
@@ -82,6 +83,11 @@ export async function readPocketSpells(db: Database, user: User, now: Date): Pro
   return readSpellPage(db, user, now)
 }
 
+/** Le Grimoire après un lancer, et les succès que ce lancer vient de graver, pour le toast. */
+export interface CastResultView extends PocketSpellsView {
+  unlocked: AchievementId[]
+}
+
 /**
  * Lancer un sort sur une catégorie de cible, puis rendre la page telle qu'elle
  * est maintenant : l'exemplaire en moins, le journal en plus — et le nom de la
@@ -96,11 +102,11 @@ export async function castFromPocket(
   spell: SpellId,
   kind: TargetKind,
   now: Date,
-): Promise<PocketSpellsView> {
+): Promise<CastResultView> {
   await requireCamp(db, user, now)
-  await castSpell(db, user, spell, kind, now)
+  const unlocked = await castSpell(db, user, spell, kind, now)
 
-  return readSpellPage(db, user, now)
+  return { ...await readSpellPage(db, user, now), unlocked }
 }
 
 /**

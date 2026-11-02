@@ -21,7 +21,7 @@
       >
         <!-- Entre l'encoche, à gauche, et ce qui sort de l'écran, à droite. -->
         <div class="absolute inset-y-[14%] left-[15%] right-[calc(2rem+4%)] flex items-center gap-[0.675rem]">
-          <AchievementImage :id="toast.id" class="aspect-square h-[80%] w-auto shrink-0 rounded-sm" />
+          <AchievementShield class="aspect-square h-[80%] w-auto shrink-0 rounded-sm" />
           <!-- Le nom en gras, puis ce qu'il a fallu faire : le succès se
                découvre ici, il était secret jusque-là. À l'encre de la guilde
                assombrie : le blanc ne tenait pas sur les clairs du ruban, et

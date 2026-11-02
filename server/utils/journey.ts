@@ -1,4 +1,5 @@
 import { and, eq, exists, inArray, sql } from 'drizzle-orm'
+import { unlock } from './achievements'
 import { pendingEffects } from './effects'
 import { rulesForFloor } from './rules'
 import { activeEffects, attempts, users } from '../db/schema'
@@ -34,9 +35,9 @@ export async function openAttempt(
 ): Promise<FloorRules | null> {
   // Les vies de la tentative dépendent de ce qui l'attend : lu d'abord, puis
   // ancré dans le même lot que les vies.
-  const { ids, rules } = anchorEffects
+  const { ids, rules, cursed } = anchorEffects
     ? await pendingEffects(db, user)
-    : { ids: [], rules: rulesForFloor(user.currentFloor) }
+    : { ids: [], rules: rulesForFloor(user.currentFloor), cursed: false }
   const unchanged = and(eq(users.id, user.id), eq(users.attemptStartedAt, user.attemptStartedAt))
 
   const [, opened] = await db.batch([
@@ -73,7 +74,17 @@ export async function openAttempt(
       .where(unchanged),
   ])
 
-  return opened.rowsAffected > 0 ? rules : null
+  if (!opened.rowsAffected) {
+    return null
+  }
+
+  // Une magie noire qui s'ancre agit : c'est là que la cible la subit. Sans
+  // toast, elle n'est pas l'auteur du geste. Voir specs/succes.md#sorts.
+  if (cursed) {
+    await unlock(db, user, ['CURSED'], now)
+  }
+
+  return rules
 }
 
 /**

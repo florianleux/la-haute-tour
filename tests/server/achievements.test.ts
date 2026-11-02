@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dayKey, earnedByAnswer, earnedByCrossing, earnedByFloorDone, playedToday } from '../../server/utils/achievements'
+import { dayKey, earnedByAnswer, earnedByCrossing, earnedByFloorDone, earnedByResuming, earnedByTrial, gameHour, playedToday } from '../../server/utils/achievements'
 import { DAY_TIERS, STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import type { AnsweredInput } from '../../server/utils/achievements'
@@ -18,8 +18,11 @@ function answered(overrides: Partial<AnsweredInput> = {}): AnsweredInput {
     died: false,
     streak: 0,
     seenTotal: 0,
-    daysPlayed: 0,
     playStreak: 0,
+    focusLoss: false,
+    answeredInMs: 10_000,
+    remainingMs: 10_000,
+    hour: 12,
     ...overrides,
   }
 }
@@ -78,11 +81,11 @@ describe('ce qu une réponse prouve', () => {
     expect(earnedByAnswer(answered({ seenTotal: first - 1 }))).not.toContain(`QUESTION_${first}`)
   })
 
-  it('compte les paliers de jours joués', () => {
+  it('compte les paliers de jours qui se suivent', () => {
     const [first] = DAY_TIERS
 
-    expect(earnedByAnswer(answered({ daysPlayed: first }))).toContain(`DAYS_${first}`)
-    expect(earnedByAnswer(answered({ daysPlayed: first - 1 }))).not.toContain(`DAYS_${first}`)
+    expect(earnedByAnswer(answered({ playStreak: first }))).toContain(`DAYS_${first}`)
+    expect(earnedByAnswer(answered({ playStreak: first - 1 }))).not.toContain(`DAYS_${first}`)
   })
 
   it('compte deux jours qui se suivent', () => {
@@ -90,13 +93,37 @@ describe('ce qu une réponse prouve', () => {
     expect(earnedByAnswer(answered({ playStreak: 1 }))).not.toContain('TWO_DAYS_IN_A_ROW')
   })
 
+  it('compte la réponse juste en moins de 3 secondes', () => {
+    expect(earnedByAnswer(answered({ answeredInMs: 2_999 }))).toContain('QUICK_ANSWER')
+    expect(earnedByAnswer(answered({ answeredInMs: 3_000 }))).not.toContain('QUICK_ANSWER')
+    expect(earnedByAnswer(answered({ answeredInMs: 1_000, correct: false }))).not.toContain('QUICK_ANSWER')
+  })
+
+  it('compte la réponse juste dans la dernière seconde, délai de grâce compris', () => {
+    expect(earnedByAnswer(answered({ remainingMs: 1_000 }))).toContain('LAST_SECOND')
+    expect(earnedByAnswer(answered({ remainingMs: -200 }))).toContain('LAST_SECOND')
+    expect(earnedByAnswer(answered({ remainingMs: 1_001 }))).not.toContain('LAST_SECOND')
+    expect(earnedByAnswer(answered({ remainingMs: 0, correct: false }))).not.toContain('LAST_SECOND')
+  })
+
+  it('compte la perte de focus', () => {
+    expect(earnedByAnswer(answered({ focusLoss: true }))).toContain('FOCUS_LOST')
+    expect(earnedByAnswer(answered())).not.toContain('FOCUS_LOST')
+  })
+
+  it('compte la réponse entre 3 h et 5 h', () => {
+    expect(earnedByAnswer(answered({ hour: 3 }))).toContain('NIGHT_OWL')
+    expect(earnedByAnswer(answered({ hour: 4 }))).toContain('NIGHT_OWL')
+    expect(earnedByAnswer(answered({ hour: 2 }))).not.toContain('NIGHT_OWL')
+    expect(earnedByAnswer(answered({ hour: 5 }))).not.toContain('NIGHT_OWL')
+  })
+
   it('ne rend jamais deux fois le même succès', () => {
     const earned = earnedByAnswer(answered({
       correct: true,
       streak: LAST_TIER,
       seenTotal: VIEW_MILESTONES[VIEW_MILESTONES.length - 1],
-      daysPlayed: DAY_TIERS[DAY_TIERS.length - 1],
-      playStreak: 2,
+      playStreak: DAY_TIERS[DAY_TIERS.length - 1],
     }))
 
     expect(new Set(earned).size).toBe(earned.length)
@@ -199,5 +226,48 @@ describe('le jour joué', () => {
 
     expect(playedToday({ lastPlayedDay: '2026-10-24', daysPlayed: 1, playStreak: 1 }, afterDst))
       .toEqual({ lastPlayedDay: '2026-10-25', daysPlayed: 2, playStreak: 2 })
+  })
+})
+
+describe('ce qu une épreuve de boss prouve', () => {
+  const trial = (overrides: Partial<Parameters<typeof earnedByTrial>[0]> = {}): Parameters<typeof earnedByTrial>[0] => ({
+    outcome: 'victory',
+    position: 6,
+    bossHp: 7,
+    bossAttemptNumber: 1,
+    ...overrides,
+  })
+
+  it('lit le sans-faute dans la place de l épreuve qui achève le boss', () => {
+    expect(earnedByTrial(trial())).toEqual(['BOSS_BEATEN', 'BOSS_PERFECT', 'BOSS_FIRST_TRY'])
+    expect(earnedByTrial(trial({ position: 7, bossAttemptNumber: 2 }))).toEqual(['BOSS_BEATEN'])
+  })
+
+  it('distingue le passage de la victoire', () => {
+    expect(earnedByTrial(trial({ outcome: 'passed' }))).toEqual(['BOSS_PASSED'])
+  })
+
+  it('ne rend rien tant que le combat dure, ni à la défaite', () => {
+    expect(earnedByTrial(trial({ outcome: null }))).toEqual([])
+    expect(earnedByTrial(trial({ outcome: 'defeat' }))).toEqual([])
+  })
+})
+
+describe('reprendre après l attente', () => {
+  const until = new Date('2026-09-11T10:00:00.000Z')
+
+  it('est ponctuel dans les 5 minutes, pas avant l échéance ni après', () => {
+    expect(earnedByResuming(until, new Date('2026-09-11T10:05:00.000Z'))).toEqual(['PUNCTUAL'])
+    expect(earnedByResuming(until, new Date('2026-09-11T10:05:01.000Z'))).toEqual([])
+    expect(earnedByResuming(until, new Date('2026-09-11T09:59:59.000Z'))).toEqual([])
+    expect(earnedByResuming(null, until)).toEqual([])
+  })
+})
+
+describe('l heure du jeu', () => {
+  it('se lit à Paris, heure d été comme d hiver', () => {
+    expect(gameHour(new Date('2026-07-01T01:30:00.000Z'))).toBe(3)
+    expect(gameHour(new Date('2026-12-01T02:30:00.000Z'))).toBe(3)
+    expect(gameHour(new Date('2026-12-01T23:30:00.000Z'))).toBe(0)
   })
 })

@@ -122,7 +122,7 @@ describe('les succès en jeu', () => {
     it('grave l Assiduité comme n importe quel autre succès', async () => {
       await db.update(users).set({
         daysPlayed: 6,
-        playStreak: 1,
+        playStreak: 6,
         lastPlayedDay: '2026-09-02',
       }).where(eq(users.id, player.id))
 
@@ -184,20 +184,21 @@ describe('les succès en jeu', () => {
     })
   })
 
-  // Atteindre l'étage suivant se gagne sur la réponse qui finit l'étage, pas
-  // à la victoire sur le boss : il n'est qu'une porte de plus. Voir ADR 0007.
+  // La réponse qui finit l'étage 1 mène devant la Porte de la Lune ; l'étage 2,
+  // lui, s'atteint au franchissement. Voir ADR 0013.
   describe('au palier', () => {
     /** Un étage 2 où monter : sans lui, c'est la fin du deck. */
     const floorAbove = (): Promise<string> => createQuestion(db, { floor: 2, statement: 'Question de l étage 2 ?' })
 
-    it('annonce l étage atteint sur la réponse qui finit l étage', async () => {
+    it('annonce la Porte de la Lune, pas encore l étage 2, sur la réponse qui finit l étage 1', async () => {
       await floorAbove()
       await holdingLastQuestionOf(1)
 
       const state = await submitAnswer(db, await reload(), 'Toulouse', NOW)
 
       expect(state.phase).toBe('floorEnd')
-      expect(state.unlocked).toContain('REACHED_FLOOR_2')
+      expect(state.unlocked).toContain('MOON_DOOR')
+      expect(state.unlocked).not.toContain('REACHED_FLOOR_2')
     })
 
     it('ne l annonce pas en fin de deck : il n y a pas d étage où monter', async () => {
@@ -206,7 +207,7 @@ describe('les succès en jeu', () => {
       const state = await submitAnswer(db, await reload(), 'Bordeaux', NOW)
 
       expect(state.phase).toBe('deckEnd')
-      expect(state.unlocked).not.toContain('REACHED_FLOOR_2')
+      expect(state.unlocked).not.toContain('MOON_DOOR')
       expect(state.unlocked).not.toContain('FIRST_ASCENT')
     })
 

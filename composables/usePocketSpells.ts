@@ -1,6 +1,7 @@
+import { useAchievementAnnouncer } from './useAchievementToasts'
 import { useWriteThenReplace } from './useWriteThenReplace'
 import type { Ref } from 'vue'
-import type { PocketSpellEntryView, PocketSpellsView } from '~~/server/utils/pocketSpells'
+import type { CastResultView, PocketSpellEntryView, PocketSpellsView } from '~~/server/utils/pocketSpells'
 import type { CastView, ReceivedView } from '~~/server/utils/effects'
 import type { SpellId } from '~~/shared/utils/spells'
 import type { TargetKind } from '~~/shared/utils/teams'
@@ -47,6 +48,8 @@ export function fetchPocketSpells(): Promise<PocketSpellsView> {
  * le serveur hors du camp — le Grimoire ne s'ouvre que là. Voir specs/ecrans.md#sorts.
  */
 export async function usePocketSpells(): Promise<PocketSpellsRead> {
+  // Pris avant l'attente : passé le premier `await`, le contexte Nuxt n'y est plus.
+  const announce = useAchievementAnnouncer()
   const { data, error } = await useAsyncData<PocketSpellsView>(POCKET_SPELLS_KEY, fetchPocketSpells)
 
   const { failed: castFailed, send } = useWriteThenReplace(data)
@@ -63,11 +66,16 @@ export async function usePocketSpells(): Promise<PocketSpellsRead> {
   async function cast(spell: SpellId, target: TargetKind): Promise<void> {
     casting.value = spell
 
-    await send(() => $fetch<PocketSpellsView>('/api/game/cast', {
-      method: 'POST',
-      body: { spell, target },
-      ...useApiFetchOptions(),
-    }))
+    await send(async () => {
+      const result = await $fetch<CastResultView>('/api/game/cast', {
+        method: 'POST',
+        body: { spell, target },
+        ...useApiFetchOptions(),
+      })
+
+      announce(result.unlocked)
+      return result
+    })
 
     casting.value = null
   }

@@ -1,7 +1,7 @@
 # ADR 0007 — Les succès de franchissement restent gagnés à `floorEnd`, pas à `crossFloor`
 
 **Date** : 2026-09-12
-**Statut** : acceptée
+**Statut** : remplacée pour `REACHED_FLOOR_n` par [ADR 0013](./0013-atteindre-un-etage-se-gagne-a-sa-premiere-question.md)
 
 ## Contexte
 

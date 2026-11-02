@@ -4,7 +4,6 @@ import {
   REACHED_FLOORS,
   STREAK_TIERS,
   VIEW_MILESTONES,
-  achievementSlug,
   daysAchievement,
   flawlessFloorAchievement,
   reachedFloorAchievement,
@@ -36,8 +35,13 @@ function fromTiers<V extends number, I extends AchievementId>(
 
 const LABELS: Record<AchievementId, string> = {
   ...fromTiers(STREAK_TIERS, streakAchievement, tier => `Série de ${tier}`),
-  ...fromTiers(DAY_TIERS, daysAchievement, tier => `${tier} jours`),
-  ...fromTiers(VIEW_MILESTONES, viewAchievement, milestone => `Question n°${milestone}`),
+  DAYS_7: 'Accro ?',
+  DAYS_30: 'J\'arrête quand je veux !',
+  DAYS_100: '100 jours',
+  QUESTION_42: 'La Réponse',
+  QUESTION_67: 'SIX SEVEEEEEEEN',
+  QUESTION_666: 'Diabolique',
+  QUESTION_1312: 'Mort aux vaches',
   ...fromTiers(REACHED_FLOORS, reachedFloorAchievement, floor => `Étage ${floor}`),
   ...fromTiers(FLOORS, flawlessFloorAchievement, floor => `Étage ${floor} sans faute`),
   FIRST_CORRECT: 'Premier pas',
@@ -50,10 +54,26 @@ const LABELS: Record<AchievementId, string> = {
   DISPUTE_OPENED: 'Objection',
   DISPUTE_ACCEPTED: 'Gain de cause',
   DISPUTE_REJECTED: 'Débouté',
-  TWO_DAYS_IN_A_ROW: 'Deux jours de suite',
+  TWO_DAYS_IN_A_ROW: 'Un goût de reviens-y',
   FIRST_ASCENT: 'Premier en haut',
   EMPTY_ANSWER: 'Sans voix',
   CHEESE_GIVEN: 'HÉ !',
+  KEY_OBTAINED: 'Passe-Partout',
+  MOON_DOOR: 'Un peu plus près des étoiles',
+  BOSS_BEATEN: 'Tueur de gardien',
+  BOSS_PERFECT: 'Perfect !',
+  BOSS_FIRST_TRY: 'First try !',
+  BOSS_PASSED: 'Solution pacifique',
+  FIRST_CAST: 'Apprenti sorcier',
+  ALLY_BOON: 'Bon samaritain',
+  FOE_CURSE: 'Coup bas',
+  CURSED: 'Maudit',
+  QUICK_ANSWER: 'Éclair',
+  LAST_SECOND: 'Sur le fil',
+  FOCUS_LOST: 'Distrait',
+  PUNCTUAL: 'Ponctuel',
+  NIGHT_OWL: 'Insomniaque',
+  DEVTOOLS_OPENED: 'La curiosité est un vilain défaut',
 }
 
 /**
@@ -66,7 +86,7 @@ const CONDITIONS: Record<AchievementId, string> = {
     streakAchievement,
     tier => `${tier} bonnes réponses d'affilée dans la même tentative, sans perdre une vie.`,
   ),
-  ...fromTiers(DAY_TIERS, daysAchievement, tier => `Jouer ${tier} jours différents.`),
+  ...fromTiers(DAY_TIERS, daysAchievement, tier => `Jouer ${tier} jours qui se suivent.`),
   ...fromTiers(
     VIEW_MILESTONES,
     viewAchievement,
@@ -92,6 +112,22 @@ const CONDITIONS: Record<AchievementId, string> = {
   FIRST_ASCENT: 'Être le premier du serveur à quitter l\'étage 1.',
   EMPTY_ANSWER: 'Laisser une réponse vide.',
   CHEESE_GIVEN: 'Donner du fromage à Michel.',
+  KEY_OBTAINED: 'Obtenir une clé.',
+  MOON_DOOR: 'Atteindre la Porte de la Lune.',
+  BOSS_BEATEN: 'Vaincre un gardien.',
+  BOSS_PERFECT: 'Vaincre un gardien sans rater une épreuve.',
+  BOSS_FIRST_TRY: 'Vaincre un gardien au premier combat.',
+  BOSS_PASSED: 'Être laissé passer par un gardien, au sixième combat.',
+  FIRST_CAST: 'Lancer un premier sort.',
+  ALLY_BOON: 'Lancer une magie blanche sur un allié.',
+  FOE_CURSE: 'Lancer une magie noire sur un ennemi.',
+  CURSED: 'Subir une magie noire.',
+  QUICK_ANSWER: 'Répondre juste en moins de 3 secondes.',
+  LAST_SECOND: 'Répondre juste dans la dernière seconde du chrono.',
+  FOCUS_LOST: 'Quitter la page pendant une question.',
+  PUNCTUAL: 'Reprendre dans les 5 minutes qui suivent la fin d\'une attente.',
+  NIGHT_OWL: 'Répondre à une question entre 3 h et 5 h du matin.',
+  DEVTOOLS_OPENED: 'Ouvrir les outils de développement du navigateur.',
 }
 
 /**
@@ -106,9 +142,4 @@ export function achievementLabel(id: AchievementId): string {
 
 export function achievementCondition(id: AchievementId): string {
   return CONDITIONS[id]
-}
-
-/** L'image d'un succès, dérivée de son identifiant et jamais tapée à la main. */
-export function achievementImage(id: AchievementId): string {
-  return `/images/achievements/${achievementSlug(id)}.webp`
 }

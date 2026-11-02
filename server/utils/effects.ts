@@ -1,4 +1,5 @@
 import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm'
+import { unlock } from './achievements'
 import { isBorneBy } from './mechanics'
 import { displayNameColumn } from './names'
 import { rulesForFloor } from './rules'
@@ -9,9 +10,10 @@ import { activeEffects, pocketSpells, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
-import { faceFor } from '../../shared/utils/spells'
+import { faceFor, isCooldownBound } from '../../shared/utils/spells'
 import type { SpellFace, SpellId } from '../../shared/utils/spells'
 import type { TargetKind } from '../../shared/utils/teams'
+import type { AchievementId } from '../../shared/utils/achievements'
 
 /**
  * Un effet tel qu'un écran le montre : quel sort, quelle face, de qui, et s'il
@@ -108,14 +110,14 @@ export async function castSpell(
   kind: TargetKind,
   now: Date,
   random: () => number = Math.random,
-): Promise<void> {
+): Promise<AchievementId[]> {
   // Le lancer n'a lieu que pendant une attente, que le journal retient par son
   // **début** — l'échéance ne le peut pas, Répit la déplace. L'appelant l'a
   // vérifié : sans attente, il n'y a rien à lancer.
   const startedAt = caster.cooldownStartedAt
 
   if (!startedAt) {
-    return
+    return []
   }
 
   // Sans équipe, ni Allié ni Ennemi ne désigne de pool : ces lancers n'existent
@@ -123,7 +125,7 @@ export async function castSpell(
   // propose déjà pas ; ceci ferme l'URL.
   // Voir specs/equipes.md#le-joueur-sans-équipe.
   if (kind !== 'self' && caster.team === null) {
-    return
+    return []
   }
 
   // Sur soi, la cible est connue d'avance : un lanceur saturé de magies
@@ -133,7 +135,7 @@ export async function castSpell(
   // tous passer — l'écran, lui, n'en envoie qu'un à la fois. Assumé.
   // Voir specs/bonus.md#limite-deffets-positifs.
   if (kind === 'self' && !(await canTargetSelf(db, caster))) {
-    return
+    return []
   }
 
   const [copy] = await db
@@ -143,7 +145,7 @@ export async function castSpell(
     .limit(1)
 
   if (!copy) {
-    return
+    return []
   }
 
   // Deux requêtes visant le même exemplaire ne peuvent pas le consommer toutes
@@ -157,7 +159,7 @@ export async function castSpell(
   // suit écrit — une Purge rejouée viderait une seconde ligne du Pool Échecs
   // pour un exemplaire resté en poche.
   if (!spent) {
-    return
+    return []
   }
 
   // La cible n'est tirée qu'une fois l'exemplaire consommé : un lancer refusé
@@ -177,8 +179,24 @@ export async function castSpell(
     targetCooldownStartedAt: target?.cooldownStartedAt ?? null,
   })
 
+  // Le lanceur grave ses succès de lancer, rendus pour son toast. Allié et
+  // Ennemi ne comptent que si le tirage a trouvé quelqu'un.
+  // Voir specs/succes.md#sorts.
+  const unlocked = await unlock(db, caster, [
+    'FIRST_CAST',
+    ...target && kind === 'ally' ? ['ALLY_BOON' as const] : [],
+    ...target && kind === 'foe' ? ['FOE_CURSE' as const] : [],
+  ], now)
+
   if (!target) {
-    return
+    return unlocked
+  }
+
+  // Un sort lié à l'attente agit dès le lancer, sur l'attente en cours de la
+  // cible : c'est là qu'une magie noire de ce genre se subit. Les autres se
+  // subissent à l'ancrage, voir openAttempt.
+  if (face === 'curse' && isCooldownBound(spell) && target.cooldownStartedAt !== null) {
+    await unlock(db, target, ['CURSED'], now)
   }
 
   // Ce que le sort fait à l'instant du lancer, s'il fait quelque chose : le
@@ -189,6 +207,8 @@ export async function castSpell(
   if (entry?.actInstantly) {
     await entry.actInstantly(db, target, face)
   }
+
+  return unlocked
 }
 
 /**
@@ -346,7 +366,7 @@ export function toReceivedViews(rows: Awaited<ReceivedLogQuery>): ReceivedView[]
  * les vies de la tentative en dépendent, et elles partent dans le même lot que
  * l'ancre de ces effets. Voir server/utils/journey.ts.
  */
-export async function pendingEffects(db: Database, user: User): Promise<{ ids: number[], rules: FloorRules }> {
+export async function pendingEffects(db: Database, user: User): Promise<{ ids: number[], rules: FloorRules, cursed: boolean }> {
   const pending = await db
     .select({ id: activeEffects.id, spell: activeEffects.spell, face: activeEffects.face })
     .from(activeEffects)
@@ -355,6 +375,7 @@ export async function pendingEffects(db: Database, user: User): Promise<{ ids: n
   return {
     ids: pending.map(effect => effect.id),
     rules: rulesWithEffects(rulesForFloor(user.currentFloor), pending),
+    cursed: pending.some(effect => effect.face === 'curse'),
   }
 }
 

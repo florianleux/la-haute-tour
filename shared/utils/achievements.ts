@@ -30,7 +30,7 @@ export const STREAK_TIERS = [
 export const DAY_TIERS = [7, 30, 100] as const
 
 /** Les numéros de question qui valent d'être atteints. Le 1312 attend le deck, comme le palier 1000. */
-export const VIEW_MILESTONES = [67, 666, 1312] as const
+export const VIEW_MILESTONES = [42, 67, 666, 1312] as const
 
 /**
  * Les étages, un par un. `FLOOR_COUNT` dit combien il y en a ; ici il faut leurs
@@ -69,6 +69,22 @@ const SINGULAR_IDS = [
   'TWO_DAYS_IN_A_ROW',
   'FIRST_ASCENT',
   'EMPTY_ANSWER',
+  'KEY_OBTAINED',
+  'MOON_DOOR',
+  'BOSS_BEATEN',
+  'BOSS_PERFECT',
+  'BOSS_FIRST_TRY',
+  'BOSS_PASSED',
+  'FIRST_CAST',
+  'ALLY_BOON',
+  'FOE_CURSE',
+  'CURSED',
+  'QUICK_ANSWER',
+  'LAST_SECOND',
+  'FOCUS_LOST',
+  'PUNCTUAL',
+  'NIGHT_OWL',
+  'DEVTOOLS_OPENED',
 ] as const
 
 export type StreakAchievementId = `STREAK_${typeof STREAK_TIERS[number]}`
@@ -121,11 +137,6 @@ export const ACHIEVEMENT_IDS = [
   ...REACHED_FLOORS.map(reachedFloorAchievement),
   ...FLOORS.map(flawlessFloorAchievement),
 ] as [AchievementId, ...AchievementId[]]
-
-/** Le nom du fichier d'image d'un succès, dérivé de son identifiant et jamais tapé à la main. */
-export function achievementSlug(id: AchievementId): string {
-  return id.toLowerCase().replaceAll('_', '-')
-}
 
 /** Un étage de la tour, pour que l'appelant n'ait pas à en connaître les bornes. */
 export function isFloor(floor: number): floor is Floor {

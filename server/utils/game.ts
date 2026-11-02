@@ -25,6 +25,8 @@ import {
   earnedByAnswer,
   earnedByCrossing,
   earnedByFloorDone,
+  earnedByResuming,
+  gameHour,
   playedToday,
   unlock,
 } from './achievements'
@@ -444,24 +446,27 @@ function acceptedQuery(db: Database, userId: number) {
 
 /** Recolle à un état ce que la requête vient de débloquer, sans toucher au reste. */
 function withUnlocked(state: GameState, unlocked: AchievementId[]): GameState {
-  return unlocked.length ? { ...state, unlocked } : state
+  return unlocked.length ? { ...state, unlocked: [...state.unlocked, ...unlocked] } : state
 }
 
 /** Ce que earnedByAnswer réclame, prélevé sur l'instantané du joueur qui vient de répondre. */
 function answeredAchievements(
-  user: Pick<User, 'streak' | 'seenTotal' | 'daysPlayed' | 'playStreak'>,
-  correct: boolean,
-  empty: boolean,
-  died: boolean,
+  user: Pick<User, 'streak' | 'seenTotal' | 'playStreak'>,
+  reservation: Pick<Reservation, 'createdAt' | 'expiresAt'>,
+  answer: { correct: boolean, empty: boolean, died: boolean, source: AnswerSource },
+  now: Date,
 ): AchievementId[] {
   return earnedByAnswer({
-    correct,
-    empty,
-    died,
+    correct: answer.correct,
+    empty: answer.empty,
+    died: answer.died,
     streak: user.streak,
     seenTotal: user.seenTotal,
-    daysPlayed: user.daysPlayed,
     playStreak: user.playStreak,
+    focusLoss: answer.source === 'focusLoss',
+    answeredInMs: now.getTime() - reservation.createdAt.getTime(),
+    remainingMs: reservation.expiresAt.getTime() - now.getTime(),
+    hour: gameHour(now),
   })
 }
 
@@ -688,7 +693,7 @@ async function resolve(
     }
 
     const earned = [
-      ...answeredAchievements(recovering, correct, answer === '', false),
+      ...answeredAchievements(recovering, reservation, { correct, empty: answer === '', died: false, source }, now),
       ...leavesPool ? ['POOL_CLEARED' as const] : [],
     ]
 
@@ -760,13 +765,12 @@ async function resolve(
   // palier. Au dernier étage il n'y a plus de clic : `gameOver` ne porte aucune
   // action, personne ne repasse. Voir utils/phase.ts.
   const floorDone = fresh.floorSeen >= snapshot.floorTotal
-  // Le palier vers un étage qui existe : c'est là que l'étage suivant est
-  // « atteint », au sens des succès — pas à la victoire sur le boss, qui n'est
-  // qu'une porte de plus. Voir ADR 0007.
+  // Le palier vers un étage qui existe : le joueur arrive devant la porte du
+  // boss. Voir ADR 0007 et ADR 0013.
   const crossing = floorDone && snapshot.nextFloorTotal > 0
 
   const earned = [
-    ...answeredAchievements(fresh, correct, answer === '', cooldownUntil !== null),
+    ...answeredAchievements(fresh, reservation, { correct, empty: answer === '', died: cooldownUntil !== null, source }, now),
     ...floorDone
       ? earnedByFloorDone({
           floor: user.currentFloor,
@@ -774,7 +778,10 @@ async function resolve(
           streak: fresh.streak,
         })
       : [],
-    ...crossing ? earnedByCrossing(user.currentFloor) : [],
+    // Le palier mène devant la porte du boss : celle de l'étage 1 est la Porte
+    // de la Lune. L'étage d'au-dessus, lui, s'atteint au franchissement, voir
+    // `crossFloor` et ADR 0013.
+    ...crossing && user.currentFloor === 1 ? ['MOON_DOOR' as const] : [],
   ]
 
   const outcome = await db.batch([
@@ -1072,8 +1079,8 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
   const trial = servedTrial(snapshot.trials)
 
   if (trial?.expiresAt && isExpired(trial.expiresAt, rulesForFloor(snapshot.user.currentFloor), now)) {
-    await resolveTrial(db, snapshot.user, trial, '', rulesForFloor(snapshot.user.currentFloor), now)
-    return buildState(db, user.id, now)
+    const unlocked = await resolveTrial(db, snapshot.user, trial, '', rulesForFloor(snapshot.user.currentFloor), now)
+    return withUnlocked(await buildState(db, user.id, now), unlocked)
   }
 
   // Une attente qui vient de s'achever est le seul cas où une lecture a quelque
@@ -1085,9 +1092,10 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     return stateFrom(snapshot, now)
   }
 
-  await resumeWithoutRecovery(db, snapshot.user, snapshot.recoveryRun.length > 0, !atBoss(snapshot), now)
+  const resumed = await resumeWithoutRecovery(db, snapshot.user, snapshot.recoveryRun.length > 0, !atBoss(snapshot), now)
+  const punctual = resumed ? await unlock(db, snapshot.user, earnedByResuming(snapshot.user.cooldownUntil, now), now) : []
 
-  return buildState(db, user.id, now)
+  return withUnlocked(await buildState(db, user.id, now), punctual)
 }
 
 /**
@@ -1105,22 +1113,22 @@ async function resumeWithoutRecovery(
   /** Faux quand l'étage est vu en entier : la tentative qui s'ouvre est un combat de boss. Voir openAttempt. */
   anchorEffects: boolean,
   now: Date,
-): Promise<void> {
+): Promise<boolean> {
   const elapsed = user.cooldownUntil !== null && now >= user.cooldownUntil
 
   if (user.lives > 0 || !elapsed || recovering) {
-    return
+    return false
   }
 
   if (anchorEffects && canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
-    return
+    return false
   }
 
   // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
   // contestable. Voir specs/validation.md#contestation. Ouverte avant tout le
   // reste : si une autre requête vient de le faire, il n'y a plus rien à écrire.
   if (!await openAttempt(db, user, now, anchorEffects)) {
-    return
+    return false
   }
 
   // Le verdict de la chute a été lu avant de redescendre : le laisser en place
@@ -1129,6 +1137,7 @@ async function resumeWithoutRecovery(
   // requête aurait servie entre-temps, vies rendues, reste en main.
   await db.delete(reservations).where(and(eq(reservations.userId, user.id), isNotNull(reservations.resolvedAt)))
   await closeAttempt(db, user, now)
+  return true
 }
 
 /**
@@ -1301,12 +1310,14 @@ export async function openPlayerChest(
 
     await db.batch([loot, db.update(users).set(armed).where(eq(users.id, user.id))])
 
-    return stateFrom({
+    const unlocked = chest === 'key' ? await unlock(db, snapshot.user, ['KEY_OBTAINED'], now) : []
+
+    return withUnlocked(stateFrom({
       ...snapshot,
       user: { ...snapshot.user, ...armed },
       hasKey: snapshot.hasKey || chest === 'key',
       reservation: opened,
-    }, now)
+    }, now), unlocked)
   }
 
   // Le Mimic retire toutes les vies d'un coup, traité comme une perte de dernière
@@ -1444,12 +1455,17 @@ async function advanceBossFight(db: Database, snapshot: PlayerSnapshot, user: Us
   // de la tentative qui s'y jouera, effets compris.
   const attemptRules = await openAttempt(db, { ...user, currentFloor: user.currentFloor + 1 }, now)
 
-  if (attemptRules) {
-    await closeAttempt(db, user, now)
-    await crossFloor(db, user, attemptRules, now)
+  if (!attemptRules) {
+    return buildState(db, user.id, now)
   }
 
-  return buildState(db, user.id, now)
+  await closeAttempt(db, user, now)
+  await crossFloor(db, user, attemptRules, now)
+
+  // L'étage d'au-dessus est atteint : sa première question est servie. Voir ADR 0013.
+  const reached = await unlock(db, user, earnedByCrossing(user.currentFloor), now)
+
+  return withUnlocked(await buildState(db, user.id, now), reached)
 }
 
 /**
@@ -1482,8 +1498,7 @@ async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date
   ])
 
   // Étage neuf : le curseur repart de zéro, donc la première question de
-  // l'étage est la première de rang supérieur à 0. Les succès de la montée se
-  // sont gagnés au palier, voir `resolve`.
+  // l'étage est la première de rang supérieur à 0.
   await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, rules, now)
 }
 
@@ -1577,6 +1592,10 @@ async function advanceRecovery(
     return buildState(db, user.id, now)
   }
 
+  // L'attente échue, le joueur reprend : tôt, c'est « Ponctuel ». Une relance
+  // dans le rattrapage redit le seuil, et `unlock` n'écrit rien de plus.
+  const punctual = await unlock(db, snapshot.user, earnedByResuming(user.cooldownUntil, now), now)
+
   // Au boss, pas de rattrapage : l'attente échue rend les vies. Un tirage fait
   // avant que la règle ne change s'efface avec elle.
   if (atBoss(snapshot)) {
@@ -1585,10 +1604,10 @@ async function advanceRecovery(
       db.delete(reservations).where(and(eq(reservations.userId, user.id), eq(reservations.mode, 'recovery'))),
     ])
     await resumeWithoutRecovery(db, user, false, false, now)
-    return buildState(db, user.id, now)
+    return withUnlocked(await buildState(db, user.id, now), punctual)
   }
 
-  let opened: AchievementId[] = []
+  let opened: AchievementId[] = [...punctual]
   // Le tirage vient de l'instantané : un rattrapage déjà tiré ne coûte aucune
   // lecture pour savoir où il en est.
   let run = snapshot.recoveryRun
@@ -1600,7 +1619,7 @@ async function advanceRecovery(
     if (!canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
       // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
       await resumeWithoutRecovery(db, user, false, true, now)
-      return buildState(db, user.id, now)
+      return withUnlocked(await buildState(db, user.id, now), opened)
     }
 
     // Tiré et posé en une seule instruction, qui ne pose rien quand un tirage
@@ -1632,7 +1651,7 @@ async function advanceRecovery(
       .returning()
 
     if (!posed.length) {
-      return buildState(db, user.id, now)
+      return withUnlocked(await buildState(db, user.id, now), opened)
     }
 
     run = posed.sort((a, b) => a.position - b.position)
@@ -1640,7 +1659,7 @@ async function advanceRecovery(
     // Le tirage posé, le rattrapage commence : c'est l'entrée en phase, et le seul
     // instant où elle se produit. Un pool trop maigre rend les vies sans jamais
     // passer ici — il n'y a pas eu de rattrapage.
-    opened = await unlock(db, snapshot.user, ['FIRST_RECOVERY'], now)
+    opened = [...opened, ...await unlock(db, snapshot.user, ['FIRST_RECOVERY'], now)]
   }
 
   // Le verdict est scellé — quota atteint ou mathématiquement impossible — : on
@@ -1942,8 +1961,8 @@ export async function submitAnswer(
   // focus y envoie la réponse en l'état, sans flag d'administration — la table
   // des pertes de focus ne connaît que les questions du deck.
   if (trial) {
-    await resolveTrial(db, snapshot.user, trial, answer, rulesForFloor(snapshot.user.currentFloor), now)
-    return buildState(db, user.id, now)
+    const unlocked = await resolveTrial(db, snapshot.user, trial, answer, rulesForFloor(snapshot.user.currentFloor), now)
+    return withUnlocked(await buildState(db, user.id, now), unlocked)
   }
 
   if (!reservation || reservation.resolvedAt) {

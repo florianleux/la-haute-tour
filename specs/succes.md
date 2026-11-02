@@ -23,7 +23,7 @@ ne partagent que le mot français — en code, l'une est `achievement`, l'autre
 
 ## Catalogue
 
-**Cinquante et un succès**, répartis en onze familles.
+**Soixante-huit succès**, répartis en quinze familles.
 
 ### Premières fois — 4
 
@@ -79,12 +79,13 @@ gagner ce succès.
   point de départ.
 - Terminer le jeu — avoir vu toutes les questions du dernier étage.
 
-Depuis le boss (voir [`boss.md`](./boss.md)), « atteindre un étage » et
-« terminer le jeu » se gagnent à `floorEnd` — toutes les questions de l'étage
-vues — et non à `crossFloor`/`gameOver`, désormais plus tardifs, gagnés
-seulement après avoir battu le boss (ou l'avoir passé automatiquement). Le
-boss est une porte supplémentaire vers l'étage suivant, il ne redéfinit pas ce
-que ces succès mesurent. Voir
+« Atteindre un étage » se gagne à `crossFloor`, quand sa première question est
+servie : après le boss battu ou passé. La porte du boss, elle, a son succès à
+`floorEnd` (voir « Porte et boss »). Voir
+[ADR 0013](../docs/adr/0013-atteindre-un-etage-se-gagne-a-sa-premiere-question.md).
+
+« Terminer le jeu » reste à `floorEnd` : au dernier étage, `gameOver` ne porte
+aucune action, personne ne repasse. Voir
 [ADR 0007](../docs/adr/0007-les-succes-de-franchissement-restent-sur-floorend.md).
 
 ### Rattrapage — 2
@@ -101,20 +102,20 @@ Première contestation demandée, première acceptée, première refusée.
 
 ### Assiduité — 4
 
-Nombre de **jours joués** distincts : paliers 7, 30 et 100 jours. Plus un succès
-pour deux jours de jeu consécutifs, la première fois.
+Nombre de **jours joués qui se suivent** : deux jours, puis paliers 7, 30 et 100
+jours. Un jour sauté remet la série à un ; un palier acquis le reste.
 
 Un jour joué est un jour où le joueur a résolu au moins une question, daté en
 Europe/Paris. Ouvrir le jeu pendant une attente de douze heures, sans pouvoir
 jouer, n'en fait pas un — c'est la partie qu'on compte, pas la visite.
 
-### Positions notables — 3
+### Positions notables — 4
 
 Atteindre un numéro précis sur le compteur de questions vues — toutes
 tentatives, tous étages confondus, un compteur qui ne redescend qu'à la remise à
 zéro du joueur.
 
-Question n°**67**, n°**666**, n°**1312**.
+Question n°**42** (« La Réponse »), n°**67**, n°**666**, n°**1312**.
 
 Comme le palier 1000 de la série, le 1312 est hors de portée du deck actuel.
 Même raison, même absence de correctif.
@@ -153,6 +154,57 @@ Le Fromage ne se donne qu'une fois par partie. Après une remise à zéro, les
 succès s'effacent avec le reste (voir [Remise à zéro](#remise-à-zéro)) : le
 joueur le regagne.
 
+### Porte et boss — 6
+
+| Succès | Déclencheur |
+|---|---|
+| Passe-Partout | Obtenir une clé, au coffre qui la donne |
+| Un peu plus près des étoiles | Atteindre la Porte de la Lune : finir l'étage 1 (`floorEnd`) quand un étage 2 existe |
+| Tueur de gardien | Vaincre un boss (vraie victoire, pas le passage automatique) |
+| Perfect ! | Vaincre un boss sans rater une épreuve du combat |
+| First try ! | Vaincre un boss à son premier combat |
+| Solution pacifique | Être laissé passer par un boss, au 6e combat perdu |
+
+« Perfect ! » se lit sur la dernière épreuve : la victoire tombe à la
+`bossHp`-ième épreuve jugée seulement si aucune n'a été ratée.
+
+### Sorts — 4
+
+| Succès | Déclencheur |
+|---|---|
+| Apprenti sorcier | Lancer un premier sort, quelle que soit la cible |
+| Bon samaritain | Lancer une magie blanche sur un allié que le tirage a trouvé |
+| Coup bas | Lancer une magie noire sur un ennemi que le tirage a trouvé |
+| Maudit | Subir une magie noire, quand elle agit |
+
+« Maudit » se gagne quand la magie noire agit : à l'ancrage, au début de la
+tentative suivante de la cible, ou au lancer pour un sort lié à l'attente, qui
+agit sur l'attente en cours. Pas de toast : la cible n'est pas l'auteur du
+geste, elle le découvre sur la page.
+
+### Style de jeu — 2
+
+| Succès | Déclencheur |
+|---|---|
+| Éclair | Répondre juste moins de 3 secondes après que la question a été servie |
+| Sur le fil | Répondre juste dans la dernière seconde du chrono, délai de grâce compris |
+
+### Clins d'œil — 4
+
+| Succès | Déclencheur |
+|---|---|
+| Distrait | Quitter la page pendant une question (`focusLoss`) |
+| Ponctuel | Reprendre dans les 5 minutes qui suivent la fin d'une attente : tirer son rattrapage, ou retrouver ses vies |
+| Insomniaque | Résoudre une question entre 3 h et 5 h du matin, heure de Paris |
+| La curiosité est un vilain défaut | Ouvrir les outils de développement du navigateur |
+
+« La curiosité est un vilain défaut » est approximatif, et l'assume : aucun
+navigateur ne signale l'ouverture de ses outils. L'écran guette les raccourcis
+qui les ouvrent (F12, Ctrl/Cmd+Maj+I/J/C, Cmd+Opt+I/J/C) et l'écart entre la
+taille de la fenêtre et celle de la page qu'un panneau ancré creuse. Un faux
+positif, ou un joueur qui l'appelle à la main, ne coûte rien : le succès est
+sans effet.
+
 ## Ce qui porte les succès
 
 Rien ne se recompte au moment de décider : le joueur porte ses compteurs, comme il
@@ -177,14 +229,17 @@ porte déjà ses questions vues. Voir
   non — on voit combien il en reste. Mais tant qu'il n'est pas obtenu, sa tuile
   ne montre qu'un point d'interrogation, et son nom comme sa condition se lisent
   « ??? ». On découvre ce qu'il fallait faire en le faisant.
-- **Le nom et la condition** d'un succès obtenu se lisent au survol, avec son
-  dessin. Un clic sur une tuile ne fait rien.
+- **Le nom et la condition** d'un succès obtenu se lisent au survol. Un clic sur
+  une tuile ne fait rien.
+- **Pas de dessin par succès.** Une tuile obtenue montre l'écu de la guilde du
+  joueur, le même pour tous les succès : ce qui les distingue, c'est leur nom et
+  leur condition. Ajouter un succès ne demande donc aucune image.
 - **Le toast** — au moment du déblocage, pendant la partie.
 - **Accès** : au camp seulement, et avec une équipe, par la bannière du camp :
   les Haut-faits sont la bannière de la guilde, posée au camp.
 
 Deux familles n'ont pas de toast : les **contestations** et l'**assiduité** hors
-jeu. Une contestation s'arbitre des heures après avoir été demandée, souvent
+jeu. « Maudit » non plus : la magie noire agit sans geste de la cible. Une contestation s'arbitre des heures après avoir été demandée, souvent
 pendant que le joueur n'est pas là ; un toast surgirait alors sans rapport avec ce
 qu'il est en train de faire. Ces succès se découvrent sur la page.
 
@@ -221,10 +276,9 @@ joueur à quitter l'étage 1, le joueur remis à zéro compris, le gagne.
 
 ## Portée future
 
-Le catalogue pourra référencer les Sorts et les Équipes une fois ces systèmes
-éprouvés — des succès liés au lancer, par exemple. Rien n'en est spécifié ici : ce
-sera à traiter au moment de l'intégration, en ajoutant au catalogue plutôt qu'en le
-rouvrant.
+Le catalogue pourra référencer les Équipes une fois ce système éprouvé. Rien
+n'en est spécifié ici : ce sera à traiter au moment de l'intégration, en ajoutant
+au catalogue plutôt qu'en le rouvrant.
 
 ---
 

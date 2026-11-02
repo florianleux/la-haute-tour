@@ -2,7 +2,6 @@
   <BaseTileButton :label="label" @click="$emit('open')">
     <!-- Au survol, le « ? » prend l'encre de la guilde, celle de son infobulle. -->
     <AchievementIcon
-      :id="id"
       :unlocked="unlocked"
       :alt="label"
       class="w-full text-white/85 transition-colors group-hover:text-(--team-ink)"
@@ -13,7 +12,6 @@
     <template #tip>
       <div class="flex items-center gap-2">
         <AchievementIcon
-          :id="id"
           :unlocked="unlocked"
           class="w-14 shrink-0 [filter:drop-shadow(0_2px_3px_rgb(0_0_0/0.3))]"
         />

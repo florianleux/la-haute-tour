@@ -3,7 +3,7 @@ import { useDatabase } from '~~/server/db/client'
 import { castFromPocket } from '~~/server/utils/pocketSpells'
 import { CASTABLE_SPELL_IDS } from '~~/shared/utils/spells'
 import { TARGET_KINDS } from '~~/shared/utils/teams'
-import type { PocketSpellsView } from '~~/server/utils/pocketSpells'
+import type { CastResultView } from '~~/server/utils/pocketSpells'
 
 // Seuls les sorts dont l'effet existe se lancent : un sort du catalogue encore
 // à implémenter serait consommé pour rien. Les trois catégories de cible, elles,
@@ -20,7 +20,7 @@ const bodySchema = z.object({
  * lancer existe.
  * Voir specs/bonus.md#où-et-quand et specs/bonus.md#tirage-de-la-cible.
  */
-export default defineEventHandler(async (event): Promise<PocketSpellsView> => {
+export default defineEventHandler(async (event): Promise<CastResultView> => {
   const user = await requireAuth(event)
   const { spell, target } = await readValidatedBody(event, bodySchema.parse)
 

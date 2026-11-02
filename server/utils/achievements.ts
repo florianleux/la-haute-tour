@@ -18,6 +18,7 @@ import type { SQL } from 'drizzle-orm'
 import type { AchievementId } from '../../shared/utils/achievements'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
+import type { BossOutcome } from './mechanics'
 
 /**
  * Ce qu un état de jeu prouve, et l écriture qui en découle.
@@ -39,9 +40,22 @@ export interface AnsweredInput {
   died: boolean
   streak: number
   seenTotal: number
-  daysPlayed: number
   playStreak: number
+  /** La réponse est partie parce que le joueur a quitté la page. */
+  focusLoss: boolean
+  /** Entre le service de la question et la réponse. */
+  answeredInMs: number
+  /** Ce qu'il restait au chrono, négatif dans le délai de grâce. */
+  remainingMs: number
+  /** L'heure de la réponse, à Paris. */
+  hour: number
 }
+
+/** Les seuils des succès de style et des clins d'œil. Voir specs/succes.md#style-de-jeu. */
+const QUICK_ANSWER_MS = 3_000
+const LAST_SECOND_MS = 1_000
+const PUNCTUAL_MS = 5 * 60_000
+const NIGHT_OWL_HOURS = { from: 3, to: 5 }
 
 export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
   const earned: AchievementId[] = [input.correct ? 'FIRST_CORRECT' : 'FIRST_WRONG']
@@ -66,8 +80,9 @@ export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
     }
   }
 
+  // Les paliers comptent des jours qui se suivent, comme TWO_DAYS_IN_A_ROW. Voir specs/succes.md#assiduité.
   for (const tier of DAY_TIERS) {
-    if (input.daysPlayed >= tier) {
+    if (input.playStreak >= tier) {
       earned.push(daysAchievement(tier))
     }
   }
@@ -76,7 +91,61 @@ export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
     earned.push('TWO_DAYS_IN_A_ROW')
   }
 
+  if (input.correct && input.answeredInMs < QUICK_ANSWER_MS) {
+    earned.push('QUICK_ANSWER')
+  }
+
+  if (input.correct && input.remainingMs <= LAST_SECOND_MS) {
+    earned.push('LAST_SECOND')
+  }
+
+  if (input.focusLoss) {
+    earned.push('FOCUS_LOST')
+  }
+
+  if (input.hour >= NIGHT_OWL_HOURS.from && input.hour < NIGHT_OWL_HOURS.to) {
+    earned.push('NIGHT_OWL')
+  }
+
   return earned
+}
+
+/** Une épreuve de boss jugée, et ce qu'elle laisse du combat. */
+export interface TrialInput {
+  outcome: BossOutcome | null
+  /** Sa place dans le combat, à partir de 0 : autant d'épreuves jugées avant elle. */
+  position: number
+  /** Les PV pleins du boss : autant d'épreuves justes pour le vaincre. */
+  bossHp: number
+  bossAttemptNumber: number
+}
+
+/**
+ * Ce que l'épreuve qui achève un combat prouve. La victoire qui tombe à la
+ * `bossHp`-ième épreuve n'a laissé passer aucune erreur : c'est ce qui lit
+ * « Perfect ! » sans rien stocker. Voir specs/succes.md#porte-et-boss.
+ */
+export function earnedByTrial(input: TrialInput): AchievementId[] {
+  if (input.outcome === 'passed') {
+    return ['BOSS_PASSED']
+  }
+
+  if (input.outcome !== 'victory') {
+    return []
+  }
+
+  return [
+    'BOSS_BEATEN',
+    ...input.position + 1 === input.bossHp ? ['BOSS_PERFECT' as const] : [],
+    ...input.bossAttemptNumber === 1 ? ['BOSS_FIRST_TRY' as const] : [],
+  ]
+}
+
+/** Reprendre peu après la fin de l'attente. Voir specs/succes.md#clins-dœil. */
+export function earnedByResuming(cooldownUntil: Date | null, now: Date): AchievementId[] {
+  const late = cooldownUntil === null ? -1 : now.getTime() - cooldownUntil.getTime()
+
+  return late >= 0 && late <= PUNCTUAL_MS ? ['PUNCTUAL'] : []
 }
 
 /** Un étage dont la dernière question vient d être résolue. */
@@ -133,6 +202,13 @@ const dayKeyFormat = new Intl.DateTimeFormat('en-CA', { timeZone: GAME_TIME_ZONE
 
 export function dayKey(now: Date): string {
   return dayKeyFormat.format(now)
+}
+
+const hourFormat = new Intl.DateTimeFormat('en-GB', { timeZone: GAME_TIME_ZONE, hour: 'numeric', hourCycle: 'h23' })
+
+/** L'heure du jeu, de 0 à 23. */
+export function gameHour(now: Date): number {
+  return Number(hourFormat.format(now))
 }
 
 export interface PlayedDay {

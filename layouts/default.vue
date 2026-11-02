@@ -30,6 +30,11 @@ const { user } = await useCurrentUser()
 useHead({ htmlAttrs: { style: computed(() => teamColorVars(displayTeam(user.value?.team ?? null))) } })
 const game = user.value ? (await useGameState()).state : ref(null)
 
+// Un joueur connecté peut gagner « La curiosité est un vilain défaut ».
+if (user.value) {
+  useDevtoolsWatch()
+}
+
 const route = useRoute()
 const blocked = computed(() => blockedByMaintenance(game.value, route.path))
 
