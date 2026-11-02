@@ -1838,4 +1838,14 @@
     round(calc(var(--k) * var(--cut-r)), 1px)
     round(calc(var(--k) * var(--cut-b)), 1px)
     round(calc(var(--k) * var(--cut-l)), 1px);
+
+  /* Sans `round()` (Chrome avant 125), la ligne d'au-dessus est ignorée en
+     entier : des bords par défaut, le parchemin en miettes. */
+  @supports not (width: round(1px, 1px)) {
+    border-width:
+      calc(var(--k) * var(--cut-t))
+      calc(var(--k) * var(--cut-r))
+      calc(var(--k) * var(--cut-b))
+      calc(var(--k) * var(--cut-l));
+  }
 }

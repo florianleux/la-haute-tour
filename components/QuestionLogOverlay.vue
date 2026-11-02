@@ -18,9 +18,13 @@
          pour laisser plus de place à la lecture. En largeur, le calque est
          rogné au ras des rouleaux : ils se posent à 4 % des bords de l'écran,
          quelle que soit la largeur. Repères du calque :
-         `question-log-scroll-metrics`, dans main.css. -->
+         `question-log-scroll-metrics`, dans main.css.
+
+         Taille arrondie au pixel par `round()`, avec un repli en `calc()` :
+         sans lui, un navigateur qui ignore `round()` (Chrome avant 125) donne
+         une boîte de hauteur nulle — le titre seul, ni parchemin ni liste. -->
     <div
-      class="relative mt-[6dvh] h-[round(calc(94dvh+var(--k)*var(--cut-b)),1px)] w-[round(92vw,1px)] shrink-0 origin-bottom"
+      class="relative mt-[6dvh] h-[round(calc(94dvh+var(--k)*var(--cut-b)),1px)] w-[round(92vw,1px)] not-supports-[width:round(1px,1px)]:h-[calc(94dvh+var(--k)*var(--cut-b))] not-supports-[width:round(1px,1px)]:w-[92vw] shrink-0 origin-bottom"
       :class="closing ? 'motion-safe:animate-sink [--enter-delay:0.12s]' : 'motion-safe:animate-rise'"
       data-camp-backdrop
       @click.self="close"
