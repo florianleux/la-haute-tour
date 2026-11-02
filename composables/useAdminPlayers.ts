@@ -32,16 +32,18 @@ export interface AdminPlayers {
  * la garde serveur est ce qui protège. Voir specs/admin.md#gestion-des-joueurs.
  */
 export async function useAdminPlayers(): Promise<AdminPlayers> {
-  const { data, error, status, refresh } = await useAsyncData<PlayersResponse>(
-    ADMIN_PLAYERS_KEY,
-    () => $fetch<PlayersResponse>('/api/admin/players', useApiFetchOptions()),
-    { default: (): PlayersResponse => ({ players: [], active: { today: 0, week: 0 } }) },
-  )
-
   // L'identité servie est relue avec la liste : un geste sur le joueur que
   // l'admin incarne la change — remis à zéro, il doit rejouer l'introduction,
-  // et le garde des pages lirait sinon l'ancienne.
-  const { refresh: refreshUser } = await useCurrentUser()
+  // et le garde des pages lirait sinon l'ancienne. Lancées ensemble : après un
+  // await, un composable Nuxt n'a plus son contexte (le rendu serveur casse).
+  const [{ data, error, status, refresh }, { refresh: refreshUser }] = await Promise.all([
+    useAsyncData<PlayersResponse>(
+      ADMIN_PLAYERS_KEY,
+      () => $fetch<PlayersResponse>('/api/admin/players', useApiFetchOptions()),
+      { default: (): PlayersResponse => ({ players: [], active: { today: 0, week: 0 } }) },
+    ),
+    useCurrentUser(),
+  ])
   const { pending: acting, send } = useWriteThenRead(async () => {
     await Promise.all([refresh(), refreshUser()])
   })

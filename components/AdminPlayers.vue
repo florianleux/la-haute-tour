@@ -148,9 +148,9 @@ const teamTotals = computed(() => [...TEAM_IDS, null].map(id => ({
 
 // Le tri, au clic sur un en-tête : un second clic inverse le sens. Le dernier
 // jeu part du plus récent, le reste de A à Z ou du bas de la Tour. Sans tri,
-// l'ordre des invitations.
+// l'ordre des invitations. À l'ouverture, les plus hauts dans la Tour en tête.
 type SortKey = 'player' | 'team' | 'floor' | 'lastPlayed'
-const sort = ref<{ key: SortKey, direction: SortDirection } | null>(null)
+const sort = ref<{ key: SortKey, direction: SortDirection } | null>({ key: 'floor', direction: 'desc' })
 
 function directionOf(key: SortKey): SortDirection | null {
   return sort.value?.key === key ? sort.value.direction : null

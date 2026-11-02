@@ -11,14 +11,19 @@
       @click="model = tab.id"
     >
       {{ tab.label }}
+      <span
+        v-if="tab.badge"
+        class="ml-1.5 rounded-full bg-rose-600 px-1.5 py-0.5 text-xs font-semibold text-white"
+      >{{ tab.badge }}</span>
     </button>
   </div>
 </template>
 
 <script setup lang="ts" generic="T extends string">
 const props = defineProps<{
-  /** Les onglets dans l'ordre de la barre ; l'id est ce que porte le v-model. */
-  tabs: { id: T, label: string }[]
+  /** Les onglets dans l'ordre de la barre ; l'id est ce que porte le v-model.
+   *  Un badge non nul s'affiche en pastille après le libellé. */
+  tabs: { id: T, label: string, badge?: number }[]
   /** Posés sur un parchemin : encre sombre sur papier clair. */
   parchment?: boolean
 }>()

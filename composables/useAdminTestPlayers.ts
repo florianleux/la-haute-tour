@@ -40,16 +40,18 @@ export interface AdminTestPlayers {
  * ennemis, et le PvP qu'ils servent à éprouver ne s'applique pas.
  */
 export async function useAdminTestPlayers(): Promise<AdminTestPlayers> {
-  const { data, error, status, refresh } = await useAsyncData<TestPlayersResponse>(
-    ADMIN_TEST_PLAYERS_KEY,
-    () => $fetch<TestPlayersResponse>('/api/admin/test-players', useApiFetchOptions()),
-    { default: (): TestPlayersResponse => ({ testPlayers: [] }) },
-  )
-
   // L'identité servie est relue avec la liste : un geste sur le joueur que
   // l'admin incarne la change — remis à zéro, il doit rejouer l'introduction,
-  // et le garde des pages lirait sinon l'ancienne.
-  const { refresh: refreshUser } = await useCurrentUser()
+  // et le garde des pages lirait sinon l'ancienne. Lancées ensemble : après un
+  // await, un composable Nuxt n'a plus son contexte (le rendu serveur casse).
+  const [{ data, error, status, refresh }, { refresh: refreshUser }] = await Promise.all([
+    useAsyncData<TestPlayersResponse>(
+      ADMIN_TEST_PLAYERS_KEY,
+      () => $fetch<TestPlayersResponse>('/api/admin/test-players', useApiFetchOptions()),
+      { default: (): TestPlayersResponse => ({ testPlayers: [] }) },
+    ),
+    useCurrentUser(),
+  ])
   const { pending: acting, send } = useWriteThenRead(async () => {
     await Promise.all([refresh(), refreshUser()])
   })
