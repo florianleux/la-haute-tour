@@ -128,22 +128,22 @@ export function formatTime(iso: string): string {
 const calendarDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: GAME_TIME_ZONE })
 
 /**
- * Quand revenir, comme on le dit à voix haute : « à 13h34 », « demain à 3h56 »,
- * « le 12 octobre à 3h56 ». Le jour se compare à Paris, pas sur la machine.
+ * Quand revenir, comme on le dit à voix haute : « à partir de 13h34 », « demain à partir de 3h56 »,
+ * « le 12 octobre à partir de 3h56 ». Le jour se compare à Paris, pas sur la machine.
  */
 export function formatReturnAt(iso: string, now: number): string {
   const time = formatTime(iso).replace(/^0?(\d+):/, '$1h')
   const day = calendarDayFormat.format(new Date(iso))
 
   if (day === calendarDayFormat.format(now)) {
-    return `à ${time}`
+    return `à partir de ${time}`
   }
 
   if (day === calendarDayFormat.format(now + 86_400_000)) {
-    return `demain à ${time}`
+    return `demain à partir de ${time}`
   }
 
-  return `le ${formatDay(iso).replace(/ \d{4}$/, '')} à ${time}`
+  return `le ${formatDay(iso).replace(/ \d{4}$/, '')} à partir de ${time}`
 }
 
 /**
