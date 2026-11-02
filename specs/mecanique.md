@@ -114,7 +114,7 @@ Valeurs par défaut, identiques aux 6 étages :
 | Bonnes réponses pour se débloquer | 1 |
 | Taille minimale du pool pour déclencher un rattrapage | 3 |
 | Réussites consécutives pour sortir du pool | 2 |
-| Attente après la dernière vie perdue | 12 h |
+| Attente après la dernière vie perdue | 6 h |
 | Attente après un rattrapage manqué | 4 h |
 | Tolérance de perte de focus | 1 s |
 | Lancers de sorts par attente | 2 |
@@ -133,7 +133,7 @@ Faire diverger un étage revient à surcharger une de ces valeurs pour cet étag
 Les quatre dernières valeurs ne sont pas des constantes de jeu mais des **facteurs
 appliqués à celles du dessus** : un effet actif ne remplace jamais une règle, il la
 module. Un timer de 60 s frappé de deux Chronomancie noires vaut 15 s, une attente
-de 12 h allégée par deux Répit blancs vaut 3 h. Les modes de cumul diffèrent d'un
+de 6 h allégée par deux Répit blancs vaut 1 h 30. Les modes de cumul diffèrent d'un
 sort à l'autre — voir [`bonus.md`](./bonus.md#cumul).
 
 Aucun de ces facteurs ne peut réduire un timer ou une attente à zéro : ils sont

@@ -121,7 +121,7 @@ const DEFAULT_RULES: FloorRules = {
   recoverySuccessesToResume: 1,
   poolSizeForRecovery: 3,
   poolSuccessesToLeave: 2,
-  cooldownMs: 12 * HOUR_MS,
+  cooldownMs: 6 * HOUR_MS,
   cooldownAfterFailedRecoveryMs: 4 * HOUR_MS,
   latencyGraceMs: 1_000,
   focusGraceMs: 1_000,

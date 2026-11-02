@@ -23,8 +23,8 @@ const DEMO_STAKES: Partial<Record<SpellId, Record<SpellFace, EffectStake>>> = {
     curse: { rule: 'lives', before: 3, after: 2 },
   },
   RESPITE: {
-    boon: { rule: 'cooldownMs', before: 12 * 3_600_000, after: 6 * 3_600_000 },
-    curse: { rule: 'cooldownMs', before: 12 * 3_600_000, after: 24 * 3_600_000 },
+    boon: { rule: 'cooldownMs', before: 6 * 3_600_000, after: 3 * 3_600_000 },
+    curse: { rule: 'cooldownMs', before: 6 * 3_600_000, after: 12 * 3_600_000 },
   },
   CHRONOMANCY: {
     boon: { rule: 'ascentTimerMs', before: 60_000, after: 120_000 },

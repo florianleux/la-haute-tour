@@ -75,7 +75,7 @@ Ce que le combat de boss ajoute, en propre, à l'état de joueur (voir
   porte du boss. Sauf si elles sont à 0, voir « Cas à 0 vie » plus bas.
 - **Combats suivants** : vies pleines standard (3), comme une tentative
   d'ascension normale.
-- **Entre deux combats** : attente (12h par défaut) au camp, **sans
+- **Entre deux combats** : attente (6h par défaut) au camp, **sans
   rattrapage** — l'attente échue rend les vies, quel que soit le Pool Échecs
   de l'étage. Le joueur remonte alors à la porte (« Remonter »).
 

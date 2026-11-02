@@ -233,7 +233,7 @@ async function purgePool(db: Database, target: User, face: SpellFace): Promise<v
  *
  * Ce que cette attente-ci dure, et non ce que le jeu de règles dit d'une
  * attente : celle qui suit un rattrapage entièrement manqué est plus courte, et
- * la recalculer sur les douze heures de l'autre la rallongerait.
+ * la recalculer sur les six heures de l'autre la rallongerait.
  */
 async function reshapeCooldown(db: Database, target: User, startedAt: Date): Promise<void> {
   const baseMs = target.cooldownBaseMs

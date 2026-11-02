@@ -106,7 +106,7 @@ Nombre de **jours joués qui se suivent** : deux jours, puis paliers 7, 30 et 10
 jours. Un jour sauté remet la série à un ; un palier acquis le reste.
 
 Un jour joué est un jour où le joueur a résolu au moins une question, daté en
-Europe/Paris. Ouvrir le jeu pendant une attente de douze heures, sans pouvoir
+Europe/Paris. Ouvrir le jeu pendant une attente de six heures, sans pouvoir
 jouer, n'en fait pas un — c'est la partie qu'on compte, pas la visite.
 
 ### Positions notables — 4

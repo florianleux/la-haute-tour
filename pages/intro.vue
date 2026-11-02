@@ -150,7 +150,7 @@ type DuoLine = DialogueLine<'left' | 'right'>
 
 /**
  * Ce que L'Inconnu répond à chaque sujet. Les règles y restent vagues (« une
- * minute à peine », « une demi-journée ») : leurs valeurs vivent dans les règles
+ * minute à peine », « quelques heures ») : leurs valeurs vivent dans les règles
  * de l'étage, et un réglage ne doit pas faire mentir le texte. Voir
  * specs/mecanique.md#règles-chiffrées.
  */
@@ -213,7 +213,7 @@ const ANSWERS: Record<Topic, DuoLine[]> = {
   'Et quand je n\'ai plus de vies ?': [
     {
       place: 'right',
-      text: 'Alors tu attends. Une demi-journée, à peu près. Tu reprendras là où tu es tombé.',
+      text: 'Alors tu attends. Quelques heures. Tu reprendras là où tu es tombé.',
     },
     {
       place: 'right',

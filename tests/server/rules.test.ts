@@ -28,7 +28,7 @@ describe('jeu de règles', () => {
       recoverySuccessesToResume: 1,
       poolSizeForRecovery: 3,
       poolSuccessesToLeave: 2,
-      cooldownMs: 12 * 60 * 60 * 1000,
+      cooldownMs: 6 * 60 * 60 * 1000,
       cooldownAfterFailedRecoveryMs: 4 * 60 * 60 * 1000,
       latencyGraceMs: 1_000,
       questionsPerChest: 25,

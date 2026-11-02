@@ -111,7 +111,7 @@ export const users = sqliteTable('users', {
    * attente.
    *
    * Portée et non relue dans le jeu de règles, parce qu'elles ne durent pas
-   * toutes pareil : une dernière vie perdue en ouvre une de douze heures, un
+   * toutes pareil : une dernière vie perdue en ouvre une de six heures, un
    * rattrapage entièrement manqué une de quatre. Recalculer depuis la première
    * rallongerait la seconde au lieu de l'écourter.
    * Voir specs/mecanique.md#règles-chiffrées.

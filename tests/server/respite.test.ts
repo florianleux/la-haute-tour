@@ -175,7 +175,7 @@ describe('Répit, sur l attente en cours', () => {
   // entièrement manqué est plus courte. Recalculer sur la durée de l'autre la
   // rallongerait — Répit punirait au lieu d'aider.
   // Voir specs/mecanique.md#règles-chiffrées.
-  describe('sur une attente qui ne dure pas douze heures', () => {
+  describe('sur une attente plus courte que l attente standard', () => {
     it('raccourcit l attente d après rattrapage manqué, sans jamais l allonger', async () => {
       const shortCooldown = rules.cooldownAfterFailedRecoveryMs
       await db
