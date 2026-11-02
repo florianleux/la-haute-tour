@@ -1,9 +1,11 @@
-import { and, eq, inArray, isNotNull, isNull, ne } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 import { achievements, activeEffects, disputes, questions, users } from '../db/schema'
+import { receivedBy } from './effects'
 import { displayNameColumn } from './names'
 import type { SQL } from 'drizzle-orm'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
+import type { DisputeVerdict } from './disputes'
 import type { ReceivedView } from './effects'
 import type { AchievementId } from '~~/shared/utils/achievements'
 
@@ -17,7 +19,7 @@ import type { AchievementId } from '~~/shared/utils/achievements'
 /** Une contestation tranchée que le joueur n'a pas encore lue. */
 export interface DisputeNotice {
   id: number
-  verdict: 'accepted' | 'rejected'
+  verdict: DisputeVerdict
   statement: string
 }
 
@@ -42,9 +44,9 @@ function unreadDisputesOf(user: User): SQL | undefined {
   return and(eq(disputes.userId, user.id), isNotNull(disputes.settledAt), isNull(disputes.noticedAt))
 }
 
-/** Les sorts lancés sur lui par un autre, pas encore lus. Un sort lancé sur soi n'est pas une nouvelle : le joueur était là. */
+/** Les sorts lancés sur lui par un autre, pas encore lus. */
 function unreadSpellsOf(user: User): SQL | undefined {
-  return and(eq(activeEffects.userId, user.id), ne(activeEffects.casterId, user.id), isNull(activeEffects.noticedAt))
+  return and(receivedBy(user.id), isNull(activeEffects.noticedAt))
 }
 
 export async function unreadNotices(db: Database, user: User): Promise<Notices> {

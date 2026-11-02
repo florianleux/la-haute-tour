@@ -1,4 +1,5 @@
 import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
 import { unlock } from './achievements'
 import { isBorneBy } from './mechanics'
 import { displayNameColumn } from './names'
@@ -330,6 +331,15 @@ export async function readReceivedLog(db: Database, target: User, limit = CAST_L
 
 type ReceivedLogQuery = ReturnType<typeof buildReceivedLogQuery>
 
+/**
+ * Les effets qu'un autre a lancés sur ce joueur : le journal des reçus et ses
+ * nouvelles (server/utils/notices.ts) lisent les mêmes. Un lancer sur soi n'en
+ * est pas : le joueur était là.
+ */
+export function receivedBy(userId: number): SQL | undefined {
+  return and(eq(activeEffects.userId, userId), ne(activeEffects.casterId, userId))
+}
+
 function buildReceivedLogQuery(db: Database, userId: number, limit: number) {
   return db
     .select({
@@ -342,10 +352,7 @@ function buildReceivedLogQuery(db: Database, userId: number, limit: number) {
     // Jointure fermée, contrairement au journal des lancers : un effet reçu a
     // toujours quelqu'un derrière lui.
     .innerJoin(users, eq(users.id, activeEffects.casterId))
-    .where(and(
-      eq(activeEffects.userId, userId),
-      ne(activeEffects.casterId, userId),
-    ))
+    .where(receivedBy(userId))
     // Même départage qu'au journal des lancers : la seconde ne suffit pas.
     .orderBy(desc(activeEffects.castAt), desc(activeEffects.id))
     .limit(limit)

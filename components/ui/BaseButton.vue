@@ -38,9 +38,11 @@ const props = withDefaults(defineProps<{
    * `link` : un simple lien blanc, en capitales, l'ombre sombre des noms du
    * camp au plus près : il se lit sur un voile sombre comme sur le papier clair
    * que la vignette d'un lancer laisse au centre — le OK d'une apparition
-   * (ItemReveal, SpellCastBurst).
+   * (ItemReveal, SpellCastBurst). `ink` : un mot souligné à l'encre, sans cadre,
+   * à la taille du texte de parchemin où il se pose — les petits gestes alignés
+   * à côté d'une ligne (« OK » d'une nouvelle, « Tout marquer lu »).
    */
-  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'link'
+  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'link' | 'ink'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -57,7 +59,7 @@ defineEmits<{ click: [MouseEvent] }>()
  * Le gabarit d'un bouton seul. Une option, empilée avec d'autres dans un texte,
  * en veut un plus serré et garde la taille de ce texte.
  */
-const PADDED = 'py-3 text-sm font-semibold transition-colors'
+const PADDED = 'px-5 py-3 text-sm font-semibold transition-colors'
 
 // Chaque variante porte sa transition : deux `transition-*` sur un même
 // bouton se disputeraient `transition-property`.
@@ -65,15 +67,16 @@ const VARIANTS = {
   primary: `${PADDED} bg-indigo-500 text-white hover:bg-indigo-400`,
   ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
-  option: 'py-1 italic bg-transparent text-inherit transition-colors hover:underline',
-  link: 'py-1 text-[max(1.1rem,2.6dvh)] font-semibold tracking-wider uppercase bg-transparent text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6)] underline-offset-4 transition-opacity hover:underline hover:opacity-80',
+  option: 'px-5 py-1 italic bg-transparent text-inherit transition-colors hover:underline',
+  link: 'px-5 py-1 text-[max(1.1rem,2.6dvh)] font-semibold tracking-wider uppercase bg-transparent text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6)] underline-offset-4 transition-opacity hover:underline hover:opacity-80',
   parchment: `${PADDED} border-2 border-amber-900/40 bg-transparent text-amber-950 enabled:hover:bg-amber-900/10`,
+  ink: 'font-semibold uppercase tracking-wide bg-transparent text-amber-900 underline decoration-amber-900/40 underline-offset-[0.2em] transition-colors enabled:hover:text-amber-950 enabled:hover:decoration-amber-950',
 }
 
 const classes = computed(() => [
   // `relative` : le loader se pose par-dessus le libellé plutôt qu'à côté, pour
   // que le bouton garde sa largeur pendant l'attente.
-  'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5',
+  'relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg',
   'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400',
   'disabled:cursor-not-allowed disabled:opacity-50',
   props.block ? 'w-full' : '',

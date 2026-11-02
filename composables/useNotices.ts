@@ -7,7 +7,7 @@ import type { NoticesReadBody } from '~~/server/api/game/notices/read.post'
 /** Cache key of the notices read: one name, so nobody re-types the string. */
 export const NOTICES_KEY = 'notices'
 
-export interface NoticesRead {
+export interface UseNotices {
   disputes: Ref<DisputeNotice[]>
   spells: Ref<SpellNotice[]>
   /** Une lecture est en vol : les boutons attendent. */
@@ -33,7 +33,7 @@ function postRead(body: NoticesReadBody): Promise<Notices> {
  * Les succès débloqués sans lui s'annoncent en toast au montage, puis sont
  * datés pour ne pas revenir. Voir specs/ecrans.md#nouvelles.
  */
-export async function useNotices(): Promise<NoticesRead> {
+export async function useNotices(): Promise<UseNotices> {
   // Pris avant l'attente : passé le premier `await`, le contexte Nuxt n'y est plus.
   const announce = useAchievementAnnouncer()
   const { data } = await useAsyncData<Notices>(NOTICES_KEY, () => $fetch<Notices>('/api/game/notices', useApiFetchOptions()))
