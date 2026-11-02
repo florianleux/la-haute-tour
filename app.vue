@@ -3,9 +3,10 @@
        se font avant que la nouvelle page s'affiche, sans ça rien ne bouge. -->
   <NuxtLoadingIndicator color="#818cf8" />
   <!-- Le format décide en CSS, avant tout script : rendu côté serveur, le jeu
-       ne passe jamais devant le mur. Voir specs/ecrans.md#mur-mobile. -->
-  <MobileWall />
-  <div class="mobile:hidden">
+       ne passe jamais devant le mur. Voir specs/ecrans.md#mur-mobile. Les écrans
+       d'administration (layout `admin`) en sont exemptés. -->
+  <MobileWall v-if="!adminLayout" />
+  <div :class="{ 'mobile:hidden': !adminLayout }">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
@@ -13,6 +14,10 @@
 </template>
 
 <script setup lang="ts">
+// Connue au rendu serveur comme au client : le premier affichage reste le bon.
+const route = useRoute()
+const adminLayout = computed(() => route.meta.layout === 'admin')
+
 useHead({
   title: 'La Haute Tour',
   link: [

@@ -31,7 +31,7 @@
 
 Toute page non listée comme ouverte redirige vers la connexion.
 
-Sur une fenêtre au format mobile, aucune de ces pages ne s'affiche : le [mur mobile](#mur-mobile) les remplace toutes.
+Sur une fenêtre au format mobile, aucune de ces pages ne s'affiche : le [mur mobile](#mur-mobile) les remplace toutes, sauf les écrans d'administration.
 
 **Une URL inconnue ne montre pas d'erreur** : elle ramène au jeu. Il n'y a pas d'écran 404 — se tromper d'adresse renvoie là où l'on joue, et un visiteur non connecté y trouve la connexion comme partout ailleurs.
 
@@ -220,8 +220,10 @@ surgit au coin bas-droit, comme en leçon. Rien d'autre à faire.
   téléphone est donc bloqué dans les deux sens, une tablette debout aussi ; une
   tablette couchée passe. Une fenêtre de bureau plus haute que large est bloquée
   comme un téléphone.
-- **Il couvre tout le site**, connexion et administration comprises, sans
-  exception pour l'admin ni les joueurs test.
+- **Il couvre tout le site, sauf les écrans d'administration** (`/admin`), qui
+  restent consultables au format mobile. La connexion et les écrans de test
+  `/test/*` restent derrière le mur, sans exception pour l'admin ni les joueurs
+  test.
 - **Il se décide en CSS**, avant tout script : le premier affichage est déjà le
   bon, le jeu ne passe jamais devant. Tourner l'appareil le fait apparaître ou
   disparaître sur-le-champ. La page reste chargée derrière, invisible et
