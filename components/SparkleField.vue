@@ -1,5 +1,7 @@
 <template>
-  <div class="absolute inset-0">
+  <!-- Un <span> : le champ se pose dans un titre <p>, où un <div> fermerait le
+       paragraphe au rendu serveur et casserait l'hydratation. -->
+  <span class="absolute inset-0">
     <SparkleStar
       v-for="(spark, index) in sparks"
       :key="index"
@@ -7,7 +9,7 @@
       :glow="glow"
       :style="{ left: spark.left, top: spark.top, width: spark.size, animationDelay: spark.delay }"
     />
-  </div>
+  </span>
 </template>
 
 <script setup lang="ts">
