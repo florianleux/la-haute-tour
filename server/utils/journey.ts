@@ -78,10 +78,11 @@ export async function openAttempt(
     return null
   }
 
-  // Une magie noire qui s'ancre agit : c'est là que la cible la subit. Sans
-  // toast, elle n'est pas l'auteur du geste. Voir specs/succes.md#sorts.
+  // Une magie noire qui s'ancre agit : c'est là que la cible la subit. Elle
+  // n'est pas l'auteur du geste : le toast attend son retour au camp.
+  // Voir specs/succes.md#sorts.
   if (cursed) {
-    await unlock(db, user, ['CURSED'], now)
+    await unlock(db, user, ['CURSED'], now, { announced: false })
   }
 
   return rules

@@ -1,4 +1,6 @@
+import { useAchievementAnnouncer } from './useAchievementToasts'
 import type { Ref } from 'vue'
+import type { AchievementId } from '~~/shared/utils/achievements'
 import type { DisputableError } from '~~/server/utils/disputes'
 import type { DisputableResponse } from '~~/server/api/game/disputable-errors.get'
 
@@ -39,6 +41,7 @@ export function useDisputes(): Disputes {
   const disputingId = useState<string | null>('disputing-id', () => null)
   const failed = useState<boolean>('disputable-failed', () => false)
   const sent = useState<string[]>('disputes-sent', () => [])
+  const announce = useAchievementAnnouncer()
 
   async function refresh(): Promise<void> {
     try {
@@ -55,8 +58,9 @@ export function useDisputes(): Disputes {
     disputingId.value = questionId
 
     try {
-      await $fetch('/api/game/disputes', { method: 'POST', body: { questionId } })
+      const { unlocked } = await $fetch<{ unlocked: AchievementId[] }>('/api/game/disputes', { method: 'POST', body: { questionId } })
       sent.value = [...sent.value, questionId]
+      announce(unlocked)
       await refresh()
       return true
     }

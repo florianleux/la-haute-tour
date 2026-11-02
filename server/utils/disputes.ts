@@ -13,6 +13,7 @@ import {
 } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
+import type { AchievementId } from '~~/shared/utils/achievements'
 
 /**
  * La contestation : le joueur affirme que sa réponse valait la bonne, l'admin
@@ -82,7 +83,7 @@ export async function openDispute(
   user: User,
   questionId: string,
   now: Date,
-): Promise<void> {
+): Promise<AchievementId[]> {
   const disputable = await disputableErrors(db, user)
 
   if (!disputable.some(error => error.questionId === questionId)) {
@@ -91,11 +92,8 @@ export async function openDispute(
 
   await db.insert(disputes).values({ userId: user.id, questionId, createdAt: now })
 
-  // Gravé ici et pas annoncé : la page Succès le montrera. Il n'y a pas d'état de
-  // jeu à porter sur ce chemin, et un toast n'aurait de toute façon aucun sens sur
-  // les deux autres succès de contestation, arbitrés des heures plus tard.
-  // Voir specs/succes.md#affichage.
-  await unlock(db, user, ['DISPUTE_OPENED'], now)
+  // Rendu pour son toast : le joueur est l'auteur du geste. Voir specs/succes.md#affichage.
+  return unlock(db, user, ['DISPUTE_OPENED'], now)
 }
 
 export interface PendingDispute {
@@ -200,12 +198,14 @@ export async function settleDispute(
     db.select().from(users).where(eq(users.id, dispute.userId)).limit(1),
   ])
 
-  // Le succès va au joueur qui a contesté, jamais à l'admin qui arbitre.
+  // Le succès va au joueur qui a contesté, jamais à l'admin qui arbitre. Il
+  // n'est pas là : son toast attend son retour au camp.
   await unlock(
     db,
     player,
     [verdict === 'accepted' ? 'DISPUTE_ACCEPTED' : 'DISPUTE_REJECTED'],
     now,
+    { announced: false },
   )
 
   if (verdict === 'rejected') {

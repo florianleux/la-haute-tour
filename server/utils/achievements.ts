@@ -278,12 +278,18 @@ function heldPlus(ids: AchievementId[]): SQL<AchievementId[]> {
  * Le conflit ignoré reste le filet — si le double ment malgré tout, l insert ne
  * rend rien, donc rien ne s annonce deux fois, et le double se recale au
  * passage. Voir server/db/schema.ts.
+ *
+ * `announced` dit si le joueur est là pour le toast : c'est le cas quand son
+ * propre geste débloque le succès. Un déblocage sans lui (contestation tranchée,
+ * malédiction reçue) passe `announced: false`, et le toast attend son retour au
+ * camp. Voir server/utils/notices.ts.
  */
 export async function unlock(
   db: Database,
   user: Pick<User, 'id' | 'achievementsHeld'>,
   ids: AchievementId[],
   now: Date,
+  { announced = true }: { announced?: boolean } = {},
 ): Promise<AchievementId[]> {
   const held = new Set(user.achievementsHeld)
   const missing = ids.filter(id => !held.has(id))
@@ -295,7 +301,7 @@ export async function unlock(
   const [granted] = await db.batch([
     db
       .insert(achievements)
-      .values(missing.map(achievement => ({ userId: user.id, achievement, unlockedAt: now })))
+      .values(missing.map(achievement => ({ userId: user.id, achievement, unlockedAt: now, announcedAt: announced ? now : null })))
       .onConflictDoNothing()
       .returning({ achievement: achievements.achievement }),
     db

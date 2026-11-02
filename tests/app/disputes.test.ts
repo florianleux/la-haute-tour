@@ -5,6 +5,7 @@ import type { DisputableError, PendingDispute } from '../../server/utils/dispute
 const { serve, answerWith, breakNetwork, signIn, calls, refresh, reset } = installAppGlobals()
 
 const { useDisputes } = await import('../../composables/useDisputes')
+const { useAchievementToasts } = await import('../../composables/useAchievementToasts')
 const { ADMIN_DISPUTES_KEY, useAdminDisputes } = await import('../../composables/useAdminDisputes')
 
 const ERROR: DisputableError = { questionId: 'q1' }
@@ -36,12 +37,24 @@ describe('contestation côté joueur', () => {
   })
 
   it('conteste puis relit la liste : le bouton disparaît de lui-même', async () => {
+    answerWith({ unlocked: [] })
     const { sendDispute } = useDisputes()
 
     const sent = await sendDispute('q1')
 
     expect(sent).toBe(true)
     expect(calls()).toEqual(['fetch POST /api/game/disputes', 'fetch GET /api/game/disputable-errors'])
+  })
+
+  // Le joueur est l'auteur du geste : son succès s'annonce sur-le-champ.
+  // Voir specs/succes.md#affichage.
+  it('annonce le succès que la contestation débloque', async () => {
+    answerWith({ unlocked: ['DISPUTE_OPENED'] })
+    const toasts = useAchievementToasts()
+
+    await useDisputes().sendDispute('q1')
+
+    expect(toasts.value.map(toast => toast.id)).toEqual(['DISPUTE_OPENED'])
   })
 
   it('retient la contestation partie, pour en accuser réception', async () => {

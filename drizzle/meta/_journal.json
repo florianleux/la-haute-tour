@@ -281,6 +281,13 @@
       "when": 1793179453477,
       "tag": "0039_loose_doorman",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1793646198444,
+      "tag": "0040_stormy_christian_walker",
+      "breakpoints": true
     }
   ]
 }

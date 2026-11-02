@@ -179,8 +179,8 @@ joueur le regagne.
 
 « Maudit » se gagne quand la magie noire agit : à l'ancrage, au début de la
 tentative suivante de la cible, ou au lancer pour un sort lié à l'attente, qui
-agit sur l'attente en cours. Pas de toast : la cible n'est pas l'auteur du
-geste, elle le découvre sur la page.
+agit sur l'attente en cours. La cible n'est pas l'auteur du geste : son toast
+attend son prochain retour au camp (voir [Affichage](#affichage)).
 
 ### Style de jeu — 2
 
@@ -234,17 +234,18 @@ porte déjà ses questions vues. Voir
 - **Pas de dessin par succès.** Une tuile obtenue montre l'écu de la guilde du
   joueur, le même pour tous les succès : ce qui les distingue, c'est leur nom et
   leur condition. Ajouter un succès ne demande donc aucune image.
-- **Le toast** — au moment du déblocage, pendant la partie.
+- **Le toast** — au moment du déblocage, quand le joueur en est l'auteur.
 - **Accès** : au camp seulement, et avec une équipe, par la bannière du camp :
   les Haut-faits sont la bannière de la guilde, posée au camp.
 
-Deux familles n'ont pas de toast : les **contestations** et l'**assiduité** hors
-jeu. « Maudit » non plus : la magie noire agit sans geste de la cible. Une contestation s'arbitre des heures après avoir été demandée, souvent
-pendant que le joueur n'est pas là ; un toast surgirait alors sans rapport avec ce
-qu'il est en train de faire. Ces succès se découvrent sur la page.
+Tout succès a son toast, assiduité comprise. Un succès débloqué **sans** le
+joueur — contestation tranchée par l'admin, « Maudit » quand la magie noire agit
+— ne surgit pas sans rapport avec ce qu'il fait : son toast attend son prochain
+retour au camp, où aucun chrono ne tourne, puis ne revient plus. Voir
+[`ecrans.md`](./ecrans.md#nouvelles).
 
 « HÉ ! » a son toast, bien que gagné au camp : il tombe au geste même du joueur,
-le don du Fromage.
+le don du Fromage. « Objection » aussi, au clic sur « Contester ».
 
 ## Contestation
 

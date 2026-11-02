@@ -132,6 +132,8 @@
          s'arrête au bouton, qui mord sur le parchemin), soit 49 cqw ; le cumul le
          plus lourd (attente admin + rattrapage raté + Répit + coffre + sorts +
          chargement) en pèse ~42, le décompte étant passé dans la bannière. -->
+    <!-- Seules les nouvelles débordent (elles ne se comptent pas d'avance) :
+         elles se tassent et défilent dans leur propre liste. Voir CampNotices. -->
     <div
       class="absolute left-[23%] top-[21%] flex h-[46%] w-[62%] flex-col items-center justify-center gap-[1.5cqw] overflow-hidden px-[2cqw] text-center text-[2.6cqw] leading-snug text-amber-800"
       :class="shade"
@@ -166,6 +168,8 @@
           />
         </div>
       </div>
+
+      <CampNotices class="mt-[4cqw] min-h-0" />
 
       <BaseParchmentNote v-if="loading">
         Mise à jour de ta partie…

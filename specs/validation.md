@@ -69,6 +69,8 @@ Une réponse vide n'est **pas contestable** : accepter une telle contestation aj
 - **Aucun plafond** : une vie rendue par contestation peut porter le total au-delà du nombre de vies d'une tentative. Ce n'est pas une récompense, c'est une réparation — la plafonner l'annulerait précisément dans le cas où le joueur a le plus attendu.
 - Rejetée → contestation clôturée, aucun effet.
 
+Acceptée ou rejetée, le joueur l'apprend à son retour au camp, sans ouvrir le Volumen : voir [`ecrans.md`](./ecrans.md#nouvelles).
+
 ### Effet sur la question
 
 Accepter une contestation, c'est établir que le joueur avait raison. Par conséquent :

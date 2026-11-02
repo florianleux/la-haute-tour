@@ -247,7 +247,7 @@ raison d'être une fois le sort parti. Sans cette révélation, personne ne saur
 jamais que le système existe : il n'y a ni classement ni score à gagner, la seule
 récompense du PvP est sociale.
 
-Trois lieux d'affichage :
+Quatre lieux d'affichage :
 
 - **L'écran d'attente** porte le récapitulatif de ce qui attend la prochaine
   tentative — effets actifs, positifs et négatifs, chacun avec le nom de son
@@ -258,6 +258,8 @@ Trois lieux d'affichage :
   lancers, sur qui — ou sur personne quand le pool était vide — et quel jour. C'est là que le
   lanceur lit que son sort a touché quelqu'un. La cible, elle, lit qui l'a
   soutenue sur l'effet actif (« Lancé par »), pas dans un journal.
+- **Les nouvelles du camp** annoncent son arrivée à la cible : qui le lui a
+  lancé, et quel sort. Voir [`ecrans.md`](./ecrans.md#nouvelles).
 - **L'ascension** affiche une **icône par effet actif**, pendant les questions
   concernées. Un joueur dont le timer démarre à 30 s trois jours après avoir lu
   l'avertissement doit pouvoir comprendre pourquoi plutôt que de croire à un bug.

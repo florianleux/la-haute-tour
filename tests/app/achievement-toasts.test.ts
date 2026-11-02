@@ -90,16 +90,16 @@ describe('les annonces de succès', () => {
   })
 
   /**
-   * L'Assiduité se gagne hors jeu et se découvre sur la page — jamais en toast,
-   * même quand le serveur l'a bien mise dans `unlocked`. Voir specs/succes.md#affichage.
+   * L'Assiduité s'annonce comme n'importe quel succès : elle tombe à une réponse,
+   * le joueur est là. Voir specs/succes.md#affichage.
    */
-  it('tait l Assiduité, même arrivée avec d autres déblocages', async () => {
+  it('annonce l Assiduité comme les autres', async () => {
     const toasts = toastsInScope()
 
     landed(['FIRST_CORRECT', 'DAYS_7', 'TWO_DAYS_IN_A_ROW'])
     await nextTick()
 
-    expect(toasts.value.map(toast => toast.id)).toEqual(['FIRST_CORRECT'])
+    expect(toasts.value.map(toast => toast.id)).toEqual(['FIRST_CORRECT', 'DAYS_7', 'TWO_DAYS_IN_A_ROW'])
   })
 
   /**

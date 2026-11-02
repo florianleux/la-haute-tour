@@ -196,7 +196,7 @@ export async function castSpell(
   // cible : c'est là qu'une magie noire de ce genre se subit. Les autres se
   // subissent à l'ancrage, voir openAttempt.
   if (face === 'curse' && isCooldownBound(spell) && target.cooldownStartedAt !== null) {
-    await unlock(db, target, ['CURSED'], now)
+    await unlock(db, target, ['CURSED'], now, { announced: false })
   }
 
   // Ce que le sort fait à l'instant du lancer, s'il fait quelque chose : le

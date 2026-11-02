@@ -477,6 +477,11 @@ export const disputes = sqliteTable('disputes', {
     .default(sql`(unixepoch())`),
   /** Quand l'admin a tranché. Null tant que la contestation attend. */
   settledAt: integer('settled_at', { mode: 'timestamp' }),
+  /**
+   * Quand le joueur a lu le verdict sur le poster du camp (« OK »). Null tant
+   * qu'il ne l'a pas lu : c'est une nouvelle. Voir specs/ecrans.md#nouvelles.
+   */
+  noticedAt: integer('noticed_at', { mode: 'timestamp' }),
 }, table => [
   unique('disputes_user_question_unique').on(table.userId, table.questionId),
   index('disputes_status_idx').on(table.status, table.createdAt),
@@ -624,6 +629,11 @@ export const activeEffects = sqliteTable('active_effects', {
   targetCooldownStartedAt: integer('target_cooldown_started_at', { mode: 'timestamp' }),
   /** La tentative sur laquelle l'effet s'est ancré. Null tant qu'il attend. */
   anchoredAt: integer('anchored_at', { mode: 'timestamp' }),
+  /**
+   * Quand la cible a lu ce lancer sur le poster du camp (« OK »). Null tant
+   * qu'elle ne l'a pas lu : c'est une nouvelle. Voir specs/ecrans.md#nouvelles.
+   */
+  noticedAt: integer('noticed_at', { mode: 'timestamp' }),
 }, table => [
   index('active_effects_user_idx').on(table.userId, table.anchoredAt),
   index('active_effects_caster_idx').on(table.casterId, table.castAt),
@@ -669,6 +679,13 @@ export const achievements = sqliteTable('achievements', {
     .references(() => users.id, { onDelete: 'cascade' }),
   achievement: text('achievement', { enum: ACHIEVEMENT_IDS }).notNull(),
   unlockedAt: integer('unlocked_at', { mode: 'timestamp' }).notNull(),
+  /**
+   * Quand son toast a été joué. Posé au déblocage quand le joueur en est
+   * l'auteur ; null quand il s'est débloqué sans lui (contestation tranchée,
+   * malédiction reçue) — le toast attend alors son retour au camp.
+   * Voir specs/succes.md#affichage.
+   */
+  announcedAt: integer('announced_at', { mode: 'timestamp' }),
 }, table => [primaryKey({ columns: [table.userId, table.achievement] })])
 
 /**
