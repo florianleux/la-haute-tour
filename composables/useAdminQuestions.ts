@@ -1,7 +1,7 @@
 import { useWriteThenRead } from './useWriteThenRead'
 import type { Ref } from 'vue'
 import type { AdminQuestionsResponse } from '~~/server/api/admin/questions/index.get'
-import type { AdminQuestion, QuestionDraft, QuestionEdit } from '~~/server/utils/questions'
+import type { AdminQuestion, QuestionEdit } from '~~/server/utils/questions'
 
 /** Cache key of the deck read: one name, so nobody re-types the string. */
 export const ADMIN_QUESTIONS_KEY = 'admin-questions'
@@ -24,7 +24,6 @@ export interface AdminQuestions {
   loading: Ref<boolean>
   /** True from the moment a write is sent until the deck has been read back. */
   saving: Ref<boolean>
-  create: (draft: QuestionDraft) => Promise<boolean>
   edit: (id: string, edit: QuestionEdit) => Promise<boolean>
   remove: (id: string) => Promise<boolean>
   refresh: () => Promise<void>
@@ -92,7 +91,6 @@ export async function useAdminQuestions(): Promise<AdminQuestions> {
     failed: computed<boolean>(() => Boolean(error.value)),
     loading: computed<boolean>(() => status.value === 'pending'),
     saving,
-    create: draft => send('/api/admin/questions', 'POST', draft),
     edit: (id, edit) => send(`/api/admin/questions/${id}`, 'PUT', edit),
     remove: id => send(`/api/admin/questions/${id}`, 'DELETE'),
     refresh,

@@ -19,27 +19,21 @@ export interface AdminQuestion {
   acceptedAnswers: string[]
 }
 
-/** Ce qu'il faut pour créer une question : son contenu et l'étage qui l'accueille. */
+/** Une question à ajouter au deck : son contenu et l'étage qui l'accueille. */
 export type QuestionDraft = Omit<AdminQuestion, 'id'>
 
 /** Ce qui s'édite : le contenu, sans l'étage. */
 export type QuestionEdit = Omit<QuestionDraft, 'floor'>
 
 /**
- * Les deux écritures partagent la même frontière : un énoncé et une réponse
- * affichée non vides, et au moins une réponse acceptée — sans elle, la question
- * serait imbattable.
+ * La frontière d'une édition : un énoncé et une réponse affichée non vides, et
+ * au moins une réponse acceptée — sans elle, la question serait imbattable.
  */
 export const questionEditSchema = z.object({
   statement: z.string().trim().min(1),
   answerLabel: z.string().trim().min(1),
   acceptedAnswers: z.array(z.string().trim().min(1)).min(1),
 }) satisfies z.ZodType<QuestionEdit>
-
-/** La création choisit en plus l'étage, qui doit être un étage de la tour. */
-export const questionDraftSchema = questionEditSchema.extend({
-  floor: floorSchema(),
-}) satisfies z.ZodType<QuestionDraft>
 
 /** Le filtre de la liste : un étage de la tour, une recherche, et la page. */
 export const questionsQuerySchema = z.object({

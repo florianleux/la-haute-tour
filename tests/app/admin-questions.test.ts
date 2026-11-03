@@ -15,13 +15,6 @@ const QUESTION: AdminQuestion = {
   acceptedAnswers: ['Bordeaux'],
 }
 
-const DRAFT = {
-  statement: 'Qui a découvert la pénicilline ?',
-  answerLabel: 'FLEMING (Alexander)',
-  floor: 3,
-  acceptedAnswers: ['Fleming'],
-}
-
 describe('questions côté admin', () => {
   beforeEach(() => {
     reset()
@@ -44,16 +37,6 @@ describe('questions côté admin', () => {
     floor.value = 4
     await nextTick()
 
-    expect(refresh).toHaveBeenCalledOnce()
-  })
-
-  it('crée une question puis relit le deck, au lieu de le deviner', async () => {
-    const { create } = await useAdminQuestions()
-
-    const created = await create(DRAFT)
-
-    expect(created).toBe(true)
-    expect(calls()).toEqual(['fetch POST /api/admin/questions'])
     expect(refresh).toHaveBeenCalledOnce()
   })
 
@@ -81,23 +64,13 @@ describe('questions côté admin', () => {
     expect(refresh).toHaveBeenCalledOnce()
   })
 
-  it('reste occupé jusqu à ce que le deck soit relu, pas seulement écrit', async () => {
-    const { create, saving } = await useAdminQuestions()
-
-    const inFlight = create(DRAFT)
-    expect(saving.value).toBe(true)
-    await inFlight
-
-    expect(saving.value).toBe(false)
-  })
-
   it('signale une écriture refusée sans relire, et sans se dire illisible', async () => {
     breakNetwork()
-    const { create, failed } = await useAdminQuestions()
+    const { remove, failed } = await useAdminQuestions()
 
-    const created = await create(DRAFT)
+    const removed = await remove('q1')
 
-    expect(created).toBe(false)
+    expect(removed).toBe(false)
     expect(refresh).not.toHaveBeenCalled()
     // Une écriture refusée ne rend pas le deck illisible : deux nouvelles distinctes.
     expect(failed.value).toBe(false)

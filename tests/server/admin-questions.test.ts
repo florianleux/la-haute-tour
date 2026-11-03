@@ -16,12 +16,10 @@ import type { Database } from '../../server/db/client'
 installNitroGlobals()
 
 const { default: listHandler } = await import('../../server/api/admin/questions/index.get')
-const { default: createHandler } = await import('../../server/api/admin/questions/index.post')
 const { default: editHandler } = await import('../../server/api/admin/questions/[id].put')
 const { default: deleteHandler } = await import('../../server/api/admin/questions/[id].delete')
 
 const list = mountHandler('/questions', listHandler)
-const create = mountHandler('/questions', createHandler)
 const edit = mountRoute('put', '/questions/:id', editHandler)
 const remove = mountRoute('delete', '/questions/:id', deleteHandler)
 
@@ -47,10 +45,6 @@ describe('questions admin', () => {
     return sessionCookieFor(id)
   }
 
-  async function createOne(body: unknown = DRAFT): Promise<Response> {
-    return create(jsonRequest('http://test/questions', 'POST', body, adminCookie))
-  }
-
   describe('garde admin', () => {
     it('refuse la lecture sans session', async () => {
       expect((await list(apiRequest('http://test/questions'))).status).toBe(401)
@@ -61,8 +55,6 @@ describe('questions admin', () => {
       const id = await createQuestion(db)
 
       expect((await list(apiRequest('http://test/questions', cookie))).status).toBe(403)
-      expect((await create(jsonRequest('http://test/questions', 'POST', DRAFT, cookie))).status)
-        .toBe(403)
       expect((await edit(jsonRequest(`http://test/questions/${id}`, 'PUT', DRAFT, cookie))).status)
         .toBe(403)
       expect((await remove(jsonRequest(`http://test/questions/${id}`, 'DELETE', undefined, cookie))).status)
@@ -172,37 +164,6 @@ describe('questions admin', () => {
       const response = await list(apiRequest('http://test/questions?floor=9', adminCookie))
 
       expect(response.status).toBe(400)
-    })
-  })
-
-  describe('création', () => {
-    it('crée une question sur un étage, avec ses réponses acceptées', async () => {
-      const response = await createOne()
-
-      expect(response.status).toBe(200)
-      expect(await response.json()).toMatchObject({
-        statement: DRAFT.statement,
-        answerLabel: DRAFT.answerLabel,
-        floor: 3,
-        acceptedAnswers: DRAFT.acceptedAnswers,
-      })
-      expect(await db.select().from(acceptedAnswers)).toHaveLength(2)
-    })
-
-    it('rejette un étage hors de la tour', async () => {
-      expect((await createOne({ ...DRAFT, floor: 0 })).status).toBe(400)
-      expect((await createOne({ ...DRAFT, floor: 7 })).status).toBe(400)
-      expect(await db.select().from(questions)).toHaveLength(0)
-    })
-
-    it('rejette un énoncé vide', async () => {
-      expect((await createOne({ ...DRAFT, statement: '   ' })).status).toBe(400)
-    })
-
-    it('rejette une question sans aucune réponse acceptée : elle serait imbattable', async () => {
-      expect((await createOne({ ...DRAFT, acceptedAnswers: [] })).status).toBe(400)
-      expect((await createOne({ ...DRAFT, acceptedAnswers: ['  '] })).status).toBe(400)
-      expect(await db.select().from(questions)).toHaveLength(0)
     })
   })
 

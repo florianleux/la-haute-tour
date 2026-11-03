@@ -113,7 +113,7 @@ que le jeu sait produire de lui-même.
 
 ## Gestion des questions
 
-- **CRUD complet** : lire, créer, éditer, supprimer des questions et leurs réponses acceptées depuis `/admin`, avec filtrage par étage.
+- **Lire, éditer, supprimer** des questions et leurs réponses acceptées depuis `/admin`, avec filtrage par étage. **Pas de création** : une question entre dans le deck par le script d'import, pas par un formulaire.
 - **Pas d'UI d'import en masse** : le chargement du deck se fait via un **script CLI** qui écrit directement en base. Voir [`architecture.md`](./architecture.md).
 - **Répartition en étages** : c'est le script d'import qui affecte chaque question à un étage, au hasard. L'admin édite le contenu, pas la structure en 6 étages.
 

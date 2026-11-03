@@ -13,18 +13,6 @@
       </div>
     </div>
 
-    <div class="mt-6 rounded-xl border border-slate-800 p-4">
-      <BaseHint class="mb-4">
-        Nouvelle question
-      </BaseHint>
-      <AdminQuestionForm
-        :key="formKey"
-        submit-label="Créer"
-        :pending="submitting === 'create'"
-        @create="onCreate"
-      />
-    </div>
-
     <BaseNotice v-if="writeFailed">
       L'enregistrement a échoué. Réessaie.
     </BaseNotice>
@@ -95,7 +83,7 @@
 
 <script setup lang="ts">
 import { floorOptions } from '~~/shared/utils/floors'
-import type { QuestionDraft, QuestionEdit } from '~~/server/utils/questions'
+import type { QuestionEdit } from '~~/server/utils/questions'
 
 // L'écran de gestion du deck. La garde serveur est ce qui protège les données ;
 // cet écran n'existe que pour les rendre éditables. Voir specs/admin.md.
@@ -108,7 +96,6 @@ const {
   limit,
   failed,
   loading,
-  create,
   edit,
   remove,
 } = await useAdminQuestions()
@@ -119,13 +106,11 @@ const confirming = ref<string | null>(null)
 /**
  * Le formulaire ou le bouton exact sur lequel on vient de cliquer : lui seul
  * montre son loader. Le `saving` du composable, lui, est vrai pour tout le deck :
- * il ferait tourner la création pendant qu'on supprime une question plus bas.
+ * il ferait tourner l'enregistrement pendant qu'on supprime une question plus bas.
  */
-const submitting = ref<'create' | string | null>(null)
+const submitting = ref<string | null>(null)
 const removing = ref<string | null>(null)
 const writeFailed = ref(false)
-// Remet le formulaire de création à blanc : il tient ses champs, pas le parent.
-const formKey = ref(0)
 
 /** Le filtre, tel qu'un `<select>` le porte : une chaîne, vide pour « tous ». */
 const NO_FILTER = ''
@@ -158,17 +143,6 @@ const emptyMessage = computed(() => {
     ? 'Aucune question dans le deck.'
     : `Aucune question à l'étage ${floor.value}.`
 })
-
-async function onCreate(draft: QuestionDraft): Promise<void> {
-  submitting.value = 'create'
-  const created = await create(draft)
-  submitting.value = null
-
-  writeFailed.value = !created
-  if (created) {
-    formKey.value += 1
-  }
-}
 
 async function onSave(id: string, content: QuestionEdit): Promise<void> {
   submitting.value = id

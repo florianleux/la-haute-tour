@@ -16,20 +16,11 @@
       label="Réponses acceptées (une par ligne)"
       placeholder="Fleming"
     />
-    <!-- L'étage ne se choisit qu'à la création : la répartition du deck
-         appartient au script d'import. Voir specs/admin.md. -->
-    <BaseSelect
-      v-if="!question"
-      v-model="floor"
-      label="Étage"
-      :options="floorOptions()"
-    />
-
     <div class="flex gap-3">
       <BaseButton :disabled="!complete" :loading="pending" @click="submit">
         {{ submitLabel }}
       </BaseButton>
-      <BaseButton v-if="question" variant="ghost" @click="emit('cancel')">
+      <BaseButton variant="ghost" @click="emit('cancel')">
         Annuler
       </BaseButton>
     </div>
@@ -37,35 +28,29 @@
 </template>
 
 <script setup lang="ts">
-// Importé explicitement : `shared/` est partagé avec le serveur, pas
-// auto-importé comme `utils/`.
-import { floorOptions } from '~~/shared/utils/floors'
-import type { AdminQuestion, QuestionDraft, QuestionEdit } from '~~/server/utils/questions'
+import type { AdminQuestion, QuestionEdit } from '~~/server/utils/questions'
 
 const props = withDefaults(defineProps<{
-  /** La question éditée, ou rien pour une création. */
-  question?: AdminQuestion | null
+  /** La question éditée. */
+  question: AdminQuestion
   submitLabel: string
   pending?: boolean
 }>(), {
-  question: null,
   pending: false,
 })
 
-// Deux sorties plutôt qu'une : l'édition ne porte pas d'étage, et un événement
-// qui en promettrait un que le parent doit retirer mentirait sur le contrat.
+// L'étage ne s'édite pas : la répartition du deck appartient au script
+// d'import. Voir specs/admin.md.
 const emit = defineEmits<{
-  create: [QuestionDraft]
   save: [QuestionEdit]
   cancel: []
 }>()
 
-const statement = ref(props.question?.statement ?? '')
-const answerLabel = ref(props.question?.answerLabel ?? '')
+const statement = ref(props.question.statement)
+const answerLabel = ref(props.question.answerLabel)
 // Une réponse acceptée par ligne : elles contiennent des espaces et des
 // parenthèses, un séparateur en ligne finirait par en couper une en deux.
-const accepted = ref((props.question?.acceptedAnswers ?? []).join('\n'))
-const floor = ref(String(props.question?.floor ?? 1))
+const accepted = ref(props.question.acceptedAnswers.join('\n'))
 
 const acceptedAnswers = computed(
   () => accepted.value.split('\n').map(answer => answer.trim()).filter(Boolean),
@@ -82,17 +67,10 @@ function submit(): void {
     return
   }
 
-  const content: QuestionEdit = {
+  emit('save', {
     statement: statement.value.trim(),
     answerLabel: answerLabel.value.trim(),
     acceptedAnswers: acceptedAnswers.value,
-  }
-
-  if (props.question) {
-    emit('save', content)
-    return
-  }
-
-  emit('create', { ...content, floor: Number(floor.value) })
+  })
 }
 </script>
