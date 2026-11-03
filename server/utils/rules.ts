@@ -125,7 +125,7 @@ const DEFAULT_RULES: FloorRules = {
   cooldownAfterFailedRecoveryMs: 4 * HOUR_MS,
   latencyGraceMs: 1_000,
   focusGraceMs: 1_000,
-  questionsPerChest: 25,
+  questionsPerChest: 20,
   mimicChance: 0.05,
   vitalityLives: 1,
   respiteFactor: 2,
