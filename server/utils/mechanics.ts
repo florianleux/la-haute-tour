@@ -618,6 +618,6 @@ export function judgeRecovery(
  * pour qu'aucun ne parte de la valeur par défaut de la colonne.
  * Voir specs/spec.md#glossaire.
  */
-export function startOfGame(): Pick<User, 'currentFloor' | 'lives'> {
-  return { currentFloor: 1, lives: rulesForFloor(1).lives }
+export function startOfGame(): Pick<User, 'currentFloor' | 'lives' | 'divineJustice' | 'divineHearts'> {
+  return { currentFloor: 1, lives: rulesForFloor(1).lives, divineJustice: 0, divineHearts: 0 }
 }

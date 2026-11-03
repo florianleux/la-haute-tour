@@ -63,9 +63,12 @@ Une réponse vide n'est **pas contestable** : accepter une telle contestation aj
 
 ### Effet sur le joueur
 
-- Acceptée **alors que le joueur n'a plus de vie** — en attente, ou dans le rattrapage que cette attente a ouvert → l'attente est annulée comme si elle n'avait jamais commencé et le rattrapage en cours est abandonné. Le joueur reprend **la même tentative** avec une vie ; les autres pertes de la tentative restent acquises.
-  - Le rattrapage n'a pas lieu, ou s'arrête : il n'existait que pour rendre les vies que l'arbitrage vient de rendre. Les questions déjà jouées gardent ce qu'elles ont fait bouger dans le Pool Échecs.
-- Acceptée **après** que le joueur a repris → une vie s'ajoute à la tentative en cours.
+- Acceptée **alors que le joueur n'a plus de vie** — en attente, ou dans le rattrapage que cette attente a ouvert → l'attente et le rattrapage suivent leur cours. La vie est mise de côté (**Justice divine**, `divineJustice`, une par contestation acceptée) et s'ajoute aux vies pleines de la **tentative suivante**, celle qui s'ouvre à la reprise.
+  - Dans le jeu, ce cœur supplémentaire est **doré** au lieu de rouge, et son infobulle, dorée comme celle d'un sort, s'intitule « Justice divine » (cœur `#FCD700`, bulle à bordure `#FCD500` sur fond `#FAF9F7`) : « Une de tes contestations a été acceptée, tu as récupéré une vie perdue injustement. Fais-en bon usage. »
+  - Un rattrapage déjà tiré suit son cours : la question contestée qu'il a jouée devient **juste**, celle qu'il n'a pas encore servie en est retirée.
+  - À l'attente échue d'un **combat de boss**, la Justice divine s'ajoute aux vies du combat (`enterBossFight`), comme à celles d'une ascension.
+  - La question sort du Pool Échecs, qui peut passer sous le seuil de déclenchement du rattrapage : l'attente échue rend alors les vies, Justice divine comprise.
+- Acceptée **après** que le joueur a repris → une vie s'ajoute à la tentative en cours, dorée de même. Seuls les cœurs de Justice divine sont dorés (`divineHearts`) : une vie rendue par l'admin reste un cœur rouge. Un cœur doré perdu ne disparaît pas, il se grise comme les autres, du même gris.
 - **Aucun plafond** : une vie rendue par contestation peut porter le total au-delà du nombre de vies d'une tentative. Ce n'est pas une récompense, c'est une réparation — la plafonner l'annulerait précisément dans le cas où le joueur a le plus attendu.
 - Rejetée → contestation clôturée, aucun effet.
 

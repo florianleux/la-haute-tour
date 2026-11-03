@@ -96,6 +96,18 @@ export const users = sqliteTable('users', {
   quillLessonAt: integer('quill_lesson_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
+  /**
+   * Les vies dues par des contestations acceptées pendant l'attente : mises de
+   * côté, elles s'ajoutent aux vies pleines de la tentative suivante, puis
+   * retombent à zéro. Voir specs/validation.md#effet-sur-le-joueur.
+   */
+  divineJustice: integer('divine_justice').notNull().default(0),
+  /**
+   * Les cœurs dorés de la tentative en cours : ceux que la Justice divine a
+   * ajoutés aux vies pleines. Ils restent affichés, grisés, quand on les perd.
+   * Remis à ce que la tentative suivante en reçoit, à son ouverture.
+   */
+  divineHearts: integer('divine_hearts').notNull().default(0),
   /** When the cooldown ends. Null outside a cooldown. The phase derives from it. */
   cooldownUntil: integer('cooldown_until', { mode: 'timestamp' }),
   /**

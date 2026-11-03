@@ -150,10 +150,16 @@ export async function enterBossFight(db: Database, user: User, rules: FloorRules
   // tireraient chacun leurs épreuves. La tentative qui s'achève les départage :
   // seul le premier la trouve encore en place. Pas sans épreuves en base : un
   // catalogue pas encore chargé laisse le joueur au palier.
+  const opening = bossFightOpening(user, rules)
   const [claimed] = await db
     .update(users)
     .set({
-      ...bossFightOpening(user, rules),
+      ...opening,
+      // La Justice divine mise de côté pendant l'attente s'ajoute aux vies du
+      // combat, comme à celles d'une ascension (openAttempt).
+      lives: sql`${opening.lives} + ${users.divineJustice}`,
+      divineHearts: sql`${users.divineJustice}`,
+      divineJustice: 0,
       attemptStartedAt: now,
       attemptSeen: 0,
       streak: 0,

@@ -295,6 +295,20 @@
       "when": 1793659309238,
       "tag": "0041_quill_lesson",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1793743230836,
+      "tag": "0042_divine_justice",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1793744333306,
+      "tag": "0043_divine_hearts",
+      "breakpoints": true
     }
   ]
 }

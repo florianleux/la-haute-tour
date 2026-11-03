@@ -4,6 +4,7 @@ import {
   acceptedAnswers,
   disputes,
   missedPool,
+  questions,
   recoveryQuestions,
   seenQuestions,
   users,
@@ -213,6 +214,7 @@ describe('contestation', () => {
       await settle('accepted')
 
       expect((await reload()).lives).toBe(rules.lives + 1)
+      expect((await reload()).divineHearts).toBe(1)
     })
 
     it('rejeter clôt la contestation sans aucun effet', async () => {
@@ -255,27 +257,61 @@ describe('contestation', () => {
       return play('presque bon')
     }
 
-    it('annule l attente et rend la même tentative avec une vie', async () => {
+    it('laisse l attente courir et met la vie de côté', async () => {
       const questionId = await loseEverything()
       await openDispute(db, await reload(), questionId, NOW)
       const [dispute] = await db.select().from(disputes)
 
       await settleDispute(db, dispute.id, 'accepted', NOW)
 
-      const resumed = await reload()
-      expect(resumed.lives).toBe(1)
-      expect(resumed.cooldownUntil).toBeNull()
-      expect(await readGameState(db, resumed, NOW)).toMatchObject({ phase: 'ascent', lives: 1 })
+      const waiting = await reload()
+      expect(waiting.lives).toBe(0)
+      expect(waiting.divineJustice).toBe(1)
+      expect(waiting.cooldownUntil).not.toBeNull()
     })
 
-    it('n ouvre aucun rattrapage : l attente n a jamais eu lieu', async () => {
+    it('garde le rattrapage en cours : la question jouée devient juste, les autres restent', async () => {
       const questionId = await loseEverything()
       await openDispute(db, await reload(), questionId, NOW)
       const [dispute] = await db.select().from(disputes)
+      const other = (await db.select().from(questions)).find(question => question.id !== questionId)!
+      await db.insert(recoveryQuestions).values([
+        { userId: player.id, questionId, position: 0, correct: false },
+        { userId: player.id, questionId: other.id, position: 1, correct: null },
+      ])
+
+      await settleDispute(db, dispute.id, 'accepted', NOW)
+
+      const rows = await db.select().from(recoveryQuestions).orderBy(recoveryQuestions.position)
+      expect(rows.map(row => row.correct)).toEqual([true, null])
+    })
+
+    it('retire du rattrapage la question contestée pas encore servie', async () => {
+      const questionId = await loseEverything()
+      await openDispute(db, await reload(), questionId, NOW)
+      const [dispute] = await db.select().from(disputes)
+      await db.insert(recoveryQuestions).values({ userId: player.id, questionId, position: 0, correct: null })
 
       await settleDispute(db, dispute.id, 'accepted', NOW)
 
       expect(await db.select().from(recoveryQuestions)).toHaveLength(0)
+    })
+
+    it('ajoute la vie aux vies pleines de la tentative suivante', async () => {
+      const questionId = await loseEverything()
+      await openDispute(db, await reload(), questionId, NOW)
+      const [dispute] = await db.select().from(disputes)
+      await settleDispute(db, dispute.id, 'accepted', NOW)
+      const { cooldownUntil } = await reload()
+
+      // Le pool est sous le seuil du rattrapage : l'attente échue rend les vies.
+      const later = new Date(cooldownUntil!.getTime() + 1000)
+      await readGameState(db, await reload(), later)
+
+      const resumed = await reload()
+      expect(resumed.lives).toBe(rules.lives + 1)
+      expect(resumed.divineJustice).toBe(0)
+      expect(resumed.divineHearts).toBe(1)
     })
   })
 })

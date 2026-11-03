@@ -87,6 +87,8 @@ première mort. Il lit son verdict au palier, puis arrive devant la porte
 comme tout le monde : poser sa clé, ouvrir, entrer. Il entre en 1er combat à
 vies pleines — comme les combats suivants, pas de vies héritées dans ce cas.
 
+Une contestation acceptée pendant l'attente d'un combat ajoute sa vie (Justice divine) aux vies pleines du combat suivant. Voir [`validation.md`](./validation.md#effet-sur-le-joueur).
+
 ## Porte à deux clés
 
 Le boss est derrière une porte (`bossDoor`) à deux clés, à l'échelle de

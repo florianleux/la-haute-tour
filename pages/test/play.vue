@@ -74,7 +74,9 @@ const lives = useState('test-play-lives', () => Number(useRoute().query.vies) ||
 
 const state = ref(demoState({
   lives: lives.value,
-  maxLives: Math.max(3, lives.value),
+  maxLives: 3,
+  // Au-delà de trois, les cœurs dorés de la Justice divine : ?vies=4 en montre un.
+  divineHearts: Math.max(0, lives.value - 3),
   // Palier 545, sur un étage qui en compte largement plus.
   floorSeen: 544,
   floorTotal: 1000,

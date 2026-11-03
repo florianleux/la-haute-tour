@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `divine_hearts` integer DEFAULT 0 NOT NULL;

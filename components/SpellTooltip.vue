@@ -15,10 +15,14 @@
       <BaseTooltip
         v-if="anchor"
         class="pointer-events-none fixed z-50 hidden w-72 sm:block"
-        :style="position"
+        :style="[position, tone === 'gold' ? GOLD_TONE : {}]"
         role="tooltip"
       >
-        <SpellDetails :subject="subject" />
+        <!-- Une infobulle qui n'est pas celle d'un sort (Justice divine) fournit
+             son propre contenu. -->
+        <slot name="tip">
+          <SpellDetails v-if="subject" :subject="subject" />
+        </slot>
       </BaseTooltip>
     </Teleport>
   </span>
@@ -32,7 +36,14 @@
 // specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
 import type { SpellSubject } from '~~/utils/spells'
 
-defineProps<{ subject: SpellSubject }>()
+defineProps<{
+  subject?: SpellSubject
+  /** `gold` : l'infobulle prend l'or de la Justice divine au lieu des couleurs de la guilde. */
+  tone?: 'gold'
+}>()
+
+/** L'or de la Justice divine : les variables que BaseTooltip lit, sans équivalent en classes. */
+const GOLD_TONE = { '--tooltip-border': '#FCD500', '--team-ink': '#5c3600', '--team-paper': '#FAF9F7' }
 
 /** L'icône survolée ; null quand rien ne l'est. */
 const anchor = ref<HTMLElement | null>(null)

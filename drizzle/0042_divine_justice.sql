@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `divine_justice` integer DEFAULT 0 NOT NULL;

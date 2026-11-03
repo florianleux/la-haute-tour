@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { recoveryQuestions, reservations, users } from '../db/schema'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
@@ -23,7 +23,7 @@ export async function grantLife(db: Database, player: User): Promise<void> {
   if (player.lives > 0) {
     await db
       .update(users)
-      .set({ lives: player.lives + 1 })
+      .set({ lives: sql`${users.lives} + 1` })
       .where(eq(users.id, player.id))
 
     return
@@ -42,6 +42,29 @@ export async function grantLife(db: Database, player: User): Promise<void> {
       .set({ lives: 1, cooldownUntil: null, cooldownStartedAt: null })
       .where(eq(users.id, player.id)),
   ])
+}
+
+/**
+ * La vie d'une contestation acceptée. Avec des vies, elle s'ajoute à la
+ * tentative en cours (grantLife). Sans, l'attente et le rattrapage suivent leur
+ * cours : la vie est mise de côté et s'ajoute aux vies pleines de la tentative
+ * suivante (openAttempt). Voir specs/validation.md#effet-sur-le-joueur.
+ */
+export async function grantDivineJustice(db: Database, player: User): Promise<void> {
+  if (player.lives > 0) {
+    await grantLife(db, player)
+    await db
+      .update(users)
+      .set({ divineHearts: sql`${users.divineHearts} + 1` })
+      .where(eq(users.id, player.id))
+
+    return
+  }
+
+  await db
+    .update(users)
+    .set({ divineJustice: sql`${users.divineJustice} + 1` })
+    .where(eq(users.id, player.id))
 }
 
 /**

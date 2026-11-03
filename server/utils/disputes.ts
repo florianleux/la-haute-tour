@@ -1,12 +1,13 @@
-import { and, asc, eq, ne, notExists, notInArray } from 'drizzle-orm'
+import { and, asc, eq, isNull, isNotNull, ne, notExists, notInArray } from 'drizzle-orm'
 import { unlock } from './achievements'
-import { grantLife } from './lives'
+import { grantDivineJustice } from './lives'
 import {
   acceptedAnswers,
   disputes,
   focusLosses,
   missedPool,
   questions,
+  recoveryQuestions,
   reservations,
   seenQuestions,
   users,
@@ -247,9 +248,24 @@ export async function settleDispute(
       eq(missedPool.userId, dispute.userId),
       eq(missedPool.questionId, dispute.questionId),
     )),
+    // Le rattrapage en cours, que l'attente laisse courir : la question jouée
+    // devient juste, celle pas encore tirée au sort n'a plus lieu d'être.
+    db
+      .update(recoveryQuestions)
+      .set({ correct: true })
+      .where(and(
+        eq(recoveryQuestions.userId, dispute.userId),
+        eq(recoveryQuestions.questionId, dispute.questionId),
+        isNotNull(recoveryQuestions.correct),
+      )),
+    db.delete(recoveryQuestions).where(and(
+      eq(recoveryQuestions.userId, dispute.userId),
+      eq(recoveryQuestions.questionId, dispute.questionId),
+      isNull(recoveryQuestions.correct),
+    )),
   ])
 
-  // La vie rendue est le même geste que celui de l'administration : une seule
-  // définition, dans lives.ts.
-  await grantLife(db, player)
+  // Une vie par contestation acceptée : tout de suite si le joueur en a encore,
+  // sinon mise de côté pour sa prochaine tentative. Voir lives.ts.
+  await grantDivineJustice(db, player)
 }

@@ -12,6 +12,7 @@ const served: GameState = {
   floor: 1,
   lives: 3,
   maxLives: 3,
+  divineHearts: 0,
   question: {
     id: 'q1',
     statement: 'Capitale de la Gironde ?',

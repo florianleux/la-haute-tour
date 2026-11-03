@@ -58,7 +58,12 @@ export async function openAttempt(
       // même écriture que son instant d'ouverture — les deux disent la même chose,
       // ils ne peuvent pas se désaccorder. Voir server/db/schema.ts.
       .set({
-        lives: rules.lives,
+        // La Justice divine mise de côté pendant l'attente s'ajoute aux vies
+        // pleines — lue dans la même écriture, pour qu'une contestation arbitrée
+        // entre-temps ne se perde pas. Voir specs/validation.md.
+        lives: sql`${rules.lives} + ${users.divineJustice}`,
+        divineHearts: sql`${users.divineJustice}`,
+        divineJustice: 0,
         cooldownUntil: null,
         cooldownStartedAt: null,
         attemptStartedAt: now,

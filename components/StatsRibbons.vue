@@ -86,27 +86,43 @@
           :key="index"
           :class="{ 'sm:pl-[0.45em]': index > 0 }"
         >
-          <span
+          <template
             v-for="n in row"
             :key="n"
-            :class="[n <= state.lives ? 'text-rose-950' : 'text-rose-950/30', n === lostHeart && 'relative inline-block']"
-          >♥<template v-if="n === lostHeart">
-            <!-- Le cœur plein, posé sur le cœur éteint, qui tremble et éclate. -->
+          >
+            <!-- Au-delà des vies pleines : la vie rendue par une contestation. -->
+            <SpellTooltip
+              v-if="isGold(n) && n <= state.lives"
+              tone="gold"
+              class="pointer-events-auto cursor-help text-[#FCD700]"
+            >
+              ♥
+              <template #tip>
+                <DivineJusticeDetails />
+              </template>
+            </SpellTooltip>
             <span
-              class="absolute inset-0 text-rose-950 opacity-0 motion-safe:animate-heart-break"
-              :style="{ '--enter-delay': `${TICKS.lives}ms` }"
-            >♥</span>
-            <SparkleSpray
-              :sparks="HEART_SPRAY"
-              glow="#e11d48"
-            />
-            <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
+              v-else
+              :class="[heartColor(n), n === lostHeart && 'relative inline-block']"
+            >♥<template v-if="n === lostHeart">
+              <!-- Le cœur plein, posé sur le cœur éteint, qui tremble et éclate. -->
               <span
-                class="whitespace-nowrap text-[9cqw] font-black text-white opacity-0 [text-shadow:0_2px_3px_rgb(76_5_25/0.9),0_0_0.4em_rgb(225_29_72/0.9)] motion-safe:animate-float-away sm:text-[3.6cqw]"
-                :style="{ '--enter-delay': `${TICKS.lives + BURST_MS}ms` }"
-              >-1</span>
-            </span>
-          </template></span>
+                class="absolute inset-0 opacity-0 motion-safe:animate-heart-break"
+                :class="isGold(n) ? 'text-[#FCD700]' : 'text-rose-950'"
+                :style="{ '--enter-delay': `${TICKS.lives}ms` }"
+              >♥</span>
+              <SparkleSpray
+                :sparks="HEART_SPRAY"
+                :glow="isGold(n) ? '#FCD700' : '#e11d48'"
+              />
+              <span class="pointer-events-none absolute inset-x-0 bottom-full flex justify-center">
+                <span
+                  class="whitespace-nowrap text-[9cqw] font-black text-white opacity-0 [text-shadow:0_2px_3px_rgb(76_5_25/0.9),0_0_0.4em_rgb(225_29_72/0.9)] motion-safe:animate-float-away sm:text-[3.6cqw]"
+                  :style="{ '--enter-delay': `${TICKS.lives + BURST_MS}ms` }"
+                >-1</span>
+              </span>
+            </template></span>
+          </template>
         </p>
       </div>
     </div>
@@ -188,7 +204,8 @@ const props = defineProps<{
  * Vitalité noire compris ; autant que la tentative en compte au-delà, cinq au
  * plus. À cinq, trois puis deux, en quinconce. Voir specs/bonus.md (Vitalité).
  */
-const heartCount = computed(() => Math.min(5, Math.max(3, props.state.maxLives, props.state.lives)))
+const heartCount = computed(() =>
+  Math.min(5, Math.max(3, props.state.maxLives + props.state.divineHearts, props.state.lives)))
 
 const heartRows = computed((): number[][] => {
   const hearts = Array.from({ length: heartCount.value }, (_, index) => index + 1)
@@ -205,6 +222,13 @@ const HEART_SIZES: Record<number, string> = {
 
 /** Le cœur qui vient de s'éteindre : le premier après ceux qui restent. */
 const lostHeart = computed(() => (props.lifeLost ? props.state.lives + 1 : null))
+
+/** Les cœurs dorés suivent les vies pleines ; perdus, ils se grisent comme les rouges. */
+const isGold = (n: number): boolean => n > props.state.maxLives && n <= props.state.maxLives + props.state.divineHearts
+
+function heartColor(n: number): string {
+  return n <= props.state.lives ? 'text-rose-950' : 'text-rose-950/30'
+}
 
 // Le chiffre qui gonfle, et le « +1 » accroché à lui (`inline-block relative`,
 // à sa largeur près) : à droite du chiffre en mobile, où il est centré ; à

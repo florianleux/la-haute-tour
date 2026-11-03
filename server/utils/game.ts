@@ -154,6 +154,8 @@ export interface GameState {
   /** Les vies pleines pour la tentative en cours, Vitalité comprise : ce que
    *  l'écran compare à `lives` pour montrer les vies déjà perdues. */
   maxLives: number
+  /** Combien de cœurs au-delà des vies pleines sont dorés (Justice divine), perdus compris. */
+  divineHearts: number
   question: ServedQuestion | null
   verdict: Verdict | null
   /** ISO 8601 end of the cooldown, null outside a cooldown. */
@@ -920,6 +922,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     floor: user.currentFloor,
     lives: user.lives,
     maxLives: played.lives,
+    divineHearts: user.divineHearts,
     question: null as ServedQuestion | null,
     verdict: null as Verdict | null,
     cooldownUntil: user.cooldownUntil?.toISOString() ?? null,
