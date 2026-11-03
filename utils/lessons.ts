@@ -35,6 +35,12 @@ export type PlayTarget = 'ribbons' | 'timer' | 'dispute'
 export type SpellbookTarget = 'spellPage' | 'castSelf'
 
 /**
+ * Ce que Michel montre dans le Volumen, à la leçon de la Plume : la recherche, puis
+ * la copie d'une question.
+ */
+export type QuillTarget = 'search' | 'copy'
+
+/**
  * Une réplique de Michel pendant une leçon. Voir specs/ecrans.md#leçons-de-michel.
  */
 export interface LessonLine {
@@ -44,7 +50,7 @@ export interface LessonLine {
    * éclaire ; le reste reste dans l'ombre. Null, rien n'est éclairé. Voir
    * specs/spec.md (glossaire, « Éclairage »).
    */
-  spotlight: CampObject | PlayTarget | SpellbookTarget | null
+  spotlight: CampObject | PlayTarget | SpellbookTarget | QuillTarget | null
   /** Ce que la réplique attend du joueur. Absent, la bulle avance au clic ou à Entrée. */
   awaits?: LessonAwait
   /** La boîte du camp d'où Michel parle, ouverte par la réplique d'avant. Absente, il parle sur le camp. */
@@ -164,6 +170,23 @@ export function spellbookLesson({ team, guided }: { team: TeamId | null, guided:
     ...team ? [others] : [],
     { text: 'Referme le Grimoire quand tu as fini.', spotlight: null, overlay: 'spellbook', awaits: 'close' },
     { text: 'À toi de jouer, et bonne chance !', spotlight: 'michel' },
+  ]
+}
+
+/**
+ * La leçon de la Plume de copiste, à la visite du camp qui suit sa trouvaille :
+ * Michel fait ouvrir le Volumen, montre la recherche puis la copie d'une
+ * question, et fait refermer. Courte : rien à faire que l'ouvrir et le refermer.
+ * Voir specs/ecrans.md#leçons-de-michel (Plume).
+ */
+export function quillLesson(): LessonLine[] {
+  return [
+    ...MICHEL_ENTRANCE,
+    { text: 'Oh, je vois que tu as déniché une plume de copiste ! Elle améliore le Volumen, ouvre-le !', spotlight: 'scroll', awaits: 'click' },
+    { text: 'Cherche une question par son texte, ou par sa catégorie : tape, choisis, et clique sur la loupe.', spotlight: 'search', overlay: 'questionLog' },
+    { text: 'Et clique sur une question, ou sur sa réponse : la voilà copiée, prête à coller dans ton Anki !', spotlight: 'copy', overlay: 'questionLog' },
+    { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
+    { text: 'Bonne révision !', spotlight: 'michel' },
   ]
 }
 

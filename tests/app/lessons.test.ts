@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, spellbookLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, quillLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
 
 // Voir specs/ecrans.md#leçons-de-michel (Chute).
 describe('la leçon de la chute', () => {
@@ -267,5 +267,29 @@ describe('le geste demandé', () => {
     expect(asks({ text: '', spotlight: 'spellPage' }, 'spellPage')).toBe(false)
     expect(asks({ text: '', spotlight: 'castSelf', awaits: 'cast' }, 'spellPage')).toBe(false)
     expect(asks(null, 'spellPage')).toBe(false)
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Plume).
+describe('la leçon de la Plume', () => {
+  const lines = quillLesson()
+
+  it('s ouvre sur la même entrée que les autres leçons', () => {
+    expect(lines.slice(0, 2)).toEqual(campLesson({ team: null }).slice(0, 2))
+  })
+
+  it('fait ouvrir le Volumen, montre la recherche puis la copie, et le fait refermer', () => {
+    expect(lines.filter(line => line.awaits && line.awaits !== 'pause').map(line => [line.spotlight, line.awaits])).toEqual([
+      ['scroll', 'click'],
+      [null, 'close'],
+    ])
+    expect(lines.filter(line => line.spotlight === 'search' || line.spotlight === 'copy').map(line => line.spotlight)).toEqual(['search', 'copy'])
+  })
+
+  it('parle depuis le Volumen, de son ouverture à sa fermeture', () => {
+    const opened = lines.findIndex(line => line.spotlight === 'scroll') + 1
+    const closed = lines.findIndex(line => line.awaits === 'close')
+
+    expect(lines.slice(opened, closed + 1).every(line => line.overlay === 'questionLog')).toBe(true)
   })
 })

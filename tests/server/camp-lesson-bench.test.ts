@@ -94,6 +94,16 @@ describe('le banc de la leçon de la chute', () => {
     expect(await db.select().from(items).where(eq(items.userId, testerId))).toEqual([])
   })
 
+  it('remet le joueur après sa première chute, la Plume au sac, leçon de la Plume à voir', async () => {
+    await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'quill'))
+
+    const tester = await loadPlayer(db, testerId)
+    expect(tester).toMatchObject({ lives: 0, quillLessonAt: null })
+    expect(tester.fallLessonAt).toBeInstanceOf(Date)
+    expect(await db.select({ item: items.item }).from(items).where(eq(items.userId, testerId))).toEqual([{ item: 'SCRIBE_QUILL' }])
+    expect(await db.select().from(missedPool).where(eq(missedPool.userId, testerId))).toHaveLength(3)
+  })
+
   it('remet le joueur à l échéance de sa première attente, leçon du rattrapage à voir', async () => {
     await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'recovery'))
 

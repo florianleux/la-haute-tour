@@ -86,6 +86,6 @@ export interface SpellEffect {
  * ou le sort trouvé. Un seul champ pour tout le cycle — deux ne pourraient que
  * se contredire.
  */
-export const CHEST_STATES = ['closed', 'mimic', 'key', ...SPELL_IDS] as const
+export const CHEST_STATES = ['closed', 'mimic', 'key', 'quill', ...SPELL_IDS] as const
 
 export type ChestState = typeof CHEST_STATES[number]

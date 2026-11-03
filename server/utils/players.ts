@@ -212,6 +212,7 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         fallLessonAt: null,
         recoveryLessonAt: null,
         spellbookLessonAt: null,
+        quillLessonAt: null,
         // Le palmarès porté tombe avec les lignes qu'il double : le laisser
         // plein ferait croire au jeu que le joueur possède encore ce qu'on
         // vient d'effacer, et aucune « première fois » ne se réécrirait.

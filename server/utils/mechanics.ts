@@ -429,6 +429,15 @@ export function keyDue({ floorSeen, floorTotal, hasKey }: KeyDueInput): boolean 
   return !hasKey && floorSeen * 2 >= floorTotal
 }
 
+/**
+ * Le coffre doit-il donner la Plume de copiste ? Au premier coffre qui suit
+ * Vitalité (un sort déjà découvert), tant que le joueur ne l'a pas : ni sort ni
+ * Mimic. La clé passe avant elle. Voir specs/bonus.md#coffre-et-mimic.
+ */
+export function quillDue({ spellDiscovered, hasQuill }: { spellDiscovered: boolean, hasQuill: boolean }): boolean {
+  return spellDiscovered && !hasQuill
+}
+
 export interface ChestOutcome {
   mimic: boolean
   /** Le sort obtenu, null sur un Mimic. */

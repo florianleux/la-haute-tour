@@ -66,7 +66,7 @@
              à un autre et qu'on revient. Les onglets se posent au-dessus de la
              liste, pas de la question relue. -->
         <KeepAlive>
-          <QuestionLogList :key="tab" :tab="tab" class="flex-1">
+          <QuestionLogList :key="tab" :tab="tab" :lesson="lesson" class="flex-1">
             <template #tabs>
               <BaseTabs v-model="tab" :tabs="tabs" parchment />
             </template>
@@ -84,8 +84,8 @@
 import type { QuestionLogTab } from '~/composables/useQuestionLog'
 import type { LessonLine } from '~~/utils/lessons'
 
-defineProps<{
-  /** La réplique de Michel quand il parle depuis le Volumen, à la leçon de la chute. */
+const props = defineProps<{
+  /** La réplique de Michel quand il parle depuis le Volumen, à la leçon de la chute ou de la Plume. */
   lesson?: LessonLine
 }>()
 
@@ -101,10 +101,7 @@ const tabs: { id: QuestionLogTab, label: string }[] = [
   { id: 'all', label: 'Toutes' },
 ]
 
-const tab = ref<QuestionLogTab>('missed')
-
-// Le bouton de contestation ne s'affiche que sur ce que le serveur dit
-// contestable : la liste se lit en arrivant.
-const { refresh } = useDisputes()
-onMounted(refresh)
+// À la leçon de la Plume, « Toutes » : Michel y montre une question à copier, et
+// « À revoir » peut être vide.
+const tab = ref<QuestionLogTab>(props.lesson?.spotlight === 'search' ? 'all' : 'missed')
 </script>

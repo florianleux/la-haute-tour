@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
 import { demoState } from '../../utils/demo'
 import { dueLesson, isAtRest } from '../../utils/phase'
-import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, recoveryLesson, spellbookLesson } from '../../utils/lessons'
+import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson } from '../../utils/lessons'
 import type { GameState } from '../../server/utils/game'
 import type { Ref } from 'vue'
 import type { TeamId } from '../../shared/utils/teams'
@@ -11,7 +11,7 @@ import type { TeamId } from '../../shared/utils/teams'
 const { answerWith, breakNetwork, calls, reset } = installAppGlobals()
 
 // Les auto-imports dont le composable se sert, que Vitest ne pose pas.
-Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
+Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
 const { fetchItems } = await import('../../composables/useItems')
 Object.assign(globalThis, { fetchItems })
 
@@ -335,5 +335,39 @@ describe('le déroulé de la leçon du Grimoire', () => {
 
   it('ne se joue pas sans sort obtenu', () => {
     expect(start(demoState({ spellDiscovered: false, lessonsDone: ['camp'] })).line.value).toBeNull()
+  })
+})
+
+describe('le déroulé de la leçon de la Plume', () => {
+  /** Au camp, la Plume dans le sac, rien d'autre à voir. */
+  const QUILL_DUE = demoState({ hasQuill: true, lessonsDone: ['camp', 'spellbook'] })
+
+  it('fait ouvrir le Volumen puis le refermer, rien d autre', async () => {
+    const lesson = start(QUILL_DUE)
+    await settle(LESSON_PAUSE_MS)
+
+    const asked: string[] = []
+    while (lesson.line.value) {
+      if (lesson.line.value.awaits) {
+        asked.push(lesson.line.value.awaits)
+      }
+      act(lesson)
+    }
+
+    expect(asked).toEqual(['click', 'close'])
+  })
+
+  it('se date à sa dernière réplique', async () => {
+    const lesson = start(QUILL_DUE)
+    await settle(LESSON_PAUSE_MS)
+
+    playThrough(lesson)
+    await settle()
+
+    expect(calls()).toContain('fetch POST /api/profile/lessons')
+  })
+
+  it('ne se joue pas sans la Plume', () => {
+    expect(start(demoState({ hasQuill: false, lessonsDone: ['camp', 'spellbook'] })).line.value).toBeNull()
   })
 })

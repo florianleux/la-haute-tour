@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `quill_lesson_at` integer;

@@ -28,6 +28,7 @@ const served: GameState = {
   streak: 0,
   seenTotal: 0,
   spellDiscovered: false,
+  hasQuill: false,
   firstCastPending: false,
   lessonsDone: ['camp'],
   chest: null,

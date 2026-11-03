@@ -184,6 +184,11 @@ export async function markSeen(
  * le joueur en argument : un test qui vient d'en écrire un le relit avant de
  * rejouer, sinon il pilote une copie périmée.
  */
+/** La Plume de copiste dans le sac : ce que le Volumen et le coffre demandent. */
+export async function grantQuill(db: Database, userId: number): Promise<void> {
+  await db.insert(schema.items).values({ userId, item: 'SCRIBE_QUILL', obtainedAt: new Date() })
+}
+
 export async function loadPlayer(db: Database, userId: number): Promise<User> {
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId))
 

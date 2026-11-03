@@ -11,6 +11,7 @@ export const LESSON_COLUMNS = {
   fall: 'fallLessonAt',
   recovery: 'recoveryLessonAt',
   spellbook: 'spellbookLessonAt',
+  quill: 'quillLessonAt',
 } as const satisfies Record<LessonId, keyof User>
 
 /** Les leçons que le joueur a déjà vues. */

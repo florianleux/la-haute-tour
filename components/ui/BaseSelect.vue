@@ -1,5 +1,5 @@
 <template>
-  <BaseField v-if="label" :label="label">
+  <BaseField v-if="label" :label="label" :parchment="parchment">
     <template #default="{ classes }">
       <select v-model="model" :class="classes" :disabled="disabled">
         <option v-for="option in options" :key="option.value" :value="option.value">
@@ -37,6 +37,8 @@ defineProps<{
   label?: string
   options: SelectOption[]
   disabled?: boolean
+  /** Aux encres du parchemin, voir BaseField. */
+  parchment?: boolean
 }>()
 
 // Une valeur de `<select>` est une chaîne : l'appelant convertit s'il attend

@@ -85,6 +85,7 @@ const SINGULAR_IDS = [
   'PUNCTUAL',
   'NIGHT_OWL',
   'DEVTOOLS_OPENED',
+  'QUESTION_COPIED',
 ] as const
 
 export type StreakAchievementId = `STREAK_${typeof STREAK_TIERS[number]}`

@@ -1,7 +1,8 @@
-import { and, asc, count, desc, eq, exists, inArray, isNotNull, isNull, notExists, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, exists, inArray, isNotNull, isNull, notExists, or, sql } from 'drizzle-orm'
 import type { BatchItem, BatchResponse } from 'drizzle-orm/batch'
 import type { RunnableQuery } from 'drizzle-orm/runnable-query'
 import type { SQL } from 'drizzle-orm'
+import type { SQLiteColumn } from 'drizzle-orm/sqlite-core'
 import {
   bossFightState,
   canDrawRecovery,
@@ -16,6 +17,7 @@ import {
   phaseOf,
   recoveryThreshold,
   keyDue,
+  quillDue,
   rollChest,
   resumesRecovery,
   sealedRecovery,
@@ -45,13 +47,16 @@ import {
   activeEffects,
   bossKeys,
   bossTrials,
+  categories,
   deckFloors,
   disputes,
+  items,
   missedPool,
   questions,
   recoveryQuestions,
   focusLosses,
   pocketSpells,
+  questionCategories,
   settings,
   reservations,
   seenQuestions,
@@ -120,6 +125,8 @@ export interface ChestView {
   spell: SpellId | null
   /** Vrai quand le coffre ouvert donnait la clé du boss. Voir specs/boss.md#obtention-de-la-clé. */
   key: boolean
+  /** Vrai quand le coffre ouvert donnait la Plume de copiste. Voir specs/bonus.md#coffre-et-mimic. */
+  quill: boolean
 }
 
 export interface RecoveryProgress {
@@ -185,6 +192,11 @@ export interface GameState {
    * sans faire lancer. Voir specs/ecrans.md#leçons-de-michel.
    */
   firstCastPending: boolean
+  /**
+   * Le joueur porte la Plume de copiste : le Volumen lui offre sa recherche et
+   * la copie de ses lignes. Voir specs/ecrans.md#volumen.
+   */
+  hasQuill: boolean
   /**
    * Les leçons de Michel que le joueur a déjà vues : une leçon absente se joue
    * à son moment. Voir specs/ecrans.md#leçons-de-michel.
@@ -265,6 +277,8 @@ export interface PlayerSnapshot {
   spellDiscovered: boolean
   /** Le premier sort en poche, et rien encore lancé. Lu avec le joueur. */
   firstCastPending: boolean
+  /** La Plume de copiste dans le sac. Lue avec le joueur. */
+  hasQuill: boolean
   /** La clé du boss de l'étage courant, pas encore posée. Lue avec le joueur. */
   hasKey: boolean
   /** Qui a posé sa clé sur la porte de son équipe, à son étage. Lus dans le même lot. */
@@ -364,6 +378,8 @@ function snapshotQueries(db: Database, userId: number) {
           or ${hasCast})`,
         firstCastPending: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(and(eq(pocketSpells.userId, users.id), eq(pocketSpells.spell, FIRST_SPELL))))}
           and not ${hasCast})`,
+        // Lue avec le joueur, pour la même raison : le Volumen en dépend.
+        hasQuill: sql<number>`${exists(db.select({ one: sql`1` }).from(items).where(and(eq(items.userId, users.id), eq(items.item, 'SCRIBE_QUILL'))))}`,
         // Lue avec le joueur, pour la même raison : la porte la demande à chaque lecture.
         hasKey: sql<number>`${exists(db.select({ one: sql`1` }).from(bossKeys).where(keyToPlace(users.id, users.currentFloor)))}`,
       })
@@ -414,6 +430,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials, keyHolders]: B
     nextFloorTotal: row.nextFloorTotal,
     spellDiscovered: row.spellDiscovered === 1,
     firstCastPending: row.firstCastPending === 1,
+    hasQuill: row.hasQuill === 1,
     hasKey: row.hasKey === 1,
     keyHolders: keyHolders.map(holder => holder.username),
     gameClosed: row.gameClosed === 1,
@@ -860,14 +877,14 @@ function chestOf(reservation: Reservation): ChestView | null {
   }
 
   if (chest === 'closed') {
-    return { opened: false, mimic: false, spell: null, key: false }
+    return { opened: false, mimic: false, spell: null, key: false, quill: false }
   }
 
-  if (chest === 'mimic' || chest === 'key') {
-    return { opened: true, mimic: chest === 'mimic', spell: null, key: chest === 'key' }
+  if (chest === 'mimic' || chest === 'key' || chest === 'quill') {
+    return { opened: true, mimic: chest === 'mimic', spell: null, key: chest === 'key', quill: chest === 'quill' }
   }
 
-  return { opened: true, mimic: false, spell: chest, key: false }
+  return { opened: true, mimic: false, spell: chest, key: false, quill: false }
 }
 
 /**
@@ -920,6 +937,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     seenTotal: user.seenTotal,
     spellDiscovered: snapshot.spellDiscovered,
     firstCastPending: snapshot.firstCastPending,
+    hasQuill: snapshot.hasQuill,
     lessonsDone: lessonsDone(user),
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
@@ -1281,8 +1299,9 @@ export async function openPlayerChest(
   // l'étage fini, plus aucun coffre ne s'y ouvre. Celle qui attend sa serrure
   // suffit donc à dire que le joueur l'a.
   const key = keyDue({ floorSeen: snapshot.user.floorSeen, floorTotal: snapshot.floorTotal, hasKey: snapshot.hasKey })
-  const outcome = key ? null : rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered)
-  const chest: ChestState = key ? 'key' : outcome?.spell ?? 'mimic'
+  const quill = !key && quillDue(snapshot)
+  const outcome = key || quill ? null : rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered)
+  const chest: ChestState = key ? 'key' : quill ? 'quill' : outcome?.spell ?? 'mimic'
 
   // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures
   // simultanées jetteraient deux dés, et la seconde écraserait la première —
@@ -1306,7 +1325,9 @@ export async function openPlayerChest(
     const armed = { lastChest: 'spell' as const }
     const loot = chest === 'key'
       ? grantKey(db, snapshot.user, now)
-      : db.insert(pocketSpells).values({ userId: user.id, spell: chest, obtainedAt: now })
+      : chest === 'quill'
+        ? db.insert(items).values({ userId: user.id, item: 'SCRIBE_QUILL', obtainedAt: now })
+        : db.insert(pocketSpells).values({ userId: user.id, spell: chest, obtainedAt: now })
 
     await db.batch([loot, db.update(users).set(armed).where(eq(users.id, user.id))])
 
@@ -1316,6 +1337,7 @@ export async function openPlayerChest(
       ...snapshot,
       user: { ...snapshot.user, ...armed },
       hasKey: snapshot.hasKey || chest === 'key',
+      hasQuill: snapshot.hasQuill || chest === 'quill',
       reservation: opened,
     }, now), unlocked)
   }
@@ -1803,6 +1825,47 @@ export interface QuestionLogPage {
 export interface QuestionLogQuery {
   limit: number
   offset: number
+  /** Du texte libre, cherché dans l'énoncé et la réponse affichée. */
+  search?: string
+  /** Le code d'une catégorie : seules ses questions restent. */
+  category?: string
+}
+
+/**
+ * Le filtre de recherche et de catégorie du Volumen, posé sur la colonne qui
+ * porte l'identifiant de la question. Rien à filtrer, rien à poser.
+ *
+ * ponytail: LIKE de SQLite ne plie la casse que pour l'ASCII — « été » ne
+ * trouve pas « Été ». Une colonne normalisée si ça gêne.
+ */
+function matchesFilters(db: Database, column: SQLiteColumn, { search, category }: QuestionLogQuery): SQL | undefined {
+  if (!search && !category) {
+    return undefined
+  }
+
+  // Les jokers de LIKE saisis par le joueur se cherchent tels quels.
+  const pattern = `%${search?.replace(/[\\%_]/g, '\\$&')}%`
+  const inCategory = db
+    .select({ id: questionCategories.questionId })
+    .from(questionCategories)
+    .innerJoin(categories, eq(categories.id, questionCategories.categoryId))
+    .where(eq(categories.name, category ?? ''))
+
+  return inArray(
+    column,
+    db
+      .select({ id: questions.id })
+      .from(questions)
+      .where(and(
+        search
+          ? or(
+              sql`${questions.statement} like ${pattern} escape '\\'`,
+              sql`${questions.answerLabel} like ${pattern} escape '\\'`,
+            )
+          : undefined,
+        category ? inArray(questions.id, inCategory) : undefined,
+      )),
+  )
 }
 
 /**
@@ -1855,6 +1918,7 @@ export async function readMissedPool(
   const onThisFloor = and(
     eq(missedPool.userId, user.id),
     eq(missedPool.floor, user.currentFloor),
+    matchesFilters(db, missedPool.questionId, query),
   )
 
   return questionLogPage(
@@ -1900,6 +1964,7 @@ export async function readQuestionLog(
   const filter = and(
     eq(seenQuestions.userId, user.id),
     query.filter === 'correct' ? eq(seenQuestions.correct, true) : undefined,
+    matchesFilters(db, seenQuestions.questionId, query),
   )
   // L'identifiant départage deux vues de la même seconde, dans le sens de
   // l'index : il se lit à rebours d'un bout à l'autre, sans rien trier.

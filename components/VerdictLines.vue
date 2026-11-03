@@ -10,20 +10,39 @@
 
   <PlayText
     role="recall"
+    :as="copyable ? 'button' : 'p'"
     :long="isLong('recall', verdict.statement)"
-    :class="shade"
+    :class="[shade, copyable && COPYABLE]"
+    :title="copyable ? 'Cliquer pour copier' : undefined"
     class="text-amber-800"
+    @click="copyable && copy('statement', verdict.statement)"
   >
     {{ withNonBreakingSpaces(verdict.statement) }}
   </PlayText>
 
   <PlayText
     role="answer"
+    :as="copyable ? 'button' : 'p'"
     :long="isLong('answer', verdict.answerLabel)"
-    :class="shade"
+    :class="[shade, copyable && COPYABLE]"
+    :title="copyable ? 'Cliquer pour copier' : undefined"
     class="text-amber-800"
+    @click="copyable && copy('answer', verdict.answerLabel)"
   >
     {{ verdict.answerLabel }}
+  </PlayText>
+
+  <!-- Au Volumen, sous la réponse : ce qui vient d'être copié. La ligne tient
+       sa hauteur vide, pour que la fiche ne bouge pas à la copie. -->
+  <PlayText v-if="copyable" role="receipt" class="min-h-[1lh] text-[#EE4B76]" aria-live="polite">
+    <Transition
+      enter-active-class="motion-safe:animate-copied-pop"
+      leave-active-class="motion-safe:animate-fade-out [--enter-delay:0s]"
+    >
+      <span v-if="copied" class="inline-block">
+        {{ copied === 'statement' ? 'Question' : 'Réponse' }} copiée&nbsp;!
+      </span>
+    </Transition>
   </PlayText>
 
   <!-- Au Volumen, la fiche montre la bonne réponse, pas la saisie. -->
@@ -114,6 +133,11 @@ const props = defineProps<{
    */
   review?: boolean
   /**
+   * L'énoncé et la réponse se copient d'un clic : au Volumen, pour qui porte la
+   * Plume de copiste. Voir specs/ecrans.md#volumen.
+   */
+  copyable?: boolean
+  /**
    * Michel montre « Contester », à la question d'essai : tout le verdict
    * s'assombrit, sauf lui. Voir specs/ecrans.md#leçons-de-michel.
    */
@@ -139,5 +163,35 @@ const disputeHeld = computed(() =>
   !props.review && !props.verdict.correct && props.verdict.submittedAnswer !== '',
 )
 
-defineEmits<{ dispute: [] }>()
+const emit = defineEmits<{
+  dispute: []
+  /** Au Volumen, l'énoncé ou la réponse vient d'être copié. */
+  copied: [which: 'statement' | 'answer']
+}>()
+
+// Au Volumen, l'énoncé et la réponse se copient d'un clic ; l'écran qui porte
+// la fiche le dit sous la réponse, et l'écran qui la porte grave le succès
+// (QuestionLogList).
+const COPYABLE = 'cursor-pointer transition-colors hover:text-amber-950'
+
+const copied = ref<'statement' | 'answer' | null>(null)
+let copiedTimer: ReturnType<typeof setTimeout> | undefined
+
+async function copy(which: 'statement' | 'answer', text: string): Promise<void> {
+  // Un navigateur peut refuser le presse-papiers : rien ne s'affiche alors, la
+  // copie n'a pas eu lieu.
+  try {
+    await navigator.clipboard.writeText(text)
+  }
+  catch {
+    return
+  }
+
+  copied.value = which
+  clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => (copied.value = null), 1800)
+  emit('copied', which)
+}
+
+onBeforeUnmount(() => clearTimeout(copiedTimer))
 </script>

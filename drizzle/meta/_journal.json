@@ -288,6 +288,13 @@
       "when": 1793646198444,
       "tag": "0040_stormy_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1793659309238,
+      "tag": "0041_quill_lesson",
+      "breakpoints": true
     }
   ]
 }

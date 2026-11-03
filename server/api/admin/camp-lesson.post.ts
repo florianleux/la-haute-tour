@@ -13,7 +13,7 @@ import { TEAM_IDS } from '~~/shared/utils/teams'
 // La guilde à donner au joueur pour ce passage, ou aucune : sans équipe, la
 // leçon du camp saute la bannière et les Haut-faits, celle du Grimoire les
 // alliés et les ennemis. La leçon à revoir : celle du camp par défaut, celle
-// de la chute, du rattrapage ou du Grimoire.
+// de la chute, du rattrapage, du Grimoire ou de la Plume.
 const bodySchema = z.object({
   team: z.enum(TEAM_IDS).nullable(),
   lesson: z.enum(LESSON_IDS).default('camp'),
@@ -34,6 +34,10 @@ const bodySchema = z.object({
  * Pour la leçon du rattrapage, la même chute, leçon de la chute vue, puis
  * l'attente passée : le joueur arrive au camp l'attente échue, avant
  * « Commencer ».
+ *
+ * Pour la leçon de la Plume de copiste, la même chute, leçon de la chute vue et
+ * Plume dans le sac : le joueur arrive au camp en attente, avec des questions à
+ * relire au Volumen.
  *
  * Pour la leçon du Grimoire, partie neuve, leçon du camp vue, et la Vitalité
  * que donne le premier coffre en poche : le joueur est au camp au repos.
@@ -61,7 +65,7 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
     introDoneAt: now,
     team,
     ...lesson !== 'camp' && { [LESSON_COLUMNS.camp]: now },
-    ...lesson === 'recovery' && { [LESSON_COLUMNS.fall]: now },
+    ...(lesson === 'recovery' || lesson === 'quill') && { [LESSON_COLUMNS.fall]: now },
   }).where(eq(users.id, player.id))
 
   if (lesson === 'camp') {
@@ -72,6 +76,12 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   if (lesson === 'spellbook') {
     await db.insert(pocketSpells).values({ userId: player.id, spell: FIRST_SPELL, obtainedAt: now })
     return { ok: true }
+  }
+
+  // La Plume dans le sac : le joueur perd ensuite une vraie ascension, comme à la
+  // chute, pour avoir des questions vues à relire au Volumen.
+  if (lesson === 'quill') {
+    await db.insert(items).values({ userId: player.id, item: 'SCRIBE_QUILL', obtainedAt: now })
   }
 
   // Une réponse vide est toujours fausse. Le palier, sur un étage trop court,

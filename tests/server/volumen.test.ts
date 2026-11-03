@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { disputes, missedPool, recoveryQuestions, reservations } from '../../server/db/schema'
-import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
+import { categories, disputes, missedPool, questionCategories, recoveryQuestions, reservations } from '../../server/db/schema'
+import { createPlayer, createQuestion, createTestDatabase, grantQuill, markSeen } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 
@@ -92,6 +92,47 @@ describe('Volumen', () => {
       const cookie = await sessionCookieFor(await createPlayer(db, AT_CAMP))
 
       expect((await log(apiRequest('http://test/question-log?filter=missed&page=0', cookie))).status).toBe(400)
+    })
+  })
+
+  describe('la recherche et la catégorie', () => {
+    it('filtre les trois onglets, et leur total, sur le texte et sur la catégorie', async () => {
+      const userId = await createPlayer(db, AT_CAMP)
+      await grantQuill(db, userId)
+      const cookie = await sessionCookieFor(userId)
+      const [{ id: categoryId }] = await db.insert(categories).values({ name: 'SPORT' }).returning()
+
+      const sport = await miss(userId, 'Qui a gagné la Coupe 98 ?', at(1))
+      await db.insert(questionCategories).values({ questionId: sport, categoryId })
+      await miss(userId, 'Capitale de l Italie ?', at(2))
+
+      const statements = async (query: string): Promise<string[]> => {
+        const body = await (await log(apiRequest(`http://test/question-log?${query}`, cookie))).json()
+        return body.entries.map((entry: { statement: string }) => entry.statement)
+      }
+
+      for (const filter of ['missed', 'all']) {
+        expect(await statements(`filter=${filter}&q=coupe`)).toEqual(['Qui a gagné la Coupe 98 ?'])
+        expect(await statements(`filter=${filter}&category=SPORT`)).toEqual(['Qui a gagné la Coupe 98 ?'])
+        expect(await statements(`filter=${filter}&q=italie&category=SPORT`)).toEqual([])
+      }
+
+      // Les jokers de LIKE se cherchent tels quels.
+      expect(await statements('filter=all&q=%25')).toEqual([])
+      const total = (await (await log(apiRequest('http://test/question-log?filter=all&q=coupe', cookie))).json()).total
+      expect(total).toBe(1)
+      // Le code d'une catégorie inconnue est une erreur, pas une liste vide.
+      expect((await log(apiRequest('http://test/question-log?category=NOPE', cookie))).status).toBe(400)
+    })
+  })
+
+  describe('sans la Plume de copiste', () => {
+    it('refuse la recherche et la catégorie, mais lit le journal', async () => {
+      const cookie = await sessionCookieFor(await createPlayer(db, AT_CAMP))
+
+      expect((await log(apiRequest('http://test/question-log?q=coupe', cookie))).status).toBe(403)
+      expect((await log(apiRequest('http://test/question-log?category=SPORT', cookie))).status).toBe(403)
+      expect((await log(apiRequest('http://test/question-log', cookie))).status).toBe(200)
     })
   })
 

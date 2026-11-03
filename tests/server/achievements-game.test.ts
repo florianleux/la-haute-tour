@@ -7,7 +7,7 @@ import { unlock } from '../../server/utils/achievements'
 import { grantKey } from '../../server/utils/bossKeys'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, grantQuill, loadPlayer, markSeen } from '../helpers/db'
 import { rolls } from '../helpers/random'
 import type { AchievementId } from '../../shared/utils/achievements'
 import type { Database } from '../../server/db/client'
@@ -346,6 +346,7 @@ describe('les succès en jeu', () => {
       // Un sort déjà sorti d'un coffre, toujours en poche : le Mimic peut attaquer.
       await db.update(users).set({ streak: 12, lastChest: 'spell' }).where(eq(users.id, player.id))
       await db.insert(pocketSpells).values({ userId: player.id, spell: 'RESPITE', obtainedAt: NOW })
+      await grantQuill(db, player.id)
       // La clé déjà en main : passé la moitié de l'étage, le coffre la donnerait.
       await grantKey(db, player, NOW)
 

@@ -1,5 +1,5 @@
 <template>
-  <BaseField :label="label" :clear="clear">
+  <BaseField :label="label" :clear="clear" :parchment="parchment">
     <template #default="{ classes }">
       <input
         ref="field"
@@ -32,6 +32,8 @@ const props = defineProps<{
   autofocus?: boolean
   /** Sans fond, voir BaseField. */
   clear?: boolean
+  /** Aux encres du parchemin, voir BaseField. */
+  parchment?: boolean
 }>()
 
 const model = defineModel<string>({ required: true })

@@ -1,10 +1,10 @@
 <template>
   <!-- L'enveloppe d'un champ : son intitulé et son allure. Voir CLAUDE.md#styling. -->
   <label class="block">
-    <span class="text-xs font-medium uppercase tracking-wide text-slate-500">
+    <span class="text-xs font-medium uppercase tracking-wide" :class="parchment ? 'text-amber-900/70' : 'text-slate-500'">
       {{ label }}
     </span>
-    <slot :classes="clear ? CLEAR : DARK" />
+    <slot :classes="parchment ? PARCHMENT : clear ? CLEAR : DARK" />
   </label>
 </template>
 
@@ -13,6 +13,8 @@ defineProps<{
   label: string
   /** Sans fond, texte sombre : pour un champ posé sur une surface claire. */
   clear?: boolean
+  /** Aux encres du parchemin (Volumen) plutôt qu'au gris : ambre sur papier clair. */
+  parchment?: boolean
 }>()
 
 defineSlots<{
@@ -26,6 +28,7 @@ defineSlots<{
 // Tailwind, deux classes de fond sur un même élément, c'est l'ordre de la
 // feuille de style qui tranche, pas celui de l'attribut.
 const BASE = 'mt-1 w-full rounded-lg border px-4 py-3 text-sm focus:outline-none'
+const PARCHMENT = `${BASE} border-amber-900/25 bg-transparent text-amber-950 placeholder:text-amber-900/40 focus:border-amber-800`
 const DARK = `${BASE} border-slate-800 bg-slate-950/60 text-slate-100 placeholder:text-slate-600 focus:border-indigo-400`
 const CLEAR = `${BASE} border-stone-400 bg-transparent text-stone-800 placeholder:text-stone-400 focus:border-stone-800`
 </script>

@@ -187,7 +187,8 @@ export function isAtRest(state: GameState | null): boolean {
  * La leçon de Michel qui attend d'être jouée d'elle-même, une à la fois, lue
  * dans l'état servi : celle du camp au repos ; sans vies et rien de tiré, celle
  * de la chute, puis celle du rattrapage une fois l'attente échue ; enfin, au
- * camp, celle du Grimoire, le premier sort obtenu. Null quand aucune n'est due.
+ * camp, celle du Grimoire, le premier sort obtenu, puis celle de la Plume de
+ * copiste. Null quand aucune n'est due.
  * Voir specs/ecrans.md#leçons-de-michel.
  */
 export function dueLesson(state: GameState | null): LessonId | null {
@@ -201,7 +202,10 @@ export function dueLesson(state: GameState | null): LessonId | null {
   if (state?.nextRecovery && state.phase === "recovery" && !done.includes("recovery")) {
     return "recovery";
   }
-  return isAtCamp(state) && state?.spellDiscovered && !done.includes("spellbook") ? "spellbook" : null;
+  if (isAtCamp(state) && state?.spellDiscovered && !done.includes("spellbook")) {
+    return "spellbook";
+  }
+  return isAtCamp(state) && state?.hasQuill && !done.includes("quill") ? "quill" : null;
 }
 
 /**

@@ -124,7 +124,7 @@
             />
 
             <div class="relative motion-safe:animate-float">
-              <!-- La clé du boss sort du coffre comme un sort, sans médaillon. -->
+              <!-- La clé du boss ou la plume sort du coffre comme un sort, sans médaillon. -->
               <img
                 v-if="keyItem"
                 :src="keyItem.image"
@@ -213,14 +213,14 @@
           >
             Le coffre contenait <strong><SpellMention :subject="chest.spell" /></strong>. Il rejoint ton Grimoire.
           </PlayText>
-          <!-- La clé ne rejoint jamais le Grimoire : une clé n'est pas un sort.
+          <!-- Ni la clé ni la plume ne rejoignent le Grimoire : ce ne sont pas des sorts.
                Voir specs/boss.md#obtention-de-la-clé. -->
           <PlayText
             v-else-if="keyItem"
             role="recall"
             class="font-semibold text-emerald-700"
           >
-            Le coffre contenait <strong>{{ keyDoor?.keyName }}</strong>. Elle rejoint ton Inventaire.
+            Le coffre contenait <strong>{{ keyItem.phrase }}</strong>. Elle rejoint ton Inventaire.
           </PlayText>
         </div>
       </div>
@@ -349,8 +349,20 @@ const stage = ref<'idle' | 'bursting' | 'open'>('idle')
 
 /** La porte de l'étage, dont le coffre donne la clé : son nom et son image. Null sur tout autre coffre. */
 const keyDoor = computed(() => props.chest.key ? bossStageOf(props.state.floor).door : null)
-const keyItem = computed(() => keyDoor.value?.keyItem ?? null)
-/** Le sort ou la clé obtenus ont été vus, et leur apparition refermée par OK. */
+
+/**
+ * L'Objet que le coffre ouvert rend à l'Inventaire — la clé du boss ou la Plume
+ * de copiste —, avec de quoi le dire en toutes lettres. Null sur un sort, un
+ * Mimic ou un coffre fermé.
+ */
+const keyItem = computed(() => {
+  if (keyDoor.value) {
+    return { ...keyDoor.value.keyItem, phrase: keyDoor.value.keyName }
+  }
+
+  return props.chest.quill ? { ...itemLabel('SCRIBE_QUILL'), phrase: 'la Plume de copiste' } : null
+})
+/** Le sort ou l'Objet obtenus ont été vus, et leur apparition refermée par OK. */
 const lootSeen = ref(false)
 
 /**

@@ -29,6 +29,9 @@
 // celle du premier coffre. Le joueur arrive au camp au repos, et Michel lui
 // fait lancer son premier sort.
 //
+// `?lesson=quill` : la même chute, leçon de la chute vue, Plume de copiste dans
+// le sac — Michel fait ouvrir le Volumen et montre la recherche et la copie.
+//
 // `?lesson=fall` : le banc de la leçon de la chute. Le joueur servi est remis
 // à zéro, leçon du camp vue, puis perd une vraie ascension, une mauvaise
 // réponse par vie : il arrive au camp en attente, et Michel explique la chute.
@@ -46,7 +49,7 @@ const team = useRoute().query.team === 'none' ? null : TEAM_IDS[Math.floor(Math.
 
 // Passée telle quelle : le serveur la valide, et revoit le camp sans elle.
 const lesson = useRoute().query.lesson
-const afterFall = lesson === 'fall' || lesson === 'recovery'
+const afterFall = lesson === 'fall' || lesson === 'recovery' || lesson === 'quill'
 
 onMounted(async () => {
   try {

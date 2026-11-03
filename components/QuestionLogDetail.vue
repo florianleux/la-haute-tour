@@ -17,9 +17,10 @@
       <VerdictLines
         review
         :verdict="verdict"
-        :disputable="isDisputable(entry.questionId)"
-        :disputing="disputingId === entry.questionId"
-        @dispute="sendDispute(entry.questionId)"
+        :copyable="copyable"
+        :disputable="false"
+        :disputing="false"
+        @copied="$emit('copied', $event)"
       />
 
       <PlayText
@@ -52,14 +53,17 @@
 
 <script setup lang="ts">
 // La question choisie dans le Volumen : énoncé, réponse affichée, saisie et
-// verdict — fiche de révision, pas punition — et la contestation quand elle est
-// encore ouverte. Voir specs/ecrans.md#volumen.
+// verdict — fiche de révision, pas punition — et où en est sa contestation. Voir specs/ecrans.md#volumen.
 import type { QuestionLogEntryView, Verdict } from '~~/server/utils/game'
 
 const props = defineProps<{
   entry: QuestionLogEntryView
   poolSuccessesToLeave: number
+  /** Le joueur porte la Plume de copiste. */
+  copyable: boolean
 }>()
+
+defineEmits<{ copied: [which: 'statement' | 'answer'] }>()
 
 // Relue au camp, la question ne coûte aucune vie.
 const verdict = computed((): Verdict => ({
@@ -69,8 +73,4 @@ const verdict = computed((): Verdict => ({
   focusLoss: false,
 }))
 
-// Le serveur seul dit ce qui est contestable : une erreur encore au pool de
-// l'étage, pas encore contestée. Voir specs/validation.md#quand. Une fois la
-// contestation partie, la liste relit sa page (voir QuestionLogList).
-const { isDisputable, sendDispute, disputingId } = useDisputes()
 </script>

@@ -25,6 +25,8 @@ export const ITEM_USES: Record<ItemId, {
   CHEESE: { usableBy: user => user.campLessonAt === null, earns: ['CHEESE_GIVEN'] },
   // Une relique ne s'utilise pas, pour l'instant. Voir specs/boss.md#récompense.
   JULIEN_CARD: { usableBy: () => false, earns: [] },
+  // Elle se porte, elle ne s'utilise pas : le Volumen la reconnaît dans le sac.
+  SCRIBE_QUILL: { usableBy: () => false, earns: [] },
 }
 
 export interface ItemsView {
@@ -71,6 +73,24 @@ export async function takeItem(db: Database, userId: number, item: ItemId): Prom
   const taken = await db.delete(items).where(eq(items.id, oldest)).returning({ id: items.id })
 
   return taken.length > 0
+}
+
+/** Le joueur porte-t-il cet Objet ? Une ligne lue, pour ce qui se garde sur lui. */
+export async function hasItem(db: Database, userId: number, item: ItemId): Promise<boolean> {
+  const [row] = await db
+    .select({ id: items.id })
+    .from(items)
+    .where(and(eq(items.userId, userId), eq(items.item, item)))
+    .limit(1)
+
+  return row !== undefined
+}
+
+/** Refuse (403) qui n'a pas la Plume de copiste : la recherche et la copie du Volumen en dépendent. */
+export async function requireQuill(db: Database, userId: number): Promise<void> {
+  if (!await hasItem(db, userId, 'SCRIBE_QUILL')) {
+    throw createError({ statusCode: 403, statusMessage: 'Il faut la Plume de copiste' })
+  }
 }
 
 function buildGrantItem(db: Database, userId: number, item: ItemId, now: Date, condition: SQL | undefined) {

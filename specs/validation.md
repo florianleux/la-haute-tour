@@ -56,7 +56,7 @@ Une réponse vide n'est **pas contestable** : accepter une telle contestation aj
 ### Quand
 
 - Une **erreur contestable** est une erreur encore au **Pool Échecs de l'étage courant**, quelle que soit la tentative où elle a été commise, et pas encore contestée — une seule contestation par question. Ne se contestent pas : une réponse vide (voir plus haut), ni la réponse soumise par un départ de page (voir [`anti-triche.md`](./anti-triche.md#perte-de-focus)) — un échec de rattrapage sur la même question n'y change rien. Vue de nouveau après une remise à zéro (voir [`admin.md`](./admin.md#gestion-des-joueurs)) et ratée sur une vraie réponse, la question redevient contestable.
-- Deux endroits : sur l'écran de **verdict**, au moment où le désaccord naît — le joueur vient de lire « faux » et la bonne réponse — et dans le **Volumen**, au camp, filet pour qui est passé trop vite à la question suivante.
+- Un seul endroit : l'écran de **verdict**, au moment où le désaccord naît — le joueur vient de lire « faux » et la bonne réponse. Le **Volumen** ne propose plus le lien : il n'affiche que l'état d'une contestation déjà partie.
 - L'écran de verdict n'est pas chronométré : contester n'ouvre aucune brèche.
 - **Bouton seul**, pas de message libre.
 - Sur l'écran de verdict, le bouton ne paraît que sur un verdict **faux** : un rattrapage réussi sur une question encore contestable ne se conteste pas. Une fois la contestation envoyée, « Contestation envoyée ! » jaillit à la place du bouton.

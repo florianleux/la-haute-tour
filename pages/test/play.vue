@@ -82,6 +82,7 @@ const state = ref(demoState({
   streak: 995,
   seenTotal: 1_204,
   spellDiscovered: true,
+  hasQuill: true,
   lessonsDone: ['camp'],
 }))
 

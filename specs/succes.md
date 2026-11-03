@@ -23,7 +23,7 @@ ne partagent que le mot français — en code, l'une est `achievement`, l'autre
 
 ## Catalogue
 
-**Soixante-huit succès**, répartis en quinze familles.
+**Soixante-neuf succès**, répartis en quinze familles.
 
 ### Premières fois — 4
 
@@ -189,7 +189,7 @@ attend son prochain retour au camp (voir [Affichage](#affichage)).
 | Éclair | Répondre juste moins de 3 secondes après que la question a été servie |
 | Sur le fil | Répondre juste dans la dernière seconde du chrono, délai de grâce compris |
 
-### Clins d'œil — 4
+### Clins d'œil — 5
 
 | Succès | Déclencheur |
 |---|---|
@@ -197,6 +197,7 @@ attend son prochain retour au camp (voir [Affichage](#affichage)).
 | Ponctuel | Reprendre dans les 5 minutes qui suivent la fin d'une attente : tirer son rattrapage, ou retrouver ses vies |
 | Insomniaque | Résoudre une question entre 3 h et 5 h du matin, heure de Paris |
 | La curiosité est un vilain défaut | Ouvrir les outils de développement du navigateur |
+| Ça, ça va dans mon Anki ! | Copier une question ou une réponse depuis le Volumen (un clic sur son énoncé ou sa réponse), ce que seule la Plume de copiste permet. Le serveur croit l'écran sur parole : le succès est sans effet |
 
 « La curiosité est un vilain défaut » est approximatif, et l'assume : aucun
 navigateur ne signale l'ouverture de ses outils. L'écran guette les raccourcis

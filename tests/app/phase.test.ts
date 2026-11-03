@@ -132,6 +132,14 @@ describe('la leçon due', () => {
     expect(dueLesson(state({ spellDiscovered: true, lessonsDone: ['camp', 'spellbook'] }))).toBeNull()
   })
 
+  it('est celle de la Plume au camp, une fois la Plume au sac', () => {
+    expect(dueLesson(state({ hasQuill: true, lessonsDone: ['camp'] }))).toBe('quill')
+    expect(dueLesson(state({ hasQuill: false, lessonsDone: ['camp'] }))).toBeNull()
+    expect(dueLesson(state({ hasQuill: true, lessonsDone: ['camp', 'quill'] }))).toBeNull()
+    // Le Grimoire passe avant elle : une leçon à la fois.
+    expect(dueLesson(state({ hasQuill: true, spellDiscovered: true, lessonsDone: ['camp'] }))).toBe('spellbook')
+  })
+
   it('passe le Grimoire après la chute et le rattrapage : une seule à la fois', () => {
     expect(dueLesson(state({ ...inCooldown, spellDiscovered: true, lessonsDone: ['camp'] }))).toBe('fall')
     expect(dueLesson(state({ ...inCooldown, spellDiscovered: true, lessonsDone: ['camp', 'fall'] }))).toBe('spellbook')
@@ -234,7 +242,7 @@ describe('action de la page de jeu', () => {
 
 describe('coffre sur l écran de verdict', () => {
   it('cache le coffre tant qu une question est servie', () => {
-    const closed = { opened: false, mimic: false, spell: null, key: false }
+    const closed = { opened: false, mimic: false, spell: null, key: false, quill: false }
 
     expect(gameScreen(state({ question, verdict, chest: closed })).chest).toBeNull()
   })
@@ -277,8 +285,8 @@ describe('barrage de maintenance', () => {
 })
 
 describe('carte de jeu', () => {
-  const closed = { opened: false, mimic: false, spell: null, key: false }
-  const opened = { opened: true, mimic: false, spell: 'RESPITE' as const, key: false }
+  const closed = { opened: false, mimic: false, spell: null, key: false, quill: false }
+  const opened = { opened: true, mimic: false, spell: 'RESPITE' as const, key: false, quill: false }
   const right = { ...verdict, correct: true, lifeLost: false }
   const ongoing = { total: 3, played: 1, successes: 0, resumes: false, sealed: false, required: 1 }
 
@@ -316,7 +324,7 @@ describe('carte de jeu', () => {
   })
 
   it('montre le Mimic avant le poster, et le poster une fois quitté', () => {
-    const mauled = { phase: 'cooldown' as const, lives: 0, verdict: right, chest: { opened: true, mimic: true, spell: null, key: false } }
+    const mauled = { phase: 'cooldown' as const, lives: 0, verdict: right, chest: { opened: true, mimic: true, spell: null, key: false, quill: false } }
 
     expect(card(mauled, { chestOf: verdict.questionId, fallenOn: null }))
       .toEqual({ card: 'chest', action: { label: 'Suivant', move: 'leave' } })

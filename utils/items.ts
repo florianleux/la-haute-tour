@@ -23,6 +23,11 @@ const ITEM_LABELS: Record<ItemId, ItemLabel> = {
     description: 'Une fiche d\'animateur, roussie et trouée, que Julien Le Perse a laissée derrière lui.',
     image: '/images/item-julien-card.webp',
   },
+  SCRIBE_QUILL: {
+    name: 'Plume de copiste',
+    description: 'Une plume d\'oiseau exotique trempée dans une encre noire. Débloque des fonctionnalités du Volumen.',
+    image: '/images/item-scribe-quill.webp',
+  },
 }
 
 export function itemLabel(item: ItemId): ItemLabel {
