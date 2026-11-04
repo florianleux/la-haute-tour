@@ -21,7 +21,7 @@
 // qu'une vraie partie — pour régler le visuel sans dépendre d'une attente
 // réelle. Modifier CooldownCard modifie donc aussi bien cette page que la
 // vraie. Admin seulement. Voir pages/test/play.vue pour le même principe.
-// `?night` force la nuit (useNight), ici comme sur /test/recovery.
+// `?night` force la nuit (useNight), ici comme sur /test/recovery et /test/play.
 import { playView } from '~~/utils/phase'
 import { TEAM_IDS } from '~~/shared/utils/teams'
 

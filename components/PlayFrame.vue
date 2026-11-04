@@ -3,7 +3,7 @@
        moindre rebond de scroll le fait glisser sous le cadre. -->
   <div
     class="fixed inset-0 z-0 bg-cover bg-center"
-    :class="[night ? SKINS[skin].nightBackground ?? SKINS[skin].background : SKINS[skin].background, shade(null)]"
+    :class="[night ? SKINS[skin].nightBackground : SKINS[skin].background, shade(null)]"
     :data-arriving="arriving || undefined"
   />
 
@@ -142,8 +142,8 @@ type PlaySkin = 'ascent' | 'recovery'
 interface Skin {
   /** Le décor plein écran, derrière le cadre, et ce qu'il encaisse à l'arrivée. */
   background: string
-  /** Le même décor la nuit. Sans lui, celui de jour. */
-  nightBackground?: string
+  /** Le même décor la nuit. */
+  nightBackground: string
   /** Gouttières et calage vertical du cadre dans la page. */
   wrapper: string
   /** Le format du cadre, mobile puis `sm:`. */
@@ -170,6 +170,7 @@ const SKINS: Record<PlaySkin, Skin> = {
   // à gauche là, plus court en bas ici.
   ascent: {
     background: 'bg-[url(/images/play-bg.webp)]',
+    nightBackground: 'bg-[url(/images/play-bg-night.webp)]',
     wrapper: '-mt-16 max-w-4xl py-8 sm:-mt-40 sm:py-16',
     frame: 'aspect-428/855 sm:aspect-1980/775',
     // Le cadre seul : en mobile, tout ce qui est au-dessus du bas du cadre

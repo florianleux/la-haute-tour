@@ -13,6 +13,7 @@ const BACKDROPS = [
   '/images/cooldown-bg-night.webp',
   '/images/blurry-cooldown-bg-night.webp',
   '/images/play-bg.webp',
+  '/images/play-bg-night.webp',
   ...Object.values(BOSS_DOORS).map(door => door!.image),
 ]
 
