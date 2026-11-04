@@ -1750,6 +1750,14 @@
   }
 }
 
+/* Une seule allure, quel que soit le thème de l'appareil : sans ça, le navigateur
+   peint les contrôles natifs (liste d'un select, barres de défilement) aux
+   couleurs du thème, et notre encre tombe sur son fond. Clair par défaut, comme
+   le parchemin ; un contrôle sur fond sombre redemande `scheme-only-dark`. */
+html {
+  color-scheme: only light;
+}
+
 /* L'angle déjà passé au crayon autour d'un rond de la page des sorts. Déclaré pour
    être un angle, pas un texte : il peut alors s'animer. Voir
    components/CrayonRing.vue. */

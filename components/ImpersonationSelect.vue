@@ -6,6 +6,7 @@
       :disabled="pending"
       aria-label="Jouer en tant que"
       title="Jouer en tant que"
+      class="scheme-only-dark"
       :class="impersonator
         ? 'border-amber-600 bg-amber-950/60 text-amber-200'
         : 'border-slate-800 bg-slate-900 text-slate-400'"
