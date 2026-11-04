@@ -21,6 +21,7 @@
 - Durées par défaut : 60 s en ascension, 60 s en rattrapage. Ces valeurs, comme toutes les autres, viennent du jeu de règles (voir [`mecanique.md`](./mecanique.md#règles-chiffrées)).
 - **Le timeout est une erreur ordinaire** : vie perdue, bonne réponse affichée, question versée au Pool Échecs.
 - L'échéance ne dépend d'aucun signal du client : elle est fixée au moment où la question est réservée, c'est-à-dire sur une action explicite du joueur.
+- **Une exception, la leçon de la question loot** (voir [`ecrans.md`](./ecrans.md#leçons-de-michel)) : le chrono est retenu tant que Michel parle, et son échéance fixée quand la leçon est datée. En échange, l'énoncé n'est pas servi pendant ce temps : retenir le chrono sur une question lisible offrirait un temps de recherche sans limite. La date ne se pose qu'une fois, et le chrono ne se relance donc pas.
 
 ## Perte de focus
 

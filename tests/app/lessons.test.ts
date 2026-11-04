@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, quillLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, lootLesson, quillLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
 
 // Voir specs/ecrans.md#leçons-de-michel (Chute).
 describe('la leçon de la chute', () => {
@@ -291,5 +291,20 @@ describe('la leçon de la Plume', () => {
     const closed = lines.findIndex(line => line.awaits === 'close')
 
     expect(lines.slice(opened, closed + 1).every(line => line.overlay === 'questionLog')).toBe(true)
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Loot).
+describe('la leçon de la question loot', () => {
+  it('s ouvre sur la même entrée que les autres leçons', () => {
+    expect(lootLesson({ questionsPerChest: 20 }).slice(0, 2)).toEqual(fallLesson().slice(0, 2))
+  })
+
+  it('annonce le chiffre des règles qu on lui donne', () => {
+    expect(lootLesson({ questionsPerChest: 7 }).map(line => line.text).join(' ')).toContain('toutes les 7 questions')
+  })
+
+  it('éclaire l annonce de la question loot', () => {
+    expect(lootLesson({ questionsPerChest: 20 }).some(line => line.spotlight === 'lootNotice')).toBe(true)
   })
 })

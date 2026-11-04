@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { items, missedPool, pocketSpells, users } from '../../server/db/schema'
+import { items, missedPool, pocketSpells, reservations, users } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -131,5 +131,21 @@ describe('le banc de la leçon de la chute', () => {
     expect(tester.lives).toBeGreaterThan(0)
     expect(await db.select({ spell: pocketSpells.spell }).from(pocketSpells).where(eq(pocketSpells.userId, testerId)))
       .toEqual([{ spell: 'VITALITY' }])
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Loot).
+describe('le banc de la leçon loot', () => {
+  it('pose le joueur sur sa première question loot, chrono retenu', async () => {
+    for (let i = 0; i < 30; i++) {
+      await createQuestion(db, { statement: `Question ${i + 1} ?` })
+    }
+
+    const response = await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'loot'))
+    const held = await db.select().from(reservations).where(eq(reservations.userId, testerId)).get()
+
+    expect(response.status).toBe(200)
+    expect(held?.expiresAt.getTime()).toBeGreaterThan(Date.now() + 24 * 60 * 60 * 1000)
+    expect((await loadPlayer(db, testerId)).lootLessonAt).toBeNull()
   })
 })

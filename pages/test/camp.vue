@@ -32,6 +32,9 @@
 // `?lesson=quill` : la même chute, leçon de la chute vue, Plume de copiste dans
 // le sac — Michel fait ouvrir le Volumen et montre la recherche et la copie.
 //
+// `?lesson=loot` : partie neuve, leçon du camp vue, le joueur posé sur sa première
+// question loot — Michel retient le chrono et explique les coffres.
+//
 // `?lesson=fall` : le banc de la leçon de la chute. Le joueur servi est remis
 // à zéro, leçon du camp vue, puis perd une vraie ascension, une mauvaise
 // réponse par vie : il arrive au camp en attente, et Michel explique la chute.

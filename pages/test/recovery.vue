@@ -73,6 +73,7 @@ const state = ref(demoState({
         // Jamais de coffre en rattrapage : isLootQuestion rend false pour ce
         // mode. Voir server/utils/mechanics.ts.
         lootQuestion: false,
+        lootLesson: null,
       }
     : null,
   verdict: answering

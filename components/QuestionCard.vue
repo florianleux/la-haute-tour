@@ -26,12 +26,15 @@
     <PlayText
       v-if="question.lootQuestion"
       role="notice"
-      class="uppercase tracking-wide text-emerald-700"
+      class="px-[1.2cqw] py-[0.5cqw] uppercase tracking-wide text-emerald-700"
+      :class="lesson?.spotlight === 'lootNotice' && LESSON_CUTOUT"
     >
       Question loot — réponds juste et tu ouvres un coffre.
     </PlayText>
 
+    <!-- Sans énoncé, la leçon loot retient la question : rien à lire ni à répondre. -->
     <PlayText
+      v-if="statement"
       role="statement"
       :long="isLong('statement', statement)"
       class="text-amber-800"
@@ -43,6 +46,7 @@
          deux côtés. Remonté quand Michel se tait, à la question d'essai : il
          prend le focus à son montage, qu'un cadre inerte lui refusait. -->
     <BaseParchmentInput
+      v-if="statement"
       :key="lessonDims(lesson) ? 'held' : 'free'"
       :model-value="modelValue"
       @update:model-value="$emit('update:modelValue', $event)"
@@ -84,7 +88,7 @@ const props = defineProps<{
   /** Une réponse est en vol, envoyée au clic comme à la fin du chrono : la carte le joue. */
   submitting: boolean
   effects: EffectView[]
-  /** La réplique de Michel, à la question d'essai. Voir PlayFrame. */
+  /** La réplique de Michel, à la question d'essai et à la question loot. Voir PlayFrame. */
   lesson?: LessonLine | null
 }>()
 
@@ -95,6 +99,9 @@ const emit = defineEmits<{ 'update:modelValue': [string], submit: [] }>()
 const { heldEmptySend, holds } = useEmptyAnswerHold(() => props.modelValue, () => props.question.id)
 
 function send(method: SendMethod): void {
+  if (!props.question.statement) {
+    return
+  }
   if (props.submitting || !holds(method)) {
     emit('submit')
   }

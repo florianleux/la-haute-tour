@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `loot_lesson_at` integer;

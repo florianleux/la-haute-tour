@@ -88,6 +88,12 @@ export async function useQuestionRun(options: QuestionRunOptions = {}): Promise<
   const visible = options.visible ?? ref(true)
 
   const secondsLeft = computed<number | null>(() => {
+    // Retenu par la leçon de Michel : il s'affiche plein, sans courir.
+    const held = state.value?.question?.lootLesson
+    if (held) {
+      return held.timerMs / 1000
+    }
+
     const deadline = runningTimer(state.value)?.expiresAt
     if (!deadline) {
       return null

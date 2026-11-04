@@ -72,6 +72,7 @@
       :seconds-left="secondsLeft"
       :submitting="pending"
       :effects="view.screen.activeEffects"
+      :lesson="lesson.line.value"
       @update:model-value="typed = $event"
       @submit="submit"
     />
@@ -171,12 +172,12 @@
       @animationend="campFade = false"
     />
 
-    <!-- Michel en leçon, sur le camp. Hors de la chaîne des cartes : glissé
+    <!-- Michel en leçon, sur le camp ou sur la question loot. Hors de la chaîne des cartes : glissé
          dedans, il la coupait, et la carte vide du `v-else` s'affichait à côté
          de la question. Quand une boîte du camp est ouverte, c'est
          elle qui le porte (l'Inventaire) : une boîte modale passerait devant. -->
     <MichelLesson
-      v-if="view?.card === 'cooldown' && !practice.question.value && lesson.line.value && lesson.line.value.awaits !== 'pause' && !lesson.line.value.overlay && !campOverlay"
+      v-if="(view?.card === 'cooldown' || view?.card === 'question') && !practice.question.value && lesson.line.value && lesson.line.value.awaits !== 'pause' && !lesson.line.value.overlay && !campOverlay"
       :line="lesson.line.value"
       @next="lesson.next"
       @ascent="leaveForAscent"

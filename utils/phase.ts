@@ -144,8 +144,15 @@ export interface RunningTimer {
   focusGraceMs: number;
 }
 
-/** La question servie, ou l'épreuve de boss servie. Null quand rien ne court. */
+/**
+ * La question servie, ou l'épreuve de boss servie. Null quand rien ne court, ce
+ * qui vaut pour la question que la leçon loot retient : ni envoi au chrono, ni
+ * perte de focus.
+ */
 export function runningTimer(state: GameState | null): RunningTimer | null {
+  if (state?.question?.lootLesson) {
+    return null;
+  }
   const trial = state?.boss?.trial;
   // L'échéance désigne l'épreuve : fixée à son service, elle ne se répète pas,
   // là où un même drapeau peut revenir d'un combat à l'autre.
@@ -188,11 +195,15 @@ export function isAtRest(state: GameState | null): boolean {
  * dans l'état servi : celle du camp au repos ; sans vies et rien de tiré, celle
  * de la chute, puis celle du rattrapage une fois l'attente échue ; enfin, au
  * camp, celle du Grimoire, le premier sort obtenu, puis celle de la Plume de
- * copiste. Null quand aucune n'est due.
+ * copiste. Celle de la question loot, elle, se joue sur la question que le
+ * serveur retient pour elle. Null quand aucune n'est due.
  * Voir specs/ecrans.md#leçons-de-michel.
  */
 export function dueLesson(state: GameState | null): LessonId | null {
   const done = state?.lessonsDone ?? [];
+  if (state?.question?.lootLesson) {
+    return "loot";
+  }
   if (isAtRest(state) && !done.includes("camp")) {
     return "camp";
   }

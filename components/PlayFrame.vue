@@ -82,7 +82,7 @@
            mesure de hauteur de clavier, juste l'état du focus. -->
       <div
         class="absolute flex flex-col items-center justify-center gap-[0.7cqw] overflow-hidden @container text-center transition-all"
-        :class="[SKINS[skin].panel, motion && CARD_MOTIONS[motion].panel, shade('dispute')]"
+        :class="[SKINS[skin].panel, motion && CARD_MOTIONS[motion].panel, shade(lesson?.spotlight === 'lootNotice' ? 'lootNotice' : 'dispute')]"
       >
         <slot />
       </div>

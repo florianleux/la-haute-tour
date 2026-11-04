@@ -92,6 +92,12 @@ export interface ServedQuestion {
    * Voir specs/bonus.md#question-loot.
    */
   lootQuestion: boolean
+  /**
+   * Le chrono est retenu par la leçon de la question loot : le temps qu'il
+   * donnera, et les chiffres de Michel. Null dès qu'il court. Tant qu'il est
+   * retenu, `statement` est vide. Voir specs/anti-triche.md#timer.
+   */
+  lootLesson: { timerMs: number, questionsPerChest: number } | null
 }
 
 /** Ce qu'un écran de question montre de la question, qu'elle soit servie ou d'essai. */
@@ -860,6 +866,7 @@ function servedQuestion(
   statement: string,
   rules: FloorRules,
   lootQuestion: boolean,
+  lootLesson: ServedQuestion['lootLesson'],
 ): ServedQuestion {
   return {
     id: reservation.questionId,
@@ -867,6 +874,7 @@ function servedQuestion(
     expiresAt: reservation.expiresAt.toISOString(),
     focusGraceMs: rules.focusGraceMs,
     lootQuestion,
+    lootLesson,
   }
 }
 
@@ -976,12 +984,12 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     else {
       // La question en jeu n'est pas encore résolue : c'est le rang suivant
       // qu'elle occupera dans les questions vues de l'étage.
-      base.question = servedQuestion(
-        reservation,
-        question.statement,
-        rules,
-        servesLoot(snapshot, reservation, rules),
-      )
+      const lootQuestion = servesLoot(snapshot, reservation, rules)
+      const lootLesson = lootQuestion && !user.lootLessonAt
+        ? { timerMs: played.ascentTimerMs, questionsPerChest: rules.questionsPerChest }
+        : null
+
+      base.question = servedQuestion(reservation, lootLesson ? '' : question.statement, rules, lootQuestion, lootLesson)
     }
   }
 
@@ -1247,7 +1255,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   // Ni la résolution ni l'étage n'ont bougé le curseur : la question lue avec
   // l'instantané est toujours celle qu'il désigne.
   const [next] = upcoming
-  const drawn = next ? await reserveDrawn(db, fresh, next.question, playedRules(current), now) : null
+  const drawn = next ? await reserveDrawn(db, fresh, next.question, heldForLesson(fresh, current.floorTotal, playedRules(current)), now) : null
 
   if (!drawn) {
     // L'étage se compte des questions non vues qu'il n'a plus : le deck a bougé
@@ -1527,6 +1535,53 @@ async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date
   await drawAndReserve(db, { ...user, currentFloor, floorCursor: 0, floorSeen: 0 }, rules, now)
 }
 
+/**
+ * L'échéance d'une question loot tirée avant sa leçon : assez loin pour que rien
+ * ne la touche, un joueur pouvant quitter en pleine leçon et revenir plus tard.
+ * startLootTimer la remplace par la vraie.
+ */
+const LOOT_LESSON_HOLD_MS = 365 * 24 * 60 * 60 * 1000
+
+/**
+ * Les règles du tirage à venir : celles reçues, chrono retenu si la question sera
+ * la première question loot du joueur. Le rang est celui que lit servesLoot.
+ * Voir specs/anti-triche.md#timer.
+ */
+function heldForLesson(user: User, floorTotal: number, rules: FloorRules): FloorRules {
+  const lootQuestion = isLootQuestion({ position: user.floorSeen + 1, floorTotal, mode: 'ascent' }, rulesForFloor(user.currentFloor))
+
+  return lootQuestion && !user.lootLessonAt ? { ...rules, ascentTimerMs: LOOT_LESSON_HOLD_MS } : rules
+}
+
+/**
+ * La leçon de la question loot est finie : elle est datée et le chrono de la
+ * question retenue part, plein. Une fois seulement : la leçon déjà datée
+ * n'écrit plus rien, sinon rappeler la route relancerait le chrono.
+ */
+export async function startLootTimer(db: Database, user: User, now: Date): Promise<void> {
+  const snapshot = await loadSnapshot(db, user.id)
+  const { reservation } = snapshot
+
+  if (snapshot.user.lootLessonAt) {
+    return
+  }
+
+  const dated = db.update(users).set({ lootLessonAt: now }).where(eq(users.id, user.id))
+
+  if (!reservation || reservation.resolvedAt || !servesLoot(snapshot, reservation, rulesForFloor(snapshot.user.currentFloor))) {
+    await dated
+    return
+  }
+
+  await db.batch([
+    dated,
+    db
+      .update(reservations)
+      .set({ expiresAt: new Date(now.getTime() + playedRules(snapshot).ascentTimerMs), createdAt: now })
+      .where(eq(reservations.userId, user.id)),
+  ])
+}
+
 /** Ce qu'un tirage vient d'écrire, pour éviter d'aller le relire. */
 interface DrawnQuestion {
   question: Question
@@ -1775,7 +1830,7 @@ async function finishRecovery(
     // curseur périmé ressert la question qu'une requête arrivée entre-temps
     // aurait déjà réservée, au lieu de la sauter. La question est celle de la
     // tentative qui s'ouvre : ses effets fraîchement ancrés jouent dès elle.
-    await drawAndReserve(db, user, attemptRules, now)
+    await drawAndReserve(db, user, heldForLesson(user, snapshot.floorTotal, attemptRules), now)
 
     return withUnlocked(await buildState(db, user.id, now), unlocked)
   }

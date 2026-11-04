@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { users } from '../../server/db/schema'
-import { createPlayer, createTestDatabase, loadPlayer } from '../helpers/db'
+import { reservations, users } from '../../server/db/schema'
+import { readGameState, serveNextQuestion } from '../../server/utils/game'
+import { rulesForFloor } from '../../server/utils/rules'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 
@@ -88,5 +90,100 @@ describe('une leçon de Michel vue', () => {
 
     expect((await loadPlayer(db, testerId)).campLessonAt).toBeInstanceOf(Date)
     expect((await loadPlayer(db, adminId)).campLessonAt).toBeNull()
+  })
+})
+
+// La leçon loot se joue sur la question, chrono retenu et énoncé pas servi.
+// Voir specs/anti-triche.md#timer.
+describe('la leçon de la question loot', () => {
+  const rules = rulesForFloor(1)
+  const SEEN_AT = new Date('2026-09-03T12:00:00.000Z')
+  let db: Database
+  let playerId: number
+
+  beforeEach(async () => {
+    db = await createTestDatabase()
+    setDatabase(db)
+    playerId = await createPlayer(db)
+    const ids: string[] = []
+    for (let i = 0; i < rules.questionsPerChest * 2; i++) {
+      ids.push(await createQuestion(db, { statement: `Question ${i + 1} ?` }))
+    }
+    await markSeen(db, playerId, ids.slice(0, rules.questionsPerChest - 1), { floor: 1, seenAt: SEEN_AT, submittedAnswer: 'Bordeaux' })
+  })
+
+  async function reservedExpiry(): Promise<number | undefined> {
+    const reservation = await db.select().from(reservations).where(eq(reservations.userId, playerId)).get()
+    return reservation?.expiresAt.getTime()
+  }
+
+  it('retient le chrono et l énoncé tant qu elle n est pas vue', async () => {
+    const now = new Date()
+    const state = await serveNextQuestion(db, await loadPlayer(db, playerId), now)
+
+    expect(state.question).toMatchObject({
+      statement: '',
+      lootQuestion: true,
+      lootLesson: { timerMs: rules.ascentTimerMs, questionsPerChest: rules.questionsPerChest },
+    })
+    expect(await reservedExpiry()).toBeGreaterThan(now.getTime() + 24 * 60 * 60 * 1000)
+  })
+
+  it('tient la question le temps qu il faut : rien n expire pendant la leçon', async () => {
+    const now = new Date()
+    await serveNextQuestion(db, await loadPlayer(db, playerId), now)
+
+    const later = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+    const state = await readGameState(db, await loadPlayer(db, playerId), later)
+
+    expect(state.lives).toBe((await loadPlayer(db, playerId)).lives)
+    expect(state.verdict).toBeNull()
+    expect(state.question?.lootLesson).not.toBeNull()
+  })
+
+  it('lance le chrono plein et sert l énoncé à sa fin', async () => {
+    await serveNextQuestion(db, await loadPlayer(db, playerId), new Date())
+
+    const before = Date.now()
+    await markLesson(lessonRequest({ lesson: 'loot' }, await sessionCookieFor(playerId)))
+    const player = await loadPlayer(db, playerId)
+    const state = await readGameState(db, player, new Date())
+
+    expect(player.lootLessonAt).not.toBeNull()
+    expect(state.question?.statement).toMatch(/^Question/)
+    expect(state.question?.lootLesson).toBeNull()
+    expect(await reservedExpiry()).toBeLessThanOrEqual(Date.now() + rules.ascentTimerMs)
+    // Les dates se stockent à la seconde.
+    expect(await reservedExpiry()).toBeGreaterThanOrEqual(before + rules.ascentTimerMs - 1_000)
+  })
+
+  it('ne relance pas le chrono si la route est rappelée', async () => {
+    await serveNextQuestion(db, await loadPlayer(db, playerId), new Date())
+    const cookie = await sessionCookieFor(playerId)
+    await markLesson(lessonRequest({ lesson: 'loot' }, cookie))
+    await db.update(reservations).set({ expiresAt: new Date(5_000_000) }).where(eq(reservations.userId, playerId))
+
+    await markLesson(lessonRequest({ lesson: 'loot' }, cookie))
+
+    expect(await reservedExpiry()).toBe(5_000_000)
+  })
+
+  it('laisse tranquille la question loot d un joueur qui l a vue', async () => {
+    await db.update(users).set({ lootLessonAt: new Date(1_000) }).where(eq(users.id, playerId))
+    const now = new Date()
+    const state = await serveNextQuestion(db, await loadPlayer(db, playerId), now)
+
+    expect(state.question).toMatchObject({ statement: expect.stringMatching(/^Question/), lootQuestion: true, lootLesson: null })
+    expect(await reservedExpiry()).toBeLessThanOrEqual(now.getTime() + rules.ascentTimerMs)
+  })
+
+  it('ne touche à aucune réservation quand la question n est pas loot', async () => {
+    await db.update(users).set({ floorSeen: 0 }).where(eq(users.id, playerId))
+    await serveNextQuestion(db, await loadPlayer(db, playerId), new Date())
+    const served = await reservedExpiry()
+
+    await markLesson(lessonRequest({ lesson: 'loot' }, await sessionCookieFor(playerId)))
+
+    expect(await reservedExpiry()).toBe(served)
   })
 })

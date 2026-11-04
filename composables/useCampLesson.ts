@@ -51,6 +51,7 @@ export function useCampLesson(
     recovery: () => state.value?.nextRecovery ? recoveryLesson(state.value.nextRecovery) : null,
     spellbook: () => spellbookLesson({ team: team.value, guided: state.value?.firstCastPending ?? false }),
     quill: quillLesson,
+    loot: () => state.value?.question?.lootLesson ? lootLesson(state.value.question.lootLesson) : null,
   }
 
   function play(played: LessonLine[], from = 0): void {

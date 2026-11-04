@@ -112,6 +112,7 @@ function drawQuestion(): void {
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
       focusGraceMs: 1000,
       lootQuestion: false,
+      lootLesson: null,
     },
     verdict: null,
   }

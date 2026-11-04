@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { useDatabase } from '~~/server/db/client'
 import { items, pocketSpells, users } from '~~/server/db/schema'
 import { serveNextQuestion, submitAnswer } from '~~/server/utils/game'
+import { rulesForFloor } from '~~/server/utils/rules'
 import { LESSON_COLUMNS } from '~~/server/utils/lessons'
 import { skipCooldown } from '~~/server/utils/lives'
 import { requirePlayer, resetPlayer } from '~~/server/utils/players'
@@ -13,7 +14,7 @@ import { TEAM_IDS } from '~~/shared/utils/teams'
 // La guilde à donner au joueur pour ce passage, ou aucune : sans équipe, la
 // leçon du camp saute la bannière et les Haut-faits, celle du Grimoire les
 // alliés et les ennemis. La leçon à revoir : celle du camp par défaut, celle
-// de la chute, du rattrapage, du Grimoire ou de la Plume.
+// de la chute, du rattrapage, du Grimoire, de la Plume ou de la question loot.
 const bodySchema = z.object({
   team: z.enum(TEAM_IDS).nullable(),
   lesson: z.enum(LESSON_IDS).default('camp'),
@@ -41,6 +42,10 @@ const bodySchema = z.object({
  *
  * Pour la leçon du Grimoire, partie neuve, leçon du camp vue, et la Vitalité
  * que donne le premier coffre en poche : le joueur est au camp au repos.
+ *
+ * Pour la leçon de la question loot, partie neuve, leçon du camp vue, et le
+ * joueur posé juste avant sa première question loot, qui lui est tirée : il
+ * arrive sur elle, chrono retenu.
  *
  * Admin seulement. Le joueur servi est le joueur test incarné : hors
  * développement, la partie d'un vrai compte, celui de l'admin compris, ne se
@@ -75,6 +80,13 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
 
   if (lesson === 'spellbook') {
     await db.insert(pocketSpells).values({ userId: player.id, spell: FIRST_SPELL, obtainedAt: now })
+    return { ok: true }
+  }
+
+  if (lesson === 'loot') {
+    const floorSeen = rulesForFloor(player.currentFloor).questionsPerChest - 1
+    await db.update(users).set({ floorSeen }).where(eq(users.id, player.id))
+    await serveNextQuestion(db, await requirePlayer(db, player.id), now)
     return { ok: true }
   }
 

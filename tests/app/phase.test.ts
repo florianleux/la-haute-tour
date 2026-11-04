@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockedByMaintenance, dueLesson, fallQuestionId, focusLossNotice, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView, victoryOnScreen } from '../../utils/phase'
+import { blockedByMaintenance, dueLesson, fallQuestionId, focusLossNotice, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView, runningTimer, victoryOnScreen } from '../../utils/phase'
 import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
@@ -29,6 +29,7 @@ const question = {
   expiresAt: '2026-09-03T12:00:20.000Z',
   focusGraceMs: 1_000,
   lootQuestion: false,
+  lootLesson: null,
 }
 
 // specs/anti-triche.md#perte-de-focus
@@ -148,7 +149,7 @@ describe('la leçon due', () => {
   })
 
   it('ne joue pas le Grimoire hors du camp', () => {
-    const answering = { question: { id: 'q1', statement: 'Capitale ?', expiresAt: '2099-01-01T00:00:00.000Z', focusGraceMs: 1_000, lootQuestion: false } }
+    const answering = { question: { id: 'q1', statement: 'Capitale ?', expiresAt: '2099-01-01T00:00:00.000Z', focusGraceMs: 1_000, lootQuestion: false, lootLesson: null } }
 
     expect(dueLesson(state({ ...answering, spellDiscovered: true, lessonsDone: ['camp'] }))).toBeNull()
   })
@@ -458,5 +459,25 @@ describe('verdict de la dernière vie', () => {
     // scellé le précédent reste dans l'état.
     expect(fallQuestionId(state({ phase: 'recovery', lives: 0, verdict: { ...verdict, lifeLost: false } })))
       .toBeNull()
+  })
+})
+
+// Voir specs/anti-triche.md#timer.
+describe('la question que la leçon loot retient', () => {
+  const held = { ...question, statement: '', lootQuestion: true, lootLesson: { timerMs: 60_000, questionsPerChest: 20 } }
+
+  it('appelle sa leçon', () => {
+    expect(dueLesson(state({ question: held, lessonsDone: ['camp'] }))).toBe('loot')
+  })
+
+  it('ne fait courir aucun chrono', () => {
+    expect(runningTimer(state({ question: held }))).toBeNull()
+  })
+
+  it('rend le chrono une fois la leçon finie', () => {
+    const running = { ...held, lootLesson: null }
+
+    expect(dueLesson(state({ question: running, lessonsDone: ['camp', 'loot'] }))).toBeNull()
+    expect(runningTimer(state({ question: running }))).toEqual(running)
   })
 })

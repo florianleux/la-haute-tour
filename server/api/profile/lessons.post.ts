@@ -2,6 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { useDatabase } from '~~/server/db/client'
 import { users } from '~~/server/db/schema'
+import { startLootTimer } from '~~/server/utils/game'
 import { LESSON_COLUMNS } from '~~/server/utils/lessons'
 import { LESSON_IDS } from '~~/shared/utils/lessons'
 
@@ -17,6 +18,12 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
   const user = await requireAuth(event)
   const { lesson } = await readValidatedBody(event, bodySchema.parse)
   const column = LESSON_COLUMNS[lesson]
+
+  // La fin de cette leçon-là lance un chrono, dans le même lot que sa date.
+  if (lesson === 'loot') {
+    await startLootTimer(useDatabase(), user, new Date())
+    return { ok: true }
+  }
 
   await useDatabase()
     .update(users)

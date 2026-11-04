@@ -309,6 +309,13 @@
       "when": 1793744333306,
       "tag": "0043_divine_hearts",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1793781845659,
+      "tag": "0044_loot_lesson",
+      "breakpoints": true
     }
   ]
 }

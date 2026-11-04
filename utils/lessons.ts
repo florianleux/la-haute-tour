@@ -11,6 +11,12 @@ export const LESSON_PAUSE_MS = 2_000
 export const LESSON_SHADE = 'brightness-[.35]'
 
 /**
+ * L'ombre levée dans un rectangle : l'inverse de LESSON_SHADE, appliqué à ce qu'il
+ * y a derrière une partie éclairée dont le fond, lui, reste dans l'ombre.
+ */
+export const LESSON_CUTOUT = 'rounded-[0.5cqw] ring-1 ring-amber-200/70 backdrop-brightness-[2.857]'
+
+/**
  * Ce qu'une réplique attend du joueur pour passer à la suite, à la place d'un
  * clic sur la bulle. Voir specs/spec.md (glossaire, « Attendu »).
  * - `pause` : rien ne s'affiche, la leçon reprend d'elle-même après LESSON_PAUSE_MS ;
@@ -24,9 +30,10 @@ export type LessonAwait = 'pause' | 'click' | 'use' | 'close' | 'cast' | 'ascent
 
 /**
  * Ce que Michel éclaire sur l'écran de question, à la question d'essai : les
- * rubans, le médaillon du chrono, et « Contester » sur le verdict.
+ * rubans, le médaillon du chrono, et « Contester » sur le verdict. Et l'annonce
+ * d'une question loot, à sa leçon.
  */
-export type PlayTarget = 'ribbons' | 'timer' | 'dispute'
+export type PlayTarget = 'ribbons' | 'timer' | 'dispute' | 'lootNotice'
 
 /**
  * Ce que Michel éclaire dans le Grimoire, à sa leçon : Vitalité à la page des sorts, et
@@ -187,6 +194,22 @@ export function quillLesson(): LessonLine[] {
     { text: 'Et clique sur une question, ou sur sa réponse : la voilà copiée, prête à coller dans ton Anki !', spotlight: 'copy', overlay: 'questionLog' },
     { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
     { text: 'Bonne révision !', spotlight: 'michel' },
+  ]
+}
+
+/**
+ * La leçon de la question loot, sur l'écran de question, chrono retenu et énoncé
+ * pas encore servi : la dernière bulle passée, le chrono part. Voir
+ * specs/ecrans.md#leçons-de-michel (Loot).
+ */
+export function lootLesson({ questionsPerChest }: { questionsPerChest: number }): LessonLine[] {
+  return [
+    ...MICHEL_ENTRANCE,
+    { text: 'Cette question est particulière, c\'est une question Loot !', spotlight: 'lootNotice' },
+    { text: 'Le chrono est arrêté, je t\'explique : réponds juste et tu ouvres un coffre.', spotlight: 'lootNotice' },
+    { text: 'Dedans, des objets magiques ! Enfin, en général…', spotlight: null },
+    { text: `Il en revient une toutes les ${questionsPerChest} questions, ouvre l'œil !`, spotlight: null },
+    { text: 'Le chrono repart quand je me tais. Bonne chance !', spotlight: null },
   ]
 }
 
