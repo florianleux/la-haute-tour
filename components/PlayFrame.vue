@@ -3,7 +3,7 @@
        moindre rebond de scroll le fait glisser sous le cadre. -->
   <div
     class="fixed inset-0 z-0 bg-cover bg-center"
-    :class="[SKINS[skin].background, shade(null)]"
+    :class="[night ? SKINS[skin].nightBackground ?? SKINS[skin].background : SKINS[skin].background, shade(null)]"
     :data-arriving="arriving || undefined"
   />
 
@@ -142,6 +142,8 @@ type PlaySkin = 'ascent' | 'recovery'
 interface Skin {
   /** Le décor plein écran, derrière le cadre, et ce qu'il encaisse à l'arrivée. */
   background: string
+  /** Le même décor la nuit. Sans lui, celui de jour. */
+  nightBackground?: string
   /** Gouttières et calage vertical du cadre dans la page. */
   wrapper: string
   /** Le format du cadre, mobile puis `sm:`. */
@@ -192,6 +194,7 @@ const SKINS: Record<PlaySkin, Skin> = {
   recovery: {
     // Il tremble à l'impact du parchemin, 33 % de `animate-plant`.
     background: 'bg-[url(/images/blurry-cooldown-bg.webp)] data-arriving:motion-safe:animate-jolt [--enter-delay:0.3s]',
+    nightBackground: 'bg-[url(/images/blurry-cooldown-bg-night.webp)] data-arriving:motion-safe:animate-jolt [--enter-delay:0.3s]',
     // Plus étroit que le `max-w-4xl` de l'ascension, et mesuré pour ça : les
     // deux illustrations n'ont pas la même proportion de page utile. Le cadre
     // de la tour laisse 52% de sa largeur au texte, le parchemin 82% — à
@@ -242,6 +245,8 @@ const props = defineProps<{
    */
   lesson?: LessonLine | null
 }>()
+
+const night = useNight()
 
 const shaded = computed(() => lessonDims(props.lesson))
 

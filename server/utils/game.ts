@@ -28,10 +28,10 @@ import {
   earnedByCrossing,
   earnedByFloorDone,
   earnedByResuming,
-  gameHour,
   playedToday,
   unlock,
 } from './achievements'
+import { gameHour } from '../../shared/utils/time'
 import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
 import { grantKey, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'

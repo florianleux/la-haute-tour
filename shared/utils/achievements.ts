@@ -84,6 +84,7 @@ const SINGULAR_IDS = [
   'FOCUS_LOST',
   'PUNCTUAL',
   'NIGHT_OWL',
+  'CAMP_AT_NIGHT',
   'DEVTOOLS_OPENED',
   'QUESTION_COPIED',
 ] as const

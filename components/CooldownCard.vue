@@ -3,8 +3,8 @@
        montre reste éclairé — sa bannière comprise, à la leçon de la chute.
        Voir spotlightOn. -->
   <div
-    class="fixed inset-0 z-0 bg-[url(/images/cooldown-bg.webp)] bg-cover bg-center"
-    :class="shade"
+    class="fixed inset-0 z-0 bg-cover bg-center"
+    :class="[night ? 'bg-[url(/images/cooldown-bg-night.webp)]' : 'bg-[url(/images/cooldown-bg.webp)]', shade]"
   />
 
   <!-- Les objets du camp, entre le décor et le poster. Voir CooldownCamp. -->
@@ -15,6 +15,7 @@
     :volumen="state.seenTotal > 0"
     :spellbook="state.spellDiscovered"
     :lesson="lesson"
+    :night="night"
     @advance="$emit('advance')"
     @open="$emit('open', $event)"
   />
@@ -75,8 +76,8 @@
        bouton, qu'ils ne recouvrent donc jamais, quel que soit le format. Le tout
        sous le sélecteur d'incarnation (z-20), que le poster ne doit pas masquer. -->
   <div
-    class="pointer-events-none fixed z-10 bg-[url(/images/cooldown-poster.webp)] bg-contain bg-center bg-no-repeat"
-    :class="[POSTER_BOX, shade]"
+    class="pointer-events-none fixed z-10 bg-contain bg-center bg-no-repeat"
+    :class="[night ? 'bg-[url(/images/cooldown-poster-night.webp)]' : 'bg-[url(/images/cooldown-poster.webp)]', POSTER_BOX, shade]"
   />
   <!-- La bannière du poster, quand Michel la montre : la même image, découpée
        au ras de l'étoffe et de ses cordes, reposée par-dessus le poster
@@ -89,7 +90,7 @@
     :class="POSTER_BOX"
   >
     <img
-      src="/images/cooldown-poster-banner.webp"
+      :src="campImage('cooldown-poster-banner', night)"
       alt=""
       class="absolute left-0 top-0 w-[96.73%]"
     >
@@ -242,6 +243,8 @@ const props = defineProps<{
 }>()
 
 defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId] }>()
+
+const night = useNight()
 
 /**
  * En leçon, le décor et le poster restent dans l'ombre : Michel ne les montre

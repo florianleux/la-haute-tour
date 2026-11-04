@@ -372,6 +372,8 @@ const CAMP_OVERLAYS: Record<CampOverlayId, Component> = {
 
 // Michel au camp : chaque leçon à son moment, une fois. Une leçon
 // datée relit l'état, qui dit la suivante. Voir specs/ecrans.md#leçons-de-michel.
+useNightCampWatch(() => view.value?.card === 'cooldown')
+
 const lesson = useCampLesson(state, computed(() => user.value?.team ?? null), refresh)
 
 /** Un objet du camp cliqué : en leçon, c'est peut-être le geste que Michel attendait. */

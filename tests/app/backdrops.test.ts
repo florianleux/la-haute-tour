@@ -10,6 +10,8 @@ const publicDir = fileURLToPath(new URL('../../public', import.meta.url))
 const BACKDROPS = [
   '/images/cooldown-bg.webp',
   '/images/blurry-cooldown-bg.webp',
+  '/images/cooldown-bg-night.webp',
+  '/images/blurry-cooldown-bg-night.webp',
   '/images/play-bg.webp',
   ...Object.values(BOSS_DOORS).map(door => door!.image),
 ]

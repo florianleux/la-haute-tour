@@ -204,13 +204,6 @@ export function dayKey(now: Date): string {
   return dayKeyFormat.format(now)
 }
 
-const hourFormat = new Intl.DateTimeFormat('en-GB', { timeZone: GAME_TIME_ZONE, hour: 'numeric', hourCycle: 'h23' })
-
-/** L'heure du jeu, de 0 à 23. */
-export function gameHour(now: Date): number {
-  return Number(hourFormat.format(now))
-}
-
 export interface PlayedDay {
   lastPlayedDay: string
   daysPlayed: number

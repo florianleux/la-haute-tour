@@ -95,6 +95,8 @@ const props = defineProps<{
   spellbook: boolean
   /** La réplique de Michel en cours, null hors leçon : elle dit ce qui s'éclaire. */
   lesson: LessonLine | null
+  /** La nuit, décidée par CooldownCard : le décor et ses objets la disent ensemble. */
+  night: boolean
 }>()
 
 const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId] }>()
@@ -128,8 +130,8 @@ interface CampItem {
 }
 
 const BANNERS: Record<TeamId, string> = {
-  MIDI: '/images/cooldown-banner-midi.webp',
-  TLM: '/images/cooldown-banner-tlm.webp',
+  MIDI: 'cooldown-banner-midi',
+  TLM: 'cooldown-banner-tlm',
 }
 
 // La corde déroulée dit que l'on peut remonter : elle n'apparaît qu'avec
@@ -185,8 +187,8 @@ const layers = computed((): ShownLayer[] => {
         props.ready
           // Déroulée, la corde part du haut de la fenêtre : son nom se pose au-dessus
           // du rouleau, pas au-dessus de l'image.
-          ? { object: 'rope', src: '/images/cooldown-rope-up.webp', place: 'left-[17.92%] top-0 w-[15%]', title: 'Ascension', labelAt: 'bottom-[13%] left-[61%]', click: 'advance' }
-          : { object: 'rope', src: '/images/cooldown-rope-coiled.webp', place: 'left-[21.61%] top-[83.33%] w-[11.3%]', title: 'Ascension', note: '(en attente)' },
+          ? { object: 'rope', src: campImage('cooldown-rope-up', props.night), place: 'left-[17.92%] top-0 w-[15%]', title: 'Ascension', labelAt: 'bottom-[13%] left-[61%]', click: 'advance' }
+          : { object: 'rope', src: campImage('cooldown-rope-coiled', props.night), place: 'left-[21.61%] top-[83.33%] w-[11.3%]', title: 'Ascension', note: '(en attente)' },
       ],
     },
     {
@@ -196,7 +198,7 @@ const layers = computed((): ShownLayer[] => {
       items: [
         // Le nom de la bannière se lit sur l'étoffe, au milieu : au-dessus, il
         // tombait dans le feuillage du haut de l'écran.
-        ...(props.team ? [{ object: 'banner', src: BANNERS[props.team], place: 'left-[78.33%] top-[14.44%] w-[16.72%]', title: 'Haut-faits', labelAt: 'left-[46%] top-1/2 -translate-y-1/2', click: { open: 'achievements' } } satisfies CampItem] : []),
+        ...(props.team ? [{ object: 'banner', src: campImage(BANNERS[props.team], props.night), place: 'left-[78.33%] top-[14.44%] w-[16.72%]', title: 'Haut-faits', labelAt: 'left-[46%] top-1/2 -translate-y-1/2', click: { open: 'achievements' } } satisfies CampItem] : []),
       ],
     },
     {
@@ -205,11 +207,11 @@ const layers = computed((): ShownLayer[] => {
       box: BACKDROP_GROUND,
       origin: 'origin-bottom',
       items: [
-        { object: 'scroll', src: '/images/cooldown-scroll.webp', place: 'left-[31.72%] top-[84%] w-[16.46%]', title: 'Volumen', click: { open: 'questionLog' } },
-        { object: 'backpack', src: '/images/cooldown-backpack.webp', place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { open: 'inventory' } },
+        { object: 'scroll', src: campImage('cooldown-scroll', props.night), place: 'left-[31.72%] top-[84%] w-[16.46%]', title: 'Volumen', click: { open: 'questionLog' } },
+        { object: 'backpack', src: campImage('cooldown-backpack', props.night), place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { open: 'inventory' } },
         // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe
         // devant eux, comme sur l'illustration.
-        { object: 'spellbook', src: '/images/cooldown-book.webp', place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } },
+        { object: 'spellbook', src: campImage('cooldown-book', props.night), place: 'left-[45.94%] top-[81.5%] w-[16.61%]', title: 'Grimoire', click: { open: 'spellbook' } },
       ],
     },
   ]

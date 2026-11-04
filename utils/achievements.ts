@@ -73,6 +73,7 @@ const LABELS: Record<AchievementId, string> = {
   FOCUS_LOST: 'Distrait',
   PUNCTUAL: 'Ponctuel',
   NIGHT_OWL: 'Insomniaque',
+  CAMP_AT_NIGHT: 'Oiseau de nuit',
   DEVTOOLS_OPENED: 'La curiosité est un vilain défaut',
   QUESTION_COPIED: 'Ça, ça va dans mon Anki !',
 }
@@ -128,6 +129,7 @@ const CONDITIONS: Record<AchievementId, string> = {
   FOCUS_LOST: 'Quitter la page pendant une question.',
   PUNCTUAL: 'Reprendre dans les 5 minutes qui suivent la fin d\'une attente.',
   NIGHT_OWL: 'Répondre à une question entre 3 h et 5 h du matin.',
+  CAMP_AT_NIGHT: 'Jouer la nuit.',
   DEVTOOLS_OPENED: 'Ouvrir les outils de développement du navigateur.',
   QUESTION_COPIED: 'Copier une question ou une réponse depuis le Volumen.',
 }

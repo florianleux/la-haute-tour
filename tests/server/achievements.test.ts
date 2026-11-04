@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { dayKey, earnedByAnswer, earnedByCrossing, earnedByFloorDone, earnedByResuming, earnedByTrial, gameHour, playedToday } from '../../server/utils/achievements'
+import { dayKey, earnedByAnswer, earnedByCrossing, earnedByFloorDone, earnedByResuming, earnedByTrial, playedToday } from '../../server/utils/achievements'
+import { gameHour } from '../../shared/utils/time'
 import { DAY_TIERS, STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import type { AnsweredInput } from '../../server/utils/achievements'
