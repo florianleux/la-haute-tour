@@ -94,7 +94,7 @@ import type { GameState } from '~~/server/utils/game'
 import type { LessonLine } from '~~/utils/lessons'
 import type { AchievementId } from '~~/shared/utils/achievements'
 import { CATEGORY_LABELS } from '~~/shared/utils/categories'
-import type { QuestionLogTab } from '~/composables/useQuestionLog'
+import type { QuestionLogTab } from '~~/shared/utils/questionLog'
 
 const props = defineProps<{
   tab: QuestionLogTab
@@ -104,6 +104,7 @@ const props = defineProps<{
 
 const EMPTY: Record<QuestionLogTab, string> = {
   missed: 'Rien à revoir sur cet étage.',
+  leeches: 'Aucune sangsue pour l\'instant.',
   correct: 'Aucune question connue pour l\'instant.',
   all: 'Aucune question vue pour l\'instant.',
 }

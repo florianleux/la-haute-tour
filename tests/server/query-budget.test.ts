@@ -243,6 +243,8 @@ describe('budget de requêtes des chemins chauds', () => {
     // n'attribuent rien. L'écriture d'un succès neuf, elle, a le droit de
     // partir — ce qu'on refuse ici est la lecture. Voir server/db/schema.ts.
     const selectsAchievements = /select[^;]*from\s+["`']?achievements/
+    // Une Sangsue ne se cherche qu'à l'ouverture d'un coffre, jamais à chaque question.
+    const seeksLeeches = /recovery_failures["`']?\s*>=/
 
     it('en servant la question suivante', async () => {
       const sql = captureSql(db)
@@ -254,6 +256,7 @@ describe('budget de requêtes des chemins chauds', () => {
       expect(seen).toContain('select')
       expect(seen).not.toMatch(counting)
       expect(seen).not.toMatch(selectsAchievements)
+      expect(seen).not.toMatch(seeksLeeches)
     })
 
     it('en lisant l état de jeu', async () => {
@@ -266,6 +269,7 @@ describe('budget de requêtes des chemins chauds', () => {
       const seen = sql()
       expect(seen).not.toMatch(counting)
       expect(seen).not.toMatch(selectsAchievements)
+      expect(seen).not.toMatch(seeksLeeches)
     })
 
     it('en résolvant une réponse', async () => {
@@ -279,6 +283,7 @@ describe('budget de requêtes des chemins chauds', () => {
       const seen = sql()
       expect(seen).not.toMatch(counting)
       expect(seen).not.toMatch(selectsAchievements)
+      expect(seen).not.toMatch(seeksLeeches)
     })
   })
 })

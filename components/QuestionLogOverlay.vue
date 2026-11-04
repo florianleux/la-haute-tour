@@ -81,11 +81,12 @@
 // Le journal des questions vues, au camp et là seulement : le rattrapage tire
 // dans le Pool Échecs, en lire les réponses pendant qu'il tourne serait tricher.
 // Voir specs/ecrans.md#volumen.
-import type { QuestionLogTab } from '~/composables/useQuestionLog'
+import type { QuestionLogTab } from '~~/shared/utils/questionLog'
+import type { GameState } from '~~/server/utils/game'
 import type { LessonLine } from '~~/utils/lessons'
 
 const props = defineProps<{
-  /** La réplique de Michel quand il parle depuis le Volumen, à la leçon de la chute ou de la Plume. */
+  /** La réplique de Michel quand il parle depuis le Volumen, à la leçon de la chute, de la Plume ou du Filet. */
   lesson?: LessonLine
 }>()
 
@@ -95,13 +96,16 @@ defineEmits<{
   next: []
 }>()
 
-const tabs: { id: QuestionLogTab, label: string }[] = [
+// L'onglet Sangsues est celui du Filet à sangsues : le camp sait déjà si le
+// joueur le porte (l'état de jeu, tenu en cache).
+const { data: gameState } = useNuxtData<GameState>(GAME_STATE_KEY)
+const tabs = computed((): { id: QuestionLogTab, label: string }[] => [
   { id: 'missed', label: 'À revoir' },
+  ...gameState.value?.hasLeechNet ? [{ id: 'leeches' as const, label: 'Sangsues' }] : [],
   { id: 'correct', label: 'Connues' },
   { id: 'all', label: 'Toutes' },
-]
+])
 
-// À la leçon de la Plume, « Toutes » : Michel y montre une question à copier, et
-// « À revoir » peut être vide.
-const tab = ref<QuestionLogTab>(props.lesson?.spotlight === 'search' ? 'all' : 'missed')
+// Michel choisit l'onglet dont il parle : « À revoir » peut être vide.
+const tab = ref<QuestionLogTab>(props.lesson?.openingTab ?? 'missed')
 </script>

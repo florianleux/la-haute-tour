@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, attempts, missedPool, recoveryQuestions, reservations, seenQuestions } from '../../server/db/schema'
+import { activeEffects, attempts, missedPool, questions, recoveryQuestions, reservations, seenQuestions } from '../../server/db/schema'
 import { requireCamp } from '../../server/utils/camp'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -138,6 +138,73 @@ describe('attente et rattrapage', () => {
 
       expect(state.phase).toBe('recovery')
       expect(state.lives).toBe(0)
+    })
+  })
+
+  describe('échecs de rattrapage', () => {
+    let reserved: () => Promise<string>
+    const failures = async (questionId: string): Promise<number> => {
+      const [row] = await db
+        .select({ recoveryFailures: seenQuestions.recoveryFailures })
+        .from(seenQuestions)
+        .where(eq(seenQuestions.questionId, questionId))
+      return row.recoveryFailures
+    }
+
+    beforeEach(async () => {
+      await fillPool(rules.poolSizeForRecovery + 2)
+      reserved = async () => {
+        const [reservation] = await db.select().from(reservations)
+        return reservation.questionId
+      }
+      await serveNextQuestion(db, player, afterCooldown)
+    })
+
+    it('comptent une mauvaise réponse', async () => {
+      const questionId = await reserved()
+
+      await submitAnswer(db, await reload(), 'nimporte', afterCooldown)
+
+      expect(await failures(questionId)).toBe(1)
+    })
+
+    it('comptent le chrono écoulé', async () => {
+      const questionId = await reserved()
+
+      await submitAnswer(db, await reload(), '', new Date(afterCooldown.getTime() + rules.recoveryTimerMs + 60_000))
+
+      expect(await failures(questionId)).toBe(1)
+    })
+
+    it('ne bougent pas sur une bonne réponse, et une réussite ne les efface pas', async () => {
+      const questionId = await reserved()
+      await db.update(seenQuestions).set({ recoveryFailures: 2 }).where(eq(seenQuestions.questionId, questionId))
+      const [{ statement }] = await db.select({ statement: questions.statement }).from(questions).where(eq(questions.id, questionId))
+
+      await submitAnswer(db, await reload(), `reponse ${statement.match(/\d+/)?.[0]}`, afterCooldown)
+
+      expect(await failures(questionId)).toBe(2)
+    })
+
+    it('ne comptent pas une question déjà sortie du pool', async () => {
+      const questionId = await reserved()
+      await db.delete(missedPool).where(eq(missedPool.questionId, questionId))
+
+      await submitAnswer(db, await reload(), 'nimporte', afterCooldown)
+
+      expect(await failures(questionId)).toBe(0)
+    })
+
+    it('survivent à la sortie du Pool Échecs', async () => {
+      const questionId = await reserved()
+      await db.update(seenQuestions).set({ recoveryFailures: 3 }).where(eq(seenQuestions.questionId, questionId))
+      await db.update(missedPool).set({ poolSuccesses: rules.poolSuccessesToLeave - 1 }).where(eq(missedPool.questionId, questionId))
+      const [{ statement }] = await db.select({ statement: questions.statement }).from(questions).where(eq(questions.id, questionId))
+
+      await submitAnswer(db, await reload(), `reponse ${statement.match(/\d+/)?.[0]}`, afterCooldown)
+
+      expect(await db.select().from(missedPool).where(eq(missedPool.questionId, questionId))).toEqual([])
+      expect(await failures(questionId)).toBe(3)
     })
   })
 

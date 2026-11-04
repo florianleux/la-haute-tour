@@ -2,6 +2,7 @@ import { teamLabel } from './teams'
 import type { CampObject } from './camp'
 import type { GameState } from '~~/server/utils/game'
 import type { CampOverlayId } from './phase'
+import type { QuestionLogTab } from '~~/shared/utils/questionLog'
 import type { TeamId } from '~~/shared/utils/teams'
 
 /** Le temps que Michel laisse au joueur arrivé au camp avant de se manifester. */
@@ -62,6 +63,8 @@ export interface LessonLine {
   awaits?: LessonAwait
   /** La boîte du camp d'où Michel parle, ouverte par la réplique d'avant. Absente, il parle sur le camp. */
   overlay?: CampOverlayId
+  /** L'onglet sur lequel le Volumen s'ouvre pour cette réplique. Absent, « À revoir ». */
+  openingTab?: QuestionLogTab
   /** La bulle seule, Michel pas encore là : on l'entend avant de le voir. */
   bubbleOnly?: true
 }
@@ -190,10 +193,26 @@ export function quillLesson(): LessonLine[] {
   return [
     ...MICHEL_ENTRANCE,
     { text: 'Oh, je vois que tu as déniché une plume de copiste ! Elle améliore le Volumen, ouvre-le !', spotlight: 'scroll', awaits: 'click' },
-    { text: 'Cherche une question par son texte, ou par sa catégorie : tape, choisis, et clique sur la loupe.', spotlight: 'search', overlay: 'questionLog' },
+    { text: 'Cherche une question par son texte, ou par sa catégorie : tape, choisis, et clique sur la loupe.', spotlight: 'search', overlay: 'questionLog', openingTab: 'all' },
     { text: 'Et clique sur une question, ou sur sa réponse : la voilà copiée, prête à coller dans ton Anki !', spotlight: 'copy', overlay: 'questionLog' },
     { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
     { text: 'Bonne révision !', spotlight: 'michel' },
+  ]
+}
+
+/**
+ * La leçon du Filet à sangsues, à la visite du camp qui suit son obtention.
+ * Michel fait ouvrir le Volumen sur les Sangsues, dit ce qu'elles sont et fait
+ * refermer. Voir specs/ecrans.md#leçons-de-michel (Filet).
+ */
+export function leechNetLesson(): LessonLine[] {
+  return [
+    ...MICHEL_ENTRANCE,
+    { text: 'Tiens, un filet à sangsues ! Lui aussi améliore le Volumen, ouvre-le !', spotlight: 'scroll', awaits: 'click' },
+    { text: 'Tes sangsues, ce sont les questions que tu rates encore et encore au rattrapage. Le filet les a toutes attrapées.', spotlight: null, overlay: 'questionLog', openingTab: 'leeches' },
+    { text: 'Les plus coriaces sont en tête. Relire ne suffit plus : apprends-les autrement, avec une astuce ou une image.', spotlight: null, overlay: 'questionLog' },
+    { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
+    { text: 'Bonne chasse !', spotlight: 'michel' },
   ]
 }
 

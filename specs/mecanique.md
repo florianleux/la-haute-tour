@@ -114,6 +114,7 @@ Valeurs par défaut, identiques aux 6 étages :
 | Bonnes réponses pour se débloquer | 1 |
 | Taille minimale du pool pour déclencher un rattrapage | 3 |
 | Réussites consécutives pour sortir du pool | 2 |
+| Échecs de rattrapage qui font une Sangsue | 3 |
 | Attente après la dernière vie perdue | 6 h |
 | Attente après un rattrapage manqué | 4 h |
 | Tolérance de perte de focus | 1 s |

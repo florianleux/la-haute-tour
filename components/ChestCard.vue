@@ -103,7 +103,7 @@
                fait jaillir ; il n'est là qu'une fois elle refermée, posé à sa
                place sans rejouer son jaillissement. -->
           <div
-            v-if="(chest.spell && spellImage(chest.spell) || keyItem) && (stage !== 'open' || lootSeen)"
+            v-if="(chest.spell && spellImage(chest.spell) || lootItem) && (stage !== 'open' || lootSeen)"
             :style="{ width: `calc(${percent(SPELL_WIDTH)} * var(--peak))` }"
             class="absolute left-1/2 top-[0%] -translate-x-1/2 -translate-y-[calc(50%-50%/var(--peak))] [--peak:4] @container"
             :class="lootSeen
@@ -126,9 +126,9 @@
             <div class="relative motion-safe:animate-float">
               <!-- La clé du boss ou la plume sort du coffre comme un sort, sans médaillon. -->
               <img
-                v-if="keyItem"
-                :src="keyItem.image"
-                :alt="keyItem.name"
+                v-if="lootItem"
+                :src="lootItem.image"
+                :alt="lootItem.name"
                 class="w-full"
               >
               <SpellMedallion
@@ -213,14 +213,14 @@
           >
             Le coffre contenait <strong><SpellMention :subject="chest.spell" /></strong>. Il rejoint ton Grimoire.
           </PlayText>
-          <!-- Ni la clé ni la plume ne rejoignent le Grimoire : ce ne sont pas des sorts.
+          <!-- Ni la clé ni les Objets ne rejoignent le Grimoire : ce ne sont pas des sorts.
                Voir specs/boss.md#obtention-de-la-clé. -->
           <PlayText
-            v-else-if="keyItem"
+            v-else-if="lootItem"
             role="recall"
             class="font-semibold text-emerald-700"
           >
-            Le coffre contenait <strong>{{ keyItem.phrase }}</strong>. Elle rejoint ton Inventaire.
+            Le coffre contenait <strong>{{ lootItem.phrase }}</strong>, qui rejoint ton Inventaire.
           </PlayText>
         </div>
       </div>
@@ -229,9 +229,9 @@
            de l'écran, et s'y montre pour lui seul jusqu'au OK. Seulement à
            l'ouverture, pas sur un coffre déjà ouvert quand l'écran arrive. -->
       <ItemReveal
-        v-if="stage === 'open' && looted && keyItem && !lootSeen"
-        :label="keyItem.name"
-        :image="keyItem.image"
+        v-if="stage === 'open' && looted && lootItem && !lootSeen"
+        :label="lootItem.name"
+        :image="lootItem.image"
         :from="spellFrom"
         @close="lootSeen = true"
       />
@@ -351,16 +351,16 @@ const stage = ref<'idle' | 'bursting' | 'open'>('idle')
 const keyDoor = computed(() => props.chest.key ? bossStageOf(props.state.floor).door : null)
 
 /**
- * L'Objet que le coffre ouvert rend à l'Inventaire — la clé du boss ou la Plume
- * de copiste —, avec de quoi le dire en toutes lettres. Null sur un sort, un
+ * L'Objet que le coffre ouvert rend à l'Inventaire — la clé du boss, la Plume
+ * de copiste ou le Filet à sangsues —, avec de quoi le dire en toutes lettres. Null sur un sort, un
  * Mimic ou un coffre fermé.
  */
-const keyItem = computed(() => {
+const lootItem = computed(() => {
   if (keyDoor.value) {
     return { ...keyDoor.value.keyItem, phrase: keyDoor.value.keyName }
   }
 
-  return props.chest.quill ? { ...itemLabel('SCRIBE_QUILL'), phrase: 'la Plume de copiste' } : null
+  return props.chest.item ? itemLabel(props.chest.item) : null
 })
 /** Le sort ou l'Objet obtenus ont été vus, et leur apparition refermée par OK. */
 const lootSeen = ref(false)

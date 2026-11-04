@@ -29,7 +29,7 @@ definePageMeta({ admin: true })
 // l'écran.
 const QUESTION_ID = 'test-chest'
 
-const CLOSED: ChestView = { opened: false, mimic: false, spell: null, key: false, quill: false }
+const CLOSED: ChestView = { opened: false, mimic: false, spell: null, key: false, item: null }
 
 const chest = ref<ChestView>(CLOSED)
 
@@ -46,6 +46,7 @@ const state = computed(() => demoState({
   seenTotal: 1_204,
   spellDiscovered: true,
   hasQuill: true,
+  hasLeechNet: true,
   lessonsDone: ['camp'],
   verdict: {
     questionId: QUESTION_ID,
@@ -65,19 +66,20 @@ provideGameState(state)
 
 function openChest(): void {
   // Le mimic pèse 5% en vrai (specs/bonus.md#coffre-et-mimic), la clé un
-  // coffre par étage (specs/boss.md#obtention-de-la-clé), la Plume un seul coffre
-  // dans toute la partie — trop rares pour se
+  // coffre par étage (specs/boss.md#obtention-de-la-clé), la Plume et le Filet un seul
+  // coffre dans toute la partie — trop rares pour se
   // voir en rejouant, donc gonflés ici pour ce banc.
   const roll = Math.random()
   const mimic = roll < 0.3
   const key = !mimic && roll < 0.6
   const quill = !mimic && !key && roll < 0.8
+  const leechNet = !mimic && !key && !quill && roll < 0.9
   chest.value = {
     opened: true,
     mimic,
-    spell: mimic || key || quill ? null : SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
+    spell: mimic || key || quill || leechNet ? null : SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
     key,
-    quill,
+    item: quill ? 'SCRIBE_QUILL' : leechNet ? 'LEECH_NET' : null,
   }
 }
 

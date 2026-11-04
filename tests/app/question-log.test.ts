@@ -14,6 +14,7 @@ function entry(index: number): QuestionLogEntryView {
     submittedAnswer: `réponse ${index}`,
     correct: false,
     poolSuccesses: 0,
+    leechFailures: null,
     disputeStatus: 'none',
   }
 }
@@ -38,6 +39,14 @@ describe('Volumen paginé', () => {
     expect(entries.value).toHaveLength(1)
     expect(pageCount.value).toBe(1)
     expect(poolSuccessesToLeave.value).toBe(2)
+  })
+
+  it('lit l onglet Sangsues', async () => {
+    answerWith(page([entry(1)], 1))
+
+    await useQuestionLog('leeches').load(1)
+
+    expect(calls()).toEqual(['fetch GET /api/game/question-log?page=1&filter=leeches'])
   })
 
   it('lit Connues et Toutes dans le journal, avec leur verdict', async () => {

@@ -231,7 +231,7 @@ export async function settleDispute(
     }),
     db
       .update(seenQuestions)
-      .set({ correct: true })
+      .set({ correct: true, recoveryFailures: 0 })
       .where(and(
         eq(seenQuestions.userId, dispute.userId),
         eq(seenQuestions.questionId, dispute.questionId),

@@ -5,6 +5,8 @@ export interface ItemLabel {
   description: string
   /** L'image de l'Objet, sous public/ : l'écran de chargement l'attend d'office. */
   image: string
+  /** Comment le coffre le nomme en toutes lettres, pour un Objet qu'il donne. */
+  phrase?: string
 }
 
 /**
@@ -27,6 +29,13 @@ const ITEM_LABELS: Record<ItemId, ItemLabel> = {
     name: 'Plume de copiste',
     description: 'Une plume d\'oiseau exotique trempée dans une encre noire. Débloque des fonctionnalités du Volumen.',
     image: '/images/item-scribe-quill.webp',
+    phrase: 'la Plume de copiste',
+  },
+  LEECH_NET: {
+    name: 'Filet à sangsues',
+    description: 'Un filet aux mailles fines, encore humide. Débloque l\'onglet Sangsues du Volumen.',
+    image: '/images/item-leech-net.webp',
+    phrase: 'le Filet à sangsues',
   },
 }
 

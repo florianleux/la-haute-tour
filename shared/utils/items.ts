@@ -6,9 +6,20 @@
  * Les identifiants seuls : les libellés vivent dans `utils/items.ts`, côté
  * écran. Voir specs/spec.md (glossaire, « Objet »).
  */
-export const ITEM_IDS = ['CHEESE', 'JULIEN_CARD', 'SCRIBE_QUILL'] as const
+export const ITEM_IDS = ['CHEESE', 'JULIEN_CARD', 'SCRIBE_QUILL', 'LEECH_NET'] as const
 
 export type ItemId = typeof ITEM_IDS[number]
+
+/**
+ * Les Objets qu'un coffre forcé donne, par état de coffre. La clé n'en est pas :
+ * elle n'est pas un Objet du catalogue. Voir specs/bonus.md#coffre-et-mimic.
+ */
+export const CHEST_ITEMS = {
+  quill: 'SCRIBE_QUILL',
+  leechNet: 'LEECH_NET',
+} as const satisfies Record<string, ItemId>
+
+export type ChestItemId = typeof CHEST_ITEMS[keyof typeof CHEST_ITEMS]
 
 /**
  * La relique que chaque boss laisse, par étage : un Objet du sac, sans effet.

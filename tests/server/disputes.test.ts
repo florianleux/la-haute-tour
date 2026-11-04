@@ -192,6 +192,24 @@ describe('contestation', () => {
       expect(accepted.map(row => row.text)).toContain('Bordo-sur-Garonne')
     })
 
+    it('accepter efface les échecs de rattrapage : la question n est plus une Sangsue', async () => {
+      await db.update(seenQuestions).set({ recoveryFailures: 4 }).where(eq(seenQuestions.questionId, questionId))
+
+      await settle('accepted')
+
+      const [seen] = await db.select().from(seenQuestions).where(eq(seenQuestions.questionId, questionId))
+      expect(seen.recoveryFailures).toBe(0)
+    })
+
+    it('refuser laisse les échecs de rattrapage', async () => {
+      await db.update(seenQuestions).set({ recoveryFailures: 4 }).where(eq(seenQuestions.questionId, questionId))
+
+      await settle('rejected')
+
+      const [seen] = await db.select().from(seenQuestions).where(eq(seenQuestions.questionId, questionId))
+      expect(seen.recoveryFailures).toBe(4)
+    })
+
     it('accepter corrige le verdict du joueur et sort la question du Pool Échecs', async () => {
       await settle('accepted')
 

@@ -124,7 +124,7 @@ chacun posant sa clé, pour la déverrouiller.
 - « 50 % » se lit sur les questions vues de l'étage, celle du coffre comprise :
   le coffre du rang *n* donne la clé quand *2n* atteint le total de l'étage.
 - Le coffre qui donne la clé la montre, comme un sort (« Le coffre contenait la
-  clé de la Lune. Elle rejoint ton Inventaire. »), et l'Inventaire la montre
+  clé de la Lune, qui rejoint ton Inventaire. »), et l'Inventaire la montre
   tant qu'elle n'est pas posée. Son image et son nom d'Objet vivent au
   catalogue des portes (`keyItem`).
 - Si le joueur ne réussit aucun coffre de loot après 50 % avant la fin de

@@ -48,6 +48,15 @@
     >
       {{ entry.poolSuccesses }}/{{ poolSuccessesToLeave }} réussite{{ poolSuccessesToLeave > 1 ? 's' : '' }} pour sortir du Pool des Échecs
     </PlayText>
+
+    <!-- Une Sangsue dit ce qu'elle a coûté, avec le Filet à sangsues. -->
+    <PlayText
+      v-if="entry.leechFailures !== null"
+      role="aside"
+      class="text-rose-900/80"
+    >
+      Ratée {{ entry.leechFailures }} fois au rattrapage
+    </PlayText>
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, asks, campLesson, fallLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, lootLesson, quillLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, asks, campLesson, fallLesson, leechNetLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, lootLesson, quillLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
 
 // Voir specs/ecrans.md#leçons-de-michel (Chute).
 describe('la leçon de la chute', () => {
@@ -291,6 +291,27 @@ describe('la leçon de la Plume', () => {
     const closed = lines.findIndex(line => line.awaits === 'close')
 
     expect(lines.slice(opened, closed + 1).every(line => line.overlay === 'questionLog')).toBe(true)
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Filet).
+describe('la leçon du Filet à sangsues', () => {
+  const lines = leechNetLesson()
+
+  it('s ouvre sur la même entrée que les autres leçons', () => {
+    expect(lines.slice(0, 2)).toEqual(campLesson({ team: null }).slice(0, 2))
+  })
+
+  it('fait ouvrir le Volumen sur les Sangsues, puis le fait refermer', () => {
+    const opened = lines.findIndex(line => line.spotlight === 'scroll') + 1
+    const closed = lines.findIndex(line => line.awaits === 'close')
+
+    expect(lines[opened].openingTab).toBe('leeches')
+    expect(lines.slice(opened, closed + 1).every(line => line.overlay === 'questionLog')).toBe(true)
+    expect(lines.filter(line => line.awaits && line.awaits !== 'pause').map(line => [line.spotlight, line.awaits])).toEqual([
+      ['scroll', 'click'],
+      [null, 'close'],
+    ])
   })
 })
 

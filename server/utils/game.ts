@@ -38,6 +38,7 @@ import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, to
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
+import { CHEST_ITEMS } from '../../shared/utils/items'
 import { FIRST_SPELL, isCooldownBound } from '../../shared/utils/spells'
 import { lessonsDone } from './lessons'
 import { rulesForFloor } from './rules'
@@ -68,6 +69,7 @@ import type { AchievementId } from '../../shared/utils/achievements'
 import type { LessonId } from '../../shared/utils/lessons'
 import type { AnswerSource, Phase } from './mechanics'
 import type { FloorRules } from './rules'
+import type { ChestItemId, ItemId } from '../../shared/utils/items'
 import type { ChestState, SpellId } from '../../shared/utils/spells'
 import type { Database } from '../db/client'
 import type { MissedPoolEntry, Question, RecoveryQuestion, Reservation, User } from '../db/schema'
@@ -131,8 +133,8 @@ export interface ChestView {
   spell: SpellId | null
   /** Vrai quand le coffre ouvert donnait la clé du boss. Voir specs/boss.md#obtention-de-la-clé. */
   key: boolean
-  /** Vrai quand le coffre ouvert donnait la Plume de copiste. Voir specs/bonus.md#coffre-et-mimic. */
-  quill: boolean
+  /** L'Objet que le coffre ouvert donnait : la Plume ou le Filet. Voir specs/bonus.md#coffre-et-mimic. */
+  item: ChestItemId | null
 }
 
 export interface RecoveryProgress {
@@ -205,6 +207,11 @@ export interface GameState {
    * la copie de ses lignes. Voir specs/ecrans.md#volumen.
    */
   hasQuill: boolean
+  /**
+   * Le joueur porte le Filet à sangsues : le Volumen lui offre l'onglet Sangsues
+   * et les échecs de rattrapage sur la fiche. Voir specs/ecrans.md#volumen.
+   */
+  hasLeechNet: boolean
   /**
    * Les leçons de Michel que le joueur a déjà vues : une leçon absente se joue
    * à son moment. Voir specs/ecrans.md#leçons-de-michel.
@@ -287,6 +294,8 @@ export interface PlayerSnapshot {
   firstCastPending: boolean
   /** La Plume de copiste dans le sac. Lue avec le joueur. */
   hasQuill: boolean
+  /** Le Filet à sangsues dans le sac. Lu avec le joueur. */
+  hasLeechNet: boolean
   /** La clé du boss de l'étage courant, pas encore posée. Lue avec le joueur. */
   hasKey: boolean
   /** Qui a posé sa clé sur la porte de son équipe, à son étage. Lus dans le même lot. */
@@ -365,6 +374,7 @@ function snapshotQueries(db: Database, userId: number) {
   // Le joueur a déjà lancé un sort : lu deux fois, par le sort découvert et le
   // premier lancer.
   const hasCast = exists(db.select({ one: sql`1` }).from(activeEffects).where(eq(activeEffects.casterId, users.id)))
+  const carries = (item: ItemId): SQL<number> => sql<number>`${exists(db.select({ one: sql`1` }).from(items).where(and(eq(items.userId, users.id), eq(items.item, item))))}`
 
   return [
     db
@@ -387,7 +397,8 @@ function snapshotQueries(db: Database, userId: number) {
         firstCastPending: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(and(eq(pocketSpells.userId, users.id), eq(pocketSpells.spell, FIRST_SPELL))))}
           and not ${hasCast})`,
         // Lue avec le joueur, pour la même raison : le Volumen en dépend.
-        hasQuill: sql<number>`${exists(db.select({ one: sql`1` }).from(items).where(and(eq(items.userId, users.id), eq(items.item, 'SCRIBE_QUILL'))))}`,
+        hasQuill: carries('SCRIBE_QUILL'),
+        hasLeechNet: carries('LEECH_NET'),
         // Lue avec le joueur, pour la même raison : la porte la demande à chaque lecture.
         hasKey: sql<number>`${exists(db.select({ one: sql`1` }).from(bossKeys).where(keyToPlace(users.id, users.currentFloor)))}`,
       })
@@ -439,6 +450,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials, keyHolders]: B
     spellDiscovered: row.spellDiscovered === 1,
     firstCastPending: row.firstCastPending === 1,
     hasQuill: row.hasQuill === 1,
+    hasLeechNet: row.hasLeechNet === 1,
     hasKey: row.hasKey === 1,
     keyHolders: keyHolders.map(holder => holder.username),
     gameClosed: row.gameClosed === 1,
@@ -582,6 +594,17 @@ function recoveryWrites(
     eq(missedPool.questionId, questionId),
     whileOpen,
   )
+  // Après le garde : une question sortie par contestation pendant le rattrapage
+  // vient d'être déclarée juste, elle ne compte plus comme un échec.
+  // ponytail: une question sortie par un Purge n'est pas comptée non plus, ni un
+  // rattrapage annulé par une vie rendue. Un échec de moins, sans effet sur le jeu.
+  if (!correct) {
+    writes.push(db
+      .update(seenQuestions)
+      .set({ recoveryFailures: sql`${seenQuestions.recoveryFailures} + 1` })
+      .where(and(eq(seenQuestions.userId, user.id), eq(seenQuestions.questionId, questionId), whileOpen)))
+  }
+
   const move = movePoolCounter(poolEntry, correct, rulesForFloor(user.currentFloor), now)
 
   if (move.leaves) {
@@ -887,14 +910,18 @@ function chestOf(reservation: Reservation): ChestView | null {
   }
 
   if (chest === 'closed') {
-    return { opened: false, mimic: false, spell: null, key: false, quill: false }
+    return { opened: false, mimic: false, spell: null, key: false, item: null }
   }
 
-  if (chest === 'mimic' || chest === 'key' || chest === 'quill') {
-    return { opened: true, mimic: chest === 'mimic', spell: null, key: chest === 'key', quill: chest === 'quill' }
+  if (chest === 'quill' || chest === 'leechNet') {
+    return { opened: true, mimic: false, spell: null, key: false, item: CHEST_ITEMS[chest] }
   }
 
-  return { opened: true, mimic: false, spell: chest, key: false, quill: false }
+  if (chest === 'mimic' || chest === 'key') {
+    return { opened: true, mimic: chest === 'mimic', spell: null, key: chest === 'key', item: null }
+  }
+
+  return { opened: true, mimic: false, spell: chest, key: false, item: null }
 }
 
 /**
@@ -949,6 +976,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     spellDiscovered: snapshot.spellDiscovered,
     firstCastPending: snapshot.firstCastPending,
     hasQuill: snapshot.hasQuill,
+    hasLeechNet: snapshot.hasLeechNet,
     lessonsDone: lessonsDone(user),
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
@@ -1309,10 +1337,16 @@ export async function openPlayerChest(
   // La clé n'est due qu'en montant : une clé posée l'a été devant la porte,
   // l'étage fini, plus aucun coffre ne s'y ouvre. Celle qui attend sa serrure
   // suffit donc à dire que le joueur l'a.
-  const key = keyDue({ floorSeen: snapshot.user.floorSeen, floorTotal: snapshot.floorTotal, hasKey: snapshot.hasKey })
-  const quill = !key && quillDue(snapshot)
-  const outcome = key || quill ? null : rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered)
-  const chest: ChestState = key ? 'key' : quill ? 'quill' : outcome?.spell ?? 'mimic'
+  const hasKeyDue = keyDue({ floorSeen: snapshot.user.floorSeen, floorTotal: snapshot.floorTotal, hasKey: snapshot.hasKey })
+  const forced = hasKeyDue
+    ? 'key'
+    : quillDue(snapshot)
+      ? 'quill'
+      // La Sangsue se cherche ici et pas à chaque lecture d'état, tant que le Filet reste à donner.
+      : snapshot.hasQuill && !snapshot.hasLeechNet && await hasLeech(db, user.id, rules.leechThreshold)
+        ? 'leechNet'
+        : null
+  const chest: ChestState = forced ?? rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered).spell ?? 'mimic'
 
   // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures
   // simultanées jetteraient deux dés, et la seconde écraserait la première —
@@ -1336,8 +1370,8 @@ export async function openPlayerChest(
     const armed = { lastChest: 'spell' as const }
     const loot = chest === 'key'
       ? grantKey(db, snapshot.user, now)
-      : chest === 'quill'
-        ? db.insert(items).values({ userId: user.id, item: 'SCRIBE_QUILL', obtainedAt: now })
+      : chest === 'quill' || chest === 'leechNet'
+        ? db.insert(items).values({ userId: user.id, item: CHEST_ITEMS[chest], obtainedAt: now })
         : db.insert(pocketSpells).values({ userId: user.id, spell: chest, obtainedAt: now })
 
     await db.batch([loot, db.update(users).set(armed).where(eq(users.id, user.id))])
@@ -1349,6 +1383,7 @@ export async function openPlayerChest(
       user: { ...snapshot.user, ...armed },
       hasKey: snapshot.hasKey || chest === 'key',
       hasQuill: snapshot.hasQuill || chest === 'quill',
+      hasLeechNet: snapshot.hasLeechNet || chest === 'leechNet',
       reservation: opened,
     }, now), unlocked)
   }
@@ -1864,6 +1899,8 @@ export interface QuestionLogEntryView {
   correct: boolean
   /** Ses Réussites, tant qu'elle est au Pool Échecs ; null ailleurs. */
   poolSuccesses: number | null
+  /** Ses échecs de rattrapage quand c'est une Sangsue et que le joueur porte le Filet ; null sinon. */
+  leechFailures: number | null
   /** Statut de la contestation : none si pas disputée, pending en attente d'arbitrage, rejected si refusée. */
   disputeStatus: 'none' | 'pending' | 'rejected'
 }
@@ -1887,6 +1924,8 @@ export interface QuestionLogQuery {
   search?: string
   /** Le code d'une catégorie : seules ses questions restent. */
   category?: string
+  /** Le joueur porte le Filet à sangsues : ses Sangsues disent leurs échecs. */
+  hasLeechNet?: boolean
 }
 
 /**
@@ -1927,18 +1966,31 @@ function matchesFilters(db: Database, column: SQLiteColumn, { search, category }
 }
 
 /**
+ * Ce qui fait une Sangsue. Le `> 0` en toutes lettres est ce qui ouvre l'index
+ * partiel `seen_questions_user_leech_idx` : un seuil lié ne prouve rien à SQLite.
+ */
+function isLeech(leechThreshold: number): SQL {
+  return sql`(${seenQuestions.recoveryFailures} > 0 and ${seenQuestions.recoveryFailures} >= ${leechThreshold})`
+}
+
+/**
  * Ce que les deux lectures du Volumen sélectionnent, joint de la même façon. Une
  * contestation acceptée a rendu la question juste : il n'y a plus rien à en
  * dire, elle se lit comme une question jamais contestée.
  */
-const QUESTION_LOG_COLUMNS = {
-  questionId: seenQuestions.questionId,
-  statement: questions.statement,
-  answerLabel: questions.answerLabel,
-  submittedAnswer: seenQuestions.submittedAnswer,
-  correct: seenQuestions.correct,
-  poolSuccesses: missedPool.poolSuccesses,
-  disputeStatus: sql<QuestionLogEntryView['disputeStatus']>`case when ${disputes.status} in ('pending', 'rejected') then ${disputes.status} else 'none' end`,
+function questionLogColumns(user: User, { hasLeechNet }: QuestionLogQuery) {
+  return {
+    questionId: seenQuestions.questionId,
+    statement: questions.statement,
+    answerLabel: questions.answerLabel,
+    submittedAnswer: seenQuestions.submittedAnswer,
+    correct: seenQuestions.correct,
+    poolSuccesses: missedPool.poolSuccesses,
+    leechFailures: hasLeechNet
+      ? sql<number | null>`case when ${isLeech(rulesForFloor(user.currentFloor).leechThreshold)} then ${seenQuestions.recoveryFailures} end`
+      : sql<number | null>`null`,
+    disputeStatus: sql<QuestionLogEntryView['disputeStatus']>`case when ${disputes.status} in ('pending', 'rejected') then ${disputes.status} else 'none' end`,
+  }
 }
 
 /**
@@ -1984,7 +2036,7 @@ export async function readMissedPool(
     user,
     query.offset,
     db
-      .select(QUESTION_LOG_COLUMNS)
+      .select(questionLogColumns(user, query))
       .from(missedPool)
       .innerJoin(questions, eq(questions.id, missedPool.questionId))
       .innerJoin(seenQuestions, and(
@@ -2005,10 +2057,22 @@ export async function readMissedPool(
   )
 }
 
+/** Le joueur a-t-il au moins une Sangsue ? Lu à l'ouverture d'un coffre, et seulement tant que le Filet reste à donner. */
+async function hasLeech(db: Database, userId: number, leechThreshold: number): Promise<boolean> {
+  const [leech] = await db
+    .select({ one: sql`1` })
+    .from(seenQuestions)
+    .where(and(eq(seenQuestions.userId, userId), isLeech(leechThreshold)))
+    .limit(1)
+
+  return leech !== undefined
+}
+
 /**
  * Les questions vues depuis la dernière remise à zéro, tous étages confondus —
- * toutes, ou les justes seulement. La plus récente en tête. Les onglets Connues et
- * Toutes du Volumen. See specs/ecrans.md#volumen.
+ * toutes, les justes seulement, ou les Sangsues. La plus récente en tête, et les
+ * Sangsues les plus ratées d'abord. Les onglets Connues, Sangsues et Toutes du
+ * Volumen. See specs/ecrans.md#volumen.
  *
  * Les vingt de la page se choisissent d'abord, dans l'index couvrant des vues
  * (`seen_questions_user_log_idx`), et seules elles sont jointes : une page
@@ -2017,22 +2081,28 @@ export async function readMissedPool(
 export async function readQuestionLog(
   db: Database,
   user: User,
-  query: QuestionLogQuery & { filter: 'correct' | 'all' },
+  query: QuestionLogQuery & { filter: 'correct' | 'leeches' | 'all' },
 ): Promise<QuestionLogPage> {
   const filter = and(
     eq(seenQuestions.userId, user.id),
     query.filter === 'correct' ? eq(seenQuestions.correct, true) : undefined,
+    query.filter === 'leeches' ? isLeech(rulesForFloor(user.currentFloor).leechThreshold) : undefined,
     matchesFilters(db, seenQuestions.questionId, query),
   )
   // L'identifiant départage deux vues de la même seconde, dans le sens de
-  // l'index : il se lit à rebours d'un bout à l'autre, sans rien trier.
-  const newestFirst = [desc(seenQuestions.seenAt), desc(seenQuestions.questionId)]
+  // l'index de chaque onglet : il se lit à rebours d'un bout à l'autre, sans
+  // rien trier.
+  const pageOrder = [
+    ...query.filter === 'leeches' ? [desc(seenQuestions.recoveryFailures)] : [],
+    desc(seenQuestions.seenAt),
+    desc(seenQuestions.questionId),
+  ]
 
   const onThisPage = db
     .select({ questionId: seenQuestions.questionId })
     .from(seenQuestions)
     .where(filter)
-    .orderBy(...newestFirst)
+    .orderBy(...pageOrder)
     .limit(query.limit)
     .offset(query.offset)
     .as('on_this_page')
@@ -2042,7 +2112,7 @@ export async function readQuestionLog(
     user,
     query.offset,
     db
-      .select(QUESTION_LOG_COLUMNS)
+      .select(questionLogColumns(user, query))
       .from(onThisPage)
       .innerJoin(seenQuestions, and(
         eq(seenQuestions.userId, user.id),
@@ -2057,7 +2127,7 @@ export async function readQuestionLog(
         eq(disputes.userId, seenQuestions.userId),
         eq(disputes.questionId, seenQuestions.questionId),
       ))
-      .orderBy(...newestFirst),
+      .orderBy(...pageOrder),
     db.select({ value: count() }).from(seenQuestions).where(filter),
   )
 }

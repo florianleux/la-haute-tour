@@ -64,6 +64,10 @@ describe('une leçon de Michel vue', () => {
     await markLesson(lessonRequest({ lesson: 'quill' }, await sessionCookieFor(playerId)))
 
     expect((await loadPlayer(db, playerId)).quillLessonAt).toBeInstanceOf(Date)
+
+    await markLesson(lessonRequest({ lesson: 'leechNet' }, await sessionCookieFor(playerId)))
+
+    expect((await loadPlayer(db, playerId)).leechNetLessonAt).toBeInstanceOf(Date)
   })
 
   it('date la leçon du rattrapage', async () => {

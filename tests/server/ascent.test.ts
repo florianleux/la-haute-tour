@@ -88,6 +88,13 @@ describe('boucle d ascension', () => {
       player = await reload()
     })
 
+    it('ne compte pas un échec d ascension comme un échec de rattrapage', async () => {
+      await submitAnswer(db, player, 'Lyon', new Date(NOW.getTime() + 3_000))
+
+      const [seen] = await db.select().from(seenQuestions)
+      expect(seen).toMatchObject({ correct: false, recoveryFailures: 0 })
+    })
+
     it('accepte une bonne réponse, avec tolérance aux fautes', async () => {
       const state = await submitAnswer(db, player, 'bordaux', new Date(NOW.getTime() + 3_000))
 

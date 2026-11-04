@@ -1,7 +1,8 @@
+import { and, eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
-import { categories, disputes, missedPool, questionCategories, recoveryQuestions, reservations } from '../../server/db/schema'
-import { createPlayer, createQuestion, createTestDatabase, grantQuill, markSeen } from '../helpers/db'
+import { categories, disputes, missedPool, questionCategories, recoveryQuestions, reservations, seenQuestions } from '../../server/db/schema'
+import { createPlayer, createQuestion, createTestDatabase, grantLeechNet, grantQuill, markSeen } from '../helpers/db'
 import { apiRequest, installNitroGlobals, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 
@@ -38,6 +39,71 @@ describe('Volumen', () => {
     await db.insert(missedPool).values({ userId, questionId, floor: 1, poolSuccesses, lastFailedAt: failedAt })
     return questionId
   }
+
+  describe('l onglet Sangsues', () => {
+    /** Une question vue, ratée `failures` fois au rattrapage. */
+    async function leech(userId: number, statement: string, seenAt: Date, failures: number): Promise<string> {
+      const questionId = await createQuestion(db, { statement })
+      await markSeen(db, userId, questionId, { floor: 1, correct: false, submittedAnswer: 'Lyon', seenAt })
+      await db
+        .update(seenQuestions)
+        .set({ recoveryFailures: failures })
+        .where(and(eq(seenQuestions.userId, userId), eq(seenQuestions.questionId, questionId)))
+      return questionId
+    }
+
+    const read = (cookie: string): Promise<Response> => log(apiRequest('http://test/question-log?filter=leeches', cookie))
+
+    it('refuse qui n a pas le Filet à sangsues', async () => {
+      const userId = await createPlayer(db, AT_CAMP)
+
+      expect((await read(await sessionCookieFor(userId))).status).toBe(403)
+    })
+
+    it('ne dit les échecs d une Sangsue qu à qui porte le Filet, dans tous les onglets', async () => {
+      const userId = await createPlayer(db, AT_CAMP)
+      await leech(userId, 'Coriace', at(0), 5)
+      await leech(userId, 'Sous le seuil', at(1), 2)
+      const failures = async (): Promise<(number | null)[]> => {
+        const response = await log(apiRequest('http://test/question-log?filter=all', await sessionCookieFor(userId)))
+        const { entries } = await response.json()
+        return entries.map((entry: { leechFailures: number | null }) => entry.leechFailures)
+      }
+
+      expect(await failures()).toEqual([null, null])
+
+      await grantLeechNet(db, userId)
+
+      expect(await failures()).toEqual([null, 5])
+    })
+
+    it('montre les questions au seuil, les plus ratées d abord, puis les plus récentes', async () => {
+      const userId = await createPlayer(db, AT_CAMP)
+      await grantLeechNet(db, userId)
+      await leech(userId, 'Sous le seuil', at(9), 2)
+      await leech(userId, 'Ancienne', at(1), 3)
+      await leech(userId, 'Récente', at(2), 3)
+      await leech(userId, 'Coriace', at(0), 5)
+
+      const body = await (await read(await sessionCookieFor(userId))).json()
+
+      expect(body.entries.map((entry: { statement: string }) => entry.statement)).toEqual(['Coriace', 'Récente', 'Ancienne'])
+      expect(body.entries[0].leechFailures).toBe(5)
+      expect(body.total).toBe(3)
+    })
+
+    it('garde une Sangsue sortie du pool et celles des autres étages, pas celles des autres joueurs', async () => {
+      const userId = await createPlayer(db, { ...AT_CAMP, currentFloor: 2 })
+      const other = await createPlayer(db, { discordId: 'autre', username: 'autre' })
+      await grantLeechNet(db, userId)
+      await leech(userId, 'Étage 1', at(0), 3)
+      await leech(other, 'À un autre', at(1), 3)
+
+      const body = await (await read(await sessionCookieFor(userId))).json()
+
+      expect(body.entries.map((entry: { statement: string }) => entry.statement)).toEqual(['Étage 1'])
+    })
+  })
 
   describe('la garde du camp', () => {
     it('ferme le Volumen en pleine ascension', async () => {

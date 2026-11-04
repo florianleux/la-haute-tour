@@ -189,6 +189,11 @@ export async function grantQuill(db: Database, userId: number): Promise<void> {
   await db.insert(schema.items).values({ userId, item: 'SCRIBE_QUILL', obtainedAt: new Date() })
 }
 
+/** Le Filet à sangsues dans le sac : ce que l'onglet Sangsues demande. */
+export async function grantLeechNet(db: Database, userId: number): Promise<void> {
+  await db.insert(schema.items).values({ userId, item: 'LEECH_NET', obtainedAt: new Date() })
+}
+
 export async function loadPlayer(db: Database, userId: number): Promise<User> {
   const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId))
 

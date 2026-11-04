@@ -12,6 +12,7 @@ export const LESSON_COLUMNS = {
   recovery: 'recoveryLessonAt',
   spellbook: 'spellbookLessonAt',
   quill: 'quillLessonAt',
+  leechNet: 'leechNetLessonAt',
   loot: 'lootLessonAt',
 } as const satisfies Record<LessonId, keyof User>
 

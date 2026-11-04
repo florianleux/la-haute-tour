@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
-import { items, missedPool, pocketSpells, reservations, users } from '../../server/db/schema'
+import { items, missedPool, pocketSpells, reservations, users, seenQuestions } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -95,6 +95,14 @@ describe('le banc de la leçon de la chute', () => {
   })
 
   it('remet le joueur après sa première chute, la Plume au sac, leçon de la Plume à voir', async () => {
+    await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'leechNet'))
+
+    expect(await loadPlayer(db, testerId)).toMatchObject({ lives: 0, leechNetLessonAt: null })
+    expect(await db.select({ item: items.item }).from(items).where(eq(items.userId, testerId))).toEqual([{ item: 'LEECH_NET' }])
+    const seen = await db.select({ recoveryFailures: seenQuestions.recoveryFailures }).from(seenQuestions).where(eq(seenQuestions.userId, testerId))
+    expect(seen.length).toBeGreaterThan(0)
+    expect(seen.every(row => row.recoveryFailures === 3)).toBe(true)
+
     await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'quill'))
 
     const tester = await loadPlayer(db, testerId)

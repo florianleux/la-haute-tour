@@ -18,6 +18,8 @@ export interface FloorRules {
   poolSizeForRecovery: number
   /** Consecutive recovery successes that take a question out of the pool. */
   poolSuccessesToLeave: number
+  /** Recovery failures that make a question a leech. */
+  leechThreshold: number
   /** Cooldown after the last life is lost. */
   cooldownMs: number
   /** Shorter cooldown after a failed recovery — quota out of reach, whatever was answered right. */
@@ -121,6 +123,7 @@ const DEFAULT_RULES: FloorRules = {
   recoverySuccessesToResume: 1,
   poolSizeForRecovery: 3,
   poolSuccessesToLeave: 2,
+  leechThreshold: 3,
   cooldownMs: 6 * HOUR_MS,
   cooldownAfterFailedRecoveryMs: 4 * HOUR_MS,
   latencyGraceMs: 1_000,

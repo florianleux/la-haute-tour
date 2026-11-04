@@ -216,7 +216,10 @@ export function dueLesson(state: GameState | null): LessonId | null {
   if (isAtCamp(state) && state?.spellDiscovered && !done.includes("spellbook")) {
     return "spellbook";
   }
-  return isAtCamp(state) && state?.hasQuill && !done.includes("quill") ? "quill" : null;
+  if (isAtCamp(state) && state?.hasQuill && !done.includes("quill")) {
+    return "quill";
+  }
+  return isAtCamp(state) && state?.hasLeechNet && !done.includes("leechNet") ? "leechNet" : null;
 }
 
 /**

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
 import { demoState } from '../../utils/demo'
 import { dueLesson, isAtRest } from '../../utils/phase'
-import { LESSON_PAUSE_MS, campLesson, fallLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson } from '../../utils/lessons'
+import { LESSON_PAUSE_MS, campLesson, fallLesson, leechNetLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson } from '../../utils/lessons'
 import type { GameState } from '../../server/utils/game'
 import type { Ref } from 'vue'
 import type { TeamId } from '../../shared/utils/teams'
@@ -11,7 +11,7 @@ import type { TeamId } from '../../shared/utils/teams'
 const { answerWith, breakNetwork, calls, reset } = installAppGlobals()
 
 // Les auto-imports dont le composable se sert, que Vitest ne pose pas.
-Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
+Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, leechNetLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
 const { fetchItems } = await import('../../composables/useItems')
 Object.assign(globalThis, { fetchItems })
 

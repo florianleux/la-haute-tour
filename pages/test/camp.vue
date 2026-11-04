@@ -32,6 +32,9 @@
 // `?lesson=quill` : la même chute, leçon de la chute vue, Plume de copiste dans
 // le sac — Michel fait ouvrir le Volumen et montre la recherche et la copie.
 //
+// `?lesson=leechNet` : la même chute, Filet à sangsues dans le sac, Sangsues au
+// Volumen.
+//
 // `?lesson=loot` : partie neuve, leçon du camp vue, le joueur posé sur sa première
 // question loot — Michel retient le chrono et explique les coffres.
 //
@@ -52,7 +55,7 @@ const team = useRoute().query.team === 'none' ? null : TEAM_IDS[Math.floor(Math.
 
 // Passée telle quelle : le serveur la valide, et revoit le camp sans elle.
 const lesson = useRoute().query.lesson
-const afterFall = lesson === 'fall' || lesson === 'recovery' || lesson === 'quill'
+const afterFall = lesson === 'fall' || lesson === 'recovery' || lesson === 'quill' || lesson === 'leechNet'
 
 onMounted(async () => {
   try {

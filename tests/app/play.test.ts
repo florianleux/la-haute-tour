@@ -31,6 +31,7 @@ const served: GameState = {
   seenTotal: 0,
   spellDiscovered: false,
   hasQuill: false,
+  hasLeechNet: false,
   firstCastPending: false,
   lessonsDone: ['camp'],
   chest: null,

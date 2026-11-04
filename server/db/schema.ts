@@ -94,6 +94,8 @@ export const users = sqliteTable('users', {
   spellbookLessonAt: integer('spellbook_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon de la Plume de copiste, la visite du camp qui suit son obtention. Comme campLessonAt. */
   quillLessonAt: integer('quill_lesson_at', { mode: 'timestamp' }),
+  /** Quand le joueur a vu la leçon du Filet à sangsues, la visite du camp qui suit son obtention. Comme campLessonAt. */
+  leechNetLessonAt: integer('leech_net_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon de la question loot, sur la première servie. Comme campLessonAt. */
   lootLessonAt: integer('loot_lesson_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
@@ -357,6 +359,12 @@ export const seenQuestions = sqliteTable('seen_questions', {
    * survivre au passage à la question suivante.
    */
   submittedAnswer: text('submitted_answer'),
+  /**
+   * Ses échecs de rattrapage, cumulés : c'est eux qui font une Sangsue. Ici et
+   * non au Pool Échecs, dont la ligne part à la sortie du pool et au palier,
+   * quand la Sangsue reste. Voir specs/spec.md (glossaire, « Sangsue »).
+   */
+  recoveryFailures: integer('recovery_failures').notNull().default(0),
   seenAt: integer('seen_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -369,6 +377,12 @@ export const seenQuestions = sqliteTable('seen_questions', {
   // ligne lue, et une page sautée n'y coûte qu'une entrée.
   // Voir specs/ecrans.md#volumen et server/utils/game.ts (readQuestionLog).
   index('seen_questions_user_log_idx').on(table.userId, table.seenAt, table.questionId, table.correct),
+  // L'onglet Sangsues, couvrant pour la même raison, dans son ordre de lecture.
+  // Partiel : presque aucune question vue n'a raté au rattrapage, et chaque vue
+  // paierait sinon une ligne d'index de plus.
+  index('seen_questions_user_leech_idx')
+    .on(table.userId, table.recoveryFailures, table.seenAt, table.questionId)
+    .where(sql`${table.recoveryFailures} > 0`),
 ])
 
 /**
