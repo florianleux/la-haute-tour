@@ -187,7 +187,7 @@ export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): Flo
 }
 
 /**
- * Ce que Purge fait au Pool Échecs de l'étage courant, selon sa face.
+ * Ce que Purge fait au Pool Échecs, selon sa face.
  *
  * Blanche, une question tirée au hasard en sort sans avoir été rejouée — le seul
  * chemin du jeu pour ça. Elle en sort comme elle en sortirait par le seuil de
@@ -202,19 +202,13 @@ export function rulesWithEffects(rules: FloorRules, effects: SpellEffect[]): Flo
  * ciblage. Voir `specs/bonus.md#catalogue`.
  */
 async function purgePool(db: Database, target: User, face: SpellFace): Promise<void> {
-  const onThisFloor = and(
-    eq(missedPool.userId, target.id),
-    eq(missedPool.floor, target.currentFloor),
-  )
-
   // Tirage et coup en une seule instruction. En deux — lire puis écrire — deux
   // lanceurs simultanés pourraient désigner la même ligne et n'en toucher
   // qu'une, là où la spec en promet deux. Voir specs/bonus.md#cumul.
   const drawn = and(
-    onThisFloor,
+    eq(missedPool.userId, target.id),
     eq(missedPool.questionId, sql`(select ${missedPool.questionId} from ${missedPool}
       where ${missedPool.userId} = ${target.id}
-        and ${missedPool.floor} = ${target.currentFloor}
       order by RANDOM() limit 1)`),
   )
 

@@ -278,7 +278,7 @@ function posterLine(): string {
   if (inCooldown.value && props.state.cooldownUntil) {
     // Après une défaite au boss, pas de rattrapage : l'attente mène à la porte.
     // Voir specs/boss.md#tentatives-et-difficulté.
-    const then = props.state.floorSeen >= props.state.floorTotal ? 'remonter à la porte' : 'tenter le rattrapage'
+    const then = props.state.fallen ? 'tenter le rattrapage' : 'remonter à la porte'
     return `Reviens ${formatReturnAt(props.state.cooldownUntil, Date.now())} pour ${then}.`
   }
   return 'Tu peux lancer ton rattrapage.'

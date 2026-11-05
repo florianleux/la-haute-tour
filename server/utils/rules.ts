@@ -122,7 +122,7 @@ const DEFAULT_RULES: FloorRules = {
   recoveryQuestions: 3,
   recoverySuccessesToResume: 1,
   poolSizeForRecovery: 3,
-  poolSuccessesToLeave: 2,
+  poolSuccessesToLeave: 3,
   leechThreshold: 3,
   cooldownMs: 6 * HOUR_MS,
   cooldownAfterFailedRecoveryMs: 4 * HOUR_MS,
@@ -142,10 +142,16 @@ const DEFAULT_RULES: FloorRules = {
 }
 
 /**
- * Per-floor overrides. Empty on purpose: no floor diverges today, and making one
- * diverge means adding an entry here and changing nothing else.
+ * Per-floor overrides. Making a floor diverge means adding an entry here and
+ * changing nothing else.
  */
-const FLOOR_OVERRIDES: Partial<Record<number, Partial<FloorRules>>> = {}
+const FLOOR_OVERRIDES: Partial<Record<number, Partial<FloorRules>>> = {
+  2: { recoveryQuestions: 4, recoverySuccessesToResume: 2 },
+  3: { recoveryQuestions: 6, recoverySuccessesToResume: 3 },
+  4: { recoveryQuestions: 7, recoverySuccessesToResume: 4 },
+  5: { recoveryQuestions: 8, recoverySuccessesToResume: 5 },
+  6: { recoveryQuestions: 9, recoverySuccessesToResume: 6 },
+}
 
 export function rulesForFloor(floor: number): FloorRules {
   return { ...DEFAULT_RULES, ...FLOOR_OVERRIDES[floor] }

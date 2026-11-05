@@ -85,7 +85,7 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 ### `cooldown` — attente
 
 - Le **temps restant** avant reprise ou rattrapage.
-- L'accès au **Volumen**, par le parchemin du camp : c'est là que se relisent les erreurs de l'étage, et que se contestent celles qui peuvent l'être. Voir [Volumen](#volumen).
+- L'accès au **Volumen**, par le parchemin du camp : c'est là que se relisent les erreurs, et que se contestent celles qui peuvent l'être. Voir [Volumen](#volumen).
 - Le **récapitulatif des effets** qui attendent la prochaine tentative — positifs et négatifs, chacun avec le nom de son lanceur au survol — et ceux qui frappent l'attente elle-même (Répit, Indulgence et Purge agissent dès le lancer). Le joueur a tout lu avant de reprendre. Chaque sort s'écrit en toutes lettres et ouvre son infobulle, voir [`bonus.md`](./bonus.md#linfobulle-dun-sort).
 - Les **nouvelles** : ce qui est arrivé au joueur sans lui, sous les effets. Voir [Nouvelles](#nouvelles).
 - L'accès au **Grimoire**, par le grimoire du camp.
@@ -201,7 +201,7 @@ Le journal des questions vues. Atteignable **au camp seulement**, par le parchem
 
 Trois onglets, quatre avec le Filet à sangsues :
 
-- **À revoir** — le **Pool Échecs de l'étage**, avec les réponses : c'est une fiche de révision, pas une punition. Il n'y a ni classement ni score à défendre ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable. Trié par **dernier échec**, du plus récent au plus ancien : une question ratée à nouveau en rattrapage remonte en tête, ce qui résiste est ce qu'on veut relire. C'est l'onglet ouvert à l'arrivée.
+- **À revoir** — le **Pool Échecs**, avec les réponses : c'est une fiche de révision, pas une punition. Il n'y a ni classement ni score à défendre ; réviser pendant l'attente fait exactement ce que le jeu cherche à produire, et c'est ce qui rend le seuil de sortie du pool atteignable. Trié par **dernier échec**, du plus récent au plus ancien : une question ratée à nouveau en rattrapage remonte en tête, ce qui résiste est ce qu'on veut relire. C'est l'onglet ouvert à l'arrivée.
 - **Sangsues** — **avec le Filet à sangsues** (voir [`spec.md`](./spec.md#glossaire)), les **Sangsues** du joueur, **tous étages confondus**, depuis la dernière remise à zéro, qu'elles soient encore au Pool Échecs ou non. Sans le Filet, l'onglet n'existe pas et le serveur refuse. Triées par **échecs de rattrapage**, du plus au moins ; à égalité, la vue la plus récente en tête.
 - **Connues** — les questions vues justes, **tous étages confondus**, depuis la dernière remise à zéro. Une contestation acceptée y fait entrer la question.
 - **Toutes** — toutes les questions vues, justes et fausses, tous étages confondus, depuis la dernière remise à zéro.

@@ -181,6 +181,7 @@ function fallen(overrides: Partial<GameState> = {}): GameState {
   return demoState({
     phase: 'cooldown',
     lives: 0,
+    fallen: true,
     cooldownUntil: new Date(Date.now() + 60_000).toISOString(),
     nextRecovery: { total: 6, required: 1 },
     lessonsDone: ['camp'],
@@ -213,8 +214,10 @@ describe('le déroulé de la leçon de la chute', () => {
     expect(start(fallen({ lessonsDone: ['camp', 'fall'] })).line.value).toBeNull()
   })
 
-  it('ne se joue pas sans rattrapage à venir', () => {
-    expect(start(fallen({ nextRecovery: null })).line.value).toBeNull()
+  it('ne se joue pas une fois le rattrapage tiré', () => {
+    const drawn = { total: 3, played: 0, successes: 0, sealed: false, resumes: false, required: 1 }
+
+    expect(start(fallen({ nextRecovery: null, recovery: drawn })).line.value).toBeNull()
   })
 
   it('se date au clic sur sa dernière réplique, puis se tait', async () => {

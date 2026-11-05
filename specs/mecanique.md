@@ -61,8 +61,8 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 
 1. Dernière vie perdue → **attente** (sauf sur la dernière question de l'étage, voir [`boss.md`](./boss.md#cas-à-0-vie)).
 2. À l'échéance de l'attente :
-   - Pool Échecs **plus petit que le nombre de questions à tirer** → vies restaurées, reprise immédiate, nouvelle tentative.
-    - Pool Échecs **assez fourni** → **rattrapage** : des questions distinctes tirées au hasard du Pool Échecs de l'étage courant.
+   - Pool Échecs **plus petit que sa taille minimale** → vies restaurées, reprise immédiate, nouvelle tentative.
+    - Pool Échecs **assez fourni** → **rattrapage** : des questions distinctes tirées au hasard du Pool Échecs. Un pool plus petit que le tirage donne ce qu'il contient, et le quota de bonnes réponses s'arrête à ce nombre.
       - Le rattrapage s'arrête dès que le verdict est **scellé** (voir ci-dessous). Succès → vies restaurées, reprise immédiate, nouvelle tentative. Échec → l'attente repart pour une durée réduite, puis le rattrapage se rejoue. Sans limite.
 
 ### Déroulement du rattrapage
@@ -75,8 +75,8 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 
 ## Pool Échecs
 
-- **Par étage**, **persistant** : jamais remis à zéro tant que le joueur reste à l'étage.
-- Toute question ratée — en ascension comme en rattrapage — appartient au Pool Échecs de son étage.
+- **Persistant** : jamais remis à zéro, il suit le joueur d'étage en étage.
+- Toute question ratée — en ascension comme en rattrapage — appartient au Pool Échecs. Elle garde l'étage où elle a été ratée, à titre d'information.
 - Chaque question du pool porte un compteur de **réussites** consécutives obtenues en rattrapage :
   - bonne réponse → compteur incrémenté ;
   - mauvaise réponse → compteur **remis à zéro** ;
@@ -84,12 +84,11 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 - Une contestation acceptée fait aussi sortir la question, immédiatement : l'admin vient d'établir que la réponse était bonne. Si elle tombe pendant l'attente, la vie rendue est mise de côté (Justice divine) et rejoint les vies pleines de la tentative suivante. Voir [`validation.md`](./validation.md).
 - Le sort **Purge** en fait sortir une au hasard, sans qu'elle ait jamais été rejouée. C'est le seul moyen de quitter le pool sans y répondre, et il peut faire passer le pool sous le seuil de déclenchement du rattrapage. Voir [`bonus.md`](./bonus.md#catalogue).
 - Conséquence assumée du retour à zéro : le pool dégonfle lentement, donc le rattrapage devient la norme passé les premières attentes. C'est pourquoi le Volumen, ouvert au camp, sert de fiche de révision (voir [`ecrans.md`](./ecrans.md#volumen)).
-- Les Pools Échecs des étages précédents sont **abandonnés** quand le joueur monte.
 
 ## Fin d'étage
 
-- Le joueur atteint le palier quand toutes les questions de l'étage courant sont vues. Le Pool Échecs de l'étage ne sert plus : il n'y a pas de rattrapage au boss, voir [`boss.md`](./boss.md).
-- Le palier n'incrémente plus l'étage lui-même : il ouvre la porte du boss (`bossDoor`), puis le combat (`bossFight`). Franchir le palier (`crossFloor`) — qui incrémente l'étage, abandonne le Pool Échecs et réserve la première question du suivant — se déclenche à la victoire sur le boss ou à son passage automatique, pas à `floorEnd`. Voir [`boss.md`](./boss.md#franchissement-détage).
+- Le joueur atteint le palier quand toutes les questions de l'étage courant sont vues. Le Pool Échecs ne sert pas ici : il n'y a pas de rattrapage au boss, voir [`boss.md`](./boss.md).
+- Le palier n'incrémente plus l'étage lui-même : il ouvre la porte du boss (`bossDoor`), puis le combat (`bossFight`). Franchir le palier (`crossFloor`) — qui incrémente l'étage et réserve la première question du suivant — se déclenche à la victoire sur le boss ou à son passage automatique, pas à `floorEnd`. Voir [`boss.md`](./boss.md#franchissement-détage).
 - La **dernière question restante de l'étage n'est jamais une question loot**. Sans cette règle, un Mimic sur cette question opposerait le palier à l'attente, alors que la règle « l'étage épuisé prime sur les vies » a déjà tranché. Voir [`bonus.md`](./bonus.md#question-loot).
 
 ## Fin de partie
@@ -97,23 +96,23 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
 - Toutes les questions du dernier étage vues → même système que les autres étages : porte, combat de boss. Battre le boss du dernier étage (ou le passer automatiquement) mène à `gameOver`, au lieu de `crossFloor`. Voir [`boss.md`](./boss.md#franchissement-détage).
 - **À venir** : le lore prévoit un 7e boss, Le Présentateur, entre le boss de l'étage 6 et `gameOver` (voir [`lore.md`](./lore.md#boss)). Ni son combat ni sa place dans la machine à états ne sont spécifiés ; d'ici là, `gameOver` suit le boss de l'étage 6.
 - Message de félicitations, phase terminale, pas de classement.
-- Le Pool Échecs du dernier étage peut rester non vide sans empêcher la fin.
+- Le Pool Échecs peut rester non vide sans empêcher la fin.
 
 ## Règles chiffrées
 
 Vies, timers, nombre de questions de rattrapage, seuil du Pool Échecs, réussites nécessaires pour en sortir, durées d'attente : **aucune de ces valeurs n'est écrite en dur dans le code**. Elles forment un jeu de règles unique, consultable par étage, et rien d'autre ne les connaît — un appelant demande les règles de l'étage, jamais une constante isolée.
 
-Valeurs par défaut, identiques aux 6 étages :
+Valeurs par défaut, celles des 6 étages sauf surcharge :
 
 | Règle | Défaut |
 |---|---|
 | Vies par tentative | 3 |
 | Timer d'une question d'ascension | 60 s |
 | Timer d'une question de rattrapage | 60 s |
-| Questions tirées au rattrapage | 3 |
-| Bonnes réponses pour se débloquer | 1 |
+| Questions tirées au rattrapage | 3 (voir ci-dessous) |
+| Bonnes réponses pour se débloquer | 1 (voir ci-dessous) |
 | Taille minimale du pool pour déclencher un rattrapage | 3 |
-| Réussites consécutives pour sortir du pool | 2 |
+| Réussites consécutives pour sortir du pool | 3 |
 | Échecs de rattrapage qui font une Sangsue | 3 |
 | Attente après la dernière vie perdue | 6 h |
 | Attente après un rattrapage manqué | 4 h |
@@ -127,7 +126,16 @@ Valeurs par défaut, identiques aux 6 étages :
 | Indulgence — facteur sur les questions tirées au rattrapage | 2 |
 | Répit — facteur sur la durée d'attente | 2 |
 
-Faire diverger un étage revient à surcharger une de ces valeurs pour cet étage ; aucun autre code ne change. Aucune divergence n'est décidée aujourd'hui.
+Faire diverger un étage revient à surcharger une de ces valeurs pour cet étage ; aucun autre code ne change. Seul le rattrapage diverge aujourd'hui, et il se durcit en montant :
+
+| Étage | Questions tirées | Bonnes réponses pour se débloquer |
+|---|---|---|
+| 1 | 3 | 1 |
+| 2 | 4 | 2 |
+| 3 | 6 | 3 |
+| 4 | 7 | 4 |
+| 5 | 8 | 5 |
+| 6 | 9 | 6 |
 
 ### Ce que les Sorts modifient
 

@@ -67,7 +67,6 @@ export async function disputableErrors(db: Database, user: User): Promise<Disput
     ))
     .where(and(
       eq(missedPool.userId, user.id),
-      eq(missedPool.floor, user.currentFloor),
       ne(seenQuestions.submittedAnswer, ''),
       notInArray(missedPool.questionId, alreadyDisputed),
       notExists(lostFocus),

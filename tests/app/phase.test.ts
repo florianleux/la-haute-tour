@@ -104,8 +104,8 @@ describe('écran de jeu', () => {
 // Voir specs/ecrans.md#leçons-de-michel.
 describe('la leçon due', () => {
   const numbers = { total: 3, required: 1 }
-  const inCooldown = { phase: 'cooldown' as const, lives: 0, cooldownUntil: '2099-01-01T00:00:00.000Z', nextRecovery: numbers }
-  const overdue = { phase: 'recovery' as const, lives: 0, nextRecovery: numbers }
+  const inCooldown = { phase: 'cooldown' as const, lives: 0, fallen: true, cooldownUntil: '2099-01-01T00:00:00.000Z', nextRecovery: numbers }
+  const overdue = { phase: 'recovery' as const, lives: 0, fallen: true, nextRecovery: numbers }
 
   it('est celle du camp au repos, tant qu elle n est pas vue', () => {
     expect(dueLesson(state({ lessonsDone: [] }))).toBe('camp')
@@ -117,6 +117,16 @@ describe('la leçon due', () => {
     expect(dueLesson(state({ ...overdue, lessonsDone: ['camp'] }))).toBe('fall')
   })
 
+  it('est celle de la chute même quand le pool est trop maigre pour un rattrapage', () => {
+    expect(dueLesson(state({ ...inCooldown, nextRecovery: null, lessonsDone: ['camp'] }))).toBe('fall')
+  })
+
+  it('n est pas celle de la chute après une défaite au boss, qui n est pas une chute', () => {
+    const atBoss = { ...inCooldown, nextRecovery: null, fallen: false }
+
+    expect(dueLesson(state({ ...atBoss, lessonsDone: ['camp'] }))).toBeNull()
+  })
+
   it('est celle du rattrapage l attente échue, la chute vue', () => {
     expect(dueLesson(state({ ...overdue, lessonsDone: ['camp', 'fall'] }))).toBe('recovery')
     expect(dueLesson(state({ ...inCooldown, lessonsDone: ['camp', 'fall'] }))).toBeNull()
@@ -124,7 +134,9 @@ describe('la leçon due', () => {
 
   it('n est aucune une fois tout vu, ou le rattrapage tiré', () => {
     expect(dueLesson(state({ ...overdue, lessonsDone: ['camp', 'fall', 'recovery'] }))).toBeNull()
-    expect(dueLesson(state({ ...overdue, nextRecovery: null, lessonsDone: ['camp'] }))).toBeNull()
+    const drawn = { total: 3, played: 0, successes: 0, sealed: false, resumes: false, required: 1 }
+
+    expect(dueLesson(state({ ...overdue, nextRecovery: null, recovery: drawn, lessonsDone: ['camp'] }))).toBeNull()
   })
 
   it('est celle du Grimoire au camp, le premier sort obtenu', () => {

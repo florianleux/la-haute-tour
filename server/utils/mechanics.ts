@@ -281,7 +281,7 @@ export interface AnswerJudgement {
   cooldownUntil: Date | null
   /** 1 quand la question entre dans les questions vues — jamais en rattrapage. */
   seenDelta: number
-  /** Vraie quand la question rejoint le Pool Échecs de l'étage. */
+  /** Vraie quand la question rejoint le Pool Échecs. */
   entersPool: boolean
 }
 
@@ -544,18 +544,17 @@ export function movePoolCounter(
 }
 
 /**
- * Le pool permet-il de tirer un rattrapage ? Deux règles chiffrées le disent — la
- * taille minimale du pool et le nombre de questions à tirer — et il faut les deux :
- * en dessous, l'attente se termine par une simple reprise.
+ * Le pool permet-il de tirer un rattrapage ? Seule sa taille minimale le dit : un
+ * pool plus petit que le tirage donne ce qu'il contient. En dessous de ce
+ * minimum, l'attente se termine par une simple reprise.
  */
 export function canDrawRecovery(poolSize: number, rules: FloorRules): boolean {
-  return poolSize >= rules.poolSizeForRecovery && poolSize >= rules.recoveryQuestions
+  return poolSize >= rules.poolSizeForRecovery
 }
 
 /**
- * Combien de bonnes réponses ce rattrapage exige. Une seule d'ordinaire — le
- * seuil vit dans les règles, et une Indulgence noire l'y porte au nombre de
- * questions tirées.
+ * Combien de bonnes réponses ce rattrapage exige. Le seuil vit dans les règles
+ * de l'étage, et une Indulgence noire l'y porte au nombre de questions tirées.
  *
  * Borné par ce que le rattrapage a réellement tiré : le pool s'arrête à ce qu'il
  * contient, et un perfect exigé sur plus de questions qu'il n'y en a serait

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { activeEffects, attempts, missedPool, questions, recoveryQuestions, reservations, seenQuestions } from '../../server/db/schema'
+import { activeEffects, attempts, missedPool, questions, recoveryQuestions, reservations, seenQuestions, users } from '../../server/db/schema'
 import { requireCamp } from '../../server/utils/camp'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -64,6 +64,40 @@ describe('attente et rattrapage', () => {
       castCooldownStartedAt: NOW,
     })
   }
+
+  describe('pool venu des étages précédents', () => {
+    it('tire le rattrapage dans les erreurs d un étage déjà quitté', async () => {
+      const ids = await fillPool(rulesForFloor(2).recoveryQuestions)
+      await db.update(users).set({ currentFloor: 2, floorSeen: 0 }).where(eq(users.id, player.id))
+      await createQuestion(db, { floor: 2, statement: 'Encore à voir au 2 ?' })
+
+      const state = await serveNextQuestion(db, await reload(), afterCooldown)
+
+      expect(state.phase).toBe('recovery')
+      expect(ids).toContain(state.question?.id)
+    })
+  })
+
+  describe('pool plus petit que le tirage', () => {
+    beforeEach(async () => {
+      await fillPool(3)
+      await db.update(users).set({ currentFloor: 6, floorSeen: 0 }).where(eq(users.id, player.id))
+      await createQuestion(db, { floor: 6, statement: 'Encore à voir au 6 ?' })
+    })
+
+    it('annonce ce que le pool peut donner', async () => {
+      const state = await readGameState(db, await reload(), afterCooldown)
+
+      expect(state.nextRecovery).toEqual({ total: 3, required: 3 })
+    })
+
+    it('tire tout le pool, quota plafonné au tirage', async () => {
+      const state = await serveNextQuestion(db, await reload(), afterCooldown)
+
+      expect(state.phase).toBe('recovery')
+      expect(state.recovery).toMatchObject({ total: 3, required: 3 })
+    })
+  })
 
   describe('attente', () => {
     it('affiche le temps restant tant que l échéance n est pas atteinte', async () => {
@@ -238,21 +272,6 @@ describe('attente et rattrapage', () => {
 
       expect(await db.select().from(recoveryQuestions)).toHaveLength(rules.recoveryQuestions)
       expect(second.recovery).toEqual(first.recovery)
-    })
-
-    it('ne tire que dans le pool de l étage courant', async () => {
-      const otherFloor = await createQuestion(db, { floor: 3, statement: 'Autre étage ?' })
-      await db.insert(missedPool).values({
-        userId: player.id,
-        questionId: otherFloor,
-        floor: 3,
-        lastFailedAt: NOW,
-      })
-
-      await serveNextQuestion(db, player, afterCooldown)
-
-      const drawn = await db.select().from(recoveryQuestions)
-      expect(drawn.map(row => row.questionId)).not.toContain(otherFloor)
     })
 
     /** Answers the question currently served, right or wrong. */

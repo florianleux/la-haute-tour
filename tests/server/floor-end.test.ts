@@ -70,7 +70,7 @@ describe('palier et fin de partie', () => {
       expect(await db.select().from(reservations)).toHaveLength(0)
     })
 
-    it('abandonne le Pool Échecs de l étage quitté', async () => {
+    it('garde le Pool Échecs de l étage quitté : il suit le joueur', async () => {
       // Une question du pool est toujours une question vue : elle y est entrée en
       // se résolvant.
       const missedId = await seeQuestion(1)
@@ -84,7 +84,7 @@ describe('palier et fin de partie', () => {
 
       await serveNextQuestion(db, player, NOW)
 
-      expect(await db.select().from(missedPool)).toHaveLength(0)
+      expect(await db.select().from(missedPool)).toMatchObject([{ questionId: missedId }])
     })
   })
 

@@ -32,7 +32,7 @@ describe('Volumen', () => {
     await createQuestion(db, { statement: 'Pas encore vue', floor: 2 })
   })
 
-  /** Une question ratée qui est encore au Pool Échecs de l'étage du joueur. */
+  /** Une question ratée qui est encore au Pool Échecs du joueur. */
   async function miss(userId: number, statement: string, failedAt: Date, poolSuccesses = 0): Promise<string> {
     const questionId = await createQuestion(db, { statement })
     await markSeen(db, userId, questionId, { correct: false, submittedAnswer: 'Lyon', seenAt: failedAt })
@@ -137,6 +137,17 @@ describe('Volumen', () => {
   })
 
   describe('l onglet À revoir', () => {
+    it('montre aussi les erreurs d un étage déjà quitté', async () => {
+      const userId = await createPlayer(db, { ...AT_CAMP, currentFloor: 2 })
+      await miss(userId, 'Ratée au premier étage', at(1))
+      await createQuestion(db, { statement: 'Pas encore vue', floor: 2 })
+      const cookie = await sessionCookieFor(userId)
+
+      const body = await (await log(apiRequest('http://test/question-log?filter=missed', cookie))).json()
+
+      expect(body.entries.map((entry: { statement: string }) => entry.statement)).toEqual(['Ratée au premier étage'])
+    })
+
     it('sert le pool vingt par page, dernier échec en tête, avec le seuil de sortie', async () => {
       const userId = await createPlayer(db, AT_CAMP)
       for (let index = 1; index <= 21; index++) {
@@ -148,7 +159,7 @@ describe('Volumen', () => {
       const second = await (await log(apiRequest('http://test/question-log?filter=missed&page=2', cookie))).json()
 
       expect(first.total).toBe(21)
-      expect(first.poolSuccessesToLeave).toBe(2)
+      expect(first.poolSuccessesToLeave).toBe(3)
       expect(first.entries).toHaveLength(20)
       expect(first.entries[0].statement).toBe('Q21')
       expect(second.entries.map((entry: { statement: string }) => entry.statement)).toEqual(['Q1'])
@@ -240,7 +251,7 @@ describe('Volumen', () => {
 
       const body = await (await log(apiRequest('http://test/question-log', await sessionCookieFor(userId)))).json()
 
-      expect(body.poolSuccessesToLeave).toBe(2)
+      expect(body.poolSuccessesToLeave).toBe(3)
       expect(body.entries).toEqual([
         expect.objectContaining({ statement: 'Fausse', poolSuccesses: 1, disputeStatus: 'pending' }),
         expect.objectContaining({ statement: 'Juste', poolSuccesses: null, disputeStatus: 'none' }),

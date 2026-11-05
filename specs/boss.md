@@ -253,7 +253,7 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
 
 ## Franchissement d'étage
 
-- `crossFloor` (incrément d'étage, abandon du Pool Échecs, réservation de la
+- `crossFloor` (incrément d'étage, réservation de la
   première question du suivant) se déclenche **après la victoire sur le boss
   ou le passage automatique** — plus à `floorEnd`.
 - `floorEnd` reste déclenché par « toutes les questions de l'étage vues »,

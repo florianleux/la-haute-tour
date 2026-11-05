@@ -423,8 +423,9 @@ export const reservations = sqliteTable('reservations', {
 })
 
 /**
- * Questions missed on the current floor, waiting for recovery. Persistent: never
- * reset while the player stays on the floor. See specs/mecanique.md#pool-échecs.
+ * Questions missed, waiting for recovery. Persistent: never reset, it follows the
+ * player up the tower; `floor` only says where the question was missed. See
+ * specs/mecanique.md#pool-échecs.
  */
 export const missedPool = sqliteTable('missed_pool', {
   userId: integer('user_id')
@@ -439,7 +440,7 @@ export const missedPool = sqliteTable('missed_pool', {
   lastFailedAt: integer('last_failed_at', { mode: 'timestamp' }).notNull(),
 }, table => [
   primaryKey({ columns: [table.userId, table.questionId] }),
-  index('missed_pool_user_floor_idx').on(table.userId, table.floor, table.lastFailedAt),
+  index('missed_pool_user_failed_idx').on(table.userId, table.lastFailedAt),
 ])
 
 /**

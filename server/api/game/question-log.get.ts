@@ -9,7 +9,7 @@ import type { QuestionLogPage } from '~~/server/utils/game'
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  /** L'onglet : le Pool Échecs de l'étage, les questions connues, les Sangsues, ou toutes les vues. */
+  /** L'onglet : le Pool Échecs, les questions connues, les Sangsues, ou toutes les vues. */
   filter: z.enum(QUESTION_LOG_TABS).default('all'),
   /** Du texte libre, cherché dans l'énoncé et la réponse. */
   q: z.string().trim().max(100).optional(),

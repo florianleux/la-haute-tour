@@ -39,7 +39,7 @@ describe('Purge, sur le Pool Échecs', () => {
     await castSpell(db, await loadPlayer(db, caster), 'PURGE', 'self', NOW)
   }
 
-  /** Remplit le Pool Échecs de l'étage courant. */
+  /** Remplit le Pool Échecs du joueur. */
   async function fillPool(size: number): Promise<string[]> {
     const ids: string[] = []
     for (let i = 0; i < size; i++) {
@@ -63,6 +63,15 @@ describe('Purge, sur le Pool Échecs', () => {
     expect(await pool()).toHaveLength(3)
   })
 
+  it('atteint les erreurs d un étage déjà quitté', async () => {
+    await fillPool(4)
+    await db.update(users).set({ currentFloor: 2 }).where(eq(users.id, player.id))
+
+    await castPurge()
+
+    expect(await pool()).toHaveLength(3)
+  })
+
   // Elle en sort comme elle en sortirait par le seuil de réussites : le passage
   // reste vu, donc l'étage ne recule pas. Voir specs/mecanique.md#pool-échecs.
   it('laisse la question vue : la progression d étage ne bouge pas', async () => {
@@ -79,21 +88,6 @@ describe('Purge, sur le Pool Échecs', () => {
 
     expect(seen).toHaveLength(1)
     expect((await reload()).floorSeen).toBe(4)
-  })
-
-  it('ne touche qu au Pool Échecs de l étage où se tient le joueur', async () => {
-    await fillPool(2)
-    const elsewhere = await createQuestion(db, { floor: 2, statement: 'Ailleurs ?', accepted: ['la'] })
-    await db.insert(missedPool).values({
-      userId: player.id,
-      questionId: elsewhere,
-      floor: 2,
-      lastFailedAt: NOW,
-    })
-
-    await castPurge()
-
-    expect(await pool()).toContain(elsewhere)
   })
 
   // Pool vide : le sort part, ne fait rien, et ne lève rien. On ne vérifie pas

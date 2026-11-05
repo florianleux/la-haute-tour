@@ -98,6 +98,16 @@ describe('contestation', () => {
     })
   })
 
+  describe('après un étage franchi', () => {
+    it('garde contestable une erreur encore au pool', async () => {
+      await createQuestion(db, { statement: 'Capitale de la Gironde ?', accepted: ['Bordeaux'] })
+      const questionId = await play('Toulouse')
+      await db.update(users).set({ currentFloor: 2 }).where(eq(users.id, player.id))
+
+      expect(await disputableErrors(db, await reload())).toMatchObject([{ questionId }])
+    })
+  })
+
   describe('ouverture', () => {
     beforeEach(async () => {
       // Les deux questions acceptent la même réponse : le tirage est au hasard,
