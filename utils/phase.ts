@@ -192,7 +192,7 @@ export function isAtRest(state: GameState | null): boolean {
 
 /**
  * La leçon de Michel qui attend d'être jouée d'elle-même, une à la fois, lue
- * dans l'état servi : celle du camp au repos ; sans vies et rien de tiré, celle
+ * dans l'état servi : celle du camp au repos ; tombé et rien de tiré, celle
  * de la chute, puis celle du rattrapage une fois l'attente échue ; enfin, au
  * camp, celle du Grimoire, le premier sort obtenu, puis celle de la Plume de
  * copiste. Celle de la question loot, elle, se joue sur la question que le
@@ -207,7 +207,7 @@ export function dueLesson(state: GameState | null): LessonId | null {
   if (isAtRest(state) && !done.includes("camp")) {
     return "camp";
   }
-  if (state?.nextRecovery && !done.includes("fall")) {
+  if (state?.fallen && !state.recovery && !done.includes("fall")) {
     return "fall";
   }
   if (state?.nextRecovery && state.phase === "recovery" && !done.includes("recovery")) {

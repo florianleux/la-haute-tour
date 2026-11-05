@@ -306,11 +306,11 @@ describe('compteur du Pool Échecs', () => {
 })
 
 describe('tirage d un rattrapage', () => {
-  it('exige un pool au moins aussi fourni que les deux seuils', () => {
-    const enough = Math.max(rules.poolSizeForRecovery, rules.recoveryQuestions)
+  it('exige la taille minimale du pool, même quand le tirage en demande plus', () => {
+    const lastFloor = rulesForFloor(6)
 
-    expect(canDrawRecovery(enough, rules)).toBe(true)
-    expect(canDrawRecovery(enough - 1, rules)).toBe(false)
+    expect(canDrawRecovery(3, lastFloor)).toBe(true)
+    expect(canDrawRecovery(2, lastFloor)).toBe(false)
   })
 })
 

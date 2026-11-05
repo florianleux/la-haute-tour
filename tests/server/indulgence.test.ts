@@ -40,7 +40,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     await castSpell(db, await reload(), 'INDULGENCE', 'self', NOW)
   }
 
-  /** Remplit le Pool Échecs de l'étage courant. */
+  /** Remplit le Pool Échecs du joueur. */
   async function fillPool(size: number): Promise<void> {
     for (let i = 0; i < size; i++) {
       const questionId = await createQuestion(db, { statement: `Ratée ${i} ?`, accepted: [`r${i}`] })
@@ -70,6 +70,8 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     const nextRecovery = async (at = NOW) => (await readGameState(db, await reload(), at)).nextRecovery
 
     it('sert les chiffres de l étage pendant l attente', async () => {
+      await fillPool(3)
+
       expect(await nextRecovery()).toEqual({ total: 3, required: 1 })
     })
 
@@ -80,9 +82,16 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     })
 
     it('double les questions tirées sous une Indulgence blanche', async () => {
+      await fillPool(6)
       await castIndulgence()
 
       expect(await nextRecovery()).toEqual({ total: 6, required: 1 })
+    })
+
+    it('n en sert aucun quand le pool est trop maigre pour un rattrapage', async () => {
+      await fillPool(2)
+
+      expect(await nextRecovery()).toBeNull()
     })
 
     it('ne les sert plus une fois le rattrapage tiré', async () => {
@@ -166,6 +175,7 @@ describe('Indulgence, sur le rattrapage que l attente ouvre', () => {
     }
 
     it('exige un perfect dans les chiffres servis avant le rattrapage', async () => {
+      await fillPool(3)
       await curse()
 
       expect((await readGameState(db, await reload(), NOW)).nextRecovery).toEqual({ total: 3, required: 3 })

@@ -54,6 +54,7 @@ const state = ref(demoState({
         focusLoss: false,
       },
   cooldownUntil: atRest ? null : new Date(Date.now() + 252_000).toISOString(),
+  fallen: !atRest,
   floorSeen: 544,
   floorTotal: 1000,
   streak: 995,

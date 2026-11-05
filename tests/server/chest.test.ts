@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { bossKeys, disputes, items, pocketSpells, seenQuestions, users } from '../../server/db/schema'
+import { bossKeys, disputes, items, missedPool, pocketSpells, seenQuestions, users } from '../../server/db/schema'
 import { grantKey } from '../../server/utils/bossKeys'
 import { openDispute, settleDispute } from '../../server/utils/disputes'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
@@ -222,6 +222,18 @@ describe('coffre de loot', () => {
       expect(state.chest).toEqual({ opened: true, mimic: true, spell: null, key: false, item: null })
       expect(await stock()).toEqual([{ spell: 'RESPITE' }])
       expect(state.lives).toBe(0)
+    })
+
+    it('annonce le rattrapage que le Pool Échecs permet', async () => {
+      await playLootQuestion('Bordeaux')
+      for (const statement of ['Ratée 1 ?', 'Ratée 2 ?', 'Ratée 3 ?']) {
+        const questionId = await createQuestion(db, { statement, floor: 2 })
+        await db.insert(missedPool).values({ userId: player.id, questionId, floor: 1, lastFailedAt: NOW })
+      }
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
+
+      expect(state.nextRecovery).toEqual({ total: 3, required: 1 })
     })
 
     it('envoie en attente comme une perte de dernière vie ordinaire', async () => {

@@ -233,7 +233,7 @@ globale.
 | **Répit** | multiplicatif | ÷4 ou ×4. N'atteint jamais zéro |
 
 Les faces blanche et noire d'un même sort **ne s'annulent pas, elles se composent**.
-Indulgence reçue des deux côtés donne six questions *et* un perfect exigé : le sort
+Indulgence reçue des deux côtés donne deux fois plus de questions *et* un perfect exigé : le sort
 de l'allié aggrave la situation. Toutes les combinaisons sont acceptables.
 
 Le multiplicatif garantit qu'aucun empilement ne peut réduire une attente ou un

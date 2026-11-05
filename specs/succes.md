@@ -93,8 +93,9 @@ aucune action, personne ne repasse. Voir
 - Faire sortir une question du Pool Échecs.
 - **Rattrapage parfait** : le tirage joué en entier, et toutes les questions
   bonnes. Depuis que le rattrapage s'arrête au verdict scellé, cela ne se produit
-  que lorsque le quota exige l'intégralité du tirage — sous Indulgence noire. Le
-  succès est rare, et c'est voulu.
+  que lorsque le quota exige l'intégralité du tirage — sous Indulgence noire, ou
+  quand un pool court plafonne le tirage au quota. Le succès est rare, et c'est
+  voulu.
 
 ### Contestations — 3
 

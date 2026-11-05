@@ -233,6 +233,22 @@ describe('boucle d ascension', () => {
   })
 
   describe('fin de vies et fin d étage', () => {
+    it('compte la question de la chute dans les chiffres du rattrapage', async () => {
+      await createQuestion(db, { statement: 'Celle de la chute ?', accepted: ['oui'] })
+      await createQuestion(db, { statement: 'Encore à voir ?', accepted: ['oui'] })
+      await createQuestion(db, { statement: 'Encore à voir aussi ?', accepted: ['oui'] })
+      for (const statement of ['Ratée 1 ?', 'Ratée 2 ?']) {
+        const questionId = await createQuestion(db, { statement, floor: 2 })
+        await db.insert(missedPool).values({ userId: player.id, questionId, floor: 1, lastFailedAt: NOW })
+      }
+      await db.update(users).set({ lives: 1 }).where(eq(users.id, player.id))
+
+      await serveNextQuestion(db, await reload(), NOW)
+      const fallen = await submitAnswer(db, await reload(), 'non', NOW)
+
+      expect(fallen.nextRecovery).toEqual({ total: 3, required: 1 })
+    })
+
     it('bascule en attente à la perte de la dernière vie', async () => {
       await createQuestion(db)
       // Une deuxième question à l'étage : sans elle, l'étage serait fini et le

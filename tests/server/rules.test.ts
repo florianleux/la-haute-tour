@@ -27,7 +27,7 @@ describe('jeu de règles', () => {
       recoveryQuestions: 3,
       recoverySuccessesToResume: 1,
       poolSizeForRecovery: 3,
-      poolSuccessesToLeave: 2,
+      poolSuccessesToLeave: 3,
       cooldownMs: 6 * 60 * 60 * 1000,
       cooldownAfterFailedRecoveryMs: 4 * 60 * 60 * 1000,
       latencyGraceMs: 1_000,
@@ -41,10 +41,13 @@ describe('jeu de règles', () => {
     })
   })
 
-  it('répond pour chaque étage du jeu', () => {
-    for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
-      expect(rulesForFloor(floor)).toEqual(rulesForFloor(1))
-    }
+  it('durcit le rattrapage en montant, et rien d autre', () => {
+    const recovery = [[3, 1], [4, 2], [6, 3], [7, 4], [8, 5], [9, 6]]
+    expect(recovery).toHaveLength(FLOOR_COUNT)
+
+    recovery.forEach(([recoveryQuestions, recoverySuccessesToResume], index) => {
+      expect(rulesForFloor(index + 1)).toEqual({ ...rules, recoveryQuestions, recoverySuccessesToResume })
+    })
   })
 })
 

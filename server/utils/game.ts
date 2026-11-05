@@ -170,11 +170,14 @@ export interface GameState {
   cooldownUntil: string | null
   /** Tally of the recovery under way, null outside one. */
   recovery: RecoveryProgress | null
+  /** Sans vie, hors du boss. Voir specs/spec.md#glossaire. */
+  fallen: boolean
   /**
    * Le rattrapage qui attend le joueur sans vies, avant son tirage : combien de
    * questions il tirera et combien de bonnes réponses il exigera, lus dans les
-   * règles jouées — une Indulgence posée s'y voit. Null dès le tirage posé, et
-   * hors attente. Ce que Michel annonce à la leçon de la chute.
+   * règles jouées — une Indulgence posée s'y voit — et plafonnés au Pool Échecs.
+   * Null dès le tirage posé, hors attente, et sous la taille minimale du pool.
+   * Ce que Michel annonce à la leçon du rattrapage.
    * Voir specs/ecrans.md#leçons-de-michel.
    */
   nextRecovery: Pick<RecoveryProgress, 'total' | 'required'> | null
@@ -288,6 +291,8 @@ export interface PlayerSnapshot {
   floorTotal: number
   /** Questions que l'étage d'au-dessus contient : zéro, c'est la fin du deck. */
   nextFloorTotal: number
+  /** Questions au Pool Échecs du joueur, sans vies. Zéro sinon : rien ne le lit. */
+  poolSize: number
   /** Au moins un sort en poche ou déjà lancé. Lu avec le joueur. */
   spellDiscovered: boolean
   /** Le premier sort en poche, et rien encore lancé. Lu avec le joueur. */
@@ -390,6 +395,10 @@ function snapshotQueries(db: Database, userId: number) {
         floorTotal: sql<number>`coalesce((select ${deckFloors.total} from ${deckFloors}
           where ${deckFloors.floor} = ${users.currentFloor}), 0)`,
         nextFloorTotal,
+        // Sans vies seulement : c'est là qu'il sert, et il grossit tout au long de la tour.
+        poolSize: sql<number>`case when ${users.lives} <= 0
+          then (select count(*) from ${missedPool} where ${missedPool.userId} = ${users.id})
+          else 0 end`,
         // Lu avec le joueur, pour la même raison : le camp pose son grimoire
         // dessus, à chaque lecture d'état.
         spellDiscovered: sql<number>`(${exists(db.select({ one: sql`1` }).from(pocketSpells).where(eq(pocketSpells.userId, users.id)))}
@@ -447,6 +456,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials, keyHolders]: B
     effects: toEffectViews(effects, row.user),
     floorTotal: row.floorTotal,
     nextFloorTotal: row.nextFloorTotal,
+    poolSize: row.poolSize,
     spellDiscovered: row.spellDiscovered === 1,
     firstCastPending: row.firstCastPending === 1,
     hasQuill: row.hasQuill === 1,
@@ -507,13 +517,14 @@ function answeredAchievements(
   })
 }
 
-async function poolSize(db: Database, user: User): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(missedPool)
-    .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor)))
+/** Ce que le prochain rattrapage tirera : le tirage réel s'arrête à ce que le pool contient. */
+function nextRecovery(size: number, rules: FloorRules): GameState['nextRecovery'] {
+  if (!canDrawRecovery(size, rules)) {
+    return null
+  }
 
-  return row.value
+  const total = Math.min(rules.recoveryQuestions, size)
+  return { total, required: recoveryThreshold(total, rules) }
 }
 
 /** Un rattrapage est tiré : ses questions n'existent que tant qu'il est en cours. */
@@ -851,7 +862,7 @@ async function resolve(
             })
             .from(reservations)
             .where(stillOpen))
-          // Already missed on this floor: the counter goes back to zero and the date moves up.
+          // Already in the pool: the counter goes back to zero and the date moves up.
           .onConflictDoUpdate({
             target: [missedPool.userId, missedPool.questionId],
             set: { poolSuccesses: 0, lastFailedAt: now },
@@ -870,7 +881,8 @@ async function resolve(
   const firstAscent = crossing && user.currentFloor === 1 ? await claimFirstAscent(db, user) : []
 
   return {
-    snapshot: { ...snapshot, user: fresh, reservation: resolved },
+    // Une chute relit tout : le pool ne se comptait pas tant qu'il restait des vies.
+    snapshot: cooldownUntil ? await loadSnapshot(db, user.id) : { ...snapshot, user: fresh, reservation: resolved },
     unlocked: await unlock(db, snapshot.user, [...earned, ...firstAscent], now),
   }
 }
@@ -954,6 +966,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
   const fallen = user.lives <= 0 && !atBoss(snapshot)
 
   const base = {
+    fallen,
     floor: user.currentFloor,
     lives: user.lives,
     maxLives: played.lives,
@@ -964,10 +977,8 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     // Les règles jouées, effets compris : c'est là que le joueur lit s'il lui
     // faut un perfect pour repartir.
     recovery: fallen ? recoveryProgress(snapshot.recoveryRun, played) : null,
-    // Les règles seules, sans compter le Pool Échecs : le tirage réel s'arrête
-    // à ce qu'il contient.
     nextRecovery: fallen && !snapshot.recoveryRun.length
-      ? { total: played.recoveryQuestions, required: recoveryThreshold(played.recoveryQuestions, played) }
+      ? nextRecovery(snapshot.poolSize, played)
       : null,
     floorSeen: seen,
     floorTotal: snapshot.floorTotal,
@@ -1149,7 +1160,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
     return stateFrom(snapshot, now)
   }
 
-  const resumed = await resumeWithoutRecovery(db, snapshot.user, snapshot.recoveryRun.length > 0, !atBoss(snapshot), now)
+  const resumed = await resumeWithoutRecovery(db, snapshot.user, snapshot.poolSize, snapshot.recoveryRun.length > 0, !atBoss(snapshot), now)
   const punctual = resumed ? await unlock(db, snapshot.user, earnedByResuming(snapshot.user.cooldownUntil, now), now) : []
 
   return withUnlocked(await buildState(db, user.id, now), punctual)
@@ -1165,6 +1176,7 @@ export async function readGameState(db: Database, user: User, now: Date): Promis
 async function resumeWithoutRecovery(
   db: Database,
   user: User,
+  poolSize: number,
   /** Un rattrapage est tiré — lu dans l'instantané de l'appelant. */
   recovering: boolean,
   /** Faux quand l'étage est vu en entier : la tentative qui s'ouvre est un combat de boss. Voir openAttempt. */
@@ -1177,7 +1189,7 @@ async function resumeWithoutRecovery(
     return false
   }
 
-  if (anchorEffects && canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
+  if (anchorEffects && canDrawRecovery(poolSize, rulesForFloor(user.currentFloor))) {
     return false
   }
 
@@ -1209,6 +1221,7 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
   const { reservation } = snapshot
   // Le snapshot décrit fidèlement le joueur tant que rien n'a été résolu ici.
   let fresh = snapshot.user
+  let { poolSize } = snapshot
   let recoveryRun = snapshot.recoveryRun
   // Ce que la résolution ci-dessous aura débloqué, à recoller sur l'état rendu :
   // le clic « suivant » résout la question expirée qu'il trouve, et ce qu'elle
@@ -1240,12 +1253,13 @@ export async function serveNextQuestion(db: Database, user: User, now: Date): Pr
     const resolution = await resolve(db, snapshot, reservation, '', now, 'player', NOTHING_ACCEPTED)
     fresh = resolution.snapshot.user
     recoveryRun = resolution.snapshot.recoveryRun
+    poolSize = resolution.snapshot.poolSize
     unlocked = resolution.unlocked
   }
 
   // Une résolution juste au-dessus a pu ajouter une question vue — jamais en
   // rattrapage, d'où le delta rendu par resolve() plutôt qu'un « +1 » supposé.
-  const current: PlayerSnapshot = { ...snapshot, user: fresh, recoveryRun }
+  const current: PlayerSnapshot = { ...snapshot, user: fresh, recoveryRun, poolSize }
 
   // Le joueur vient de cliquer : plus aucune question n'est en jeu, celle qu'il
   // tenait est résolue.
@@ -1399,11 +1413,7 @@ export async function openPlayerChest(
 
   const unlocked = await unlock(db, snapshot.user, ['FIRST_DEATH'], now)
 
-  return withUnlocked(stateFrom({
-    ...snapshot,
-    user: { ...snapshot.user, ...killed },
-    reservation: opened,
-  }, now), unlocked)
+  return withUnlocked(await buildState(db, user.id, now), unlocked)
 }
 
 /**
@@ -1537,8 +1547,7 @@ async function advanceBossFight(db: Database, snapshot: PlayerSnapshot, user: Us
 }
 
 /**
- * Franchir le palier : l'étage monte d'un cran, le Pool Échecs de celui qu'on
- * quitte est abandonné — les ratées non rattrapées ne suivent pas le joueur —,
+ * Franchir le palier : l'étage monte d'un cran, le Pool Échecs suit le joueur,
  * le combat de boss s'efface, et la première question du suivant est réservée.
  * Appelée sur la victoire contre le boss, qui garantit qu'un étage suivant existe.
  * Voir specs/mecanique.md#fin-détage.
@@ -1547,15 +1556,11 @@ async function crossFloor(db: Database, user: User, rules: FloorRules, now: Date
   const currentFloor = user.currentFloor + 1
 
   // Franchir est un seul acte : en écritures séparées, une interruption au
-  // milieu abandonnerait le Pool Échecs d'un étage que le joueur n'a pas
-  // quitté. Un batch plutôt qu'une transaction : sur Turso, le HTTP n'en porte
-  // pas.
+  // milieu effacerait le combat d'un étage que le joueur n'a pas quitté. Un
+  // batch plutôt qu'une transaction : sur Turso, le HTTP n'en porte pas.
   await db.batch([
     db.delete(reservations).where(eq(reservations.userId, user.id)),
     db.delete(bossTrials).where(eq(bossTrials.userId, user.id)),
-    db
-      .delete(missedPool)
-      .where(and(eq(missedPool.userId, user.id), eq(missedPool.floor, user.currentFloor))),
     // Étage neuf : le décompte des questions vues et le boss repartent de zéro
     // avec lui. Écrits dans le même lot que l'étage, sinon un franchissement
     // interrompu laisserait le joueur au palier suivant avec ceux du précédent.
@@ -1718,7 +1723,7 @@ async function advanceRecovery(
       db.delete(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id)),
       db.delete(reservations).where(and(eq(reservations.userId, user.id), eq(reservations.mode, 'recovery'))),
     ])
-    await resumeWithoutRecovery(db, user, false, false, now)
+    await resumeWithoutRecovery(db, user, snapshot.poolSize, false, false, now)
     return withUnlocked(await buildState(db, user.id, now), punctual)
   }
 
@@ -1731,9 +1736,9 @@ async function advanceRecovery(
     // Le seuil se lit dans les règles de l'étage, jamais dans les règles
     // modulées : une Indulgence double le tirage, elle ne relève pas la barre
     // d'entrée — sinon elle empêcherait le rattrapage qu'elle rallonge.
-    if (!canDrawRecovery(await poolSize(db, user), rulesForFloor(user.currentFloor))) {
+    if (!canDrawRecovery(snapshot.poolSize, rulesForFloor(user.currentFloor))) {
       // Trop maigre pour y tirer : l'attente se termine et les vies reviennent.
-      await resumeWithoutRecovery(db, user, false, true, now)
+      await resumeWithoutRecovery(db, user, snapshot.poolSize, false, true, now)
       return withUnlocked(await buildState(db, user.id, now), opened)
     }
 
@@ -1746,7 +1751,6 @@ async function advanceRecovery(
       .from(missedPool)
       .where(and(
         eq(missedPool.userId, user.id),
-        eq(missedPool.floor, user.currentFloor),
         notExists(db.select({ one: sql`1` }).from(recoveryQuestions).where(eq(recoveryQuestions.userId, user.id))),
       ))
       .orderBy(sql`RANDOM()`)
@@ -1826,7 +1830,8 @@ async function finishRecovery(
 
   // Le tirage joué en entier, et juste de bout en bout. Depuis que le rattrapage
   // s'arrête au verdict scellé, cela n'arrive que lorsque le quota exige tout le
-  // tirage — sous Indulgence noire. Voir specs/succes.md#rattrapage.
+  // tirage — sous Indulgence noire, ou sur un pool court. Voir
+  // specs/succes.md#rattrapage.
   const perfect = progress !== null
     && progress.total > 0
     && progress.played === progress.total
@@ -2016,7 +2021,7 @@ async function questionLogPage(
 }
 
 /**
- * The missed pool of the player's floor, answers included — the Volumen's first
+ * The player's missed pool, answers included — the Volumen's first
  * tab. By last failure, newest first: what resists is what one wants to reread.
  * See specs/ecrans.md#volumen.
  */
@@ -2025,9 +2030,8 @@ export async function readMissedPool(
   user: User,
   query: QuestionLogQuery,
 ): Promise<QuestionLogPage> {
-  const onThisFloor = and(
+  const inPool = and(
     eq(missedPool.userId, user.id),
-    eq(missedPool.floor, user.currentFloor),
     matchesFilters(db, missedPool.questionId, query),
   )
 
@@ -2047,13 +2051,13 @@ export async function readMissedPool(
         eq(disputes.userId, missedPool.userId),
         eq(disputes.questionId, missedPool.questionId),
       ))
-      .where(onThisFloor)
+      .where(inPool)
       // L'identifiant départage deux échecs de la même seconde : une page ne
       // doit pas en reprendre une de la précédente.
       .orderBy(desc(missedPool.lastFailedAt), asc(missedPool.questionId))
       .limit(query.limit)
       .offset(query.offset),
-    db.select({ value: count() }).from(missedPool).where(onThisFloor),
+    db.select({ value: count() }).from(missedPool).where(inPool),
   )
 }
 

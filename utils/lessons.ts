@@ -251,7 +251,7 @@ export function recoveryLesson({ total, required }: NonNullable<GameState['nextR
   return [
     ...MICHEL_ENTRANCE,
     { text: 'Ton attente est finie : place au rattrapage !', spotlight: 'michel' },
-    // Toujours plusieurs questions : les règles en tirent trois, et l'Indulgence n'en retire jamais.
+    // Toujours plusieurs questions : sous la taille minimale du pool, pas de rattrapage.
     { text: `${inWords(total).charAt(0).toUpperCase()}${inWords(total).slice(1)} questions que tu as ratées précédemment te seront présentées, donne ${inWords(required)} ${required > 1 ? 'bonnes réponses' : 'bonne réponse'} pour reprendre ton ascension !`, spotlight: 'michel' },
     { text: 'Clique sur « Commencer » quand tu es prêt. Bonne chance !', spotlight: 'michel' },
   ]

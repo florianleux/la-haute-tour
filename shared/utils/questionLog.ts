@@ -5,7 +5,7 @@
 export const QUESTION_PAGE_SIZE = 20
 
 /**
- * Les onglets du Volumen : le Pool Échecs de l'étage, les Sangsues, les questions
+ * Les onglets du Volumen : le Pool Échecs, les Sangsues, les questions
  * connues, toutes les vues. Voir specs/ecrans.md#volumen.
  */
 export const QUESTION_LOG_TABS = ['missed', 'leeches', 'correct', 'all'] as const
