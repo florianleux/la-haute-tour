@@ -72,15 +72,32 @@ describe('le poids de l écran de chargement', () => {
   })
 })
 
-/** Un faux `Image` : le test dit lui-même quand chaque fichier arrive ou échoue. */
+/** Un faux `Image` : le test dit lui-même quand chaque fichier est décodé ou échoue. */
 class FakeImage {
   static created: FakeImage[] = []
-  onload: (() => void) | null = null
-  onerror: (() => void) | null = null
   src = ''
+  private resolve: () => void = () => {}
+  private reject: () => void = () => {}
 
   constructor() {
     FakeImage.created.push(this)
+  }
+
+  decode(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.resolve = resolve
+      this.reject = reject
+    })
+  }
+
+  async decoded(): Promise<void> {
+    this.resolve()
+    await Promise.resolve()
+  }
+
+  async failed(): Promise<void> {
+    this.reject()
+    await Promise.resolve()
   }
 }
 
@@ -113,10 +130,10 @@ describe('le préchargement', () => {
     screen.start()
     expect(FakeImage.created.map(image => image.src)).toEqual(['/a.webp', '/b.webp'])
 
-    FakeImage.created[0]!.onload!()
+    await FakeImage.created[0]!.decoded()
     expect(screen.done.value).toBe(false)
 
-    FakeImage.created[1]!.onerror!()
+    await FakeImage.created[1]!.failed()
     expect(screen.done.value).toBe(true)
   })
 
@@ -132,7 +149,7 @@ describe('le préchargement', () => {
     expect(screen.loaded.value).toBe(screen.total)
 
     // Un fichier qui arrive après le plafond ne fait pas déborder la barre.
-    FakeImage.created[0]!.onload!()
+    await FakeImage.created[0]!.decoded()
     expect(screen.loaded.value).toBe(screen.total)
   })
 
@@ -189,7 +206,7 @@ describe('le préchargement d un boss', () => {
     expect(FakeImage.created.map(image => image.src)).toEqual(['/images/boss/1/door.webp'])
     expect(screen.done.value).toBe(false)
 
-    FakeImage.created[0]!.onload!()
+    await FakeImage.created[0]!.decoded()
     expect(screen.done.value).toBe(true)
   })
 

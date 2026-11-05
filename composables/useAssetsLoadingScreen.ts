@@ -2,7 +2,7 @@ import { behindMobileWall } from '../utils/mobileWall'
 import type { ComputedRef, Ref } from 'vue'
 
 /** Au plus combien de temps l'écran de chargement tient, depuis `start()`. */
-export const ASSETS_LOADING_CEILING_MS = 10_000
+export const ASSETS_LOADING_CEILING_MS = 15_000
 
 /**
  * Vrai pour le jeu, l'introduction et les pages de test : celles dont les
@@ -34,8 +34,10 @@ export interface AssetsLoadingScreen {
 
 /**
  * Le préchargement des fichiers du jeu, avant son premier affichage dans
- * l'onglet. Un fichier en erreur compte comme arrivé : il ne doit pas tenir
- * l'écran. Chaque objet `Image` est gardé (`kept`) : le navigateur sert alors
+ * l'onglet. Un fichier compte comme arrivé une fois décodé, pas seulement
+ * téléchargé : sinon le décodage d'un décor 2400×1080 retombe sur son premier
+ * affichage, et le camp attend son fond. Un fichier en erreur compte aussi : il
+ * ne doit pas tenir l'écran. Chaque objet `Image` est gardé (`kept`) : le navigateur sert alors
  * le fichier de sa mémoire quand le jeu le demande dans la même page. D'une visite à
  * l'autre, chaque image est revalidée (`netlify.toml`) : un 304 sans contenu si
  * elle n'a pas changé.
@@ -86,9 +88,8 @@ function preloading(files: string[], key: string): AssetsLoadingScreen {
 
     for (const url of files) {
       const image = new Image()
-      image.onload = settle
-      image.onerror = settle
       image.src = url
+      image.decode().then(settle, settle)
       kept.push(image)
     }
 
