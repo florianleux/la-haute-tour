@@ -1,5 +1,19 @@
 @import 'tailwindcss';
 
+/* Seul le texte se sélectionne : un triple clic sur un objet du jeu (le Champignon
+   du camp) ne doit pas le surligner, ni l'image se traîner hors de l'écran. */
+@layer base {
+  img,
+  svg,
+  canvas,
+  video,
+  button {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+}
+
 @theme {
   --font-sans: 'Platypi', ui-sans-serif, system-ui, sans-serif;
 

@@ -5,7 +5,7 @@
        de l'appelant (le cadre de jeu qui rebondit) capterait le `fixed`.
        @container : le titre se mesure sur la largeur de l'écran. -->
   <Teleport to="body">
-    <div class="@container fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/75 motion-safe:animate-fade-in">
+    <div class="@container fixed inset-0 z-50 flex select-none flex-col items-center justify-center bg-slate-950/75 motion-safe:animate-fade-in">
       <!-- « Obtenu », puis le nom à la ligne : la mise en page du titre d'un
            boss, son épithète au-dessus de son nom. Devant les rayons, qui
            débordent jusque sous lui (`z-10`). -->
