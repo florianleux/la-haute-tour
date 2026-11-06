@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, notExists, sql } from 'drizzle-orm'
 import { keyToPlace } from './bossKeys'
 import { bossKeys, items, users } from '../db/schema'
 import type { SQL } from 'drizzle-orm'
@@ -29,6 +29,8 @@ export const ITEM_USES: Record<ItemId, {
   SCRIBE_QUILL: { usableBy: () => false, earns: [] },
   // Lui aussi : le Volumen le reconnaît dans le sac.
   LEECH_NET: { usableBy: () => false, earns: [] },
+  // Son effet tient dans la route, qui appelle eatMushroom. Voir specs/champignon.md.
+  MUSHROOM: { usableBy: () => true, earns: ['MUSHROOM_EATEN'] },
 }
 
 export interface ItemsView {
@@ -86,6 +88,14 @@ export async function hasItem(db: Database, userId: number, item: ItemId): Promi
     .limit(1)
 
   return row !== undefined
+}
+
+/** La garde d'un Objet qui ne se porte qu'en un exemplaire : à poser sur son INSERT … SELECT. */
+export function notCarrying(db: Database, userId: number, item: ItemId): SQL {
+  return notExists(db
+    .select({ one: sql`1` })
+    .from(items)
+    .where(and(eq(items.userId, userId), eq(items.item, item))))
 }
 
 /** Refuse (403) qui n'a pas la Plume de copiste : la recherche et la copie du Volumen en dépendent. */

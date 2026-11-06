@@ -20,6 +20,14 @@ import type { MissedPoolEntry, Reservation, User } from '../db/schema'
  */
 export type AnswerSource = 'player' | 'focusLoss'
 
+/** Le délai glissant entre un repas et le Champignon suivant. Voir specs/champignon.md. */
+const MUSHROOM_REGROWTH_MS = 7 * 24 * 60 * 60 * 1000
+
+/** Un Champignon pousse au camp : aucun au sac, et le délai du dernier repas passé. */
+export function mushroomGrows({ eatenAt, carried }: { eatenAt: Date | null, carried: boolean }, now: Date): boolean {
+  return !carried && (eatenAt === null || now.getTime() - eatenAt.getTime() >= MUSHROOM_REGROWTH_MS)
+}
+
 /** Voir specs/mecanique.md#machine-à-états — la seule définition de « où en est le joueur ». */
 export type Phase = 'ascent' | 'cooldown' | 'recovery' | 'floorEnd' | 'deckEnd' | 'bossDoor' | 'bossFight' | 'gameOver'
 

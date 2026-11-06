@@ -12,7 +12,7 @@
     type="button"
     :aria-label="label"
     :class="SURFACE"
-    @click="$emit('click')"
+    @click="$emit('click', $event)"
   />
 </template>
 
@@ -29,7 +29,7 @@ defineProps<{
   label: string
 }>()
 
-defineEmits<{ click: [] }>()
+defineEmits<{ click: [event: MouseEvent] }>()
 
 const SURFACE = 'absolute inset-0 z-30 cursor-pointer appearance-none border-0 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70'
 </script>

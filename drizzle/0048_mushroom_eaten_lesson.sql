@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `mushroom_eaten_lesson_at` integer;

@@ -98,6 +98,9 @@ export const users = sqliteTable('users', {
   leechNetLessonAt: integer('leech_net_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon de la question loot, sur la première servie. Comme campLessonAt. */
   lootLessonAt: integer('loot_lesson_at', { mode: 'timestamp' }),
+  /** Quand le joueur a répondu à Michel, au premier clic sur Utiliser du Champignon appétissant. Comme campLessonAt. */
+  mushroomLessonAt: integer('mushroom_lesson_at', { mode: 'timestamp' }),
+  mushroomEatenLessonAt: integer('mushroom_eaten_lesson_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),
   /**
@@ -242,6 +245,14 @@ export const users = sqliteTable('users', {
    * Voir specs/bonus.md#coffre-et-mimic.
    */
   lastChest: text('last_chest', { enum: ['spell', 'mimic'] }),
+  /**
+   * Quand le joueur a mangé son dernier Champignon appétissant : un autre
+   * repousse 7 jours glissants plus tard. Null : aucun depuis la dernière remise
+   * à zéro, il pousse dès le premier camp. Voir specs/champignon.md.
+   */
+  mushroomEatenAt: integer('mushroom_eaten_at', { mode: 'timestamp' }),
+  /** Intoxiqué : du repas au retour au camp. Voir specs/champignon.md. */
+  intoxicated: integer('intoxicated', { mode: 'boolean' }).notNull().default(false),
   /**
    * Les succès déjà acquis, portés plutôt que relus.
    *

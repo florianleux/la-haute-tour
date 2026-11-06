@@ -27,6 +27,8 @@ export interface Play {
   climbToDoor: () => Promise<void>
   /** « Entrer » : ouvrir le combat de boss, au terme de la porte et de l'introduction. */
   enterBoss: () => Promise<void>
+  /** Cueillir le Champignon appétissant du décor du camp. */
+  pickMushroom: () => Promise<void>
   /** True when the last action came back empty-handed. */
   failed: Ref<boolean>
   pending: Ref<boolean>
@@ -92,6 +94,7 @@ export function usePlay(): Play {
     descendToCamp: () => move('/api/game/door/descend'),
     climbToDoor: () => move('/api/game/door/climb'),
     enterBoss: () => move('/api/game/boss'),
+    pickMushroom: () => move('/api/game/items/pick'),
     failed,
     pending,
   }

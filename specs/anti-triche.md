@@ -14,6 +14,8 @@
 - **Scraping des questions via l'API** → sans objet.
 - **Recherche en ligne pendant la question** → couvert par le timer et la perte de focus.
 
+- **Clavier décalé de l'intoxication** : appliqué par l'écran, à la frappe. Contournable par les outils de développement, limite assumée. Voir [`champignon.md`](./champignon.md#lascension-intoxiquée).
+
 ## Timer
 
 - **Le serveur arbitre.** La question est servie avec une échéance ; toute réponse arrivant après est traitée comme un timeout, à une marge de latence près, quoi qu'affiche le client.

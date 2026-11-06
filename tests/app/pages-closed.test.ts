@@ -24,6 +24,7 @@ const OTHER_ADMIN_PAGES = [
   'test/intro.vue',
   'test/camp.vue',
   'test/leeches.vue',
+  'test/mushroom.vue',
   'test/door/[floor].vue',
   'test/boss/1/index.vue',
   'test/boss/1/victory.vue',

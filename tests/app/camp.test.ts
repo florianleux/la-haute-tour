@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { campDoorLine, campObjects } from '../../utils/camp'
 
-const newcomer = { team: null, volumen: false, spellbook: false }
+const newcomer = { team: null, volumen: false, spellbook: false, mushroom: false }
 
 describe('objets du camp', () => {
   it('pose la corde et le sac, même pour un joueur neuf sans équipe', () => {
@@ -21,8 +21,12 @@ describe('objets du camp', () => {
     expect(campObjects({ ...newcomer, spellbook: true }).has('spellbook')).toBe(true)
   })
 
+  it('pose le champignon quand il pousse', () => {
+    expect(campObjects({ ...newcomer, mushroom: true }).has('mushroom')).toBe(true)
+  })
+
   it('pose tout pour un joueur qui a tout découvert', () => {
-    expect(campObjects({ team: 'TLM', volumen: true, spellbook: true }).size).toBe(5)
+    expect(campObjects({ team: 'TLM', volumen: true, spellbook: true, mushroom: true }).size).toBe(6)
   })
 })
 

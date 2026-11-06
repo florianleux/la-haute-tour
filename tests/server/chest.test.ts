@@ -214,6 +214,16 @@ describe('coffre de loot', () => {
       await db.insert(pocketSpells).values({ userId: player.id, spell: 'RESPITE', obtainedAt: NOW })
     })
 
+    // Voir specs/champignon.md.
+    it('dégrise le joueur intoxiqué', async () => {
+      await db.update(users).set({ intoxicated: true }).where(eq(users.id, player.id))
+      await playLootQuestion('Bordeaux')
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
+
+      expect(state.intoxicated).toBe(false)
+    })
+
     it('ne donne rien et vide la tentative d un coup', async () => {
       await playLootQuestion('Bordeaux')
 

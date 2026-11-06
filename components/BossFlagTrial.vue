@@ -50,6 +50,7 @@
         :class="motion && CARD_MOTIONS[motion].panel"
       >
       <template v-if="verdict === null">
+        <IntoxicationPip v-if="intoxicated" class="w-[5dvh]" />
         <!-- Les drapeaux en `drop-shadow`, pas en `box-shadow` : dix sont
              détourés (transparence), et l'ombre doit suivre leur contour, pas
              leur boîte. Le cadre grossit (chute, saut) : à vérifier sur iPad
@@ -63,6 +64,7 @@
           :key="image"
           :model-value="modelValue"
           tone="moon"
+          :shifted="intoxicated"
           @update:model-value="emit('update:modelValue', $event)"
           @submit="send('enter')"
         />
@@ -153,6 +155,8 @@ const props = defineProps<{
    */
   outcome: BossOutcome | null
   modelValue: string
+  /** Le joueur est intoxiqué : l'icône de l'effet, et le clavier décalé. */
+  intoxicated?: boolean
   /** Le bouton sous le verdict ; absent, aucun. Sous le drapeau, c'est « Valider ». */
   actionLabel: string | null
   busy?: boolean

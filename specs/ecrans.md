@@ -54,6 +54,7 @@ L'ascension **au repos** (voir [`spec.md`](./spec.md#glossaire)) s'affiche au ca
 |---|---|
 | La corde (Ascension) | toujours |
 | Le sac (Inventaire) | toujours |
+| Le Champignon appétissant | quand il pousse, voir [`champignon.md`](./champignon.md) |
 | La bannière (Haut-faits) | toujours, pour un joueur qui a une équipe |
 | Le parchemin (Volumen) | dès la première question vue — en pratique, au retour de la première chute |
 | Le grimoire (Sorts) | dès le premier sort obtenu, même une fois tous lancés |
@@ -71,6 +72,8 @@ Un **indicateur de question loot** avant de répondre, quand le passage en est u
 Aucune autre action que répondre.
 
 **Entrée envoie la réponse, puis enchaîne.** Sur le verdict, le palier, la fin de rattrapage, la même touche passe à la suite : on joue au clavier sans en sortir. Elle est rendue à l'élément qui a le focus quand il en fait déjà quelque chose — un champ de saisie, un bouton, un lien —, sinon un seul appui déclencherait deux choses. **Une réponse vide se confirme** : le premier envoi d'un champ vide ou blanc, à Entrée comme au clic sur Valider, ne part pas ; la carte dit « Réponse vide. Appuie encore sur Entrée pour l'envoyer quand même. » (ou « Clique encore sur Valider »), et le second geste, quel qu'il soit, l'envoie. Une réponse vide coûte une vie, et Entrée vient de passer le verdict : un double appui un peu rapide grillerait la question qui s'affiche. Taper dans le champ efface l'avertissement. La fin du chrono et le départ de la page envoient sans demander.
+
+Intoxiqué, le joueur a aussi l'**icône d'intoxication**, et son champ de réponse a le clavier décalé. Voir [`champignon.md`](./champignon.md#lascension-intoxiquée).
 
 ### `ascent` — verdict
 
@@ -90,6 +93,8 @@ Le verdict est conservé par le serveur : recharger, ou revenir depuis un autre 
 - Les **nouvelles** : ce qui est arrivé au joueur sans lui, sous les effets. Voir [Nouvelles](#nouvelles).
 - L'accès au **Grimoire**, par le grimoire du camp.
 - Le **camp** lui-même, posé sur le décor : la corde (« Ascension »), roulée pendant l'attente, déroulée quand elle est échue — un clic lance alors la suite, comme le bouton « Commencer » ; la bannière de la guilde du joueur, qui mène aux Haut-faits (pas de bannière sans équipe, voir [`equipes.md`](./equipes.md)) ; le parchemin du Volumen ; le grimoire ; le sac de l'Inventaire. Chaque objet dit son nom au survol, et n'est là qu'une fois apparu (voir [Camp au repos](#camp-au-repos)).
+
+- Le **Champignon appétissant**, posé sur le décor quand il pousse, et que le sac permet de manger : voir [`champignon.md`](./champignon.md).
 
 ### `recovery` — rattrapage
 
@@ -131,6 +136,8 @@ Le combat se joue dans l'arène (`bossArena`) : la figure du boss, le joueur, le
 
 Le combat s'arrête au boss à 0 PV (victoire) ou au joueur à 0 vie (défaite). La victoire s'annonce sur le verdict de l'épreuve qui l'emporte, puis, sans clic, la nuit monte en fondu sur l'arène : c'est l'**outro de victoire**, solennelle : « Gardien vaincu » en petit et « VICTOIRE » en grand titre or, révélés lentement, le boss bras dans le dos, en colère, au bas de l'écran, puis sa réplique dans sa fenêtre (« Je m'incline, tu peux continuer ton ascension. Mais ne te fais pas d'illusions, ce n'était qu'un échauffement... »), qu'un clic sur elle enchaîne. Le passage automatique a la même nuit, sans titre : le boss bras dans le dos, sérieux, sa réplique dans sa fenêtre (« Ta persévérance force le respect, je veux voir jusqu'où elle te mènera... Je te laisse monter plus haut. »), et **Continuer**. Ce geste montre la relique du boss sur l'écran d'objet obtenu, dont l'OK franchit le palier — au dernier étage, la fin de partie. La défaite mène à l'**outro de défaite** : « DÉFAITE » en grand titre rouge, comme le nom du boss à l'introduction, le boss au milieu qui rit, sa réplique dans sa fenêtre (« Tu n'es pas encore au niveau, reviens dans quelques heures si tu l'oses. »), et « Redescendre » vers le camp en attente. Une page rechargée pendant l'attente va droit au camp. Un combat relancé après échec va direct au combat, sans rejouer l'introduction (pas encore : #39). Voir [`boss.md`](./boss.md).
 
+Intoxiqué, le joueur retrouve sur l'épreuve l'icône d'intoxication et le clavier décalé, comme à la question. Voir [`champignon.md`](./champignon.md#lascension-intoxiquée).
+
 ### `gameOver` — fin de partie
 
 Message de félicitations, précédé du verdict de la dernière question. Phase terminale, sans classement : plus rien n'avance.
@@ -152,6 +159,8 @@ Les textes sont à écrire ; seul leur contenu est fixé ici.
 | **Rattrapage** | la première attente échue, au camp, avant que « Commencer » n'apparaisse — juste après la leçon de la chute si le joueur n'est revenu qu'après l'échéance. « Commencer » reste caché tant qu'elle n'est pas vue | Le rattrapage qui suit, avec ses chiffres lus dans les règles jouées, Indulgence comprise : combien de questions tirées d'« À revoir », combien de bonnes réponses exigées. À sa première question, le décompte « Question n/total · x réponses justes sur y requises » (pas encore implémenté). |
 | **Grimoire** | première visite du camp après le premier sort obtenu — après la chute ou le rattrapage s'ils sont dus, jamais en même temps | Le premier sort est toujours Vitalité (voir [`bonus.md`](./bonus.md#coffre-et-mimic)). 1. Le grimoire, qui vient d'apparaître : l'ouvrir. Dans le Grimoire, qui se regarde sans se toucher sauf ce que Michel demande : 2. la page de gauche, qui montre ses sorts — il en reste à découvrir —, et Vitalité à y choisir ; 3. les deux faces de chaque sort, magie blanche et magie noire, selon sur qui on le lance (blanche sur soi ou un allié, noire sur un ennemi ; sans équipe, la blanche seule) ; 4. « Sur moi », pour la lancer sur soi ; 5. ce qu'elle fait : une vie de plus à la prochaine tentative ; 6. le lancer sur un allié ou un ennemi, tiré au hasard (sauté sans équipe) ; 7. le refermer. 8. Au revoir, au camp. Vitalité plus en poche ou déjà un sort lancé, Michel ouvre Vitalité lui-même et explique sans faire lancer ; « Sur moi » éteint, la leçon passe le lancer sans lui. |
 | **Plume** | première visite du camp avec la Plume de copiste au sac (voir [`bonus.md`](./bonus.md#coffre-et-mimic)) — après le Grimoire s'il est dû, jamais en même temps | Courte, rien à faire que l'ouvrir et la refermer. 1. Le parchemin du Volumen : l'ouvrir. Dans le Volumen, qui s'ouvre sur « Toutes » : 2. la **recherche** et le filtre de catégorie, qui pulsent — taper, choisir, cliquer la loupe ; 3. la **copie** : une question s'ouvre à droite, et un clic sur son énoncé ou sa réponse la copie, « pour ton Anki ». 4. Le refermer. 5. Au revoir. |
+| **Champignon** | premier clic sur Manger, le bouton Utiliser du Champignon appétissant (voir [`champignon.md`](./champignon.md#leçon-de-michel)) | Michel surgit aussitôt dans le sac (« HÉ ! »), met en garde et demande au joueur s'il est sûr. Oui, il le mange, le sac se ferme, Michel se tait sans bouger pendant les 2 secondes où l'intoxication monte, puis enchaîne sur son commentaire ; Non, il reste au sac. Datée dans les deux cas. |
+| **Champignon mangé** | premier repas (voir [`champignon.md`](./champignon.md#leçon-de-michel)) | Michel commente sur le camp : il l'avait bien dit. Après un Non, il arrive une fois l'intoxication montée. |
 | **Filet** | première visite du camp avec le Filet à sangsues au sac (voir [`bonus.md`](./bonus.md#coffre-et-mimic)) — après la Plume, jamais en même temps | Courte, rien à faire que l'ouvrir et la refermer. 1. Le parchemin du Volumen : l'ouvrir. Dans le Volumen, qui s'ouvre sur « Sangsues » : 2. ce qu'elles sont, les questions qu'on rate encore et encore au rattrapage ; 3. le tri, les plus coriaces en tête, et comment s'en défaire : les apprendre autrement. 4. Le refermer. 5. Au revoir. |
 | **Loot** | première question loot servie — la prochaine pour un joueur qui en a déjà croisé | Sur l'écran de question, pas au camp. Le chrono ne court pas et l'énoncé n'est pas servi tant que Michel parle (voir [`anti-triche.md`](./anti-triche.md#timer)). 1. L'annonce de la question loot, éclairée : réponds juste et tu ouvres un coffre. 2. Les objets magiques qu'il contient, avec une allusion au Mimic, sans le nommer. 3. Le retour d'une question loot toutes les 20 questions, chiffre lu dans les règles. 4. Le chrono repart : la dernière bulle passée, l'énoncé s'affiche et le joueur a son temps entier. |
 
@@ -172,7 +181,7 @@ Rien ne part hors du jeu : ni message Discord, ni email.
 
 ## Inventaire
 
-Nommé **Inventaire** côté joueur, ouvert par le sac du camp. Il montre les **Objets** du joueur — le Fromage, tant qu'il ne l'a pas donné à Michel, la Plume de copiste et le Filet à sangsues que lui ont donnés des coffres, et les reliques des boss battus (voir [`boss.md`](./boss.md#récompense)) — puis la clé du boss de l'étage tant qu'elle n'est pas posée (voir [`boss.md`](./boss.md#obtention-de-la-clé)), et rien des sorts, qui vivent au Grimoire. Vide, il le dit dans l'univers du jeu.
+Nommé **Inventaire** côté joueur, ouvert par le sac du camp. Il montre les **Objets** du joueur — le Fromage, tant qu'il ne l'a pas donné à Michel, la Plume de copiste et le Filet à sangsues que lui ont donnés des coffres, le Champignon appétissant cueilli au camp (voir [`champignon.md`](./champignon.md)), et les reliques des boss battus (voir [`boss.md`](./boss.md#récompense)) — puis la clé du boss de l'étage tant qu'elle n'est pas posée (voir [`boss.md`](./boss.md#obtention-de-la-clé)), et rien des sorts, qui vivent au Grimoire. Vide, il le dit dans l'univers du jeu.
 
 Il s'ouvre **par-dessus le camp**, comme le Grimoire : un sac vu de face qui jaillit du bas et rebondit en se posant, son titre « Inventaire » au-dessus. Échap, la croix ou un clic à côté le referment. Tout se passe dans son volet ouvert, au-dessus du nœud, en deux parties :
 

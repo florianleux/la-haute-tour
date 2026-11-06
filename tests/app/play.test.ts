@@ -33,6 +33,8 @@ const served: GameState = {
   spellDiscovered: false,
   hasQuill: false,
   hasLeechNet: false,
+  mushroomGrown: false,
+  intoxicated: false,
   firstCastPending: false,
   lessonsDone: ['camp'],
   chest: null,

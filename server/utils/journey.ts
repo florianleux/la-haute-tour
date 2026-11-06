@@ -95,6 +95,21 @@ export async function openAttempt(
 }
 
 /**
+ * Le retour au camp met fin à l'intoxication : chute, Mimic, « Redescendre »,
+ * défaite au boss ; la fin de la tour aussi. Écrit dès la dernière vie perdue,
+ * quand plus aucune réponse ne reste à décaler : l'écran garde ses effets jusqu'au
+ * camp (isHazy), et le toast du succès l'y attend. Voir specs/champignon.md.
+ */
+export async function soberUp(db: Database, user: User, now: Date): Promise<void> {
+  if (!user.intoxicated) {
+    return
+  }
+
+  await db.update(users).set({ intoxicated: false }).where(eq(users.id, user.id))
+  await unlock(db, user, ['MUSHROOM_SOBER'], now, { announced: false })
+}
+
+/**
  * Clôt la tentative en cours et enregistre sa longueur, en questions vues.
  *
  * Appelée au moment où la tentative suivante s'ouvre, jamais à la perte de la

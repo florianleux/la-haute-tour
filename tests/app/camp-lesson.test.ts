@@ -3,15 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
 import { demoState } from '../../utils/demo'
 import { dueLesson, isAtRest } from '../../utils/phase'
-import { LESSON_PAUSE_MS, campLesson, fallLesson, leechNetLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson } from '../../utils/lessons'
+import { LESSON_PAUSE_MS, campLesson, fallLesson, leechNetLesson, lessonStart, mushroomEatenLesson, mushroomLesson, quillLesson, recoveryLesson, spellbookLesson } from '../../utils/lessons'
 import type { GameState } from '../../server/utils/game'
 import type { Ref } from 'vue'
+import type { Mock } from 'vitest'
 import type { TeamId } from '../../shared/utils/teams'
 
 const { answerWith, breakNetwork, calls, reset } = installAppGlobals()
 
 // Les auto-imports dont le composable se sert, que Vitest ne pose pas.
-Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, leechNetLesson, lessonStart, quillLesson, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
+Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, leechNetLesson, lessonStart, mushroomEatenLesson, mushroomLesson, quillLesson, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
 const { fetchItems } = await import('../../composables/useItems')
 Object.assign(globalThis, { fetchItems })
 
@@ -53,6 +54,11 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers()
 })
+
+/** La dernière leçon envoyée au serveur pour être datée. */
+function lastLessonDated(): string | undefined {
+  return (globalThis as unknown as { $fetch: Mock }).$fetch.mock.lastCall?.[1]?.body?.lesson
+}
 
 /** Laisse passer la pause de Michel et la lecture du sac. */
 async function settle(ms = 0): Promise<void> {
@@ -372,5 +378,63 @@ describe('le déroulé de la leçon de la Plume', () => {
 
   it('ne se joue pas sans la Plume', () => {
     expect(start(demoState({ hasQuill: false, lessonsDone: ['camp', 'spellbook'] })).line.value).toBeNull()
+  })
+})
+
+// Oui ou Non, la leçon est datée. Voir specs/champignon.md#leçon-de-michel.
+describe('la leçon du Champignon', () => {
+  async function untilQuestion(): Promise<CampLesson> {
+    const lesson = start(demoState({ lessonsDone: ['camp'] }))
+
+    lesson.askMushroom()
+    expect(lesson.line.value).toMatchObject({ text: 'HÉ !', overlay: 'inventory' })
+    clickThrough(lesson)
+    expect(lesson.line.value).toMatchObject({ overlay: 'inventory', awaits: 'eat' })
+
+    return lesson
+  }
+
+  it('oui : le sac se ferme, Michel attend que l intoxication monte, commente, puis la leçon se date', async () => {
+    const lesson = await untilQuestion()
+
+    lesson.done('eat')
+    expect(lesson.line.value).toMatchObject({ text: '', overlay: 'inventory', awaits: 'close' })
+
+    lesson.done('close')
+    expect(lesson.line.value).toMatchObject({ text: '', awaits: 'haze' })
+
+    await vi.advanceTimersByTimeAsync(LESSON_PAUSE_MS)
+    expect(lesson.line.value?.text).toMatch(/^Je te l'avais bien dit/)
+    expect(lesson.line.value?.overlay).toBeUndefined()
+
+    lesson.next()
+    await settle()
+
+    expect(lesson.line.value).toBeNull()
+    expect(lastLessonDated()).toBe('mushroomEaten')
+  })
+
+  it('non puis un repas : Michel arrive une fois l intoxication montée, et commente', async () => {
+    const lesson = start(demoState({ lessonsDone: ['camp', 'mushroom'], intoxicated: true, phase: 'ascent' }))
+
+    expect(lesson.line.value).toMatchObject({ text: '', awaits: 'pause' })
+
+    await vi.advanceTimersByTimeAsync(LESSON_PAUSE_MS)
+    expect(lesson.line.value?.text).toMatch(/^Je te l'avais bien dit/)
+
+    lesson.next()
+    await settle()
+
+    expect(lastLessonDated()).toBe('mushroomEaten')
+  })
+
+  it('non : la leçon s arrête et se date', async () => {
+    const lesson = await untilQuestion()
+
+    await lesson.finish()
+
+    expect(lesson.line.value).toBeNull()
+    expect(lastLessonDated()).toBe('mushroom')
+    expect(refreshes).toBe(1)
   })
 })

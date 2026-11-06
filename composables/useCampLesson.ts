@@ -12,12 +12,14 @@ export interface CampLesson {
   next: () => void
   /**
    * Le joueur vient de faire ce geste (cliquer un objet, utiliser le Fromage,
-   * refermer une boîte, lancer un sort sur soi) : la leçon passe à la suite si
+   * refermer une boîte, lancer un sort sur soi, répondre à Michel) : la leçon passe à la suite si
    * c'est ce que la réplique attendait, et ne bouge pas sinon.
    */
-  done: (performed: Exclude<LessonAwait, 'pause' | 'ascent'>) => void
+  done: (performed: Exclude<LessonAwait, 'pause' | 'haze' | 'ascent'>) => void
   /** Le clic sur l'au revoir de Michel : la leçon du camp est vue, datée par le serveur. */
   finish: () => Promise<void>
+  /** Le premier clic sur Utiliser du Champignon : Michel demande si le joueur est sûr. */
+  askMushroom: () => void
 }
 
 /**
@@ -53,6 +55,8 @@ export function useCampLesson(
     quill: quillLesson,
     leechNet: leechNetLesson,
     loot: () => state.value?.question?.lootLesson ? lootLesson(state.value.question.lootLesson) : null,
+    mushroom: mushroomLesson,
+    mushroomEaten: mushroomEatenLesson,
   }
 
   function play(played: LessonLine[], from = 0): void {
@@ -89,8 +93,13 @@ export function useCampLesson(
     }
   }
 
-  function done(performed: Exclude<LessonAwait, 'pause' | 'ascent'>): void {
+  function done(performed: Exclude<LessonAwait, 'pause' | 'haze' | 'ascent'>): void {
     if (line.value?.awaits === performed) {
+      // Oui : le serveur a daté la mise en garde en servant le repas, la suite
+      // est le commentaire d'après.
+      if (performed === 'eat') {
+        playing.value = 'mushroomEaten'
+      }
       next()
     }
   }
@@ -102,7 +111,7 @@ export function useCampLesson(
     let pausing: ReturnType<typeof setTimeout> | undefined
     watch(line, (now) => {
       clearTimeout(pausing)
-      if (now?.awaits === 'pause') {
+      if (now?.awaits === 'pause' || now?.awaits === 'haze') {
         pausing = setTimeout(next, LESSON_PAUSE_MS)
       }
     })
@@ -132,5 +141,11 @@ export function useCampLesson(
     }, { immediate: true })
   }
 
-  return { line, next, done, finish: complete }
+  /** La leçon que le joueur déclenche lui-même : le premier clic sur Utiliser du Champignon. */
+  function askMushroom(): void {
+    play(mushroomLesson())
+    playing.value = 'mushroom'
+  }
+
+  return { line, next, done, finish: complete, askMushroom }
 }

@@ -52,6 +52,9 @@ const bodySchema = z.object({
  * joueur posé juste avant sa première question loot, qui lui est tirée : il
  * arrive sur elle, chrono retenu.
  *
+ * Pour la leçon du Champignon appétissant, partie neuve, toutes les autres leçons
+ * vues : le joueur est au camp au repos, le champignon sur le décor.
+ *
  * Admin seulement. Le joueur servi est le joueur test incarné : hors
  * développement, la partie d'un vrai compte, celui de l'admin compris, ne se
  * jette pas pour un banc.
@@ -77,6 +80,13 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
     ...lesson !== 'camp' && { [LESSON_COLUMNS.camp]: now },
     ...(lesson === 'recovery' || lesson === 'quill' || lesson === 'leechNet') && { [LESSON_COLUMNS.fall]: now },
   }).where(eq(users.id, player.id))
+
+  if (lesson === 'mushroom') {
+    await db.update(users).set(
+      Object.fromEntries(LESSON_IDS.filter(seen => seen !== 'mushroom' && seen !== 'mushroomEaten').map(seen => [LESSON_COLUMNS[seen], now])),
+    ).where(eq(users.id, player.id))
+    return { ok: true }
+  }
 
   if (lesson === 'camp') {
     await db.insert(items).values({ userId: player.id, item: 'CHEESE', obtainedAt: now })

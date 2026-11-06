@@ -23,7 +23,7 @@ ne partagent que le mot français — en code, l'une est `achievement`, l'autre
 
 ## Catalogue
 
-**Soixante-neuf succès**, répartis en quinze familles.
+**Soixante-douze succès**, répartis en seize familles.
 
 ### Premières fois — 4
 
@@ -154,6 +154,16 @@ premier qu'on gagne, avant toute question.
 Le Fromage ne se donne qu'une fois par partie. Après une remise à zéro, les
 succès s'effacent avec le reste (voir [Remise à zéro](#remise-à-zéro)) : le
 joueur le regagne.
+
+### Champignon — 3
+
+Voir [`champignon.md`](./champignon.md#succès).
+
+| Succès | Déclencheur |
+|---|---|
+| Chasseur-cueilleur | Cueillir son premier champignon |
+| Aucun instinct de survie | Manger son premier champignon |
+| Descente d'acide | Revenir au camp après une ascension intoxiquée |
 
 ### Porte et boss — 6
 

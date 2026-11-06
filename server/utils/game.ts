@@ -14,6 +14,7 @@ import {
   judgeAnswer,
   judgeRecovery,
   movePoolCounter,
+  mushroomGrows,
   phaseOf,
   recoveryThreshold,
   keyDue,
@@ -35,8 +36,9 @@ import { gameHour } from '../../shared/utils/time'
 import { grantKey, KEYS_TO_UNLOCK, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
-import { closeAttempt, openAttempt } from './journey'
+import { closeAttempt, openAttempt, soberUp } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
+import { grantItemWhere, hasItem, notCarrying } from './items'
 import { CHEST_ITEMS } from '../../shared/utils/items'
 import { FIRST_SPELL, isCooldownBound } from '../../shared/utils/spells'
 import { lessonsDone } from './lessons'
@@ -214,6 +216,10 @@ export interface GameState {
    * et les échecs de rattrapage sur la fiche. Voir specs/ecrans.md#volumen.
    */
   hasLeechNet: boolean
+  /** Un Champignon appétissant pousse au camp : un clic le cueille. Voir specs/champignon.md. */
+  mushroomGrown: boolean
+  /** Le joueur est intoxiqué : couleurs et vagues à l'écran, clavier décalé. Voir specs/champignon.md. */
+  intoxicated: boolean
   /**
    * Les leçons de Michel que le joueur a déjà vues : une leçon absente se joue
    * à son moment. Voir specs/ecrans.md#leçons-de-michel.
@@ -300,6 +306,8 @@ export interface PlayerSnapshot {
   hasQuill: boolean
   /** Le Filet à sangsues dans le sac. Lu avec le joueur. */
   hasLeechNet: boolean
+  /** Le Champignon appétissant dans le sac. Lu avec le joueur. */
+  hasMushroom: boolean
   /** La clé du boss de l'étage courant, pas encore posée. Lue avec le joueur. */
   hasKey: boolean
   /** Qui a posé sa clé sur la porte de son équipe, à son étage. Lus dans le même lot. */
@@ -407,6 +415,7 @@ function snapshotQueries(db: Database, userId: number) {
         // Lue avec le joueur, pour la même raison : le Volumen en dépend.
         hasQuill: carries('SCRIBE_QUILL'),
         hasLeechNet: carries('LEECH_NET'),
+        hasMushroom: carries('MUSHROOM'),
         // Lue avec le joueur, pour la même raison : la porte la demande à chaque lecture.
         hasKey: sql<number>`${exists(db.select({ one: sql`1` }).from(bossKeys).where(keyToPlace(users.id, users.currentFloor)))}`,
       })
@@ -460,6 +469,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials, keyHolders]: B
     firstCastPending: row.firstCastPending === 1,
     hasQuill: row.hasQuill === 1,
     hasLeechNet: row.hasLeechNet === 1,
+    hasMushroom: row.hasMushroom === 1,
     hasKey: row.hasKey === 1,
     keyHolders: keyHolders.map(holder => holder.username),
     gameClosed: row.gameClosed === 1,
@@ -879,6 +889,11 @@ async function resolve(
   // coûterait une écriture par palier pour rien.
   const firstAscent = crossing && user.currentFloor === 1 ? await claimFirstAscent(db, user) : []
 
+  // La chute ramène au camp : l'intoxication s'y arrête.
+  if (cooldownUntil) {
+    await soberUp(db, snapshot.user, now)
+  }
+
   return {
     // Une chute relit tout : le pool ne se comptait pas tant qu'il restait des vies.
     snapshot: cooldownUntil ? await loadSnapshot(db, user.id) : { ...snapshot, user: fresh, reservation: resolved },
@@ -987,6 +1002,8 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     firstCastPending: snapshot.firstCastPending,
     hasQuill: snapshot.hasQuill,
     hasLeechNet: snapshot.hasLeechNet,
+    mushroomGrown: mushroomGrows({ eatenAt: user.mushroomEatenAt, carried: snapshot.hasMushroom }, now),
+    intoxicated: user.intoxicated,
     lessonsDone: lessonsDone(user),
     chest: null as ChestView | null,
     maintenance: snapshot.gameClosed && !user.isAdmin && !user.isTest,
@@ -1192,6 +1209,15 @@ async function resumeWithoutRecovery(
     return false
   }
 
+  return resumeAttempt(db, user, anchorEffects, now)
+}
+
+/**
+ * Sortir de l'attente, vies pleines, sans rattrapage : parce qu'il n'y a rien à
+ * tirer (resumeWithoutRecovery) ou parce que le joueur a mangé son Champignon
+ * (eatMushroom). Vrai si c'est cette requête qui l'a fait.
+ */
+async function resumeAttempt(db: Database, user: User, anchorEffects: boolean, now: Date): Promise<boolean> {
   // Les vies pleines ouvrent une tentative : ce qui a été raté avant n'est plus
   // contestable. Voir specs/validation.md#contestation. Ouverte avant tout le
   // reste : si une autre requête vient de le faire, il n'y a plus rien à écrire.
@@ -1206,6 +1232,43 @@ async function resumeWithoutRecovery(
   await db.delete(reservations).where(and(eq(reservations.userId, user.id), isNotNull(reservations.resolvedAt)))
   await closeAttempt(db, user, now)
   return true
+}
+
+/**
+ * Cueillir le Champignon appétissant : il quitte le décor pour le sac. Un seul à
+ * la fois, et pas avant que le délai du dernier repas soit passé. L'INSERT porte
+ * la garde du sac : deux clics simultanés n'en cueillent qu'un.
+ * Voir specs/champignon.md.
+ */
+export async function pickMushroom(db: Database, user: User, now: Date): Promise<GameState> {
+  if (!mushroomGrows({ eatenAt: user.mushroomEatenAt, carried: await hasItem(db, user.id, 'MUSHROOM') }, now)) {
+    throw createError({ statusCode: 409, statusMessage: 'Aucun champignon à cueillir' })
+  }
+
+  await grantItemWhere(db, user.id, 'MUSHROOM', now, notCarrying(db, user.id, 'MUSHROOM'))
+
+  const picked = await unlock(db, user, ['MUSHROOM_PICKED'], now)
+
+  return withUnlocked(await buildState(db, user.id, now), picked)
+}
+
+/**
+ * Manger le Champignon appétissant : le joueur est intoxiqué et le délai de
+ * repousse part. Sans vies, l'attente échoit sans rattrapage, quels que soient
+ * les sorts qui la touchent ; au repos, rien d'autre. Voir specs/champignon.md.
+ */
+export async function eatMushroom(db: Database, user: User, now: Date): Promise<void> {
+  // Le manger vaut réponse à la mise en garde de Michel.
+  await db.update(users).set({ intoxicated: true, mushroomEatenAt: now, mushroomLessonAt: user.mushroomLessonAt ?? now }).where(eq(users.id, user.id))
+
+  // Une échéance posée, c'est une attente en cours ou échue.
+  if (user.cooldownUntil === null) {
+    return
+  }
+
+  const snapshot = await loadSnapshot(db, user.id)
+
+  await resumeAttempt(db, snapshot.user, !atBoss(snapshot), now)
 }
 
 /**
@@ -1412,6 +1475,8 @@ export async function openPlayerChest(
 
   const unlocked = await unlock(db, snapshot.user, ['FIRST_DEATH'], now)
 
+  await soberUp(db, snapshot.user, now)
+
   return withUnlocked(await buildState(db, user.id, now), unlocked)
 }
 
@@ -1479,6 +1544,13 @@ async function moveDoorSpot(db: Database, user: User, now: Date, to: User['doorS
   }
 
   await db.update(users).set({ doorSpot: to }).where(eq(users.id, user.id))
+
+  // Redescendre, c'est revenir au camp : l'intoxication s'y arrête.
+  if (to === 'camp' && snapshot.user.intoxicated) {
+    await soberUp(db, snapshot.user, now)
+    return buildState(db, user.id, now)
+  }
+
   return stateFrom({ ...snapshot, user: { ...snapshot.user, doorSpot: to } }, now)
 }
 

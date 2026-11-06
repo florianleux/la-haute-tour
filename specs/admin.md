@@ -50,6 +50,7 @@
   - Les effets effacés sont ceux qu'il subit **et** les sorts qu'il a lancés sur d'autres joueurs : ceux-là perdent les effets qu'il leur avait posés.
   - Les contestations effacées le sont toutes, en cours comme tranchées : gardée, une contestation tranchée interdirait de recontester une question ratée de nouveau. Les réponses qu'elle a fait accepter restent sur la question.
   - Ses compteurs et ses succès repartent de zéro, vrai joueur comme joueur test : voir [`succes.md`](./succes.md#remise-à-zéro).
+  - Le Champignon appétissant s'efface aussi : celui du sac, son délai de repousse et l'intoxication. Il repousse au premier camp, voir [`champignon.md`](./champignon.md#apparition-et-cueillette).
   - Ses clés du boss sont effacées avec le reste.
   - Les pertes de focus restent : ce sont des drapeaux d'administration, pas la partie.
 - L'avatar est le hash renvoyé par Discord à la connexion, resynchronisé à chaque login. Faute de hash, l'avatar par défaut du compte.

@@ -61,6 +61,8 @@ Une réponse vide n'est **pas contestable** : accepter une telle contestation aj
 - **Bouton seul**, pas de message libre.
 - Sur l'écran de verdict, le bouton ne paraît que sur un verdict **faux** : un rattrapage réussi sur une question encore contestable ne se conteste pas. Une fois la contestation envoyée, « Contestation envoyée ! » jaillit à la place du bouton.
 
+Une réponse altérée par le clavier décalé de l'intoxication se conteste comme une autre : le serveur juge ce qu'il reçoit, et l'admin voit la réponse décalée, sans mention de l'intoxication. Voir [`champignon.md`](./champignon.md#contestation).
+
 ### Effet sur le joueur
 
 - Acceptée **alors que le joueur n'a plus de vie** — en attente, ou dans le rattrapage que cette attente a ouvert → l'attente et le rattrapage suivent leur cours. La vie est mise de côté (**Justice divine**, `divineJustice`, une par contestation acceptée) et s'ajoute aux vies pleines de la **tentative suivante**, celle qui s'ouvre à la reprise.

@@ -34,7 +34,7 @@
 
     <!-- Michel, quand il parle depuis la boîte : dedans, et non sur le camp —
          une boîte modale passe devant tout ce qui n'est pas en elle. -->
-    <MichelLesson v-if="lesson" :line="lesson" @next="$emit('next')" />
+    <MichelLesson v-if="lesson" :line="lesson" @next="$emit('next')" @answer="$emit('answer', $event, close)" />
   </BaseDialog>
 </template>
 
@@ -77,7 +77,7 @@ const props = defineProps<{
   lesson?: LessonLine
 }>()
 
-const emit = defineEmits<{ close: [], next: [] }>()
+const emit = defineEmits<{ close: [], next: [], answer: [yes: boolean, close: () => void] }>()
 
 const locked = computed(() => locksOverlay(props.lesson))
 

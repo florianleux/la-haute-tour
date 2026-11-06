@@ -49,6 +49,7 @@
       v-if="statement"
       :key="lessonDims(lesson) ? 'held' : 'free'"
       :model-value="modelValue"
+      :shifted="state.intoxicated"
       @update:model-value="$emit('update:modelValue', $event)"
       @submit="send('enter')"
     />

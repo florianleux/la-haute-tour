@@ -159,6 +159,7 @@
       <div
         class="pointer-events-auto absolute left-[71%] top-[90%] flex w-[24%] justify-center gap-1.5 sm:left-[82.6%] sm:top-[72.5%] sm:w-[14%] sm:justify-start"
       >
+        <IntoxicationPip v-if="state.intoxicated" class="w-[6.5cqw] sm:w-[3cqw]" />
         <template v-if="curses.length">
           <EffectPip
             v-for="(effect, i) in curses"
@@ -167,7 +168,7 @@
           />
         </template>
         <span
-          v-else
+          v-else-if="!state.intoxicated"
           class="text-[6.5cqw] font-bold leading-none text-rose-950/60 sm:ml-[1cqw] sm:text-[3cqw]"
         >-</span>
       </div>

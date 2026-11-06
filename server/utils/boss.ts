@@ -1,11 +1,12 @@
-import { and, asc, eq, exists, isNull, notExists, sql } from 'drizzle-orm'
+import { and, asc, eq, exists, isNull, sql } from 'drizzle-orm'
 import { isAnswerAccepted } from '../../shared/utils/answers'
+import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { BOSS_RELICS } from '../../shared/utils/items'
 import { earnedByTrial, unlock } from './achievements'
-import { closeAttempt } from './journey'
-import { grantItemWhere } from './items'
+import { closeAttempt, soberUp } from './journey'
+import { grantItemWhere, notCarrying } from './items'
 import { BOSS_FIGHT_COUNT, bossBeaten, bossFightOpening, bossFightState, bossOutcome, isExpired, judgeTrial } from './mechanics'
-import { bossTrials, flags, items, users } from '../db/schema'
+import { bossTrials, flags, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { BossOutcome } from './mechanics'
@@ -268,10 +269,7 @@ export async function resolveTrial(
     // deux réponses simultanées n'en laissent qu'une, et un boss rebattu (le
     // joueur test reculé) n'en laisse pas une deuxième.
     ...relic
-      ? [grantItemWhere(db, user.id, relic, now, and(whileOpen, notExists(db
-          .select({ one: sql`1` })
-          .from(items)
-          .where(and(eq(items.userId, user.id), eq(items.item, relic))))))]
+      ? [grantItemWhere(db, user.id, relic, now, and(whileOpen, notCarrying(db, user.id, relic)))]
       : [],
     db.update(bossTrials).set({ resolvedAt: now, correct, submittedAnswer: answer }).where(stillOpen),
   ])
@@ -281,10 +279,18 @@ export async function resolveTrial(
     return []
   }
 
-  return unlock(db, user, earnedByTrial({
+  const earned = await unlock(db, user, earnedByTrial({
     outcome,
     position: trial.position,
     bossHp: rules.bossHp,
     bossAttemptNumber: user.bossAttemptNumber,
   }), now)
+
+  // La défaite ramène au camp, et la tour finie n'y ramène plus jamais :
+  // l'intoxication s'arrête là.
+  if (judgement.cooldownUntil || (outcome && user.currentFloor >= FLOOR_COUNT)) {
+    await soberUp(db, user, now)
+  }
+
+  return earned
 }

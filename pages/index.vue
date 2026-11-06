@@ -94,6 +94,7 @@
       @skip-cooldown="run('skipCooldown', skipCooldown)"
       @advance="advanceFromCamp"
       @open="openCampOverlay"
+      @pick="pick"
     />
 
     <ChestCard
@@ -143,6 +144,7 @@
       :stage="bossStage"
       :player-name="user?.displayName ?? ''"
       :portrait="playerPortrait(user?.gender ?? null)"
+      :intoxicated="state.intoxicated"
       :model-value="typed"
       :seconds-left="secondsLeft"
       :submitting="pending"
@@ -172,6 +174,8 @@
       @animationend="campFade = false"
     />
 
+    <IntoxicationHaze v-if="hazy" />
+
     <!-- Michel en leçon, sur le camp ou sur la question loot. Hors de la chaîne des cartes : glissé
          dedans, il la coupait, et la carte vide du `v-else` s'affichait à côté
          de la question. Quand une boîte du camp est ouverte, c'est
@@ -195,13 +199,24 @@
          affiché dessous et son attente continue de tourner. Chaque boîte
          prévient quand elle a fini de se fermer, ou quand la partie quitte le
          camp (CampOverlay). -->
+    <!-- Le Champignon cueilli : il saute du décor au centre de l'écran. -->
+    <ItemReveal
+      v-if="pickedFrom"
+      :label="itemLabel('MUSHROOM').name"
+      :image="itemLabel('MUSHROOM').image"
+      :from="pickedFrom"
+      @close="pickedFrom = null"
+    />
+
     <component
       :is="CAMP_OVERLAYS[campOverlay]"
       v-if="campOverlay"
       v-bind="lesson.line.value?.overlay === campOverlay ? { lesson: lesson.line.value } : {}"
       @close="closeCampOverlay"
       @next="lesson.next"
-      @used="lesson.done('use')"
+      @used="onItemUsed"
+      @ask-eat="lesson.askMushroom"
+      @declined="lesson.finish"
       @chosen="lesson.done('click')"
       @cast="lesson.done('cast')"
     />
@@ -211,6 +226,8 @@
 <script setup lang="ts">
 import { AchievementsOverlay, InventoryOverlay, QuestionLogOverlay, SpellbookOverlay } from '#components'
 import type { Component } from 'vue'
+import type { ItemId } from '~~/shared/utils/items'
+import type { PickedFrom } from '~~/utils/camp'
 import type { CampOverlayId, PlayView } from '~~/utils/phase'
 
 // Une seule route de jeu : le serveur décide de la phase, la page affiche
@@ -231,6 +248,7 @@ const {
   openDoor,
   descendToCamp,
   climbToDoor,
+  pickMushroom,
   pending,
   actionFailed,
   readFailed,
@@ -312,6 +330,14 @@ const view = computed(() =>
     : null,
 )
 
+// L'intoxication, du repas à l'arrivée au camp : posée sur la racine, elle prend
+// tout l'écran (IntoxicationHaze). Voir specs/champignon.md.
+const hazy = useHazy()
+watch([() => state.value?.intoxicated, () => view.value?.card, () => state.value?.phase], ([intoxicated, card, phase]) => {
+  hazy.value = isHazy(intoxicated ?? false, hazy.value, card, phase)
+}, { immediate: true })
+useHead({ htmlAttrs: { class: computed(() => (hazy.value ? 'intoxicated' : '')) } })
+
 /** Le boss de l'étage, sa porte et son introduction. */
 const bossStage = computed(() => state.value && bossStageOf(state.value.floor))
 
@@ -386,6 +412,36 @@ function openCampOverlay(screen: CampOverlayId): void {
 function closeCampOverlay(): void {
   campOverlay.value = null
   lesson.done('close')
+  if (mushroomEaten) {
+    mushroomEaten = false
+    void refresh()
+  }
+}
+
+/** D'où part le Champignon qui se montre, null quand aucun ne se montre. */
+const pickedFrom = ref<PickedFrom | null>(null)
+
+/** Le triple clic : le serveur le cueille, et il se montre une fois au sac. */
+async function pick(from: PickedFrom): Promise<void> {
+  if (pending.value) {
+    return
+  }
+  await pickMushroom()
+  if (state.value?.mushroomGrown === false) {
+    pickedFrom.value = from
+  }
+}
+
+/**
+ * Le Champignon mangé change l'état de jeu, relu une fois le sac fermé :
+ * l'intoxication ne monte qu'après.
+ */
+let mushroomEaten = false
+
+/** Un Objet utilisé : Michel a son geste. */
+function onItemUsed(item: ItemId): void {
+  lesson.done(item === 'CHEESE' ? 'use' : 'eat')
+  mushroomEaten = item === 'MUSHROOM'
 }
 
 /**
@@ -433,7 +489,7 @@ async function leaveForAscent(): Promise<void> {
 // pendant que Michel parle : Entrée fait avancer sa bulle, et une leçon ne se
 // passe pas.
 // L'outro de victoire tient Entrée elle-même, une fois sa fenêtre parue.
-useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && !(view.value && victoryOnScreen(view.value)) && campOverlay.value === null && !lesson.line.value && !practice.question.value)
+useAdvanceOnEnter(goNext, () => Boolean(view.value?.action) && !(view.value && victoryOnScreen(view.value)) && campOverlay.value === null && !pickedFrom.value && !lesson.line.value && !practice.question.value)
 
 // Au verdict de la question d'essai, Entrée fait « Suivant » — une fois Michel tu.
 useAdvanceOnEnter(practice.leave, () => Boolean(practice.verdict.value) && !practice.line.value)

@@ -6,7 +6,7 @@
  * Les identifiants seuls : les libellés vivent dans `utils/items.ts`, côté
  * écran. Voir specs/spec.md (glossaire, « Objet »).
  */
-export const ITEM_IDS = ['CHEESE', 'JULIEN_CARD', 'SCRIBE_QUILL', 'LEECH_NET'] as const
+export const ITEM_IDS = ['CHEESE', 'JULIEN_CARD', 'SCRIBE_QUILL', 'LEECH_NET', 'MUSHROOM'] as const
 
 export type ItemId = typeof ITEM_IDS[number]
 

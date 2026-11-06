@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { useDatabase } from '~~/server/db/client'
 import { unlock } from '~~/server/utils/achievements'
 import { requireCamp } from '~~/server/utils/camp'
+import { eatMushroom } from '~~/server/utils/game'
 import { ITEM_USES, readItems, takeItem } from '~~/server/utils/items'
 import { ITEM_IDS } from '~~/shared/utils/items'
 import type { ItemsView } from '~~/server/utils/items'
@@ -32,6 +33,10 @@ export default defineEventHandler(async (event): Promise<ItemUseView> => {
 
   if (!ITEM_USES[item].usableBy(user) || !await takeItem(db, user.id, item)) {
     throw createError({ statusCode: 409, statusMessage: 'Objet inutilisable' })
+  }
+
+  if (item === 'MUSHROOM') {
+    await eatMushroom(db, user, now)
   }
 
   const [bag, unlocked] = await Promise.all([

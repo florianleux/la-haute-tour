@@ -3,10 +3,17 @@ import { BOSS_DOORS } from './bossDoors'
 import type { TeamId } from '~~/shared/utils/teams'
 
 /** Un objet posé sur le décor du camp. */
-export type CampObject = 'rope' | 'banner' | 'scroll' | 'backpack' | 'spellbook' | 'michel'
+export type CampObject = 'rope' | 'banner' | 'scroll' | 'backpack' | 'spellbook' | 'mushroom' | 'michel'
   // La bannière du poster, qui porte le décompte de l'attente : pas un objet
   // posé sur le décor, mais Michel l'éclaire comme eux.
   | 'posterBanner'
+
+/** D'où le Champignon cueilli part à l'écran : ce qu'ItemReveal attend en `from`. */
+export interface PickedFrom {
+  x: number
+  y: number
+  width: number
+}
 
 /** Ce que le camp lit de l'état servi pour savoir quels objets poser. */
 export interface CampContents {
@@ -16,6 +23,8 @@ export interface CampContents {
   volumen: boolean
   /** Le joueur a déjà obtenu un sort, même tous lancés depuis. */
   spellbook: boolean
+  /** Un Champignon appétissant pousse : un clic le cueille. */
+  mushroom: boolean
 }
 
 /**
@@ -23,11 +32,12 @@ export interface CampContents {
  * ni parchemin vide ni grimoire sans sort. Tout se déduit de l'état servi, rien
  * n'est stocké en plus. Voir specs/ecrans.md#camp-au-repos.
  */
-export function campObjects({ team, volumen, spellbook }: CampContents): Set<CampObject> {
+export function campObjects({ team, volumen, spellbook, mushroom }: CampContents): Set<CampObject> {
   const objects = new Set<CampObject>(['rope', 'backpack'])
   if (team) objects.add('banner')
   if (volumen) objects.add('scroll')
   if (spellbook) objects.add('spellbook')
+  if (mushroom) objects.add('mushroom')
   return objects
 }
 

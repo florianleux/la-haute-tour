@@ -87,6 +87,9 @@ const SINGULAR_IDS = [
   'CAMP_AT_NIGHT',
   'DEVTOOLS_OPENED',
   'QUESTION_COPIED',
+  'MUSHROOM_PICKED',
+  'MUSHROOM_EATEN',
+  'MUSHROOM_SOBER',
 ] as const
 
 export type StreakAchievementId = `STREAK_${typeof STREAK_TIERS[number]}`

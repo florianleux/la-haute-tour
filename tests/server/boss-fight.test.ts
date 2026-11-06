@@ -271,6 +271,15 @@ describe('combat de boss', () => {
         expect((await readGameState(db, await reload(), tick())).door).toMatchObject({ spot: 'door' })
       })
 
+      // Voir specs/champignon.md.
+      it('dégrise le joueur intoxiqué', async () => {
+        await set({ team: 'TLM', intoxicated: true })
+
+        const state = await descend()
+
+        expect(state.intoxicated).toBe(false)
+      })
+
       it('retient le camp : au retour, le joueur y est encore', async () => {
         await set({ team: 'TLM' })
 
@@ -413,6 +422,15 @@ describe('combat de boss', () => {
       }
       return state
     }
+
+    // Voir specs/champignon.md.
+    it('dégrise le joueur intoxiqué', async () => {
+      await set({ intoxicated: true })
+
+      const state = await lose()
+
+      expect(state.intoxicated).toBe(false)
+    })
 
     it('rend le joueur au camp, en attente : le boss garde ses PV, le combat s efface', async () => {
       const state = await lose()

@@ -99,6 +99,8 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     firstCastPending: false,
     hasQuill: false,
     hasLeechNet: false,
+    mushroomGrown: false,
+    intoxicated: false,
     lessonsDone: ['camp'],
     chest: null,
     maintenance: false,

@@ -25,9 +25,11 @@ export const LESSON_CUTOUT = 'rounded-[0.5cqw] ring-1 ring-amber-200/70 backdrop
  * - `use` : utiliser le Fromage depuis l'Inventaire — le donner à Michel ;
  * - `close` : refermer la boîte du camp où Michel parle ;
  * - `cast` : lancer sur soi le sort qu'il montre, depuis le Grimoire ;
+ * - `eat` : répondre Oui ou Non à sa question, dans l'Inventaire ;
+ * - `haze` : rien à faire, Michel se tait sur le camp le temps que l'intoxication monte (LESSON_PAUSE_MS) ;
  * - `ascent` : le clic sur la bulle, qui finit la leçon et lance l'ascension.
  */
-export type LessonAwait = 'pause' | 'click' | 'use' | 'close' | 'cast' | 'ascent'
+export type LessonAwait = 'pause' | 'click' | 'use' | 'close' | 'cast' | 'eat' | 'haze' | 'ascent'
 
 /**
  * Ce que Michel éclaire sur l'écran de question, à la question d'essai : les
@@ -74,9 +76,11 @@ export interface LessonLine {
  * attendre, puis on l'entend avant de le voir. Le camp s'assombrit dès le cri :
  * Michel est déjà là, hors de vue.
  */
+const MICHEL_SHOUT: LessonLine = { text: 'HÉ !', spotlight: 'michel', bubbleOnly: true }
+
 const MICHEL_ENTRANCE: LessonLine[] = [
   { text: '', spotlight: null, awaits: 'pause' },
-  { text: 'HÉ !', spotlight: 'michel', bubbleOnly: true },
+  MICHEL_SHOUT,
 ]
 
 /**
@@ -213,6 +217,39 @@ export function leechNetLesson(): LessonLine[] {
     { text: 'Les plus coriaces sont en tête. Relire ne suffit plus : apprends-les autrement, avec une astuce ou une image.', spotlight: null, overlay: 'questionLog' },
     { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
     { text: 'Bonne chasse !', spotlight: 'michel' },
+  ]
+}
+
+const MICHEL_TOLD_YOU: LessonLine = { text: 'Je te l\'avais bien dit ! Tu peux repartir à l\'ascension dès maintenant, mais t\'as pas l\'air net.', spotlight: 'michel' }
+
+/**
+ * La leçon du Champignon appétissant, au premier clic sur Manger : Michel surgit
+ * dans le sac, met en garde et demande si le joueur est sûr. Non, elle s'arrête
+ * là. Oui, le sac se ferme, Michel se tait sans bouger le temps que
+ * l'intoxication monte, et enchaîne sur son commentaire (mushroomEatenLesson).
+ * Voir specs/ecrans.md#leçons-de-michel (Champignon).
+ */
+export function mushroomLesson(): LessonLine[] {
+  return [
+    // Sans pause : le joueur vient de cliquer, Michel crie aussitôt.
+    { ...MICHEL_SHOUT, overlay: 'inventory' },
+    { text: 'C\'est vrai que certains champignons permettent de se reposer plus vite, mais je serais toi, je ne le tenterais pas.', spotlight: null, overlay: 'inventory' },
+    { text: 'Tu es sûr de vouloir le manger ?', spotlight: null, overlay: 'inventory', awaits: 'eat' },
+    // Sans texte, Michel est là sans bulle : dans le sac qui se ferme, puis sur le camp.
+    { text: '', spotlight: null, overlay: 'inventory', awaits: 'close' },
+    { text: '', spotlight: null, awaits: 'haze' },
+    MICHEL_TOLD_YOU,
+  ]
+}
+
+/**
+ * Le commentaire de Michel sur le Champignon mangé alors qu'il avait dit Non :
+ * Michel n'était pas là, il arrive une fois l'intoxication montée.
+ */
+export function mushroomEatenLesson(): LessonLine[] {
+  return [
+    { text: '', spotlight: null, awaits: 'pause' },
+    MICHEL_TOLD_YOU,
   ]
 }
 

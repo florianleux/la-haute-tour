@@ -1,7 +1,9 @@
+import { LESSON_IDS } from '../../shared/utils/lessons'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
 import { items, missedPool, pocketSpells, reservations, users, seenQuestions } from '../../server/db/schema'
+import { readGameState } from '../../server/utils/game'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import { installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
@@ -155,5 +157,26 @@ describe('le banc de la leçon loot', () => {
     expect(response.status).toBe(200)
     expect(held?.expiresAt.getTime()).toBeGreaterThan(Date.now() + 24 * 60 * 60 * 1000)
     expect((await loadPlayer(db, testerId)).lootLessonAt).toBeNull()
+  })
+})
+
+// Le banc du Champignon (/test/mushroom) : au camp au repos, le champignon à cueillir.
+describe('le banc du Champignon', () => {
+  it('rend une partie neuve, leçons vues sauf la sienne, champignon sur le décor', async () => {
+    const db = await createTestDatabase()
+    setDatabase(db)
+    await createQuestion(db)
+    const adminId = await createPlayer(db, { discordId: '999', username: 'saruman', isAdmin: true })
+    const testerId = await createPlayer(db, { discordId: 'test-1', username: 'testeur', isTest: true })
+    await db.update(users).set({ intoxicated: true, mushroomEatenAt: new Date() }).where(eq(users.id, testerId))
+
+    const response = await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'mushroom'))
+    const state = await readGameState(db, await loadPlayer(db, testerId), new Date())
+
+    expect(response.status).toBe(200)
+    expect(state).toMatchObject({ phase: 'ascent', mushroomGrown: true, intoxicated: false })
+    expect(state.lessonsDone).toHaveLength(LESSON_IDS.length - 2)
+    expect(state.lessonsDone).not.toContain('mushroom')
+    expect(state.lessonsDone).not.toContain('mushroomEaten')
   })
 })

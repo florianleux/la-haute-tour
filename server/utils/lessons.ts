@@ -14,6 +14,8 @@ export const LESSON_COLUMNS = {
   quill: 'quillLessonAt',
   leechNet: 'leechNetLessonAt',
   loot: 'lootLessonAt',
+  mushroom: 'mushroomLessonAt',
+  mushroomEaten: 'mushroomEatenLessonAt',
 } as const satisfies Record<LessonId, keyof User>
 
 /** Les leçons que le joueur a déjà vues. */

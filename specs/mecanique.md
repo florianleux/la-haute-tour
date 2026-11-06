@@ -65,6 +65,8 @@ Le serveur détermine seul la phase du joueur. Le client ne choisit jamais son �
     - Pool Échecs **assez fourni** → **rattrapage** : des questions distinctes tirées au hasard du Pool Échecs. Un pool plus petit que le tirage donne ce qu'il contient, et le quota de bonnes réponses s'arrête à ce nombre.
       - Le rattrapage s'arrête dès que le verdict est **scellé** (voir ci-dessous). Succès → vies restaurées, reprise immédiate, nouvelle tentative. Échec → l'attente repart pour une durée réduite, puis le rattrapage se rejoue. Sans limite.
 
+Le Champignon appétissant, mangé pendant l'attente ou le rattrapage avant « Commencer », y met fin **sans rattrapage** : vies pleines, reprise de l'ascension. Voir [`champignon.md`](./champignon.md#le-manger).
+
 ### Déroulement du rattrapage
 
 - **Feedback immédiat après chaque question** : le joueur sait tout de suite s'il a bon ou faux et voit la bonne réponse, puis passe à la suivante. Même mécanique qu'en ascension.

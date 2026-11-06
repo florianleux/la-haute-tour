@@ -15,6 +15,7 @@
       :verdict="boss.trial ? null : boss.verdict"
       :outcome="boss.outcome"
       :model-value="modelValue"
+      :intoxicated="intoxicated"
       :action-label="ended || defeated ? null : action?.label ?? null"
       :busy="submitting || advancing"
       :motion="submitting ? 'judging' : advancing ? 'leaving' : undefined"
@@ -74,6 +75,7 @@ const props = defineProps<{
   playerName: string
   portrait: string
   modelValue: string
+  intoxicated?: boolean
   secondsLeft: number | null
   submitting: boolean
   action: PlayAction | null

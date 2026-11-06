@@ -4,6 +4,11 @@
        quand il montre quelque chose, neutre sinon (michel-talking.webp,
        michel.webp : même cadrage, l'un remplace l'autre sans bouger).
 
+       Intoxiqué, le joueur voit un éléphant à sa place, quelle que soit la leçon.
+       Déjà là quand l'intoxication monte, Michel se fond en éléphant au même
+       rythme qu'elle (2 s, voir HAZE_RAMP_MS). Le rebond porte sur les deux
+       images ensemble.
+
        La place du buste est tenue même avant qu'il n'arrive : « HÉ ! », bulle
        seule, crie déjà d'où il va surgir. Puis il surgit du bas, s'étire et
        rebondit (camp-rise), et sa bulle éclot ensuite. Le buste est coupé au
@@ -15,24 +20,37 @@
        une boîte du camp, posé dans la boîte même : une boîte modale passe
        devant tout ce qui n'est pas en elle. -->
   <div class="pointer-events-none fixed bottom-0 right-[2vw] z-[25] aspect-[903/786] h-[min(38dvh,30vw)]">
-    <img
+    <div
       v-if="!line.bubbleOnly"
-      :src="line.spotlight ? '/images/michel-talking.webp' : '/images/michel.webp'"
-      alt=""
-      class="size-full origin-bottom translate-y-[4%] motion-safe:animate-camp-rise [--rise-lift:0dvh] [--rise-stretch:1.12]"
+      class="relative size-full origin-bottom translate-y-[4%] [--rise-lift:0dvh] [--rise-stretch:1.12]"
+      :class="{ 'motion-safe:animate-camp-rise': !alreadyThere }"
     >
+      <img
+        :src="line.spotlight ? '/images/michel-talking.webp' : '/images/michel.webp'"
+        alt=""
+        class="size-full motion-safe:transition-opacity motion-safe:duration-[2s]"
+        :class="{ 'opacity-0': hazy }"
+      >
+      <img
+        src="/images/michel-elephant.webp"
+        alt=""
+        class="absolute inset-0 size-full object-contain object-right motion-safe:transition-opacity motion-safe:duration-[2s]"
+        :class="{ 'opacity-0': !hazy }"
+      >
+    </div>
 
     <!-- La bulle. Remontée à l'arrivée de Michel (`key`) : elle éclot après
          lui. « HÉ ! » est plus gros, tremble à son éclosion, et pointe à
          droite, vers où Michel va surgir ; les autres pointent vers sa tête,
-         en bas. -->
+         en bas. Sans texte, Michel se tait : pas de bulle. -->
     <div
+      v-if="line.text"
       :key="line.bubbleOnly ? 'shout' : 'michel'"
       ref="bubble"
       class="pointer-events-auto absolute bottom-[92%] right-0 rounded-3xl bg-stone-100/95 px-6 py-4 text-[max(1.1rem,2.4dvh)] leading-snug text-stone-800 shadow-2xl ring-1 ring-black/10"
       :class="line.bubbleOnly
         ? 'origin-right motion-safe:animate-shout'
-        : 'w-[min(26rem,45vw)] origin-bottom-left motion-safe:animate-bubble-in [--enter-delay:0.6s]'"
+        : ['w-[min(26rem,45vw)] origin-bottom-left motion-safe:animate-bubble-in', !alreadyThere && '[--enter-delay:0.6s]']"
       role="status"
     >
       <span
@@ -42,6 +60,15 @@
       <p :class="line.bubbleOnly && 'px-4 text-[3em] font-black tracking-wide'">
         {{ line.text }}
       </p>
+
+      <div v-if="line.awaits === 'eat'" class="mt-3 flex justify-end gap-2">
+        <BaseButton variant="parchment" @click="$emit('answer', true)">
+          Oui
+        </BaseButton>
+        <BaseButton variant="parchment" @click="$emit('answer', false)">
+          Non
+        </BaseButton>
+      </div>
 
       <template v-if="onBubble">
         <p class="mt-1 text-right text-[0.6em] italic text-stone-500">
@@ -64,7 +91,15 @@ import type { LessonLine } from '~~/utils/lessons'
 
 const props = defineProps<{ line: LessonLine }>()
 
-const emit = defineEmits<{ next: [], ascent: [] }>()
+const emit = defineEmits<{ next: [], ascent: [], answer: [yes: boolean] }>()
+
+const hazy = useHazy()
+
+/**
+ * Monté silencieux, Michel était déjà à l'écran, dans la boîte qui vient de se
+ * fermer : il ne surgit pas une seconde fois.
+ */
+const alreadyThere = !props.line.text
 
 /** La bulle elle-même fait avancer : la réplique n'attend aucun autre geste. */
 const onBubble = computed(() => advancesOnBubble(props.line))

@@ -14,10 +14,12 @@
     :team="team"
     :volumen="state.seenTotal > 0"
     :spellbook="state.spellDiscovered"
+    :mushroom="state.mushroomGrown"
     :lesson="lesson"
     :night="night"
     @advance="$emit('advance')"
     @open="$emit('open', $event)"
+    @pick="$emit('pick', $event)"
   />
 
   <!-- Le poster est presque carré (918×980) là où le cadre de l'ascension est en
@@ -223,6 +225,7 @@
 // l'image. Voir specs/ecrans.md#cooldown--attente.
 import type { GameState } from '~~/server/utils/game'
 import type { TeamId } from '~~/shared/utils/teams'
+import type { PickedFrom } from '~~/utils/camp'
 import type { LessonLine } from '~~/utils/lessons'
 import type { CampOverlayId, GameScreen, PlayAction } from '~~/utils/phase'
 
@@ -242,7 +245,7 @@ const props = defineProps<{
   lesson: LessonLine | null
 }>()
 
-defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId] }>()
+defineEmits<{ skipCooldown: [], advance: [], open: [screen: CampOverlayId], pick: [from: PickedFrom] }>()
 
 const night = useNight()
 

@@ -9,6 +9,7 @@
     :maxlength="ANSWER_MAX_LENGTH"
     class="w-[88%] rounded border bg-white px-[2.9cqw] py-[2.35cqw] text-center text-[7.1cqw] placeholder:italic focus:outline-none sm:w-[76%] sm:text-[3.5cqw]"
     :class="TONES[tone]"
+    @beforeinput="shiftTyped"
     @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     @keydown.enter.prevent="$emit('submit')"
   >
@@ -33,10 +34,12 @@
 import { ANSWER_MAX_LENGTH } from '~~/shared/utils/answers'
 import { MOON_INK } from '~~/utils/typography'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: string
   /** Ses couleurs : le parchemin du jeu, ou les lunes de l'épreuve du boss de l'étage 1. */
   tone?: 'parchment' | 'moon'
+  /** Le clavier décalé de l'intoxication : le champ montre et envoie la saisie décalée. */
+  shifted?: boolean
 }>(), { tone: 'parchment' })
 
 const TONES = {
@@ -44,9 +47,31 @@ const TONES = {
   moon: `border-[#C1FFFE] ${MOON_INK.navy} placeholder:text-[#2B8390]/50`,
 } as const
 
-defineEmits<{ 'update:modelValue': [string], submit: [] }>()
+const emit = defineEmits<{ 'update:modelValue': [string], submit: [] }>()
 
 const field = useTemplateRef<HTMLInputElement>('field')
+
+/** Les saisies que le clavier décalé altère : une lettre composée (é, ê) reste. */
+const SHIFTED_INPUTS = ['insertText', 'insertFromPaste', 'insertFromDrop']
+
+/**
+ * Remplace ce qui entre dans le champ par ses lettres voisines, avant qu'il y entre.
+ * `setRangeText` ignore `maxlength` : la limite se tient ici.
+ */
+function shiftTyped(event: InputEvent): void {
+  const input = event.target as HTMLInputElement
+  if (!props.shifted || !SHIFTED_INPUTS.includes(event.inputType) || !event.data) {
+    return
+  }
+  event.preventDefault()
+  const start = input.selectionStart ?? input.value.length
+  const end = input.selectionEnd ?? start
+  if (input.value.length - (end - start) + event.data.length > ANSWER_MAX_LENGTH) {
+    return
+  }
+  input.setRangeText(shiftLetters(event.data), start, end, 'end')
+  emit('update:modelValue', input.value)
+}
 
 // Le focus auto ouvre le clavier physique sans y toucher — utile sur desktop,
 // où Entrée enchaîne les questions sans jamais en sortir. Sur mobile, il n'y a

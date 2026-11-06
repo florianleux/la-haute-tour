@@ -37,6 +37,11 @@ const ITEM_LABELS: Record<ItemId, ItemLabel> = {
     image: '/images/item-leech-net.webp',
     phrase: 'le Filet à sangsues',
   },
+  MUSHROOM: {
+    name: 'Champignon appétissant',
+    description: 'Il sent bon. Trop bon.',
+    image: '/images/item-mushroom.webp',
+  },
 }
 
 export function itemLabel(item: ItemId): ItemLabel {

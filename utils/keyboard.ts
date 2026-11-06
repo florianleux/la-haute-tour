@@ -51,3 +51,17 @@ export function advancesOnEnter(
 
   return !TYPING_TAGS.has(tag) && !activates && !event.target?.isContentEditable
 }
+
+/**
+ * Le clavier décalé de l'intoxication : chaque lettre devient la suivante, z et Z
+ * reviennent à a et A. Accents, chiffres, espaces et ponctuation restent.
+ * Voir specs/champignon.md.
+ */
+export function shiftLetters(text: string): string {
+  return text.replace(/[a-z]/gi, (letter) => {
+    if (letter === 'z') {
+      return 'a'
+    }
+    return letter === 'Z' ? 'A' : String.fromCharCode(letter.charCodeAt(0) + 1)
+  })
+}

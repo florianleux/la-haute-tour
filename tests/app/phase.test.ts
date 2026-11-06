@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { blockedByMaintenance, dueLesson, fallQuestionId, focusLossNotice, gameScreen, isAnswering, isAtCamp, nextActionLabel, playView, runningTimer, victoryOnScreen } from '../../utils/phase'
+import { blockedByMaintenance, dueLesson, fallQuestionId, focusLossNotice, gameScreen, isAnswering, isAtCamp, isHazy, nextActionLabel, playView, runningTimer, victoryOnScreen } from '../../utils/phase'
 import { demoState as state } from '../../utils/demo'
 
 describe('entrée dans la partie', () => {
@@ -110,6 +110,12 @@ describe('la leçon due', () => {
   it('est celle du camp au repos, tant qu elle n est pas vue', () => {
     expect(dueLesson(state({ lessonsDone: [] }))).toBe('camp')
     expect(dueLesson(state({ lessonsDone: ['camp'] }))).toBeNull()
+  })
+
+  it('est le commentaire de Michel une fois le Champignon mangé, au camp et intoxiqué', () => {
+    expect(dueLesson(state({ lessonsDone: ['camp', 'mushroom'], intoxicated: true }))).toBe('mushroomEaten')
+    expect(dueLesson(state({ lessonsDone: ['camp', 'mushroom', 'mushroomEaten'], intoxicated: true }))).toBeNull()
+    expect(dueLesson(state({ lessonsDone: ['camp', 'mushroom'] }))).toBeNull()
   })
 
   it('est celle de la chute sans vies, l attente en cours ou échue', () => {
@@ -495,5 +501,28 @@ describe('la question que la leçon loot retient', () => {
 
     expect(dueLesson(state({ question: running, lessonsDone: ['camp', 'loot'] }))).toBeNull()
     expect(runningTimer(state({ question: running }))).toEqual(running)
+  })
+})
+
+// Voir specs/champignon.md.
+describe('les effets de l intoxication', () => {
+  it('courent dès le repas, camp compris', () => {
+    expect(isHazy(true, false, 'cooldown', 'ascent')).toBe(true)
+  })
+
+  it('restent sur le verdict de la chute, le serveur ayant dégrisé', () => {
+    expect(isHazy(false, true, 'result', 'cooldown')).toBe(true)
+  })
+
+  it('s arrêtent à l arrivée au camp', () => {
+    expect(isHazy(false, true, 'cooldown', 'cooldown')).toBe(false)
+  })
+
+  it('s arrêtent à la fin de la tour', () => {
+    expect(isHazy(false, true, 'bossFight', 'gameOver')).toBe(false)
+  })
+
+  it('ne viennent pas d elles-mêmes', () => {
+    expect(isHazy(false, false, 'result', 'ascent')).toBe(false)
   })
 })

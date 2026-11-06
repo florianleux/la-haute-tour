@@ -1876,3 +1876,26 @@ html {
       calc(var(--k) * var(--cut-l));
   }
 }
+
+/* L'intoxication du Champignon appétissant, posée sur la racine (pages/index.vue)
+   et sur les boîtes du camp et les toasts : une <dialog> modale ou un popover vit
+   dans la couche du dessus, hors de l'arbre que le filtre de la racine peint.
+   Le filtre, ses vagues et ses couleurs : IntoxicationHaze. Voir specs/champignon.md. */
+html.intoxicated,
+html.intoxicated dialog,
+html.intoxicated [popover] {
+  filter: url(#intoxicated-haze);
+}
+
+/* Les vagues décollent les bords de la fenêtre : la page grossit assez pour les
+   cacher, sans barres de défilement pour autant. */
+html.intoxicated {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.intoxicated {
+    transform: scale(1.04);
+    transition: transform 2s linear;
+  }
+}

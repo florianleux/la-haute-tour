@@ -36,7 +36,7 @@
                (`inert`). Ce qu'il demande d'ouvrir pulse. Voir spotlightOn. -->
           <div
             class="group pointer-events-auto absolute transition duration-200"
-            :class="[item.place, layer.origin, item.click && HOVER, item.spot.dimmed && LESSON_SHADE, item.spot.pulses && 'motion-safe:animate-nudge']"
+            :class="[item.place, layer.origin, item.click && !item.silent && HOVER, item.spot.dimmed && LESSON_SHADE, item.spot.pulses && 'motion-safe:animate-nudge']"
             :inert="!item.spot.clickable"
           >
             <img
@@ -45,7 +45,7 @@
               class="w-full"
             >
             <SparkleField
-              v-if="item.click"
+              v-if="item.click && !item.silent"
               :sparks="CAMP_SPARKS"
               class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
             />
@@ -53,6 +53,7 @@
                  hauteur de la fenêtre, comme les objets du sol. Au focus clavier
                  aussi, pas seulement au survol. -->
             <BaseGlowLabel
+              v-if="!item.silent"
               class="pointer-events-none absolute -translate-x-1/2 text-[3cqh] opacity-0 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
               :class="item.labelAt ?? 'bottom-full left-1/2 mb-[0.5cqh]'"
             >
@@ -65,7 +66,7 @@
             <BaseSurfaceButton
               v-if="item.click"
               :label="item.title"
-              @click="onClick(item.click)"
+              @click="onClick(item.click, $event)"
             />
           </div>
         </template>
@@ -80,6 +81,7 @@
 // ouvrent une boîte par-dessus le camp, tous disent leur nom au survol.
 import type { TeamId } from '~~/shared/utils/teams'
 import { BACKDROP_BOX, BACKDROP_COVER, BACKDROP_GROUND, BACKDROP_SCENE } from '~~/utils/backdrop'
+import type { PickedFrom } from '~~/utils/camp'
 import type { LessonLine, Spotlit } from '~~/utils/lessons'
 import type { CampOverlayId } from '~~/utils/phase'
 
@@ -93,19 +95,51 @@ const props = defineProps<{
   volumen: boolean
   /** Le joueur a déjà obtenu un sort : le Grimoire a de quoi se montrer. */
   spellbook: boolean
+  /** Un Champignon appétissant pousse au camp : un clic le cueille. */
+  mushroom: boolean
   /** La réplique de Michel en cours, null hors leçon : elle dit ce qui s'éclaire. */
   lesson: LessonLine | null
   /** La nuit, décidée par CooldownCard : le décor et ses objets la disent ensemble. */
   night: boolean
 }>()
 
-const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId] }>()
+const emit = defineEmits<{ advance: [], open: [screen: CampOverlayId], pick: [from: PickedFrom] }>()
 
-/** Ce que fait un clic sur l'objet : ouvrir une boîte du camp, ou lancer la suite. */
-type CampClick = { open: CampOverlayId } | 'advance'
+/** Ce que fait un clic sur l'objet : ouvrir une boîte du camp, cueillir, ou lancer la suite. */
+type CampClick = { open: CampOverlayId } | 'pick' | 'advance'
 
-function onClick(click: CampClick): void {
-  if (click !== 'advance') {
+/** Le rebond du Champignon qu'on tâte. En JS : une animation CSS ne se rejoue qu'en remontant l'élément. */
+const POKE: Keyframe[] = [
+  { transform: 'none' },
+  { transform: 'scale(1.14, 0.84)', offset: 0.25 },
+  { transform: 'scale(0.92, 1.12)', offset: 0.55 },
+  { transform: 'scale(1.03, 0.97)', offset: 0.8 },
+  { transform: 'none' },
+]
+
+/**
+ * Chaque clic fait rebondir le Champignon, un triple clic rapide le cueille :
+ * `detail` compte les clics que le système tient pour enchaînés. À 0, le geste
+ * vient du clavier, qui n'a pas de triple clic. Voir specs/champignon.md.
+ */
+function pokeMushroom(event: MouseEvent): void {
+  const mushroom = (event.currentTarget as HTMLElement).parentElement!
+
+  if (!prefersReducedMotion()) {
+    mushroom.animate(POKE, { duration: 350, easing: 'ease-out' })
+  }
+
+  if (event.detail === 0 || event.detail >= 3) {
+    const box = mushroom.getBoundingClientRect()
+    emit('pick', { x: box.left + box.width / 2, y: box.top + box.height / 2, width: box.width })
+  }
+}
+
+function onClick(click: CampClick, event: MouseEvent): void {
+  if (click === 'pick') {
+    pokeMushroom(event)
+  }
+  else if (click !== 'advance') {
     emit('open', click.open)
   }
   else if (!props.advancing) {
@@ -127,6 +161,8 @@ interface CampItem {
   labelAt?: string
   /** Sans clic, l'objet n'est que décor : il dit son nom, sans luire. */
   click?: CampClick
+  /** Rien au survol que le curseur : ni nom, ni lueur. À trouver. */
+  silent?: true
 }
 
 const BANNERS: Record<TeamId, string> = {
@@ -207,6 +243,7 @@ const layers = computed((): ShownLayer[] => {
       box: BACKDROP_GROUND,
       origin: 'origin-bottom',
       items: [
+        { object: 'mushroom', src: campImage('cooldown-mushroom', props.night), place: 'left-[14.01%] top-[77.13%] w-[6.72%]', title: 'Champignon appétissant', click: 'pick', silent: true },
         { object: 'scroll', src: campImage('cooldown-scroll', props.night), place: 'left-[31.72%] top-[84%] w-[16.46%]', title: 'Volumen', click: { open: 'questionLog' } },
         { object: 'backpack', src: campImage('cooldown-backpack', props.night), place: 'left-[60.42%] top-[78.7%] w-[21.35%]', title: 'Inventaire', click: { open: 'inventory' } },
         // Le grimoire en dernier : il chevauche le parchemin et le sac, et passe

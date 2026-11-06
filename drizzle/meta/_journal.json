@@ -330,6 +330,20 @@
       "when": 1793860307359,
       "tag": "0046_missed_pool_failed_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1793973297243,
+      "tag": "0047_mushroom",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1793977276387,
+      "tag": "0048_mushroom_eaten_lesson",
+      "breakpoints": true
     }
   ]
 }

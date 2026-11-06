@@ -1,5 +1,5 @@
 <template>
-  <CampOverlay v-slot="{ closing, close }" label="Inventaire" close-label="Fermer l'Inventaire" :lesson="lesson" @close="$emit('close')" @next="$emit('next')">
+  <CampOverlay v-slot="{ closing, close }" label="Inventaire" close-label="Fermer l'Inventaire" :lesson="lesson" @close="$emit('close')" @next="$emit('next')" @answer="onAnswer">
     <!-- Par-dessus le camp (CampOverlay), comme le Grimoire : le sac monte du
          bas et rebondit en se posant. Clic à côté du sac = fermer.
 
@@ -81,9 +81,17 @@
               v-if="lesson?.awaits === 'use' && selected === 'CHEESE'"
               variant="parchment"
               :loading="using"
-              @click="submitUse(close)"
+              @click="submitUse('CHEESE', close)"
             >
               Donner à Michel
+            </BaseButton>
+            <BaseButton
+              v-else-if="selected === 'MUSHROOM' && !lesson"
+              variant="parchment"
+              :loading="using"
+              @click="onEat(close)"
+            >
+              Manger
             </BaseButton>
           </div>
         </div>
@@ -101,7 +109,9 @@
 // L'Inventaire : le sac du camp (CooldownCamp), ouvert par-dessus lui. Au camp
 // seulement. Il montre les Objets du joueur, jamais ses sorts, qui vivent au
 // Grimoire. Voir specs/ecrans.md#inventaire.
+import { GAME_STATE_KEY } from '~/composables/useGameState'
 import type { ItemUseView } from '~~/server/api/game/items/use.post'
+import type { GameState } from '~~/server/utils/game'
 import type { ItemId } from '~~/shared/utils/items'
 import type { ItemLabel } from '~~/utils/items'
 import type { LessonLine } from '~~/utils/lessons'
@@ -118,8 +128,12 @@ const emit = defineEmits<{
   close: []
   /** Michel passe à sa réplique suivante. */
   next: []
-  /** Le Fromage est utilisé — donné à Michel : la leçon passe à la suite. */
-  used: []
+  /** Un Objet est utilisé : le Fromage donné à Michel, ou le Champignon mangé. */
+  used: [item: ItemId]
+  /** Le joueur a répondu Non à Michel : le Champignon reste au sac. */
+  declined: []
+  /** Premier clic sur Utiliser du Champignon : Michel demande si le joueur est sûr. */
+  askEat: []
 }>()
 
 /** Les cases de la grille : 5 de large sur 20 de haut. */
@@ -151,22 +165,23 @@ const using = ref(false)
 const useFailed = ref(false)
 
 /**
- * Utilise le Fromage — le donne à Michel —, puis referme le sac : la leçon
- * reprend au camp. Le sac servi en retour remplace celui qu'on avait lu.
+ * Utilise un Objet, puis referme le sac : le Fromage rend la leçon au camp, le
+ * Champignon rend le joueur au décor. Le sac servi en retour remplace celui
+ * qu'on avait lu.
  *
- * Le succès gagné au don (« HÉ ! ») s'annonce ici : le don ne rend pas d'état
- * de jeu, où les toasts écoutent d'habitude.
+ * Le succès gagné s'annonce ici : utiliser un Objet ne rend pas d'état de jeu,
+ * où les toasts écoutent d'habitude.
  */
-async function submitUse(close: () => void): Promise<void> {
+async function submitUse(item: ItemId, close: () => void): Promise<void> {
   using.value = true
-  const bag = await $fetch<ItemUseView>('/api/game/items/use', { method: 'POST', body: { item: 'CHEESE' } })
-    .catch(bagAfterRefusal)
+  const bag = await $fetch<ItemUseView>('/api/game/items/use', { method: 'POST', body: { item } })
+    .catch(() => bagAfterRefusal(item))
   using.value = false
   useFailed.value = bag === null
   if (bag) {
     replace(bag)
     announce(bag.unlocked)
-    emit('used')
+    emit('used', item)
     // La réplique suivante n'attend plus rien du sac : la boîte se laisse fermer.
     await nextTick()
     close()
@@ -174,13 +189,35 @@ async function submitUse(close: () => void): Promise<void> {
 }
 
 /**
- * Un refus peut dire que le Fromage est déjà donné — depuis un autre onglet,
- * ou par une réponse perdue en route. Le sac relu tranche : sans Fromage, la
- * leçon suit son cours au lieu de bloquer le joueur sur un don impossible.
+ * Un refus peut dire que l'Objet est déjà parti — depuis un autre onglet, ou par
+ * une réponse perdue en route. Le sac relu tranche : sans lui, la leçon suit son
+ * cours au lieu de bloquer le joueur sur un geste impossible.
  */
-async function bagAfterRefusal(): Promise<ItemUseView | null> {
+async function bagAfterRefusal(item: ItemId): Promise<ItemUseView | null> {
   const bag = await fetchItems().catch(() => null)
-  return bag && !bag.items.includes('CHEESE') ? { ...bag, unlocked: [] } : null
+  return bag && !bag.items.includes(item) ? { ...bag, unlocked: [] } : null
+}
+
+const { data: game } = useNuxtData<GameState>(GAME_STATE_KEY)
+
+/** Le premier clic passe par Michel ; les suivants mangent directement. */
+function onEat(close: () => void): void {
+  if (game.value?.lessonsDone.includes('mushroom')) {
+    void submitUse('MUSHROOM', close)
+  }
+  else {
+    emit('askEat')
+  }
+}
+
+/** Oui : le joueur le mange. Non : il reste au sac. Dans les deux cas, la leçon est datée. */
+function onAnswer(yes: boolean, close: () => void): void {
+  if (yes) {
+    void submitUse('MUSHROOM', close)
+  }
+  else {
+    emit('declined')
+  }
 }
 
 /** Ce que la page de détail dit de l'Objet choisi. */

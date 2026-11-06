@@ -195,7 +195,8 @@ export function isAtRest(state: GameState | null): boolean {
  * dans l'état servi : celle du camp au repos ; tombé et rien de tiré, celle
  * de la chute, puis celle du rattrapage une fois l'attente échue ; enfin, au
  * camp, celle du Grimoire, le premier sort obtenu, puis celle de la Plume de
- * copiste. Celle de la question loot, elle, se joue sur la question que le
+ * copiste, puis celle du Filet à sangsues, puis le commentaire de Michel sur le
+ * Champignon mangé. Celle de la question loot, elle, se joue sur la question que le
  * serveur retient pour elle. Null quand aucune n'est due.
  * Voir specs/ecrans.md#leçons-de-michel.
  */
@@ -219,7 +220,10 @@ export function dueLesson(state: GameState | null): LessonId | null {
   if (isAtCamp(state) && state?.hasQuill && !done.includes("quill")) {
     return "quill";
   }
-  return isAtCamp(state) && state?.hasLeechNet && !done.includes("leechNet") ? "leechNet" : null;
+  if (isAtCamp(state) && state?.hasLeechNet && !done.includes("leechNet")) {
+    return "leechNet";
+  }
+  return isAtCamp(state) && state?.intoxicated && !done.includes("mushroomEaten") ? "mushroomEaten" : null;
 }
 
 /**
@@ -518,4 +522,14 @@ function recoveryLine(
     required: recovery.required,
     resumes: over ? recovery.resumes : null,
   };
+}
+
+/**
+ * Les effets de l'intoxication restent à l'écran du repas à l'arrivée au camp : le
+ * serveur dégrise dès la dernière vie perdue, mais le verdict de la chute, le
+ * Mimic et l'outro du boss se lisent encore dessous. La tour finie les arrête.
+ * Voir specs/champignon.md.
+ */
+export function isHazy(intoxicated: boolean, wasHazy: boolean, card: string | undefined, phase: GameState["phase"] | undefined): boolean {
+  return intoxicated || (wasHazy && card !== "cooldown" && phase !== "gameOver");
 }

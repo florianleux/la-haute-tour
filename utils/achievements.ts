@@ -76,6 +76,9 @@ const LABELS: Record<AchievementId, string> = {
   CAMP_AT_NIGHT: 'Oiseau de nuit',
   DEVTOOLS_OPENED: 'La curiosité est un vilain défaut',
   QUESTION_COPIED: 'Ça, ça va dans mon Anki !',
+  MUSHROOM_PICKED: 'Chasseur-cueilleur',
+  MUSHROOM_EATEN: 'Aucun instinct de survie',
+  MUSHROOM_SOBER: 'Descente d\'acide',
 }
 
 /**
@@ -132,6 +135,9 @@ const CONDITIONS: Record<AchievementId, string> = {
   CAMP_AT_NIGHT: 'Jouer la nuit.',
   DEVTOOLS_OPENED: 'Ouvrir les outils de développement du navigateur.',
   QUESTION_COPIED: 'Copier une question ou une réponse depuis le Volumen.',
+  MUSHROOM_PICKED: 'Cueillir son premier champignon.',
+  MUSHROOM_EATEN: 'Manger son premier champignon.',
+  MUSHROOM_SOBER: 'Revenir au camp après une ascension intoxiquée.',
 }
 
 /**
