@@ -531,5 +531,5 @@ function recoveryLine(
  * Voir specs/champignon.md.
  */
 export function isHazy(intoxicated: boolean, wasHazy: boolean, card: string | undefined, phase: GameState["phase"] | undefined): boolean {
-  return intoxicated || (wasHazy && card !== "cooldown" && phase !== "gameOver");
+  return intoxicated || (wasHazy && card !== "cooldown" && phase !== "gameOver" && phase !== "deckEnd");
 }

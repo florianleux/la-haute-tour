@@ -95,7 +95,7 @@ const props = defineProps<{
   volumen: boolean
   /** Le joueur a déjà obtenu un sort : le Grimoire a de quoi se montrer. */
   spellbook: boolean
-  /** Un Champignon appétissant pousse au camp : un clic le cueille. */
+  /** Un Champignon appétissant pousse au camp : un triple clic le cueille. */
   mushroom: boolean
   /** La réplique de Michel en cours, null hors leçon : elle dit ce qui s'éclaire. */
   lesson: LessonLine | null
@@ -129,7 +129,7 @@ function pokeMushroom(event: MouseEvent): void {
     mushroom.animate(POKE, { duration: 350, easing: 'ease-out' })
   }
 
-  if (event.detail === 0 || event.detail >= 3) {
+  if (picksMushroom(event.detail)) {
     const box = mushroom.getBoundingClientRect()
     emit('pick', { x: box.left + box.width / 2, y: box.top + box.height / 2, width: box.width })
   }

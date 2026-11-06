@@ -73,7 +73,7 @@ Famille **Champignon — 3** :
 | Aucun instinct de survie | Manger son premier champignon |
 | Descente d'acide | Revenir au camp après une ascension intoxiquée |
 
-Le troisième suit presque toujours le deuxième : toute ascension intoxiquée finit par un retour au camp, ou par la fin de la tour. Son toast attend le camp.
+Le troisième suit presque toujours le deuxième : toute ascension intoxiquée finit par un retour au camp, ou par la fin de la tour. Son toast attend le camp ; à la fin de la tour et à la fin du deck, qui n'y ramènent plus, il s'annonce sur place.
 
 ## Noms en code
 
@@ -83,3 +83,5 @@ Le troisième suit presque toujours le deuxième : toute ascension intoxiquée f
 | Cueillir | `pick` |
 | Intoxication | `intoxicated` |
 | Leçon Champignon | `mushroom` |
+| Leçon Champignon mangé | `mushroomEaten` |
+| Effets de l'intoxication à l'écran | `haze`, `hazy` |

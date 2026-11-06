@@ -32,6 +32,7 @@ import {
   playedToday,
   unlock,
 } from './achievements'
+import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { gameHour } from '../../shared/utils/time'
 import { grantKey, KEYS_TO_UNLOCK, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
@@ -216,7 +217,7 @@ export interface GameState {
    * et les échecs de rattrapage sur la fiche. Voir specs/ecrans.md#volumen.
    */
   hasLeechNet: boolean
-  /** Un Champignon appétissant pousse au camp : un clic le cueille. Voir specs/champignon.md. */
+  /** Un Champignon appétissant pousse au camp : un triple clic le cueille. Voir specs/champignon.md. */
   mushroomGrown: boolean
   /** Le joueur est intoxiqué : couleurs et vagues à l'écran, clavier décalé. Voir specs/champignon.md. */
   intoxicated: boolean
@@ -889,15 +890,15 @@ async function resolve(
   // coûterait une écriture par palier pour rien.
   const firstAscent = crossing && user.currentFloor === 1 ? await claimFirstAscent(db, user) : []
 
-  // La chute ramène au camp : l'intoxication s'y arrête.
-  if (cooldownUntil) {
-    await soberUp(db, snapshot.user, now)
-  }
+  // La chute ramène au camp : l'intoxication s'y arrête. La fin du deck n'y ramène
+  // plus : elle s'arrête là.
+  const deckDone = floorDone && snapshot.nextFloorTotal === 0 && user.currentFloor < FLOOR_COUNT
+  const sobered = cooldownUntil || deckDone ? await soberUp(db, snapshot.user, now, { announced: deckDone }) : []
 
   return {
     // Une chute relit tout : le pool ne se comptait pas tant qu'il restait des vies.
-    snapshot: cooldownUntil ? await loadSnapshot(db, user.id) : { ...snapshot, user: fresh, reservation: resolved },
-    unlocked: await unlock(db, snapshot.user, [...earned, ...firstAscent], now),
+    snapshot: cooldownUntil || (deckDone && user.intoxicated) ? await loadSnapshot(db, user.id) : { ...snapshot, user: fresh, reservation: resolved },
+    unlocked: [...sobered, ...await unlock(db, snapshot.user, [...earned, ...firstAscent], now)],
   }
 }
 

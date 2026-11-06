@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnEnter, DIALOGUE_KEYS, shiftLetters } from '../../utils/keyboard'
+import { advancesOnEnter, DIALOGUE_KEYS, shiftLetters, shiftsInput } from '../../utils/keyboard'
 import type { EnterPress, EnterTarget } from '../../utils/keyboard'
 
 /** Un appui, tel que le navigateur le décrit, réduit à ce qui décide. */
@@ -77,6 +77,14 @@ describe('les flèches d un dialogue', () => {
 })
 
 // Voir specs/champignon.md.
+describe('shiftsInput', () => {
+  it('touche ce qui entre dans le champ, pas ce qui en sort', () => {
+    expect(shiftsInput('insertText')).toBe(true)
+    expect(shiftsInput('insertFromPaste')).toBe(true)
+    expect(shiftsInput('deleteContentBackward')).toBe(false)
+  })
+})
+
 describe('shiftLetters', () => {
   it('décale minuscules et majuscules', () => {
     expect(shiftLetters('abyABY')).toBe('bczBCZ')

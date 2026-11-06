@@ -26,10 +26,13 @@ export const LESSON_CUTOUT = 'rounded-[0.5cqw] ring-1 ring-amber-200/70 backdrop
  * - `close` : refermer la boîte du camp où Michel parle ;
  * - `cast` : lancer sur soi le sort qu'il montre, depuis le Grimoire ;
  * - `eat` : répondre Oui ou Non à sa question, dans l'Inventaire ;
- * - `haze` : rien à faire, Michel se tait sur le camp le temps que l'intoxication monte (LESSON_PAUSE_MS) ;
+ * - `haze` : rien à faire, Michel se tait sur le camp le temps que l'intoxication, une fois servie, monte (LESSON_PAUSE_MS) ;
  * - `ascent` : le clic sur la bulle, qui finit la leçon et lance l'ascension.
  */
 export type LessonAwait = 'pause' | 'click' | 'use' | 'close' | 'cast' | 'eat' | 'haze' | 'ascent'
+
+/** Ce qui se signale à la leçon : un geste du joueur, ni une attente ni le clic sur la bulle. */
+export type LessonGesture = Exclude<LessonAwait, 'pause' | 'haze' | 'ascent'>
 
 /**
  * Ce que Michel éclaire sur l'écran de question, à la question d'essai : les

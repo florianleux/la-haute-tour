@@ -522,6 +522,10 @@ describe('les effets de l intoxication', () => {
     expect(isHazy(false, true, 'bossFight', 'gameOver')).toBe(false)
   })
 
+  it('s arrêtent à la fin du deck', () => {
+    expect(isHazy(false, true, 'result', 'deckEnd')).toBe(false)
+  })
+
   it('ne viennent pas d elles-mêmes', () => {
     expect(isHazy(false, false, 'result', 'ascent')).toBe(false)
   })

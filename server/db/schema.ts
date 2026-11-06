@@ -98,8 +98,9 @@ export const users = sqliteTable('users', {
   leechNetLessonAt: integer('leech_net_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon de la question loot, sur la première servie. Comme campLessonAt. */
   lootLessonAt: integer('loot_lesson_at', { mode: 'timestamp' }),
-  /** Quand le joueur a répondu à Michel, au premier clic sur Utiliser du Champignon appétissant. Comme campLessonAt. */
+  /** Quand le joueur a répondu à Michel, au premier clic sur Manger le Champignon appétissant. Comme campLessonAt. */
   mushroomLessonAt: integer('mushroom_lesson_at', { mode: 'timestamp' }),
+  /** Quand le joueur a lu le commentaire de Michel sur son premier repas. */
   mushroomEatenLessonAt: integer('mushroom_eaten_lesson_at', { mode: 'timestamp' }),
   currentFloor: integer('current_floor').notNull().default(1),
   lives: integer('lives').notNull().default(3),

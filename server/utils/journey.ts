@@ -6,6 +6,7 @@ import { activeEffects, attempts, users } from '../db/schema'
 import type { FloorRules } from './rules'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
+import type { AchievementId } from '../../shared/utils/achievements'
 
 /**
  * Ouvre une tentative : les vies reviennent, l'attente s'efface, et ce qui
@@ -96,17 +97,22 @@ export async function openAttempt(
 
 /**
  * Le retour au camp met fin à l'intoxication : chute, Mimic, « Redescendre »,
- * défaite au boss ; la fin de la tour aussi. Écrit dès la dernière vie perdue,
- * quand plus aucune réponse ne reste à décaler : l'écran garde ses effets jusqu'au
- * camp (isHazy), et le toast du succès l'y attend. Voir specs/champignon.md.
+ * défaite au boss. Écrit dès la dernière vie perdue, quand plus aucune réponse ne
+ * reste à décaler : l'écran garde ses effets jusqu'au camp (isHazy), et le toast
+ * du succès l'y attend. La fin de la tour et la fin du deck l'arrêtent aussi :
+ * elles ne ramènent plus au camp, le succès s'annonce donc sur place
+ * (`announced`), et l'appelant le rend à l'écran. Voir specs/champignon.md.
  */
-export async function soberUp(db: Database, user: User, now: Date): Promise<void> {
+export async function soberUp(db: Database, user: User, now: Date, { announced = false }: { announced?: boolean } = {}): Promise<AchievementId[]> {
   if (!user.intoxicated) {
-    return
+    return []
   }
 
   await db.update(users).set({ intoxicated: false }).where(eq(users.id, user.id))
-  await unlock(db, user, ['MUSHROOM_SOBER'], now, { announced: false })
+
+  const earned = await unlock(db, user, ['MUSHROOM_SOBER'], now, { announced })
+
+  return announced ? earned : []
 }
 
 /**

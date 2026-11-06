@@ -82,6 +82,7 @@
 // que L'Inconnu tend à la fin de l'introduction. L'objet lui-même vient de
 // l'appelant, par le slot, à la taille de sa boîte carrée. Rien ne se ferme
 // tout seul : le joueur lit, puis clique OK. Voir specs/ecrans.md.
+import type { PickedFrom } from '~~/utils/camp'
 
 const props = withDefaults(defineProps<{
   /** Le nom de l'objet, sous le titre. */
@@ -97,7 +98,7 @@ const props = withDefaults(defineProps<{
    * part à sa taille, et saute jusqu'au centre (le sort, de la fente du
    * coffre). Sans lui, il jaillit de rien, sur place (le Fromage).
    */
-  from?: { x: number, y: number, width: number }
+  from?: PickedFrom
 }>(), { title: 'Obtenu', image: undefined, glow: 'rgb(254 243 199 / 0.9)', from: undefined })
 
 defineEmits<{ close: [] }>()

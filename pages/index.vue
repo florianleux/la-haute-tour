@@ -412,8 +412,8 @@ function openCampOverlay(screen: CampOverlayId): void {
 function closeCampOverlay(): void {
   campOverlay.value = null
   lesson.done('close')
-  if (mushroomEaten) {
-    mushroomEaten = false
+  if (mushroomJustEaten) {
+    mushroomJustEaten = false
     void refresh()
   }
 }
@@ -436,12 +436,12 @@ async function pick(from: PickedFrom): Promise<void> {
  * Le Champignon mangé change l'état de jeu, relu une fois le sac fermé :
  * l'intoxication ne monte qu'après.
  */
-let mushroomEaten = false
+let mushroomJustEaten = false
 
 /** Un Objet utilisé : Michel a son geste. */
 function onItemUsed(item: ItemId): void {
   lesson.done(item === 'CHEESE' ? 'use' : 'eat')
-  mushroomEaten = item === 'MUSHROOM'
+  mushroomJustEaten = item === 'MUSHROOM'
 }
 
 /**

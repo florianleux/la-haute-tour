@@ -52,6 +52,13 @@ export function advancesOnEnter(
   return !TYPING_TAGS.has(tag) && !activates && !event.target?.isContentEditable
 }
 
+const SHIFTED_INPUTS = new Set(['insertText', 'insertFromPaste', 'insertFromDrop'])
+
+/** Ce que le clavier décalé touche : ce qui entre dans le champ, pas ce qui en sort. */
+export function shiftsInput(inputType: string): boolean {
+  return SHIFTED_INPUTS.has(inputType)
+}
+
 /**
  * Le clavier décalé de l'intoxication : chaque lettre devient la suivante, z et Z
  * reviennent à a et A. Accents, chiffres, espaces et ponctuation restent.

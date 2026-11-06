@@ -288,8 +288,9 @@ export async function resolveTrial(
 
   // La défaite ramène au camp, et la tour finie n'y ramène plus jamais :
   // l'intoxication s'arrête là.
-  if (judgement.cooldownUntil || (outcome && user.currentFloor >= FLOOR_COUNT)) {
-    await soberUp(db, user, now)
+  const towerDone = Boolean(outcome) && user.currentFloor >= FLOOR_COUNT
+  if (judgement.cooldownUntil || towerDone) {
+    return [...earned, ...await soberUp(db, user, now, { announced: towerDone })]
   }
 
   return earned

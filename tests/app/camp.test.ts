@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { campDoorLine, campObjects } from '../../utils/camp'
+import { campDoorLine, campObjects, picksMushroom } from '../../utils/camp'
 
 const newcomer = { team: null, volumen: false, spellbook: false, mushroom: false }
 
@@ -31,6 +31,18 @@ describe('objets du camp', () => {
 })
 
 // specs/boss.md#attendre-au-camp : la porte nommée, les clés qui manquent, sans les poseurs.
+describe('la cueillette du Champignon', () => {
+  it('attend le troisième clic d un triple clic', () => {
+    expect(picksMushroom(1)).toBe(false)
+    expect(picksMushroom(2)).toBe(false)
+    expect(picksMushroom(3)).toBe(true)
+  })
+
+  it('répond au clavier, qui ne fait jamais trois clics', () => {
+    expect(picksMushroom(0)).toBe(true)
+  })
+})
+
 describe('porte vue du camp', () => {
   const door = { unlocked: false, opened: false, hasKey: false, keyHolders: ['frodon'], spot: 'camp' as const, bossAttemptNumber: 0 }
 

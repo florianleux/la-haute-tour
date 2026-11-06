@@ -1,29 +1,26 @@
 <template>
   <div>
-    <div class="flex items-center gap-3">
-      <SpellMedallion
-        :spell="spell"
-        :face="effect?.face ?? 'mixed'"
-        class="w-[3.75rem] shrink-0"
-        shadow-class="shadow-[0_2px_3px_rgb(0_0_0/0.4)]"
-        fallback-class="border-2 border-current/40 text-xl"
-      />
+    <TooltipHeader :title="spellLabel(spell)">
+      <template #icon>
+        <SpellMedallion
+          :spell="spell"
+          :face="effect?.face ?? 'mixed'"
+          class="w-[3.75rem] shrink-0"
+          shadow-class="shadow-[0_2px_3px_rgb(0_0_0/0.4)]"
+          fallback-class="border-2 border-current/40 text-xl"
+        />
+      </template>
 
-      <div class="min-w-0">
-        <p class="text-base font-bold">
-          {{ spellLabel(spell) }}
-        </p>
-        <p
-          v-if="effect"
-          class="mt-1 flex flex-wrap gap-1 text-xs"
-        >
-          <SpellFaceTag :face="effect.face" />
-          <span class="rounded border border-current/30 bg-current/5 px-1.5 py-px">
-            Lancé par {{ effect.casterName }}
-          </span>
-        </p>
-      </div>
-    </div>
+      <p
+        v-if="effect"
+        class="mt-1 flex flex-wrap gap-1 text-xs"
+      >
+        <SpellFaceTag :face="effect.face" />
+        <span class="rounded border border-current/30 bg-current/5 px-1.5 py-px">
+          Lancé par {{ effect.casterName }}
+        </span>
+      </p>
+    </TooltipHeader>
 
     <div>
       <p

@@ -132,7 +132,7 @@ const emit = defineEmits<{
   used: [item: ItemId]
   /** Le joueur a répondu Non à Michel : le Champignon reste au sac. */
   declined: []
-  /** Premier clic sur Utiliser du Champignon : Michel demande si le joueur est sûr. */
+  /** Premier clic sur Manger : Michel demande si le joueur est sûr. */
   askEat: []
 }>()
 

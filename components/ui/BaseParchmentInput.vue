@@ -52,15 +52,13 @@ const emit = defineEmits<{ 'update:modelValue': [string], submit: [] }>()
 const field = useTemplateRef<HTMLInputElement>('field')
 
 /** Les saisies que le clavier décalé altère : une lettre composée (é, ê) reste. */
-const SHIFTED_INPUTS = ['insertText', 'insertFromPaste', 'insertFromDrop']
-
 /**
  * Remplace ce qui entre dans le champ par ses lettres voisines, avant qu'il y entre.
  * `setRangeText` ignore `maxlength` : la limite se tient ici.
  */
 function shiftTyped(event: InputEvent): void {
   const input = event.target as HTMLInputElement
-  if (!props.shifted || !SHIFTED_INPUTS.includes(event.inputType) || !event.data) {
+  if (!props.shifted || !shiftsInput(event.inputType) || !event.data) {
     return
   }
   event.preventDefault()

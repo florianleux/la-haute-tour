@@ -383,8 +383,8 @@ describe('le déroulé de la leçon de la Plume', () => {
 
 // Oui ou Non, la leçon est datée. Voir specs/champignon.md#leçon-de-michel.
 describe('la leçon du Champignon', () => {
-  async function untilQuestion(): Promise<CampLesson> {
-    const lesson = start(demoState({ lessonsDone: ['camp'] }))
+  async function untilQuestion(state: GameState | Ref<GameState> = demoState({ lessonsDone: ['camp'] })): Promise<CampLesson> {
+    const lesson = start(state)
 
     lesson.askMushroom()
     expect(lesson.line.value).toMatchObject({ text: 'HÉ !', overlay: 'inventory' })
@@ -395,7 +395,8 @@ describe('la leçon du Champignon', () => {
   }
 
   it('oui : le sac se ferme, Michel attend que l intoxication monte, commente, puis la leçon se date', async () => {
-    const lesson = await untilQuestion()
+    const state = ref(demoState({ lessonsDone: ['camp'] }))
+    const lesson = await untilQuestion(state)
 
     lesson.done('eat')
     expect(lesson.line.value).toMatchObject({ text: '', overlay: 'inventory', awaits: 'close' })
@@ -403,6 +404,12 @@ describe('la leçon du Champignon', () => {
     lesson.done('close')
     expect(lesson.line.value).toMatchObject({ text: '', awaits: 'haze' })
 
+    // Le temps de la montée ne court qu'une fois l'intoxication servie.
+    await vi.advanceTimersByTimeAsync(LESSON_PAUSE_MS)
+    expect(lesson.line.value?.awaits).toBe('haze')
+
+    state.value = { ...state.value, intoxicated: true }
+    await nextTick()
     await vi.advanceTimersByTimeAsync(LESSON_PAUSE_MS)
     expect(lesson.line.value?.text).toMatch(/^Je te l'avais bien dit/)
     expect(lesson.line.value?.overlay).toBeUndefined()

@@ -217,7 +217,17 @@ describe('Champignon appétissant', () => {
       expect(await earnedBy(db, playerId)).toContain('MUSHROOM_SOBER')
     })
 
+    it('la fin du deck dégrise et annonce le succès sur place : elle ne ramène plus au camp', async () => {
+      await serveNextQuestion(db, await loadPlayer(db, playerId), new Date())
+
+      const state = await submitAnswer(db, await loadPlayer(db, playerId), 'bordeaux', new Date())
+
+      expect(state).toMatchObject({ phase: 'deckEnd', intoxicated: false })
+      expect(state.unlocked).toContain('MUSHROOM_SOBER')
+    })
+
     it('une bonne réponse ne dégrise pas', async () => {
+      await createQuestion(db)
       await serveNextQuestion(db, await loadPlayer(db, playerId), new Date())
 
       const state = await submitAnswer(db, await loadPlayer(db, playerId), 'bordeaux', new Date())

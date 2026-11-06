@@ -8,6 +8,14 @@ export type CampObject = 'rope' | 'banner' | 'scroll' | 'backpack' | 'spellbook'
   // posé sur le décor, mais Michel l'éclaire comme eux.
   | 'posterBanner'
 
+/**
+ * Le clic qui cueille le Champignon : le troisième d'un triple clic, ou un clic
+ * au clavier (`detail` nul), qui n'en fait jamais trois.
+ */
+export function picksMushroom(clickCount: number): boolean {
+  return clickCount === 0 || clickCount >= 3
+}
+
 /** D'où le Champignon cueilli part à l'écran : ce qu'ItemReveal attend en `from`. */
 export interface PickedFrom {
   x: number
@@ -23,7 +31,7 @@ export interface CampContents {
   volumen: boolean
   /** Le joueur a déjà obtenu un sort, même tous lancés depuis. */
   spellbook: boolean
-  /** Un Champignon appétissant pousse : un clic le cueille. */
+  /** Un Champignon appétissant pousse : un triple clic le cueille. */
   mushroom: boolean
 }
 

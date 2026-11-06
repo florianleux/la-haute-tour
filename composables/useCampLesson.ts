@@ -3,7 +3,7 @@ import type { Ref } from 'vue'
 import type { GameState } from '~~/server/utils/game'
 import type { LessonId } from '~~/shared/utils/lessons'
 import type { TeamId } from '~~/shared/utils/teams'
-import type { LessonAwait, LessonLine } from '~~/utils/lessons'
+import type { LessonGesture, LessonLine } from '~~/utils/lessons'
 
 export interface CampLesson {
   /** La réplique de Michel en cours, null quand il se tait. */
@@ -15,10 +15,10 @@ export interface CampLesson {
    * refermer une boîte, lancer un sort sur soi, répondre à Michel) : la leçon passe à la suite si
    * c'est ce que la réplique attendait, et ne bouge pas sinon.
    */
-  done: (performed: Exclude<LessonAwait, 'pause' | 'haze' | 'ascent'>) => void
+  done: (performed: LessonGesture) => void
   /** Le clic sur l'au revoir de Michel : la leçon du camp est vue, datée par le serveur. */
   finish: () => Promise<void>
-  /** Le premier clic sur Utiliser du Champignon : Michel demande si le joueur est sûr. */
+  /** Le premier clic sur Manger : Michel demande si le joueur est sûr. */
   askMushroom: () => void
 }
 
@@ -93,7 +93,7 @@ export function useCampLesson(
     }
   }
 
-  function done(performed: Exclude<LessonAwait, 'pause' | 'haze' | 'ascent'>): void {
+  function done(performed: LessonGesture): void {
     if (line.value?.awaits === performed) {
       // Oui : le serveur a daté la mise en garde en servant le repas, la suite
       // est le commentaire d'après.
@@ -108,10 +108,11 @@ export function useCampLesson(
   if (!import.meta.server) {
     // Michel se fait attendre : la pause passe d'elle-même. Rien ne l'abrège
     // — une leçon ne se passe pas —, sauf à quitter le camp, qui démonte la page.
+    // L'intoxication qui monte ne compte qu'une fois servie : elle part de là.
     let pausing: ReturnType<typeof setTimeout> | undefined
-    watch(line, (now) => {
+    watch([line, () => state.value?.intoxicated], ([now, intoxicated]) => {
       clearTimeout(pausing)
-      if (now?.awaits === 'pause' || now?.awaits === 'haze') {
+      if (now?.awaits === 'pause' || (now?.awaits === 'haze' && intoxicated)) {
         pausing = setTimeout(next, LESSON_PAUSE_MS)
       }
     })
@@ -141,7 +142,7 @@ export function useCampLesson(
     }, { immediate: true })
   }
 
-  /** La leçon que le joueur déclenche lui-même : le premier clic sur Utiliser du Champignon. */
+  /** La leçon que le joueur déclenche lui-même : le premier clic sur Manger. */
   function askMushroom(): void {
     play(mushroomLesson())
     playing.value = 'mushroom'
