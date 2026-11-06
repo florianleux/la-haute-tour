@@ -41,6 +41,8 @@ export interface AnsweredInput {
   streak: number
   seenTotal: number
   playStreak: number
+  /** Le joueur répond sous l'effet du Champignon appétissant. */
+  intoxicated: boolean
   /** La réponse est partie parce que le joueur a quitté la page. */
   focusLoss: boolean
   /** Entre le service de la question et la réponse. */
@@ -89,6 +91,10 @@ export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
 
   if (input.playStreak >= 2) {
     earned.push('TWO_DAYS_IN_A_ROW')
+  }
+
+  if (input.correct && input.intoxicated) {
+    earned.push('MUSHROOM_CORRECT')
   }
 
   if (input.correct && input.answeredInMs < QUICK_ANSWER_MS) {

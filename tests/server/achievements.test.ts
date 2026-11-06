@@ -20,6 +20,7 @@ function answered(overrides: Partial<AnsweredInput> = {}): AnsweredInput {
     streak: 0,
     seenTotal: 0,
     playStreak: 0,
+    intoxicated: false,
     focusLoss: false,
     answeredInMs: 10_000,
     remainingMs: 10_000,

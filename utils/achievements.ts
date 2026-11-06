@@ -77,7 +77,8 @@ const LABELS: Record<AchievementId, string> = {
   DEVTOOLS_OPENED: 'La curiosité est un vilain défaut',
   QUESTION_COPIED: 'Ça, ça va dans mon Anki !',
   MUSHROOM_PICKED: 'Chasseur-cueilleur',
-  MUSHROOM_EATEN: 'Aucun instinct de survie',
+  MUSHROOM_EATEN: 'Mangez-moi Mangez-moi Mangez-moi',
+  MUSHROOM_CORRECT: 'Trip Lucide',
   MUSHROOM_SOBER: 'Descente d\'acide',
 }
 
@@ -137,6 +138,7 @@ const CONDITIONS: Record<AchievementId, string> = {
   QUESTION_COPIED: 'Copier une question ou une réponse depuis le Volumen.',
   MUSHROOM_PICKED: 'Cueillir son premier champignon.',
   MUSHROOM_EATEN: 'Manger son premier champignon.',
+  MUSHROOM_CORRECT: 'Donner une bonne réponse en étant intoxiqué.',
   MUSHROOM_SOBER: 'Revenir au camp après une ascension intoxiquée.',
 }
 

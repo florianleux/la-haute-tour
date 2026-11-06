@@ -65,12 +65,13 @@ Dans les deux cas la leçon (`mushroom`) est datée : les champignons suivants s
 
 ## Succès
 
-Famille **Champignon — 3** :
+Famille **Champignon — 4** :
 
 | Succès | Déclencheur |
 |---|---|
 | Chasseur-cueilleur | Cueillir son premier champignon |
-| Aucun instinct de survie | Manger son premier champignon |
+| Mangez-moi Mangez-moi Mangez-moi | Manger son premier champignon |
+| Trip Lucide | Donner une bonne réponse en étant intoxiqué, à une question ou à une épreuve de boss |
 | Descente d'acide | Revenir au camp après une ascension intoxiquée |
 
 Le troisième suit presque toujours le deuxième : toute ascension intoxiquée finit par un retour au camp, ou par la fin de la tour. Son toast attend le camp ; à la fin de la tour et à la fin du deck, qui n'y ramènent plus, il s'annonce sur place.

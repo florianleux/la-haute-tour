@@ -508,7 +508,7 @@ function withUnlocked(state: GameState, unlocked: AchievementId[]): GameState {
 
 /** Ce que earnedByAnswer réclame, prélevé sur l'instantané du joueur qui vient de répondre. */
 function answeredAchievements(
-  user: Pick<User, 'streak' | 'seenTotal' | 'playStreak'>,
+  user: Pick<User, 'streak' | 'seenTotal' | 'playStreak' | 'intoxicated'>,
   reservation: Pick<Reservation, 'createdAt' | 'expiresAt'>,
   answer: { correct: boolean, empty: boolean, died: boolean, source: AnswerSource },
   now: Date,
@@ -520,6 +520,7 @@ function answeredAchievements(
     streak: user.streak,
     seenTotal: user.seenTotal,
     playStreak: user.playStreak,
+    intoxicated: user.intoxicated,
     focusLoss: answer.source === 'focusLoss',
     answeredInMs: now.getTime() - reservation.createdAt.getTime(),
     remainingMs: reservation.expiresAt.getTime() - now.getTime(),

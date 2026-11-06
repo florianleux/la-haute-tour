@@ -279,12 +279,15 @@ export async function resolveTrial(
     return []
   }
 
-  const earned = await unlock(db, user, earnedByTrial({
-    outcome,
-    position: trial.position,
-    bossHp: rules.bossHp,
-    bossAttemptNumber: user.bossAttemptNumber,
-  }), now)
+  const earned = await unlock(db, user, [
+    ...earnedByTrial({
+      outcome,
+      position: trial.position,
+      bossHp: rules.bossHp,
+      bossAttemptNumber: user.bossAttemptNumber,
+    }),
+    ...correct && user.intoxicated ? ['MUSHROOM_CORRECT' as const] : [],
+  ], now)
 
   // La défaite ramène au camp, et la tour finie n'y ramène plus jamais :
   // l'intoxication s'arrête là.

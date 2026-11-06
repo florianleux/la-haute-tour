@@ -552,6 +552,16 @@ describe('combat de boss', () => {
   })
 
   describe('victoire', () => {
+    // Voir specs/champignon.md#succès.
+    it('une épreuve réussie intoxiqué vaut Trip Lucide', async () => {
+      await open()
+      await set({ intoxicated: true })
+
+      const state = await answer(answerOf(await enter()))
+
+      expect(state.unlocked).toContain('MUSHROOM_CORRECT')
+    })
+
     it('se lit sur l arène, puis « Continuer » franchit le palier sur une tentative neuve', async () => {
       await pendingVitality()
       await set({ lives: 1 })

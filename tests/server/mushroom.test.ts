@@ -233,6 +233,16 @@ describe('Champignon appétissant', () => {
       const state = await submitAnswer(db, await loadPlayer(db, playerId), 'bordeaux', new Date())
 
       expect(state.intoxicated).toBe(true)
+      expect(state.unlocked).toContain('MUSHROOM_CORRECT')
+    })
+
+    it('une mauvaise réponse ne vaut pas Trip Lucide', async () => {
+      await createQuestion(db)
+      await serveNextQuestion(db, await loadPlayer(db, playerId), new Date())
+
+      const state = await submitAnswer(db, await loadPlayer(db, playerId), 'faux', new Date())
+
+      expect(state.unlocked).not.toContain('MUSHROOM_CORRECT')
     })
   })
 
