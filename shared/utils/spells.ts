@@ -29,12 +29,6 @@ export const FIRST_SPELL: SpellId = 'VITALITY'
  */
 export const CASTABLE_SPELL_IDS = ['VITALITY', 'RESPITE', 'CHRONOMANCY', 'INDULGENCE', 'PURGE'] as const
 
-export type CastableSpellId = typeof CASTABLE_SPELL_IDS[number]
-
-export function isCastable(spell: SpellId): spell is CastableSpellId {
-  return (CASTABLE_SPELL_IDS as readonly SpellId[]).includes(spell)
-}
-
 /**
  * Les sorts dont le déclencheur est l'attente elle-même, et non la tentative
  * suivante : leur effet trouve de quoi mordre tout de suite, et ils meurent avec
@@ -45,7 +39,7 @@ export function isCastable(spell: SpellId): spell is CastableSpellId {
  * Les autres attendent la prochaine tentative et s'ancrent dessus.
  * Voir specs/bonus.md#ancrage-et-durée-de-vie.
  */
-export const COOLDOWN_BOUND_SPELL_IDS = ['RESPITE', 'INDULGENCE', 'PURGE'] as const
+const COOLDOWN_BOUND_SPELL_IDS = ['RESPITE', 'INDULGENCE', 'PURGE'] as const
 
 export function isCooldownBound(spell: SpellId): boolean {
   return (COOLDOWN_BOUND_SPELL_IDS as readonly SpellId[]).includes(spell)

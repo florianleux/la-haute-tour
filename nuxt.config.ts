@@ -21,6 +21,11 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
     build: {
+      // Tailwind écrit ses couleurs en oklch(), que Chrome ignore avant 111 : du
+      // texte noir, sans erreur. Lightning CSS, compilé pour Chrome 109 (le
+      // dernier de Windows 7 et 8.1), les double d'un hexadécimal.
+      cssMinify: 'lightningcss',
+      cssTarget: 'chrome109',
       // Le rendu serveur laisse `shared/` hors du lot, importé par son chemin.
       // Par défaut, Rollup rend relatif un tel import quand le premier qui le
       // croise l'écrit en relatif (`../../shared/utils/floors` dans

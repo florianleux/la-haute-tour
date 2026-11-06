@@ -16,7 +16,8 @@
     "db:migrate:prod": "DATABASE_URL= drizzle-kit migrate",
     "db:import": "tsx --env-file-if-exists=.env scripts/import-questions.ts",
     "db:seed-flags": "tsx --env-file-if-exists=.env scripts/seed-flags.ts",
-    "db:seed-flags:prod": "DATABASE_URL= tsx --env-file-if-exists=.env scripts/seed-flags.ts"
+    "db:seed-flags:prod": "DATABASE_URL= tsx --env-file-if-exists=.env scripts/seed-flags.ts",
+    "db:simulate-load": "tsx scripts/simulate-turso-load.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -34,13 +35,10 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.9.0",
-    "@nuxt/test-utils": "^3.19.2",
     "@tailwindcss/vite": "^4.1.12",
-    "@vue/test-utils": "^2.4.6",
     "drizzle-kit": "^0.31.4",
     "eslint": "^9.34.0",
     "h3": "1.15.11",
-    "happy-dom": "^20.14.6",
     "tailwindcss": "^4.1.12",
     "tsx": "^4.23.13",
     "typescript": "^5.9.2",

@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gt, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, gt, inArray, sql } from 'drizzle-orm'
 import { deckFloors, questions, seenQuestions, users } from '../db/schema'
 import type { Database } from '../db/client'
 import type { Question, User } from '../db/schema'
@@ -175,22 +175,4 @@ export async function recountSeenBy(db: Database, userIds: number[]): Promise<vo
           and ${seenQuestions.seenAt} >= ${users.attemptStartedAt})`,
     })
     .where(inArray(users.id, userIds))
-}
-
-/**
- * Recompte les étages depuis les questions elles-mêmes. Le compte est tenu à
- * chaque édition ; ceci est le filet — l'import de masse s'en sert plutôt que
- * d'incrémenter des milliers de fois, et un doute se lève en l'appelant.
- */
-export async function recountDeckFloors(db: Database): Promise<void> {
-  const totals = await db
-    .select({ floor: questions.floor, total: count() })
-    .from(questions)
-    .groupBy(questions.floor)
-
-  await db.delete(deckFloors)
-
-  if (totals.length) {
-    await db.insert(deckFloors).values(totals)
-  }
 }

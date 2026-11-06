@@ -8,9 +8,9 @@
  * coûterait chez Turso.
  *
  * Usage :
- *   pnpm tsx scripts/simulate-turso-load.ts [--players=20] [--days=30] [--qpd=250]
- *                                           [--accuracy=0.97] [--deck=1250]
- *                                           [--spells] [--label="…"] [--json=chemin]
+ *   pnpm db:simulate-load [--players=20] [--days=30] [--qpd=250]
+ *                         [--accuracy=0.97] [--deck=1250]
+ *                         [--spells] [--label="…"] [--json=chemin]
  */
 import { createClient } from '@libsql/client'
 import { createError } from 'h3'

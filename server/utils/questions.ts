@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, like, max } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, like } from 'drizzle-orm'
 import { z } from 'zod'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { floorSize, recountSeenBy, shiftFloorSize, wholeDeckSize } from './deck'
@@ -19,11 +19,8 @@ export interface AdminQuestion {
   acceptedAnswers: string[]
 }
 
-/** Une question à ajouter au deck : son contenu et l'étage qui l'accueille. */
-export type QuestionDraft = Omit<AdminQuestion, 'id'>
-
 /** Ce qui s'édite : le contenu, sans l'étage. */
-export type QuestionEdit = Omit<QuestionDraft, 'floor'>
+export type QuestionEdit = Omit<AdminQuestion, 'id' | 'floor'>
 
 /**
  * La frontière d'une édition : un énoncé et une réponse affichée non vides, et
@@ -141,37 +138,6 @@ export async function listQuestions(
   }
 
   return { questions: ids.map(id => listed.get(id)!), total }
-}
-
-export async function addQuestion(db: Database, draft: QuestionDraft): Promise<AdminQuestion> {
-  // Une question ajoutée se range à la fin de son étage : les rangs déjà servis
-  // ne bougent pas, sinon les joueurs en cours sauteraient des questions ou en
-  // reverraient. Voir specs/mecanique.md#ascension.
-  const [{ last }] = await db
-    .select({ last: max(questions.rank) })
-    .from(questions)
-    .where(eq(questions.floor, draft.floor))
-
-  const [created] = await db
-    .insert(questions)
-    .values({
-      statement: draft.statement,
-      answerLabel: draft.answerLabel,
-      floor: draft.floor,
-      rank: (last ?? 0) + 1,
-    })
-    .returning()
-
-  // L'étage vient de grandir : son compte suit, dans le même lot que la
-  // question — comptés séparément, les deux pourraient se contredire.
-  // Voir server/utils/deck.ts.
-  await db.batch([shiftFloorSize(db, draft.floor, 1)])
-
-  await replaceAcceptedAnswers(db, created.id, draft.acceptedAnswers)
-
-  // Recomposée plutôt que diffusée : la ligne Drizzle porte un `createdAt` que
-  // l'administration n'a pas demandé, et qui partirait dans le JSON.
-  return { ...draft, id: created.id }
 }
 
 /** Rend null quand la question n'existe pas : l'appelant en fait un 404. */

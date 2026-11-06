@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import { readGameState } from '../../server/utils/game'
-import { castSpell, readCastLog } from '../../server/utils/effects'
+import { castLogQuery, castSpell, toCastViews } from '../../server/utils/effects'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
@@ -116,7 +116,7 @@ describe('Répit, sur l attente en cours', () => {
   it('apparaît au journal du lanceur', async () => {
     await castRespite()
 
-    expect(await readCastLog(db, await reload()))
+    expect(toCastViews(await castLogQuery(db, player.id)))
       .toMatchObject([{ spell: 'RESPITE', face: 'boon', targetName: 'gandalf' }])
   })
 
@@ -225,7 +225,7 @@ describe('Répit, sur l attente en cours', () => {
         .set({ cooldownStartedAt: new Date(NOW.getTime() + rules.cooldownMs) })
         .where(eq(users.id, player.id))
 
-      expect(await readCastLog(db, await reload())).toHaveLength(1)
+      expect(toCastViews(await castLogQuery(db, player.id))).toHaveLength(1)
     })
   })
 })

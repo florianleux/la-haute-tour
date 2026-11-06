@@ -16,23 +16,27 @@ Voir [`specs/architecture.md`](specs/architecture.md) pour le détail.
 ```
 la-haute-tour/
 ├── app.vue
+├── assets/css/         # main.css : Tailwind, thème, animations (@keyframes)
 ├── layouts/            # layouts Nuxt (défaut, admin)
-├── middleware/         # gardes de route (auth, camp)
+├── middleware/         # garde de route globale (auth)
 ├── pages/              # routes Nuxt (file-based routing)
 ├── components/         # composants Vue, PascalCase
 ├── composables/        # logique réutilisable côté client (useXxx.ts)
 ├── utils/              # helpers client auto-importés (dates, libellés, styles)
-├── shared/utils/       # le peu qui doit être identique des deux côtés (forme de la tour)
+├── shared/utils/       # ce qui doit être identique des deux côtés : catalogues (sorts, succès, objets, catégories), étages, équipes, normalisation des réponses
 ├── server/
 │   ├── api/            # routes Nitro, un fichier par endpoint
 │   ├── db/
 │   │   ├── schema.ts   # source unique du schéma Drizzle
 │   │   └── client.ts   # instance Drizzle/Turso
-│   └── utils/          # helpers serveur (auth, validation)
+│   ├── middleware/     # middleware Nitro (contrôle d'origine)
+│   ├── plugins/        # plugins Nitro (vérification de config, base)
+│   └── utils/          # helpers serveur (auth, mécanique, lectures/écritures du jeu — voir CONTEXT.md)
+├── types/              # déclarations TypeScript (meta de page)
 ├── drizzle/            # migrations générées par drizzle-kit
-├── scripts/            # scripts CLI (import questions, etc.)
+├── scripts/            # scripts CLI (import questions, drapeaux, simulation de charge, images) et la liste des fichiers que l'écran de chargement attend
 ├── tests/              # Vitest : tests/server (handlers, utils), tests/app (client)
-├── docs/adr/           # décisions d'architecture
+├── docs/               # adr/ (décisions d'architecture) et revues datées (sécurité, budget Turso)
 └── specs/              # specs fonctionnelles, source de vérité du domaine
 ```
 
@@ -61,7 +65,7 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 
 - Maximiser la componentisation : tout élément d'UI qui se répète (bouton, input, card, modal, badge...) devient un composant partagé avant d'être dupliqué une 2e fois — jamais de markup/style copié-collé entre deux pages.
 - Composants génériques sous `components/ui/` (`BaseButton.vue`, `BaseInput.vue`, `BaseModal.vue`...), préfixés `Base`, auto-importés par Nuxt.
-- Composants métier (`QuestionCard.vue`, `VieCounter.vue`) composent ces primitives `Base*`, n'écrivent jamais un `<button>`/`<input>` brut directement.
+- Composants métier (`QuestionCard.vue`, `ResultCard.vue`) composent ces primitives `Base*`, n'écrivent jamais un `<button>`/`<input>` brut directement.
 
 ## Styling
 
@@ -100,7 +104,8 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 
 ## Tests
 
-- Vitest + `@nuxt/test-utils` — unit/intégration sur les handlers Nitro et les composants.
+- Vitest seul, en environnement `node` (pas d'environnement Nuxt) : `tests/server` teste les handlers Nitro et les helpers serveur sur une base SQLite en mémoire, `tests/app` teste composables et utils client à travers un faux Nuxt (`tests/helpers/app.ts`).
+- Pas de test de rendu de composant : la logique d'un écran vit dans une fonction pure ou un composable, et c'est là qu'elle se teste.
 - Pas d'E2E (Playwright) pour l'instant — solo dev, poids pas justifié tant qu'il n'y a pas de régression réelle à couvrir.
 
 ## Base de données — local vs prod
@@ -110,13 +115,13 @@ Pourquoi : sans cette table, chacun retraduit à sa façon et le même concept f
 - Env vars : `DATABASE_URL=file:./local.db` en local ; `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` en prod (Netlify env vars). Les deux peuvent cohabiter dans le `.env` du poste : `DATABASE_URL` gagne, donc `pnpm dev` reste toujours sur la base locale.
 - `pnpm db:migrate` migre le local, `pnpm db:migrate:prod` la prod (il vide `DATABASE_URL` pour laisser passer Turso). Viser la prod est un geste nommé, jamais un défaut.
 - Migrations prod lancées manuellement, dans la foulée du push, tant que le projet est solo — à automatiser (hook de build Netlify) seulement si ça devient pénible.
+- `pnpm db:simulate-load` rejoue le vrai code du jeu sur une base en mémoire et compte ce que Turso facturerait (lignes lues, écrites, stockage). Voir [`docs/revue-du-budget-turso.md`](docs/revue-du-budget-turso.md).
 
 ## CI/CD
 
 - GitHub Actions sur push/PR : install → typecheck (`nuxi typecheck`) → lint → `vitest run` → `nuxt build`. Pas de deploy dans Actions.
 - Le build est dans la CI parce qu'il attrape ce que les trois autres ne voient pas : un composant Vue vide passe typecheck **et** lint, une page renommée ne casse aucun test, et une route attrape-tout qui avale `/api/**` ne se voit qu'à l'exécution. Netlify construit de son côté, mais trop tard — l'erreur est déjà sur `main`.
-- Netlify branché directement sur le repo GitHub (pas via Actions) : push sur `main` → prod, PR → deploy preview auto.
-- Ces deux éléments (workflow CI, lien Netlify↔repo) dépendent du scaffold Nuxt (package.json, scripts, build command) — à mettre en place dans le ticket qui scaffold le projet, pas avant.
+- Netlify branché directement sur le repo GitHub (pas via Actions) : push sur `main` → prod. Pas de deploy preview sur les PR.
 
 ## Setup manuel requis (comptes/credentials tiers, personne d'autre ne peut le faire)
 

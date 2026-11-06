@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { addQuestion, removeQuestion } from '../../server/utils/questions'
+import { removeQuestion } from '../../server/utils/questions'
 import { floorSize } from '../../server/utils/deck'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
@@ -57,19 +57,6 @@ describe('taille d un étage', () => {
     await floorSize(db, 1)
 
     expect(queries()).toBe(1)
-  })
-
-  it('grandit quand une question entre au deck', async () => {
-    await addQuestion(db, {
-      statement: 'Une de plus ?',
-      answerLabel: 'OUI',
-      floor: 1,
-      acceptedAnswers: ['oui'],
-    })
-
-    // Sans ce suivi, l'étage garderait sa taille d'avant et le palier tomberait
-    // une question trop tôt.
-    expect(await floorSize(db, 1)).toBe(5)
   })
 
   it('rétrécit quand une question sort du deck', async () => {

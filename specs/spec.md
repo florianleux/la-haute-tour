@@ -188,7 +188,7 @@ Le mot **session** n'appartient pas au vocabulaire du domaine : il désigne uniq
 - [`bonus.md`](./bonus.md) — Sorts, question loot, coffres et Mimic. Le seul système qui fasse communiquer deux parties entre elles.
 - [`equipes.md`](./equipes.md) — Les deux équipes, leur assignation, et la dérivation allié/ennemi dont la magie noire dépend.
 - [`succes.md`](./succes.md) — Le catalogue des Succès, ce qui les déclenche, et comment ils se montrent.
-- [`boss.md`](./boss.md) — Les boss d'étage, la porte à deux clés, le combat. Le combat est implémenté (#34), le reste pas encore.
+- [`boss.md`](./boss.md) — Les boss d'étage, la porte à deux clés, le combat. Ce qui est implémenté et ce qui ne l'est pas encore : voir son en-tête.
 - [`boss-etage1-drapeaux.md`](./boss-etage1-drapeaux.md) — Le boss de l'étage 1 et ses drapeaux.
 - [`lore.md`](./lore.md) — Le monde du jeu : le Grand Événement, la Tour, les guildes, L'Inconnu.
 
