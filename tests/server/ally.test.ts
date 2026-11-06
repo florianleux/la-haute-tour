@@ -4,9 +4,11 @@ import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/
 import {
   castSpell,
   effectsQuery,
-  readCastLog,
-  readReceivedLog,
+  castLogQuery,
+  receivedLogQuery,
+  toCastViews,
   toEffectViews,
+  toReceivedViews,
 } from '../../server/utils/effects'
 import { readGameState } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
@@ -143,16 +145,16 @@ describe('lancer sur un allié', () => {
 
     await cast('VITALITY')
 
-    expect(await readCastLog(db, await loadPlayer(db, caster.id)))
+    expect(toCastViews(await castLogQuery(db, caster.id)))
       .toMatchObject([{ spell: 'VITALITY', targetName: 'samsagace' }])
-    expect(await readReceivedLog(db, samsagace))
+    expect(toReceivedViews(await receivedLogQuery(db, samsagace.id)))
       .toMatchObject([{ spell: 'VITALITY', face: 'boon', casterName: 'gandalf' }])
   })
 
   it('nomme personne au journal quand le tirage n a désigné personne', async () => {
     await cast('VITALITY')
 
-    expect(await readCastLog(db, await loadPlayer(db, caster.id)))
+    expect(toCastViews(await castLogQuery(db, caster.id)))
       .toMatchObject([{ spell: 'VITALITY', targetName: null }])
   })
 
@@ -160,7 +162,7 @@ describe('lancer sur un allié', () => {
     await db.insert(pocketSpells).values({ userId: caster.id, spell: 'VITALITY', obtainedAt: NOW })
     await castSpell(db, caster, 'VITALITY', 'self', NOW)
 
-    expect(await readReceivedLog(db, await loadPlayer(db, caster.id))).toEqual([])
+    expect(toReceivedViews(await receivedLogQuery(db, caster.id))).toEqual([])
   })
 
   // Le déclencheur en cours est celui de la cible : c'est son attente à elle que

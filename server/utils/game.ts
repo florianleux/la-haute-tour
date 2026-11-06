@@ -32,8 +32,7 @@ import {
   unlock,
 } from './achievements'
 import { gameHour } from '../../shared/utils/time'
-import { KEYS_TO_UNLOCK } from '../../shared/utils/bossKeys'
-import { grantKey, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'
+import { grantKey, KEYS_TO_UNLOCK, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'
 import { bossView, enterBossFight, resolveTrial, servedTrial, serveNextTrial, toHeldTrials, trialsQuery } from './boss'
 import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQuestions } from './deck'
 import { closeAttempt, openAttempt } from './journey'

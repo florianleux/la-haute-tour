@@ -285,6 +285,6 @@ function posterLine(): string {
 }
 
 // La place et la taille du poster, partagées par son image et son contenu.
-const POSTER_BOX = 'bottom-[calc(4svh+1.5rem)] left-1/2 aspect-918/980 w-[min(calc(100%-3rem),calc((94svh-3rem)*918/980))] -translate-x-1/2 translate-y-[calc(5svh_-_min(8svh,max(0px,(100svh*16/9_-_100vw)/6)))]'
+const POSTER_BOX = 'bottom-[calc(4svh+1.5rem)] left-1/2 aspect-918/980 w-[min(calc(100%-3rem),calc((94svh-3rem)*918/980))] -translate-x-1/2 translate-y-[max(-3svh,min(5svh,calc(100vw/6_-_665svh/27)))]'
 
 </script>

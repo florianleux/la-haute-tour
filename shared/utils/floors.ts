@@ -8,7 +8,7 @@
 export const FLOOR_COUNT = 6
 
 /** Les étages, du premier au dernier. */
-export function everyFloor(): number[] {
+function everyFloor(): number[] {
   return Array.from({ length: FLOOR_COUNT }, (_, index) => index + 1)
 }
 

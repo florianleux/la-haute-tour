@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { activeEffects, pocketSpells, users } from '../../server/db/schema'
-import { castSpell, effectsQuery, readCastLog, toEffectViews } from '../../server/utils/effects'
+import { castLogQuery, castSpell, effectsQuery, toCastViews, toEffectViews } from '../../server/utils/effects'
 import { openAttempt } from '../../server/utils/journey'
 import { rulesForFloor } from '../../server/utils/rules'
 import { createPlayer, createTestDatabase, loadPlayer } from '../helpers/db'
@@ -186,7 +186,7 @@ describe('lancer et ancrage des effets', () => {
     await own('VITALITY')
     await cast('VITALITY')
 
-    expect(await readCastLog(db, await loadPlayer(db, userId))).toEqual([
+    expect(toCastViews(await castLogQuery(db, userId))).toEqual([
       { spell: 'VITALITY', face: 'boon', targetName: 'gandalf', castAt: NOW.toISOString() },
     ])
   })
@@ -199,7 +199,7 @@ describe('lancer et ancrage des effets', () => {
     await cast('VITALITY')
 
     expect(await readEffects(userId)).toMatchObject([{ casterName: 'Bilbon' }])
-    expect(await readCastLog(db, await loadPlayer(db, userId))).toMatchObject([{ targetName: 'Bilbon' }])
+    expect(toCastViews(await castLogQuery(db, userId))).toMatchObject([{ targetName: 'Bilbon' }])
   })
 
   it('garde au journal un sort dont l effet est déjà mort', async () => {
@@ -208,7 +208,7 @@ describe('lancer et ancrage des effets', () => {
     await openAttempt(db, await loadPlayer(db, userId), NOW)
     await db.update(users).set({ attemptStartedAt: new Date(NOW.getTime() + 60_000) }).where(eq(users.id, userId))
 
-    expect(await readCastLog(db, await loadPlayer(db, userId))).toHaveLength(1)
+    expect(toCastViews(await castLogQuery(db, userId))).toHaveLength(1)
     expect(await readEffects(userId)).toEqual([])
   })
 })

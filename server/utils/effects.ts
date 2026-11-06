@@ -271,15 +271,6 @@ export function toEffectViews(rows: EffectRow[], user: User): PlacedEffect[] {
  */
 export const CAST_LOG_SIZE = 20
 
-/**
- * Le journal du lanceur : ce qu'il a envoyé, sur qui, et quand. Il survit à
- * l'effet, qui meurt avec la tentative sur laquelle il s'est ancré — c'est là
- * que le lanceur lit que son sort a touché quelqu'un.
- */
-export async function readCastLog(db: Database, caster: User, limit = CAST_LOG_SIZE): Promise<CastView[]> {
-  return toCastViews(await castLogQuery(db, caster.id, limit))
-}
-
 type CastLogQuery = ReturnType<typeof buildCastLogQuery>
 
 function buildCastLogQuery(db: Database, casterId: number, limit: number) {
@@ -304,6 +295,10 @@ function buildCastLogQuery(db: Database, casterId: number, limit: number) {
 }
 
 /**
+ * Le journal du lanceur : ce qu'il a envoyé, sur qui, et quand. Il survit à
+ * l'effet, qui meurt avec la tentative sur laquelle il s'est ancré — c'est là
+ * que le lanceur lit que son sort a touché quelqu'un.
+ *
  * La requête du journal, rendue plutôt qu'exécutée : le Grimoire la fait
  * voyager dans le même lot que ses voisines, pour qu'ouvrir l'écran ne coûte pas
  * un aller-retour réseau par liste affichée.
@@ -315,18 +310,6 @@ export function castLogQuery(db: Database, casterId: number, limit = CAST_LOG_SI
 
 export function toCastViews(rows: Awaited<CastLogQuery>): CastView[] {
   return rows.map(row => ({ ...row, castAt: row.castAt.toISOString() }))
-}
-
-/**
- * L'autre journal : ce que le joueur a **reçu**, de qui, et quand. Ses propres
- * lancers sur lui-même n'y figurent pas — il les lit déjà en face.
- *
- * Sans ce journal, personne ne saurait jamais que le système existe : un effet
- * meurt avec la tentative qu'il a servie, et le nom de son lanceur avec lui.
- * Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
- */
-export async function readReceivedLog(db: Database, target: User, limit = CAST_LOG_SIZE): Promise<ReceivedView[]> {
-  return toReceivedViews(await receivedLogQuery(db, target.id, limit))
 }
 
 type ReceivedLogQuery = ReturnType<typeof buildReceivedLogQuery>
@@ -358,7 +341,17 @@ function buildReceivedLogQuery(db: Database, userId: number, limit: number) {
     .limit(limit)
 }
 
-/** Même raison d'être que `castLogQuery` : les deux listes voyagent ensemble. */
+/**
+ * L'autre journal : ce que le joueur a **reçu**, de qui, et quand. Ses propres
+ * lancers sur lui-même n'y figurent pas — il les lit déjà en face.
+ *
+ * Sans ce journal, personne ne saurait jamais que le système existe : un effet
+ * meurt avec la tentative qu'il a servie, et le nom de son lanceur avec lui.
+ * Voir specs/bonus.md#ce-que-voit-la-cible-et-ce-que-voit-le-lanceur.
+ *
+ * Rendue plutôt qu'exécutée, pour la même raison que `castLogQuery` : les deux
+ * listes voyagent ensemble.
+ */
 export function receivedLogQuery(db: Database, userId: number, limit = CAST_LOG_SIZE): ReceivedLogQuery {
   return buildReceivedLogQuery(db, userId, limit)
 }
