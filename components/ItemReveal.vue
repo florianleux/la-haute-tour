@@ -67,7 +67,7 @@
       </p>
 
       <BaseButton
-        variant="link"
+        variant="reveal"
         class="mt-[4dvh]"
         @click="$emit('close')"
       >

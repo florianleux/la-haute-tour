@@ -150,7 +150,7 @@
           </BaseGlowLabel>
         </p>
         <BaseButton
-          variant="link"
+          variant="reveal"
           class="pointer-events-auto mt-[3dvh] motion-safe:animate-fade-in [--enter-delay:1.3s]"
           @click="$emit('dismiss')"
         >

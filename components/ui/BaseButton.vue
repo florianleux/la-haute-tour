@@ -35,14 +35,14 @@ const props = withDefaults(defineProps<{
    * à la taille et à la couleur du texte qui l'entoure, qu'elle reprend plutôt
    * que d'imposer les siennes. `parchment` : un bouton tracé à l'encre, pour
    * une action posée sur du papier (le Grimoire), où les fonds sombres jurent.
-   * `link` : un simple lien blanc, en capitales, l'ombre sombre des noms du
-   * camp au plus près : il se lit sur un voile sombre comme sur le papier clair
-   * que la vignette d'un lancer laisse au centre — le OK d'une apparition
-   * (ItemReveal, SpellCastBurst). `ink` : un mot souligné à l'encre, sans cadre,
+   * `reveal` : un bouton plein, sombre et bordé d'or, en capitales : il se lit
+   * sur un voile sombre comme sur le papier clair que la vignette d'un lancer
+   * laisse au centre — le OK d'une apparition (ItemReveal, SpellCastBurst).
+   * `ink` : un mot souligné à l'encre, sans cadre,
    * à la taille du texte de parchemin où il se pose — les petits gestes alignés
    * à côté d'une ligne (« OK » d'une nouvelle, « Tout marquer lu »).
    */
-  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'link' | 'ink'
+  variant?: 'primary' | 'ghost' | 'text' | 'option' | 'parchment' | 'reveal' | 'ink'
   disabled?: boolean
 }>(), {
   to: undefined,
@@ -68,7 +68,7 @@ const VARIANTS = {
   ghost: `${PADDED} bg-transparent text-slate-300 hover:bg-slate-800`,
   text: `${PADDED} bg-transparent text-stone-800 hover:underline`,
   option: 'px-5 py-1 italic bg-transparent text-inherit transition-colors hover:underline',
-  link: 'px-5 py-1 text-[max(1.1rem,2.6dvh)] font-semibold tracking-wider uppercase bg-transparent text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.85),0_0_6px_rgb(0_0_0/0.6)] underline-offset-4 transition-opacity hover:underline hover:opacity-80',
+  reveal: 'min-w-[8em] rounded-full! border-2 border-amber-300 bg-stone-950/90 px-8 py-2 text-[max(1.1rem,2.6dvh)] font-semibold tracking-wider uppercase text-amber-200 shadow-[0_2px_10px_rgb(0_0_0/0.6)] transition-colors hover:bg-stone-800 hover:text-amber-100',
   parchment: `${PADDED} border-2 border-amber-900/40 bg-transparent text-amber-950 enabled:hover:bg-amber-900/10`,
   ink: 'font-semibold uppercase tracking-wide bg-transparent text-amber-900 underline decoration-amber-900/40 underline-offset-[0.2em] transition-colors enabled:hover:text-amber-950 enabled:hover:decoration-amber-950',
 }
