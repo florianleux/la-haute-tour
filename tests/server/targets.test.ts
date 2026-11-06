@@ -129,30 +129,37 @@ describe('tirage de la cible', () => {
   })
 
   // Un compte délaissé ne prend pas les sorts des autres : seul compte qui a
-  // résolu une question aujourd'hui ou hier, au jour du jeu.
+  // résolu une question aujourd'hui, hier ou avant-hier, au jour du jeu.
   // Voir specs/bonus.md#tirage-de-la-cible.
-  it('écarte un joueur qui n a pas joué aujourd hui ni hier', async () => {
-    await player('absent', { lastPlayedDay: '2026-09-04' })
+  it('écarte un joueur qui n a joué ni aujourd hui, ni hier, ni avant-hier', async () => {
+    await player('absent', { lastPlayedDay: '2026-09-03' })
     await player('jamais', { lastPlayedDay: null })
 
     expect(await draw(0.5)).toBeNull()
   })
 
-  it('tire un joueur qui a joué hier', async () => {
-    await player('hier', { lastPlayedDay: '2026-09-05' })
+  it('tire un joueur qui a joué avant-hier', async () => {
+    await player('avant-hier', { lastPlayedDay: '2026-09-04' })
 
-    expect(await draw(0.5)).toBe('hier')
+    expect(await draw(0.5)).toBe('avant-hier')
   })
 
-  // Hier se lit sur la date, pas 24 heures plus tôt : au lendemain du passage à
-  // l'heure d'été, la journée n'en a duré que 23.
-  it('lit hier au jour du jeu, changement d heure compris', async () => {
-    await player('veille', { lastPlayedDay: '2026-03-29' })
+  // Avant-hier se lit sur la date, pas 48 heures plus tôt : au lendemain du
+  // passage à l'heure d'été, la veille n'a duré que 23 heures.
+  it('lit avant-hier au jour du jeu, changement d heure compris', async () => {
+    await player('trop-vieux', { lastPlayedDay: '2026-03-27' })
 
-    // 30 mars, 00 h 30 à Paris (heure d'été) : 24 heures plus tôt, on était le 28.
-    const target = await drawTarget(db, await loadPlayer(db, caster), 'ally', new Date('2026-03-29T22:30:00.000Z'), rolls(0.5))
+    // 30 mars, 00 h 30 à Paris (heure d'été) : avant-hier est le 28, mais
+    // 48 heures plus tôt, on était encore le 27 — que le tirage doit écarter.
+    const at = new Date('2026-03-29T22:30:00.000Z')
+    const drawAt = async (): Promise<string | null> =>
+      (await drawTarget(db, await loadPlayer(db, caster), 'ally', at, rolls(0.5)))?.username ?? null
 
-    expect(target?.username).toBe('veille')
+    expect(await drawAt()).toBeNull()
+
+    await player('avant-hier', { lastPlayedDay: '2026-03-28' })
+
+    expect(await drawAt()).toBe('avant-hier')
   })
 
   // On soutient le plus faible : le moins avancé porte le plus gros poids.

@@ -221,8 +221,8 @@ type Candidate = { user: User, floorTotal: number | null, nextFloorTotal: number
  * Un joueur que le tirage garde. Sont écartés ceux qui ont fini leur partie —
  * ils n'auront jamais de prochaine tentative, l'effet serait mort-né —, ceux
  * qui n'ont pas fini leur première : un nouveau venu apprend le jeu avant d'en
- * subir les sorts, et ceux qui n'ont pas joué aujourd'hui ni hier : un compte
- * délaissé ne prend pas les sorts des autres. Lui se lance un sort à lui-même,
+ * subir les sorts, et ceux qui n'ont joué ni aujourd'hui, ni hier, ni
+ * avant-hier : un compte délaissé ne prend pas les sorts des autres. Lui se lance un sort à lui-même,
  * ce filtre ne tire que les autres.
  *
  * Le filtre passe **avant** le classement : un joueur retiré du pool ne pèse
@@ -245,13 +245,13 @@ function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion, pastFirstA
 }
 
 /**
- * A-t-il résolu une question aujourd'hui ou hier, au jour du jeu ? Hier se
- * calcule sur la date et non en retranchant 24 heures : un changement d'heure
- * fait des journées de 23 et de 25 heures. `YYYY-MM-DD` se compare comme une
+ * A-t-il résolu une question aujourd'hui, hier ou avant-hier, au jour du jeu ?
+ * Avant-hier se calcule sur la date et non en retranchant 48 heures : un
+ * changement d'heure fait des journées de 23 et de 25 heures. `YYYY-MM-DD` se compare comme une
  * chaîne. Voir specs/bonus.md#tirage-de-la-cible.
  */
 function playedRecently(user: User, now: Date): boolean {
-  const yesterday = new Date(Date.parse(dayKey(now)) - 86_400_000).toISOString().slice(0, 10)
+  const dayBeforeYesterday = new Date(Date.parse(dayKey(now)) - 2 * 86_400_000).toISOString().slice(0, 10)
 
-  return user.lastPlayedDay !== null && user.lastPlayedDay >= yesterday
+  return user.lastPlayedDay !== null && user.lastPlayedDay >= dayBeforeYesterday
 }
