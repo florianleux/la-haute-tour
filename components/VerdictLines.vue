@@ -138,15 +138,16 @@ const props = defineProps<{
    */
   copyable?: boolean
   /**
-   * Michel montre « Contester », à la question d'essai : tout le verdict
-   * s'assombrit, sauf lui. Voir specs/ecrans.md#leçons-de-michel.
+   * Michel montre autre chose : « Contester », à la question d'essai, ou la
+   * Boule de cristal, au Volumen. Tout le verdict s'assombrit, sauf elle. Voir
+   * specs/ecrans.md#leçons-de-michel.
    */
-  disputeLit?: boolean
+  shaded?: boolean
 }>()
 
 const focusNotice = computed(() => focusLossNotice(props.verdict))
 
-const shade = computed(() => (props.disputeLit ? LESSON_SHADE : ''))
+const shade = computed(() => (props.shaded ? LESSON_SHADE : ''))
 
 // Une réponse jugée juste ne se conteste pas, même quand la question reste
 // contestable ailleurs : au rattrapage, l'erreur d'origine est encore au pool.

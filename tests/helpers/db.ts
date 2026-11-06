@@ -189,6 +189,11 @@ export async function grantQuill(db: Database, userId: number): Promise<void> {
   await db.insert(schema.items).values({ userId, item: 'SCRIBE_QUILL', obtainedAt: new Date() })
 }
 
+/** La Boule de cristal dans le sac : ce que le coffre demande pour passer au Filet. */
+export async function grantCrystalBall(db: Database, userId: number): Promise<void> {
+  await db.insert(schema.items).values({ userId, item: 'CRYSTAL_BALL', obtainedAt: new Date() })
+}
+
 /** Le Filet à sangsues dans le sac : ce que l'onglet Sangsues demande. */
 export async function grantLeechNet(db: Database, userId: number): Promise<void> {
   await db.insert(schema.items).values({ userId, item: 'LEECH_NET', obtainedAt: new Date() })

@@ -17,7 +17,7 @@ const RECOVERY_FAILURES = [5, 4, 3, 3, 2]
 
 /**
  * Le banc des Sangsues (pages/test/leeches.vue). Remet le joueur servi juste
- * avant le coffre du Filet à sangsues, par le vrai jeu : partie neuve, Plume et
+ * avant le coffre du Filet à sangsues, par le vrai jeu : partie neuve, Plume, Boule et
  * Vitalité au sac, toutes les leçons vues sauf celle du Filet, puis une
  * ascension jouée jusqu'à la première question loot, réussie. Il arrive sur son
  * verdict, coffre fermé, à une vie : une erreur le ramène ensuite au camp, où
@@ -44,7 +44,10 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
       introDoneAt: now,
       ...Object.fromEntries(LESSON_IDS.filter(lesson => lesson !== 'leechNet').map(lesson => [LESSON_COLUMNS[lesson], now])),
     }).where(eq(users.id, player.id)),
-    db.insert(items).values({ userId: player.id, item: 'SCRIBE_QUILL', obtainedAt: now }),
+    db.insert(items).values([
+      { userId: player.id, item: 'SCRIBE_QUILL', obtainedAt: now },
+      { userId: player.id, item: 'CRYSTAL_BALL', obtainedAt: now },
+    ]),
     db.insert(pocketSpells).values({ userId: player.id, spell: FIRST_SPELL, obtainedAt: now }),
   ])
 

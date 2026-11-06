@@ -351,6 +351,13 @@
       "when": 1793987629189,
       "tag": "0049_drop_first_ascension",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1794002044117,
+      "tag": "0050_crystal_ball_lesson",
+      "breakpoints": true
     }
   ]
 }

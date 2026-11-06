@@ -195,7 +195,7 @@ export function isAtRest(state: GameState | null): boolean {
  * dans l'état servi : celle du camp au repos ; tombé et rien de tiré, celle
  * de la chute, puis celle du rattrapage une fois l'attente échue ; enfin, au
  * camp, celle du Grimoire, le premier sort obtenu, puis celle de la Plume de
- * copiste, puis celle du Filet à sangsues, puis le commentaire de Michel sur le
+ * copiste, puis celle de la Boule de cristal, puis celle du Filet à sangsues, puis le commentaire de Michel sur le
  * Champignon mangé. Celle de la question loot, elle, se joue sur la question que le
  * serveur retient pour elle. Null quand aucune n'est due.
  * Voir specs/ecrans.md#leçons-de-michel.
@@ -219,6 +219,9 @@ export function dueLesson(state: GameState | null): LessonId | null {
   }
   if (isAtCamp(state) && state?.hasQuill && !done.includes("quill")) {
     return "quill";
+  }
+  if (isAtCamp(state) && state?.hasCrystalBall && !done.includes("crystalBall")) {
+    return "crystalBall";
   }
   if (isAtCamp(state) && state?.hasLeechNet && !done.includes("leechNet")) {
     return "leechNet";

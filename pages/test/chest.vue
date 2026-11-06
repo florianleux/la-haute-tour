@@ -46,6 +46,7 @@ const state = computed(() => demoState({
   seenTotal: 1_204,
   spellDiscovered: true,
   hasQuill: true,
+  hasCrystalBall: true,
   hasLeechNet: true,
   lessonsDone: ['camp'],
   verdict: {
@@ -66,20 +67,21 @@ provideGameState(state)
 
 function openChest(): void {
   // Le mimic pèse 5% en vrai (specs/bonus.md#coffre-et-mimic), la clé un
-  // coffre par étage (specs/boss.md#obtention-de-la-clé), la Plume et le Filet un seul
+  // coffre par étage (specs/boss.md#obtention-de-la-clé), la Plume, la Boule et le Filet un seul
   // coffre dans toute la partie — trop rares pour se
   // voir en rejouant, donc gonflés ici pour ce banc.
   const roll = Math.random()
   const mimic = roll < 0.3
   const key = !mimic && roll < 0.6
   const quill = !mimic && !key && roll < 0.8
-  const leechNet = !mimic && !key && !quill && roll < 0.9
+  const crystalBall = !mimic && !key && !quill && roll < 0.85
+  const leechNet = !mimic && !key && !quill && !crystalBall && roll < 0.9
   chest.value = {
     opened: true,
     mimic,
-    spell: mimic || key || quill || leechNet ? null : SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
+    spell: mimic || key || quill || crystalBall || leechNet ? null : SPELL_IDS[Math.floor(Math.random() * SPELL_IDS.length)],
     key,
-    item: quill ? 'SCRIBE_QUILL' : leechNet ? 'LEECH_NET' : null,
+    item: quill ? 'SCRIBE_QUILL' : crystalBall ? 'CRYSTAL_BALL' : leechNet ? 'LEECH_NET' : null,
   }
 }
 

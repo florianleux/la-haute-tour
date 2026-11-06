@@ -35,13 +35,13 @@
            Le parchemin et son rouleau gauche, dévoilés de gauche à droite… -->
       <div
         class="question-log-scroll pointer-events-none absolute inset-0 [--enter-delay:0.15s]"
-        :class="closing ? 'motion-safe:animate-roll-up' : 'motion-safe:animate-unroll'"
+        :class="[closing ? 'motion-safe:animate-roll-up' : 'motion-safe:animate-unroll', shade]"
       />
       <!-- …pendant que le rouleau droit, seul, glisse depuis le gauche. Ses
            rebonds le font osciller autour de sa poignée du haut. -->
       <div
         class="question-log-scroll pointer-events-none absolute inset-0 origin-[calc(100%-var(--k)*var(--rod-r))_calc(var(--k)*var(--cap-y))] [--enter-delay:0.15s] [clip-path:inset(0_0_0_calc(100%-var(--k)*(var(--rod-r)+var(--rod-w)/2)))]"
-        :class="closing ? 'motion-safe:animate-roll-up-rod' : 'motion-safe:animate-unroll-rod'"
+        :class="[closing ? 'motion-safe:animate-roll-up-rod' : 'motion-safe:animate-unroll-rod', shade]"
       />
 
       <!-- Le papier attrape ses clics : seuls les vides autour des rouleaux
@@ -53,7 +53,7 @@
            l'éclat des noms du camp. Il jaillit pendant le déroulé, quand le
            bord du papier passe sous lui, au milieu, avec le même rebond que le
            verdict juste (animate-cheer). -->
-      <CampOverlayTitle :closing="closing" delay="0.3s" class="top-[calc(var(--k)*var(--paper-y))]">
+      <CampOverlayTitle :closing="closing" delay="0.3s" class="top-[calc(var(--k)*var(--paper-y))]" :class="shade">
         Volumen
       </CampOverlayTitle>
 
@@ -66,7 +66,7 @@
              à un autre et qu'on revient. Les onglets se posent au-dessus de la
              liste, pas de la question relue. -->
         <KeepAlive>
-          <QuestionLogList :key="tab" :tab="tab" :lesson="lesson" class="flex-1">
+          <QuestionLogList :key="tab" :tab="tab" :lesson="lesson" class="flex-1" @next="$emit('next')">
             <template #tabs>
               <BaseTabs v-model="tab" :tabs="tabs" parchment />
             </template>
@@ -86,7 +86,7 @@ import type { GameState } from '~~/server/utils/game'
 import type { LessonLine } from '~~/utils/lessons'
 
 const props = defineProps<{
-  /** La réplique de Michel quand il parle depuis le Volumen, à la leçon de la chute, de la Plume ou du Filet. */
+  /** La réplique de Michel quand il parle depuis le Volumen, à la leçon de la chute, de la Plume, de la Boule ou du Filet. */
   lesson?: LessonLine
 }>()
 
@@ -108,4 +108,7 @@ const tabs = computed((): { id: QuestionLogTab, label: string }[] => [
 
 // Michel choisit l'onglet dont il parle : « À revoir » peut être vide.
 const tab = ref<QuestionLogTab>(props.lesson?.openingTab ?? 'missed')
+
+// Michel montre la Boule de cristal : le parchemin passe dans l'ombre, elle non.
+const shade = computed(() => (props.lesson?.spotlight === 'wikipedia' ? LESSON_SHADE : ''))
 </script>

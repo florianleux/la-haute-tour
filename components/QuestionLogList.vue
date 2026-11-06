@@ -2,7 +2,7 @@
   <!-- La liste à gauche, la question choisie à droite. Sur un écran étroit, la
        question choisie passe au-dessus de la liste, qui défile en dessous. -->
   <div class="flex min-h-0 flex-col gap-6 md:flex-row">
-    <section class="flex min-h-0 flex-1 flex-col">
+    <section class="flex min-h-0 flex-1 flex-col" :class="ballShown && LESSON_SHADE" :inert="ballShown || undefined">
       <slot name="tabs" />
 
       <!-- Rien ne part à la frappe ni au choix : la loupe (ou Entrée) lance. Même
@@ -77,8 +77,11 @@ v-if="hasQuill" class="mt-4 grid grid-cols-[1fr_1fr_auto] items-end gap-3 overfl
         class="flex-1"
         :entry="selected"
         :pool-successes-to-leave="poolSuccessesToLeave"
-        :copyable="hasQuill"
+        :copyable="hasQuill && !ballShown"
+        :linked="hasCrystalBall"
+        :spotlit="ballShown"
         @copied="unlockCopyAchievement"
+        @followed="$emit('next')"
       />
       <p v-else-if="entries.length" class="my-auto text-center text-sm italic text-amber-900/60">
         Aucune question sélectionnée
@@ -98,9 +101,17 @@ import type { QuestionLogTab } from '~~/shared/utils/questionLog'
 
 const props = defineProps<{
   tab: QuestionLogTab
-  /** La réplique de Michel à la leçon de la Plume : il montre la recherche, puis la copie. */
+  /** La réplique de Michel : à la leçon de la Plume, la recherche, puis la copie ; à celle de la Boule, la boule. */
   lesson?: LessonLine
 }>()
+
+defineEmits<{
+  /** La Boule cliquée, à sa leçon : Michel a fini. */
+  next: []
+}>()
+
+// Michel montre la Boule : seule elle répond, le reste passe dans l'ombre.
+const ballShown = computed(() => props.lesson?.spotlight === 'wikipedia')
 
 const EMPTY: Record<QuestionLogTab, string> = {
   missed: 'Rien à revoir sur cet étage.',
@@ -123,6 +134,7 @@ const CATEGORY_OPTIONS = [
 // déjà si le joueur la porte (l'état de jeu, tenu en cache).
 const { data: gameState } = useNuxtData<GameState>(GAME_STATE_KEY)
 const hasQuill = computed(() => gameState.value?.hasQuill ?? false)
+const hasCrystalBall = computed(() => gameState.value?.hasCrystalBall ?? false)
 
 // Les champs se remplissent sans rien lancer ; la loupe les applique et
 // revient à la première page.
@@ -173,10 +185,10 @@ const selected = computed(() => entries.value.find(entry => entry.questionId ===
 
 onMounted(() => load(1))
 
-// Michel montre la copie sur une question : la première de la liste, ouverte
+// Michel montre la copie, ou le lien, sur une question : la première de la liste, ouverte
 // pour lui. Le joueur n'a rien à choisir.
 watch([() => props.lesson?.spotlight, entries], ([spot]) => {
-  if (spot === 'copy' && !selectedId.value && entries.value.length) {
+  if ((spot === 'copy' || spot === 'wikipedia') && !selectedId.value && entries.value.length) {
     selectedId.value = entries.value[0].questionId
   }
 }, { immediate: true })

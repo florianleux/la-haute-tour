@@ -446,6 +446,14 @@ export function quillDue({ spellDiscovered, hasQuill }: { spellDiscovered: boole
   return spellDiscovered && !hasQuill
 }
 
+/**
+ * La Boule de cristal est due : la Plume en poche, et pas encore la Boule. Le
+ * premier coffre qui suit la Plume la donne. Voir specs/bonus.md#coffre-et-mimic.
+ */
+export function crystalBallDue({ hasQuill, hasCrystalBall }: { hasQuill: boolean, hasCrystalBall: boolean }): boolean {
+  return hasQuill && !hasCrystalBall
+}
+
 export interface ChestOutcome {
   mimic: boolean
   /** Le sort obtenu, null sur un Mimic. */

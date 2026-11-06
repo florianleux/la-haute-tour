@@ -212,6 +212,7 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         recoveryLessonAt: null,
         spellbookLessonAt: null,
         quillLessonAt: null,
+        crystalBallLessonAt: null,
         leechNetLessonAt: null,
         lootLessonAt: null,
         mushroomLessonAt: null,

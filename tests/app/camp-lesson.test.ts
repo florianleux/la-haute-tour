@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installAppGlobals } from '../helpers/app'
 import { demoState } from '../../utils/demo'
 import { dueLesson, isAtRest } from '../../utils/phase'
-import { LESSON_PAUSE_MS, campLesson, fallLesson, leechNetLesson, lessonStart, mushroomEatenLesson, mushroomLesson, quillLesson, recoveryLesson, spellbookLesson } from '../../utils/lessons'
+import { LESSON_PAUSE_MS, campLesson, crystalBallLesson, fallLesson, leechNetLesson, lessonStart, mushroomEatenLesson, mushroomLesson, quillLesson, recoveryLesson, spellbookLesson } from '../../utils/lessons'
 import type { GameState } from '../../server/utils/game'
 import type { Ref } from 'vue'
 import type { Mock } from 'vitest'
@@ -12,7 +12,7 @@ import type { TeamId } from '../../shared/utils/teams'
 const { answerWith, breakNetwork, calls, reset } = installAppGlobals()
 
 // Les auto-imports dont le composable se sert, que Vitest ne pose pas.
-Object.assign(globalThis, { dueLesson, isAtRest, campLesson, fallLesson, leechNetLesson, lessonStart, mushroomEatenLesson, mushroomLesson, quillLesson, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
+Object.assign(globalThis, { dueLesson, isAtRest, campLesson, crystalBallLesson, fallLesson, leechNetLesson, lessonStart, mushroomEatenLesson, mushroomLesson, quillLesson, recoveryLesson, spellbookLesson, LESSON_PAUSE_MS })
 const { fetchItems } = await import('../../composables/useItems')
 Object.assign(globalThis, { fetchItems })
 
@@ -378,6 +378,41 @@ describe('le déroulé de la leçon de la Plume', () => {
 
   it('ne se joue pas sans la Plume', () => {
     expect(start(demoState({ hasQuill: false, lessonsDone: ['camp', 'spellbook'] })).line.value).toBeNull()
+  })
+})
+
+describe('le déroulé de la leçon de la Boule de cristal', () => {
+  /** Au camp, la Boule dans le sac, rien d'autre à voir. */
+  const BALL_DUE = demoState({ hasCrystalBall: true, lessonsDone: ['camp', 'spellbook', 'quill'] })
+
+  /** Michel montre la Boule : le Volumen est ouvert, il ne reste qu'à conclure. */
+  async function showBall(): Promise<ReturnType<typeof start>> {
+    const lesson = start(BALL_DUE)
+    await settle(LESSON_PAUSE_MS)
+    while (lesson.line.value?.spotlight !== 'wikipedia') {
+      act(lesson)
+    }
+    return lesson
+  }
+
+  it('finit quand le Volumen se referme', async () => {
+    const lesson = await showBall()
+
+    lesson.done('close')
+    await settle()
+
+    expect(lesson.line.value).toBeNull()
+    expect(calls()).toContain('fetch POST /api/profile/lessons')
+  })
+
+  it('finit au clic sur la Boule, le Volumen restant ouvert', async () => {
+    const lesson = await showBall()
+
+    lesson.next()
+    await settle()
+
+    expect(lesson.line.value).toBeNull()
+    expect(calls()).toContain('fetch POST /api/profile/lessons')
   })
 })
 

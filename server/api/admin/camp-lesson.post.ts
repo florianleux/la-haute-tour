@@ -7,7 +7,7 @@ import { rulesForFloor } from '~~/server/utils/rules'
 import { LESSON_COLUMNS } from '~~/server/utils/lessons'
 import { skipCooldown } from '~~/server/utils/lives'
 import { requirePlayer, resetPlayer } from '~~/server/utils/players'
-import { CHEST_ITEMS } from '~~/shared/utils/items'
+import { CHEST_ITEMS, namesChestItem } from '~~/shared/utils/items'
 import { LESSON_IDS } from '~~/shared/utils/lessons'
 import { FIRST_SPELL } from '~~/shared/utils/spells'
 import { TEAM_IDS } from '~~/shared/utils/teams'
@@ -15,8 +15,8 @@ import { TEAM_IDS } from '~~/shared/utils/teams'
 // La guilde à donner au joueur pour ce passage, ou aucune : sans équipe, la
 // leçon du camp saute la bannière et les Haut-faits, celle du Grimoire les
 // alliés et les ennemis. La leçon à revoir : celle du camp par défaut, celle
-// de la chute, du rattrapage, du Grimoire, de la Plume, du Filet ou de la question
-// loot.
+// de la chute, du rattrapage, du Grimoire, de la Plume, de la Boule, du Filet ou
+// de la question loot.
 const bodySchema = z.object({
   team: z.enum(TEAM_IDS).nullable(),
   lesson: z.enum(LESSON_IDS).default('camp'),
@@ -78,7 +78,7 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
     introDoneAt: now,
     team,
     ...lesson !== 'camp' && { [LESSON_COLUMNS.camp]: now },
-    ...(lesson === 'recovery' || lesson === 'quill' || lesson === 'leechNet') && { [LESSON_COLUMNS.fall]: now },
+    ...(lesson === 'recovery' || namesChestItem(lesson)) && { [LESSON_COLUMNS.fall]: now },
   }).where(eq(users.id, player.id))
 
   if (lesson === 'mushroom') {
@@ -107,7 +107,7 @@ export default defineEventHandler(async (event): Promise<{ ok: true }> => {
 
   // L'Objet dans le sac : le joueur perd ensuite une vraie ascension, comme à la
   // chute, pour avoir des questions vues à relire au Volumen.
-  if (lesson === 'quill' || lesson === 'leechNet') {
+  if (namesChestItem(lesson)) {
     await db.insert(items).values({ userId: player.id, item: CHEST_ITEMS[lesson], obtainedAt: now })
   }
 

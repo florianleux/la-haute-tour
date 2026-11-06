@@ -352,7 +352,7 @@ const keyDoor = computed(() => props.chest.key ? bossStageOf(props.state.floor).
 
 /**
  * L'Objet que le coffre ouvert rend à l'Inventaire — la clé du boss, la Plume
- * de copiste ou le Filet à sangsues —, avec de quoi le dire en toutes lettres. Null sur un sort, un
+ * de copiste, la Boule de cristal ou le Filet à sangsues —, avec de quoi le dire en toutes lettres. Null sur un sort, un
  * Mimic ou un coffre fermé.
  */
 const lootItem = computed(() => {

@@ -33,7 +33,7 @@
         :disputable="disputable"
         :disputing="disputing"
         :last-life="state.lives <= 0"
-        :dispute-lit="lessonDims(lesson) && !spotlightOn(lesson, 'dispute').dimmed"
+        :shaded="lessonDims(lesson) && !spotlightOn(lesson, 'dispute').dimmed"
         @dispute="$emit('dispute')"
       />
 

@@ -6,7 +6,7 @@ import { openDispute, settleDispute } from '../../server/utils/disputes'
 import { openPlayerChest, readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
 import { SPELL_IDS } from '../../shared/utils/spells'
-import { createPlayer, createQuestion, createTestDatabase, grantLeechNet, grantQuill, loadPlayer, markSeen } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, grantCrystalBall, grantLeechNet, grantQuill, loadPlayer, markSeen } from '../helpers/db'
 import { rolls } from '../helpers/random'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
@@ -210,6 +210,7 @@ describe('coffre de loot', () => {
     // La Plume, elle, est déjà dans le sac : sans elle, le coffre la donnerait.
     beforeEach(async () => {
       await grantQuill(db, player.id)
+      await grantCrystalBall(db, player.id)
       await db.update(users).set({ lastChest: 'spell' }).where(eq(users.id, player.id))
       await db.insert(pocketSpells).values({ userId: player.id, spell: 'RESPITE', obtainedAt: NOW })
     })
@@ -324,12 +325,13 @@ describe('coffre de loot', () => {
 
     it('ne se donne qu une fois', async () => {
       await grantQuill(db, player.id)
+      await grantCrystalBall(db, player.id)
       await playLootQuestion('Bordeaux')
 
       const state = await openPlayerChest(db, await reload(), NOW, rolls(0, 0))
 
       expect(state.chest).toMatchObject({ item: null })
-      expect(await bag()).toHaveLength(1)
+      expect(await bag()).toHaveLength(2)
     })
 
     it('laisse la clé passer avant elle', async () => {
@@ -342,11 +344,53 @@ describe('coffre de loot', () => {
     })
   })
 
+  describe('boule de cristal', () => {
+    beforeEach(async () => {
+      await db.update(users).set({ lastChest: 'spell' }).where(eq(users.id, player.id))
+      await db.insert(pocketSpells).values({ userId: player.id, spell: 'VITALITY', obtainedAt: NOW })
+      await grantQuill(db, player.id)
+    })
+
+    const bag = (): Promise<{ item: string }[]> =>
+      db.select({ item: items.item }).from(items).where(eq(items.userId, player.id))
+
+    it('est le contenu du premier coffre qui suit la Plume, sans sort ni Mimic', async () => {
+      await playLootQuestion('Bordeaux')
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
+
+      expect(state.chest).toEqual({ opened: true, mimic: false, spell: null, key: false, item: 'CRYSTAL_BALL' })
+      expect(state.hasCrystalBall).toBe(true)
+      expect(await bag()).toContainEqual({ item: 'CRYSTAL_BALL' })
+      expect(await stock()).toEqual([{ spell: 'VITALITY' }])
+      expect((await reload()).lastChest).toBe('spell')
+    })
+
+    it('passe avant le Filet quand une Sangsue l attend aussi', async () => {
+      await playLootQuestion('Bordeaux')
+      await db.update(seenQuestions).set({ recoveryFailures: 3 }).where(eq(seenQuestions.userId, player.id))
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesMimic())
+
+      expect(state.chest).toMatchObject({ item: 'CRYSTAL_BALL' })
+    })
+
+    it('ne se donne qu une fois', async () => {
+      await grantCrystalBall(db, player.id)
+      await playLootQuestion('Bordeaux')
+
+      const state = await openPlayerChest(db, await reload(), NOW, givesSpell())
+
+      expect(state.chest).toMatchObject({ item: null })
+    })
+  })
+
   describe('filet à sangsues', () => {
     beforeEach(async () => {
       await db.update(users).set({ lastChest: 'spell' }).where(eq(users.id, player.id))
       await db.insert(pocketSpells).values({ userId: player.id, spell: 'VITALITY', obtainedAt: NOW })
       await grantQuill(db, player.id)
+      await grantCrystalBall(db, player.id)
     })
 
     const bag = (): Promise<{ item: string }[]> =>
@@ -388,7 +432,7 @@ describe('coffre de loot', () => {
       const state = await openPlayerChest(db, await reload(), NOW, givesSpell())
 
       expect(state.chest).toMatchObject({ item: null })
-      expect(await bag()).toHaveLength(2)
+      expect(await bag()).toHaveLength(3)
     })
 
     it('laisse passer la Plume avant lui', async () => {

@@ -382,10 +382,16 @@ Deux conséquences à garder en tête, et la seconde est la plus importante :
   la donner — ni Sort, ni Mimic. Elle arme le Mimic comme un Sort (`lastChest`).
   La clé passe avant elle. Elle rejoint l'Inventaire ; c'est elle qui ouvre au
   Volumen la recherche et la copie (voir [`ecrans.md`](./ecrans.md#volumen)).
+- **Exception, le premier coffre qui suit la Plume de copiste** et tant que le
+  joueur n'a pas la **Boule de cristal** : le coffre est **forcé** de la donner —
+  ni Sort, ni Mimic. Elle arme le Mimic comme un Sort (`lastChest`). La clé et la
+  Plume passent avant elle. Elle rejoint l'Inventaire ; c'est elle qui ouvre, sur
+  la fiche du Volumen, le lien vers Wikipédia (voir
+  [`ecrans.md`](./ecrans.md#volumen)).
 - **Exception, le premier coffre qui suit la première Sangsue**, une fois la
-  Plume de copiste en poche et tant que le joueur n'a pas le **Filet à
+  Plume de copiste et la Boule de cristal en poche et tant que le joueur n'a pas le **Filet à
   sangsues** : le coffre est **forcé** de le donner — ni Sort, ni Mimic. Il arme
-  le Mimic comme un Sort (`lastChest`). La clé et la Plume passent avant lui. Il
+  le Mimic comme un Sort (`lastChest`). La clé, la Plume et la Boule passent avant lui. Il
   rejoint l'Inventaire ; c'est lui qui ouvre au Volumen l'onglet Sangsues (voir
   [`ecrans.md`](./ecrans.md#volumen)). Une contestation acceptée qui retire
   l'unique Sangsue avant le coffre le repousse à la suivante : à son obtention,

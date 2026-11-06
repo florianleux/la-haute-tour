@@ -6,7 +6,7 @@
  * Les identifiants seuls : les libellés vivent dans `utils/items.ts`, côté
  * écran. Voir specs/spec.md (glossaire, « Objet »).
  */
-export const ITEM_IDS = ['CHEESE', 'JULIEN_CARD', 'SCRIBE_QUILL', 'LEECH_NET', 'MUSHROOM'] as const
+export const ITEM_IDS = ['CHEESE', 'JULIEN_CARD', 'SCRIBE_QUILL', 'CRYSTAL_BALL', 'LEECH_NET', 'MUSHROOM'] as const
 
 export type ItemId = typeof ITEM_IDS[number]
 
@@ -16,10 +16,16 @@ export type ItemId = typeof ITEM_IDS[number]
  */
 export const CHEST_ITEMS = {
   quill: 'SCRIBE_QUILL',
+  crystalBall: 'CRYSTAL_BALL',
   leechNet: 'LEECH_NET',
 } as const satisfies Record<string, ItemId>
 
 export type ChestItemId = typeof CHEST_ITEMS[keyof typeof CHEST_ITEMS]
+
+/** Cet état de coffre, ou cette leçon, porte-t-il le nom d'un Objet de coffre ? */
+export function namesChestItem(name: string): name is keyof typeof CHEST_ITEMS {
+  return Object.hasOwn(CHEST_ITEMS, name)
+}
 
 /**
  * La relique que chaque boss laisse, par étage : un Objet du sac, sans effet.

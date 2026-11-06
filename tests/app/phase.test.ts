@@ -157,6 +157,9 @@ describe('la leçon due', () => {
     expect(dueLesson(state({ hasQuill: true, lessonsDone: ['camp', 'quill'] }))).toBeNull()
     expect(dueLesson(state({ hasLeechNet: true, lessonsDone: ['camp', 'quill'] }))).toBe('leechNet')
     expect(dueLesson(state({ hasLeechNet: true, lessonsDone: ['camp', 'quill', 'leechNet'] }))).toBeNull()
+    expect(dueLesson(state({ hasCrystalBall: true, lessonsDone: ['camp', 'quill'] }))).toBe('crystalBall')
+    expect(dueLesson(state({ hasCrystalBall: true, hasLeechNet: true, lessonsDone: ['camp', 'quill'] }))).toBe('crystalBall')
+    expect(dueLesson(state({ hasCrystalBall: true, lessonsDone: ['camp', 'quill', 'crystalBall'] }))).toBeNull()
     // La Plume d'abord, jamais les deux en même temps.
     expect(dueLesson(state({ hasQuill: true, hasLeechNet: true, lessonsDone: ['camp'] }))).toBe('quill')
     // Le Grimoire passe avant elle : une leçon à la fois.
