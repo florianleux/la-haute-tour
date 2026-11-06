@@ -188,11 +188,11 @@ describe('repartir de zéro', () => {
 
   // Michel redonne ses leçons à la partie neuve. Voir specs/admin.md#gestion-des-joueurs.
   it('remet les leçons du camp, de la chute, du rattrapage et du Grimoire à voir', async () => {
-    await db.update(users).set({ campLessonAt: NOW, fallLessonAt: NOW, recoveryLessonAt: NOW, spellbookLessonAt: NOW, quillLessonAt: NOW }).where(eq(users.id, userId))
+    await db.update(users).set({ campLessonAt: NOW, fallLessonAt: NOW, recoveryLessonAt: NOW, spellbookLessonAt: NOW, quillLessonAt: NOW, crystalBallLessonAt: NOW }).where(eq(users.id, userId))
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
 
-    expect(await loadPlayer(db, userId)).toMatchObject({ campLessonAt: null, fallLessonAt: null, recoveryLessonAt: null, spellbookLessonAt: null, quillLessonAt: null })
+    expect(await loadPlayer(db, userId)).toMatchObject({ campLessonAt: null, fallLessonAt: null, recoveryLessonAt: null, spellbookLessonAt: null, quillLessonAt: null, crystalBallLessonAt: null })
   })
 
   it('ne laisse aucune attente derrière lui, durée comprise', async () => {

@@ -94,6 +94,8 @@ export const users = sqliteTable('users', {
   spellbookLessonAt: integer('spellbook_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon de la Plume de copiste, la visite du camp qui suit son obtention. Comme campLessonAt. */
   quillLessonAt: integer('quill_lesson_at', { mode: 'timestamp' }),
+  /** Quand le joueur a vu la leçon de la Boule de cristal, la visite du camp qui suit son obtention. Comme campLessonAt. */
+  crystalBallLessonAt: integer('crystal_ball_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon du Filet à sangsues, la visite du camp qui suit son obtention. Comme campLessonAt. */
   leechNetLessonAt: integer('leech_net_lesson_at', { mode: 'timestamp' }),
   /** Quand le joueur a vu la leçon de la question loot, sur la première servie. Comme campLessonAt. */

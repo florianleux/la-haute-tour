@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { advancesOnBubble, asks, campLesson, fallLesson, leechNetLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, lootLesson, quillLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
+import { advancesOnBubble, asks, campLesson, crystalBallLesson, fallLesson, leechNetLesson, lessonDims, practiceLesson, practiceVerdictLesson, recoveryLesson, lessonStart, locksOverlay, lootLesson, quillLesson, spellbookLesson, spotlightOn } from '../../utils/lessons'
 
 // Voir specs/ecrans.md#leçons-de-michel (Chute).
 describe('la leçon de la chute', () => {
@@ -291,6 +291,18 @@ describe('la leçon de la Plume', () => {
     const closed = lines.findIndex(line => line.awaits === 'close')
 
     expect(lines.slice(opened, closed + 1).every(line => line.overlay === 'questionLog')).toBe(true)
+  })
+})
+
+// Voir specs/ecrans.md#leçons-de-michel (Boule).
+describe('la leçon de la Boule de cristal', () => {
+  const lines = crystalBallLesson()
+
+  it('fait ouvrir le Volumen sur toutes les questions et finit sur la boule', () => {
+    const opened = lines.findIndex(line => line.spotlight === 'scroll') + 1
+
+    expect(lines[opened]).toMatchObject({ spotlight: 'wikipedia', overlay: 'questionLog', openingTab: 'all', awaits: 'close' })
+    expect(lines).toHaveLength(opened + 1)
   })
 })
 

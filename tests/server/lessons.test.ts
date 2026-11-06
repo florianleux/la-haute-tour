@@ -65,6 +65,10 @@ describe('une leçon de Michel vue', () => {
 
     expect((await loadPlayer(db, playerId)).quillLessonAt).toBeInstanceOf(Date)
 
+    await markLesson(lessonRequest({ lesson: 'crystalBall' }, await sessionCookieFor(playerId)))
+
+    expect((await loadPlayer(db, playerId)).crystalBallLessonAt).toBeInstanceOf(Date)
+
     await markLesson(lessonRequest({ lesson: 'leechNet' }, await sessionCookieFor(playerId)))
 
     expect((await loadPlayer(db, playerId)).leechNetLessonAt).toBeInstanceOf(Date)

@@ -23,7 +23,7 @@ export const LESSON_CUTOUT = 'rounded-[0.5cqw] ring-1 ring-amber-200/70 backdrop
  * - `pause` : rien ne s'affiche, la leçon reprend d'elle-même après LESSON_PAUSE_MS ;
  * - `click` : cliquer l'objet éclairé ;
  * - `use` : utiliser le Fromage depuis l'Inventaire — le donner à Michel ;
- * - `close` : refermer la boîte du camp où Michel parle ;
+ * - `close` : refermer la boîte du camp où Michel parle — ou, à la leçon de la Boule, cliquer la boule ;
  * - `cast` : lancer sur soi le sort qu'il montre, depuis le Grimoire ;
  * - `eat` : répondre Oui ou Non à sa question, dans l'Inventaire ;
  * - `haze` : rien à faire, Michel se tait sur le camp le temps que l'intoxication, une fois servie, monte (LESSON_PAUSE_MS) ;
@@ -53,6 +53,9 @@ export type SpellbookTarget = 'spellPage' | 'castSelf'
  */
 export type QuillTarget = 'search' | 'copy'
 
+/** Ce que Michel montre dans le Volumen, à la leçon de la Boule : la boule de la fiche. */
+export type CrystalBallTarget = 'wikipedia'
+
 /**
  * Une réplique de Michel pendant une leçon. Voir specs/ecrans.md#leçons-de-michel.
  */
@@ -63,7 +66,7 @@ export interface LessonLine {
    * éclaire ; le reste reste dans l'ombre. Null, rien n'est éclairé. Voir
    * specs/spec.md (glossaire, « Éclairage »).
    */
-  spotlight: CampObject | PlayTarget | SpellbookTarget | QuillTarget | null
+  spotlight: CampObject | PlayTarget | SpellbookTarget | QuillTarget | CrystalBallTarget | null
   /** Ce que la réplique attend du joueur. Absent, la bulle avance au clic ou à Entrée. */
   awaits?: LessonAwait
   /** La boîte du camp d'où Michel parle, ouverte par la réplique d'avant. Absente, il parle sur le camp. */
@@ -204,6 +207,20 @@ export function quillLesson(): LessonLine[] {
     { text: 'Et clique sur une question, ou sur sa réponse : la voilà copiée, prête à coller dans ton Anki !', spotlight: 'copy', overlay: 'questionLog' },
     { text: 'Referme le Volumen quand tu as fini.', spotlight: null, overlay: 'questionLog', awaits: 'close' },
     { text: 'Bonne révision !', spotlight: 'michel' },
+  ]
+}
+
+/**
+ * La leçon de la Boule de cristal, à la visite du camp qui suit son obtention.
+ * Michel fait ouvrir le Volumen et montre la boule sur la fiche d'une question.
+ * Un clic sur elle finit la leçon, comme refermer le Volumen.
+ * Voir specs/ecrans.md#leçons-de-michel (Boule).
+ */
+export function crystalBallLesson(): LessonLine[] {
+  return [
+    ...MICHEL_ENTRANCE,
+    { text: 'Une boule de cristal ! Elle aussi améliore le Volumen, ouvre-le !', spotlight: 'scroll', awaits: 'click' },
+    { text: 'Clique dessus pour en savoir plus.', spotlight: 'wikipedia', overlay: 'questionLog', openingTab: 'all', awaits: 'close' },
   ]
 }
 

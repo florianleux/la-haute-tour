@@ -31,6 +31,12 @@ const ITEM_LABELS: Record<ItemId, ItemLabel> = {
     image: '/images/item-scribe-quill.webp',
     phrase: 'la Plume de copiste',
   },
+  CRYSTAL_BALL: {
+    name: 'Boule de cristal',
+    description: 'Donne un aperçu d\'un autre monde.',
+    image: '/images/item-crystal-ball.webp',
+    phrase: 'la Boule de cristal',
+  },
   LEECH_NET: {
     name: 'Filet à sangsues',
     description: 'Un filet aux mailles fines, encore humide. Débloque l\'onglet Sangsues du Volumen.',

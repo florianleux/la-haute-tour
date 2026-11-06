@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `crystal_ball_lesson_at` integer;

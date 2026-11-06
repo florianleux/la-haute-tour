@@ -98,6 +98,7 @@ export function demoState(overrides: Partial<GameState> = {}): GameState {
     spellDiscovered: false,
     firstCastPending: false,
     hasQuill: false,
+    hasCrystalBall: false,
     hasLeechNet: false,
     mushroomGrown: false,
     intoxicated: false,

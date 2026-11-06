@@ -27,6 +27,8 @@ export const ITEM_USES: Record<ItemId, {
   JULIEN_CARD: { usableBy: () => false, earns: [] },
   // Elle se porte, elle ne s'utilise pas : le Volumen la reconnaît dans le sac.
   SCRIBE_QUILL: { usableBy: () => false, earns: [] },
+  // Elle aussi : le Volumen la reconnaît dans le sac.
+  CRYSTAL_BALL: { usableBy: () => false, earns: [] },
   // Lui aussi : le Volumen le reconnaît dans le sac.
   LEECH_NET: { usableBy: () => false, earns: [] },
   // Son effet tient dans la route, qui appelle eatMushroom. Voir specs/champignon.md.

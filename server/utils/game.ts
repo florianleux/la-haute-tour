@@ -18,6 +18,7 @@ import {
   phaseOf,
   recoveryThreshold,
   keyDue,
+  crystalBallDue,
   quillDue,
   rollChest,
   resumesRecovery,
@@ -40,7 +41,7 @@ import { floorSizeQuery, nextFloorTotal, nextQuestionQuery, sizeOf, upcomingQues
 import { closeAttempt, openAttempt, soberUp } from './journey'
 import { effectsQuery, toEffectViews } from './effects'
 import { grantItemWhere, hasItem, notCarrying } from './items'
-import { CHEST_ITEMS } from '../../shared/utils/items'
+import { CHEST_ITEMS, namesChestItem } from '../../shared/utils/items'
 import { FIRST_SPELL, isCooldownBound } from '../../shared/utils/spells'
 import { lessonsDone } from './lessons'
 import { rulesForFloor } from './rules'
@@ -135,7 +136,7 @@ export interface ChestView {
   spell: SpellId | null
   /** Vrai quand le coffre ouvert donnait la clé du boss. Voir specs/boss.md#obtention-de-la-clé. */
   key: boolean
-  /** L'Objet que le coffre ouvert donnait : la Plume ou le Filet. Voir specs/bonus.md#coffre-et-mimic. */
+  /** L'Objet que le coffre ouvert donnait : la Plume, la Boule ou le Filet. Voir specs/bonus.md#coffre-et-mimic. */
   item: ChestItemId | null
 }
 
@@ -212,6 +213,11 @@ export interface GameState {
    * la copie de ses lignes. Voir specs/ecrans.md#volumen.
    */
   hasQuill: boolean
+  /**
+   * Le joueur porte la Boule de cristal : la fiche du Volumen lui offre le lien
+   * vers Wikipédia. Voir specs/ecrans.md#volumen.
+   */
+  hasCrystalBall: boolean
   /**
    * Le joueur porte le Filet à sangsues : le Volumen lui offre l'onglet Sangsues
    * et les échecs de rattrapage sur la fiche. Voir specs/ecrans.md#volumen.
@@ -305,6 +311,8 @@ export interface PlayerSnapshot {
   firstCastPending: boolean
   /** La Plume de copiste dans le sac. Lue avec le joueur. */
   hasQuill: boolean
+  /** La Boule de cristal dans le sac. Lue avec le joueur. */
+  hasCrystalBall: boolean
   /** Le Filet à sangsues dans le sac. Lu avec le joueur. */
   hasLeechNet: boolean
   /** Le Champignon appétissant dans le sac. Lu avec le joueur. */
@@ -415,6 +423,7 @@ function snapshotQueries(db: Database, userId: number) {
           and not ${hasCast})`,
         // Lue avec le joueur, pour la même raison : le Volumen en dépend.
         hasQuill: carries('SCRIBE_QUILL'),
+        hasCrystalBall: carries('CRYSTAL_BALL'),
         hasLeechNet: carries('LEECH_NET'),
         hasMushroom: carries('MUSHROOM'),
         // Lue avec le joueur, pour la même raison : la porte la demande à chaque lecture.
@@ -469,6 +478,7 @@ function toSnapshot([[row], [held], effects, recoveryRun, trials, keyHolders]: B
     spellDiscovered: row.spellDiscovered === 1,
     firstCastPending: row.firstCastPending === 1,
     hasQuill: row.hasQuill === 1,
+    hasCrystalBall: row.hasCrystalBall === 1,
     hasLeechNet: row.hasLeechNet === 1,
     hasMushroom: row.hasMushroom === 1,
     hasKey: row.hasKey === 1,
@@ -954,7 +964,7 @@ function chestOf(reservation: Reservation): ChestView | null {
     return { opened: false, mimic: false, spell: null, key: false, item: null }
   }
 
-  if (chest === 'quill' || chest === 'leechNet') {
+  if (namesChestItem(chest)) {
     return { opened: true, mimic: false, spell: null, key: false, item: CHEST_ITEMS[chest] }
   }
 
@@ -1016,6 +1026,7 @@ function stateFrom(snapshot: PlayerSnapshot, now: Date): GameState {
     spellDiscovered: snapshot.spellDiscovered,
     firstCastPending: snapshot.firstCastPending,
     hasQuill: snapshot.hasQuill,
+    hasCrystalBall: snapshot.hasCrystalBall,
     hasLeechNet: snapshot.hasLeechNet,
     mushroomGrown: mushroomGrows({ eatenAt: user.mushroomEatenAt, carried: snapshot.hasMushroom }, now),
     intoxicated: user.intoxicated,
@@ -1433,10 +1444,12 @@ export async function openPlayerChest(
     ? 'key'
     : quillDue(snapshot)
       ? 'quill'
-      // La Sangsue se cherche ici et pas à chaque lecture d'état, tant que le Filet reste à donner.
-      : snapshot.hasQuill && !snapshot.hasLeechNet && await hasLeech(db, user.id, rules.leechThreshold)
-        ? 'leechNet'
-        : null
+      : crystalBallDue(snapshot)
+        ? 'crystalBall'
+        // La Sangsue se cherche ici et pas à chaque lecture d'état, tant que le Filet reste à donner.
+        : snapshot.hasQuill && !snapshot.hasLeechNet && await hasLeech(db, user.id, rules.leechThreshold)
+          ? 'leechNet'
+          : null
   const chest: ChestState = forced ?? rollChest(rules, random, snapshot.user.lastChest, snapshot.spellDiscovered).spell ?? 'mimic'
 
   // Le coffre se réclame et se remplit d'un seul geste : deux ouvertures
@@ -1461,7 +1474,7 @@ export async function openPlayerChest(
     const armed = { lastChest: 'spell' as const }
     const loot = chest === 'key'
       ? grantKey(db, snapshot.user, now)
-      : chest === 'quill' || chest === 'leechNet'
+      : namesChestItem(chest)
         ? db.insert(items).values({ userId: user.id, item: CHEST_ITEMS[chest], obtainedAt: now })
         : db.insert(pocketSpells).values({ userId: user.id, spell: chest, obtainedAt: now })
 
@@ -1474,6 +1487,7 @@ export async function openPlayerChest(
       user: { ...snapshot.user, ...armed },
       hasKey: snapshot.hasKey || chest === 'key',
       hasQuill: snapshot.hasQuill || chest === 'quill',
+      hasCrystalBall: snapshot.hasCrystalBall || chest === 'crystalBall',
       hasLeechNet: snapshot.hasLeechNet || chest === 'leechNet',
       reservation: opened,
     }, now), unlocked)

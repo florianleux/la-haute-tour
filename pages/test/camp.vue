@@ -32,6 +32,9 @@
 // `?lesson=quill` : la même chute, leçon de la chute vue, Plume de copiste dans
 // le sac — Michel fait ouvrir le Volumen et montre la recherche et la copie.
 //
+// `?lesson=crystalBall` : la même chute, Boule de cristal dans le sac — Michel
+// fait ouvrir le Volumen et montre le lien d'une question.
+//
 // `?lesson=leechNet` : la même chute, Filet à sangsues dans le sac, Sangsues au
 // Volumen.
 //
@@ -44,6 +47,7 @@
 //
 // Admin seulement. Hors développement, sur un joueur test incarné : un banc ne
 // jette pas la partie d'un vrai compte. Voir server/api/admin/camp-lesson.post.ts.
+import { namesChestItem } from '~~/shared/utils/items'
 import { TEAM_IDS } from '~~/shared/utils/teams'
 
 definePageMeta({ admin: true })
@@ -55,7 +59,7 @@ const team = useRoute().query.team === 'none' ? null : TEAM_IDS[Math.floor(Math.
 
 // Passée telle quelle : le serveur la valide, et revoit le camp sans elle.
 const lesson = useRoute().query.lesson
-const afterFall = lesson === 'fall' || lesson === 'recovery' || lesson === 'quill' || lesson === 'leechNet'
+const afterFall = lesson === 'fall' || lesson === 'recovery' || (typeof lesson === 'string' && namesChestItem(lesson))
 
 onMounted(async () => {
   try {

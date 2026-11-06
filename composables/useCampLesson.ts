@@ -53,6 +53,7 @@ export function useCampLesson(
     recovery: () => state.value?.nextRecovery ? recoveryLesson(state.value.nextRecovery) : null,
     spellbook: () => spellbookLesson({ team: team.value, guided: state.value?.firstCastPending ?? false }),
     quill: quillLesson,
+    crystalBall: crystalBallLesson,
     leechNet: leechNetLesson,
     loot: () => state.value?.question?.lootLesson ? lootLesson(state.value.question.lootLesson) : null,
     mushroom: mushroomLesson,

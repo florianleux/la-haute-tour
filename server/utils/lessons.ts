@@ -12,6 +12,7 @@ export const LESSON_COLUMNS = {
   recovery: 'recoveryLessonAt',
   spellbook: 'spellbookLessonAt',
   quill: 'quillLessonAt',
+  crystalBall: 'crystalBallLessonAt',
   leechNet: 'leechNetLessonAt',
   loot: 'lootLessonAt',
   mushroom: 'mushroomLessonAt',

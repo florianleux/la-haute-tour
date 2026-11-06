@@ -32,6 +32,7 @@ const served: GameState = {
   seenTotal: 0,
   spellDiscovered: false,
   hasQuill: false,
+  hasCrystalBall: false,
   hasLeechNet: false,
   mushroomGrown: false,
   intoxicated: false,

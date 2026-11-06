@@ -114,6 +114,13 @@ describe('le banc de la leçon de la chute', () => {
     expect(await db.select().from(missedPool).where(eq(missedPool.userId, testerId))).toHaveLength(3)
   })
 
+  it('remet le joueur après sa première chute, la Boule au sac, leçon de la Boule à voir', async () => {
+    await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'crystalBall'))
+
+    expect(await loadPlayer(db, testerId)).toMatchObject({ lives: 0, crystalBallLessonAt: null })
+    expect(await db.select({ item: items.item }).from(items).where(eq(items.userId, testerId))).toEqual([{ item: 'CRYSTAL_BALL' }])
+  })
+
   it('remet le joueur à l échéance de sa première attente, leçon du rattrapage à voir', async () => {
     await replayCamp(benchRequest(await sessionCookieFor(adminId, testerId), 'recovery'))
 
