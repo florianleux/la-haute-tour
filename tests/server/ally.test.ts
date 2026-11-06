@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { dayKey } from '../../server/utils/achievements'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import {
@@ -53,6 +54,7 @@ describe('lancer sur un allié', () => {
       team: 'TLM',
       floorSeen: 1,
       pastFirstAttempt: true,
+      lastPlayedDay: dayKey(NOW),
       ...state,
     })
 

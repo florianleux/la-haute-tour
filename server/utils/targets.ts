@@ -1,5 +1,6 @@
 import { and, asc, eq, exists, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
 import { activeEffects, attempts, deckFloors, reservations, users } from '../db/schema'
+import { dayKey } from './achievements'
 import { nextFloorTotal } from './deck'
 import { countsTowardMaxBoons, drawByRank, isBorneBy, phaseOf } from './mechanics'
 import { rulesForFloor } from './rules'
@@ -218,10 +219,11 @@ type Candidate = { user: User, floorTotal: number | null, nextFloorTotal: number
 
 /**
  * Un joueur que le tirage garde. Sont écartés ceux qui ont fini leur partie —
- * ils n'auront jamais de prochaine tentative, l'effet serait mort-né — et ceux
+ * ils n'auront jamais de prochaine tentative, l'effet serait mort-né —, ceux
  * qui n'ont pas fini leur première : un nouveau venu apprend le jeu avant d'en
- * subir les sorts. Lui se lance un sort à lui-même, ce filtre ne tire que les
- * autres.
+ * subir les sorts, et ceux qui n'ont pas joué aujourd'hui ni hier : un compte
+ * délaissé ne prend pas les sorts des autres. Lui se lance un sort à lui-même,
+ * ce filtre ne tire que les autres.
  *
  * Le filtre passe **avant** le classement : un joueur retiré du pool ne pèse
  * plus dans la distribution. Voir specs/bonus.md#tirage-de-la-cible.
@@ -239,5 +241,17 @@ function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion, pastFirstA
 
   // ponytail: la fin du deck reste ciblable — un état de beta, sans prochaine
   // tentative non plus. À écarter aussi si un deck réduit sert au-delà d'une beta.
-  return phase !== 'gameOver' && pastFirstAttempt
+  return phase !== 'gameOver' && pastFirstAttempt && playedRecently(user, now)
+}
+
+/**
+ * A-t-il résolu une question aujourd'hui ou hier, au jour du jeu ? Hier se
+ * calcule sur la date et non en retranchant 24 heures : un changement d'heure
+ * fait des journées de 23 et de 25 heures. `YYYY-MM-DD` se compare comme une
+ * chaîne. Voir specs/bonus.md#tirage-de-la-cible.
+ */
+function playedRecently(user: User, now: Date): boolean {
+  const yesterday = new Date(Date.parse(dayKey(now)) - 86_400_000).toISOString().slice(0, 10)
+
+  return user.lastPlayedDay !== null && user.lastPlayedDay >= yesterday
 }

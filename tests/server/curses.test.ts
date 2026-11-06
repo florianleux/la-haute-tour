@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm'
+import { dayKey } from '../../server/utils/achievements'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import { castSpell, effectsQuery, toEffectViews } from '../../server/utils/effects'
@@ -47,6 +48,7 @@ describe('magie noire, sur un ennemi', () => {
       team: 'MIDI',
       floorSeen: 1,
       pastFirstAttempt: true,
+      lastPlayedDay: dayKey(NOW),
       ...state,
     })
 
@@ -180,7 +182,7 @@ describe('magie noire, sur un ennemi', () => {
   // lancers touchent. Voir specs/bonus.md#où-et-quand.
   it('lance autant de sorts qu il en a dans la même attente', async () => {
     await enemy()
-    await createPlayer(db, { discordId: 'enemy-2', username: 'sauron', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true })
+    await createPlayer(db, { discordId: 'enemy-2', username: 'sauron', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true, lastPlayedDay: dayKey(NOW) })
 
     await strike('VITALITY')
     await strike('VITALITY')
