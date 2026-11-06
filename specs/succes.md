@@ -23,9 +23,9 @@ ne partagent que le mot français — en code, l'une est `achievement`, l'autre
 
 ## Catalogue
 
-**Soixante-treize succès**, répartis en seize familles.
+**Soixante-seize succès**, répartis en seize familles.
 
-### Premières fois — 4
+### Premières fois — 5
 
 Un déblocage unique, au premier événement rencontré.
 
@@ -34,9 +34,10 @@ Un déblocage unique, au premier événement rencontré.
 | Première bonne réponse | Première question juste, tous étages confondus |
 | Première mauvaise réponse | Première question fausse |
 | Première mort | Première perte de la dernière vie d'une tentative — sauf sur la dernière question de l'étage, qui mène au palier ([`boss.md`](./boss.md#cas-à-0-vie)) |
+| Mobilier hostile | Première mort par Mimic |
 | Premier rattrapage | Première entrée en phase `recovery` |
 
-La mort par Mimic compte comme une mort : elle retire toutes les vies d'un coup et
+La mort par Mimic compte aussi comme une mort : elle retire toutes les vies d'un coup et
 ouvre une attente, c'est la même chose vue d'ailleurs. Voir
 [`bonus.md`](./bonus.md#coffre-et-mimic).
 
@@ -88,7 +89,7 @@ servie : après le boss battu ou passé. La porte du boss, elle, a son succès �
 aucune action, personne ne repasse. Voir
 [ADR 0007](../docs/adr/0007-les-succes-de-franchissement-restent-sur-floorend.md).
 
-### Rattrapage — 2
+### Rattrapage — 3
 
 - Faire sortir une question du Pool Échecs.
 - **Rattrapage parfait** : le tirage joué en entier, et toutes les questions
@@ -96,6 +97,7 @@ aucune action, personne ne repasse. Voir
   que lorsque le quota exige l'intégralité du tirage — sous Indulgence noire, ou
   quand un pool court plafonne le tirage au quota. Le succès est rare, et c'est
   voulu.
+- **Fanny** : un rattrapage achevé sans une seule bonne réponse, au verdict scellé.
 
 ### Contestations — 3
 
@@ -201,11 +203,12 @@ attend son prochain retour au camp (voir [Affichage](#affichage)).
 | Éclair | Répondre juste moins de 3 secondes après que la question a été servie |
 | Sur le fil | Répondre juste dans la dernière seconde du chrono, délai de grâce compris |
 
-### Clins d'œil — 6
+### Clins d'œil — 7
 
 | Succès | Déclencheur |
 |---|---|
 | Distrait | Quitter la page pendant une question (`focusLoss`) |
+| Je ne fais que passer | Perdre sa dernière vie sans une seule bonne réponse dans la tentative |
 | Ponctuel | Reprendre dans les 5 minutes qui suivent la fin d'une attente : tirer son rattrapage, ou retrouver ses vies |
 | Insomniaque | Résoudre une question entre 3 h et 5 h du matin, heure de Paris |
 | Oiseau de nuit | Afficher le camp la nuit, de 20 h à 7 h, heure de Paris. L'écran le demande, l'heure du serveur en décide |

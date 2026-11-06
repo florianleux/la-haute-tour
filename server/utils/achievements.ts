@@ -147,6 +147,19 @@ export function earnedByTrial(input: TrialInput): AchievementId[] {
   ]
 }
 
+/**
+ * Ce qu'un rattrapage achevé prouve. Le parfait exige le tirage joué en entier,
+ * ce qui n'arrive que lorsque le quota l'exige ; la Fanny, elle, se lit au verdict
+ * scellé, qui peut tomber avant la fin du tirage. Voir specs/succes.md#rattrapage.
+ */
+export function earnedByRecovery(progress: { successes: number, played: number, total: number }): AchievementId[] {
+  if (progress.played > 0 && progress.successes === 0) {
+    return ['RECOVERY_SHUTOUT']
+  }
+
+  return progress.total > 0 && progress.successes === progress.total ? ['RECOVERY_PERFECT'] : []
+}
+
 /** Reprendre peu après la fin de l'attente. Voir specs/succes.md#clins-dœil. */
 export function earnedByResuming(cooldownUntil: Date | null, now: Date): AchievementId[] {
   const late = cooldownUntil === null ? -1 : now.getTime() - cooldownUntil.getTime()

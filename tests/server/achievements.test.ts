@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dayKey, earnedByAnswer, earnedByCrossing, earnedByFloorDone, earnedByResuming, earnedByTrial, playedToday } from '../../server/utils/achievements'
+import { dayKey, earnedByAnswer, earnedByCrossing, earnedByFloorDone, earnedByRecovery, earnedByResuming, earnedByTrial, playedToday } from '../../server/utils/achievements'
 import { gameHour } from '../../shared/utils/time'
 import { DAY_TIERS, STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
@@ -228,6 +228,18 @@ describe('le jour joué', () => {
 
     expect(playedToday({ lastPlayedDay: '2026-10-24', daysPlayed: 1, playStreak: 1 }, afterDst))
       .toEqual({ lastPlayedDay: '2026-10-25', daysPlayed: 2, playStreak: 2 })
+  })
+})
+
+describe('ce qu un rattrapage achevé prouve', () => {
+  it('lit la Fanny au verdict scellé, même avant la fin du tirage', () => {
+    expect(earnedByRecovery({ successes: 0, played: 3, total: 4 })).toEqual(['RECOVERY_SHUTOUT'])
+  })
+
+  it('lit le parfait sur le tirage entier, et rien entre les deux', () => {
+    expect(earnedByRecovery({ successes: 3, played: 3, total: 3 })).toEqual(['RECOVERY_PERFECT'])
+    expect(earnedByRecovery({ successes: 1, played: 1, total: 3 })).toEqual([])
+    expect(earnedByRecovery({ successes: 0, played: 0, total: 3 })).toEqual([])
   })
 })
 

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, exists, inArray, isNotNull, isNull, notExists, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, exists, gte, inArray, isNotNull, isNull, notExists, or, sql } from 'drizzle-orm'
 import type { BatchItem, BatchResponse } from 'drizzle-orm/batch'
 import type { RunnableQuery } from 'drizzle-orm/runnable-query'
 import type { SQL } from 'drizzle-orm'
@@ -27,6 +27,7 @@ import {
   claimFirstAscent,
   earnedByAnswer,
   earnedByCrossing,
+  earnedByRecovery,
   earnedByFloorDone,
   earnedByResuming,
   playedToday,
@@ -528,6 +529,21 @@ function answeredAchievements(
   })
 }
 
+/** Une bonne réponse dans la tentative en cours. Une seule ligne, ce qui borne la lecture. */
+async function hasCorrectInAttempt(db: Database, user: Pick<User, 'id' | 'attemptStartedAt'>): Promise<boolean> {
+  const [row] = await db
+    .select({ one: sql`1` })
+    .from(seenQuestions)
+    .where(and(
+      eq(seenQuestions.userId, user.id),
+      eq(seenQuestions.correct, true),
+      gte(seenQuestions.seenAt, user.attemptStartedAt),
+    ))
+    .limit(1)
+
+  return row !== undefined
+}
+
 /** Ce que le prochain rattrapage tirera : le tirage réel s'arrête à ce que le pool contient. */
 function nextRecovery(size: number, rules: FloorRules): GameState['nextRecovery'] {
   if (!canDrawRecovery(size, rules)) {
@@ -852,6 +868,8 @@ async function resolve(
     // de la Lune. L'étage d'au-dessus, lui, s'atteint au franchissement, voir
     // `crossFloor` et ADR 0013.
     ...crossing && user.currentFloor === 1 ? ['MOON_DOOR' as const] : [],
+    // Lu à la mort seulement : la dernière vie tombe rarement, la réponse souvent.
+    ...cooldownUntil !== null && !await hasCorrectInAttempt(db, user) ? ['ATTEMPT_SHUTOUT' as const] : [],
   ]
 
   const outcome = await db.batch([
@@ -1475,7 +1493,7 @@ export async function openPlayerChest(
 
   await db.update(users).set(killed).where(eq(users.id, user.id))
 
-  const unlocked = await unlock(db, snapshot.user, ['FIRST_DEATH'], now)
+  const unlocked = await unlock(db, snapshot.user, ['FIRST_DEATH', 'MIMIC_DEATH'], now)
 
   await soberUp(db, snapshot.user, now)
 
@@ -1901,17 +1919,8 @@ async function finishRecovery(
 ): Promise<GameState> {
   const verdict = judgeRecovery(progress?.successes ?? 0, progress?.total ?? 0, recoveryRules, now)
 
-  // Le tirage joué en entier, et juste de bout en bout. Depuis que le rattrapage
-  // s'arrête au verdict scellé, cela n'arrive que lorsque le quota exige tout le
-  // tirage — sous Indulgence noire, ou sur un pool court. Voir
-  // specs/succes.md#rattrapage.
-  const perfect = progress !== null
-    && progress.total > 0
-    && progress.played === progress.total
-    && progress.successes === progress.total
-
-  const unlocked = perfect
-    ? await unlock(db, snapshot.user, ['RECOVERY_PERFECT'], now)
+  const unlocked = progress
+    ? await unlock(db, snapshot.user, earnedByRecovery(progress), now)
     : []
 
   // Le rattrapage s'efface d'un seul geste : une interruption entre les deux

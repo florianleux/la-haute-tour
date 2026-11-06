@@ -79,7 +79,10 @@ describe('les succès en jeu', () => {
       // Pas sur la dernière question de l'étage, qui mène au palier sans chute.
       await createQuestion(db)
 
-      expect(await answer('Toulouse')).toContain('FIRST_DEATH')
+      const earned = await answer('Toulouse')
+
+      expect(earned).toContain('FIRST_DEATH')
+      expect(earned).toContain('ATTEMPT_SHUTOUT')
     })
 
     it('donne le palier de série atteint, et lui seul', async () => {
@@ -366,7 +369,7 @@ describe('les succès en jeu', () => {
 
       const state = await openPlayerChest(db, await reload(), NOW, rolls(0))
 
-      expect(state.unlocked).toContain('FIRST_DEATH')
+      expect(state.unlocked).toEqual(expect.arrayContaining(['FIRST_DEATH', 'MIMIC_DEATH']))
       expect((await reload()).streak).toBe(0)
     })
   })
