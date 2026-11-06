@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { achievements, missedPool, pocketSpells, settings, users } from '../../server/db/schema'
+import { achievements, missedPool, pocketSpells, users } from '../../server/db/schema'
 import { STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { unlock } from '../../server/utils/achievements'
@@ -211,34 +211,6 @@ describe('les succès en jeu', () => {
 
       expect(state.phase).toBe('deckEnd')
       expect(state.unlocked).not.toContain('MOON_DOOR')
-      expect(state.unlocked).not.toContain('FIRST_ASCENT')
-    })
-
-    it('donne le premier arrivé en haut, à un seul joueur', async () => {
-      await floorAbove()
-      await holdingLastQuestionOf(1)
-      expect((await submitAnswer(db, await reload(), 'Bordeaux', NOW)).unlocked).toContain('FIRST_ASCENT')
-
-      // Le second finit le même étage, sur la même et unique question.
-      const second = await createPlayer(db, { discordId: 'second', username: 'frodo' })
-      await serveNextQuestion(db, await loadPlayer(db, second), NOW)
-
-      const other = await submitAnswer(db, await loadPlayer(db, second), 'Bordeaux', NOW)
-      expect(other.phase).toBe('floorEnd')
-      expect(other.unlocked).not.toContain('FIRST_ASCENT')
-    })
-
-    // Il arbitre les parties, il n a pas à y peser — sans quoi le succès serait
-    // pris au premier test qui suit l ouverture. Voir specs/succes.md.
-    it('ne donne le premier arrivé ni à l admin ni à un joueur test', async () => {
-      await db.update(users).set({ isAdmin: true }).where(eq(users.id, player.id))
-      await floorAbove()
-      await holdingLastQuestionOf(1)
-
-      const state = await submitAnswer(db, await reload(), 'Bordeaux', NOW)
-
-      expect(state.unlocked).not.toContain('FIRST_ASCENT')
-      expect(await db.select().from(settings)).toEqual([])
     })
   })
 

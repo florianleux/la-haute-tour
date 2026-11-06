@@ -14,7 +14,6 @@ import {
   bossTrials,
   reservations,
   seenQuestions,
-  settings,
   users,
 } from '../db/schema'
 import { nextFloorTotal } from './deck'
@@ -232,9 +231,5 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
     // disparues. Rien ne dépend de cette ligne avant les autres, donc un seul
     // aller-retour lui suffit autant qu'au reste de la remise à zéro.
     db.delete(achievements).where(eq(achievements.userId, player.id)),
-    // « Premier en haut » tombe avec le reste, et sa place se libère : le
-    // prochain à quitter l'étage 1, lui compris, le gagne. Voir
-    // specs/succes.md#remise-à-zéro.
-    db.update(settings).set({ firstAscensionUserId: null }).where(eq(settings.firstAscensionUserId, player.id)),
   ])
 }

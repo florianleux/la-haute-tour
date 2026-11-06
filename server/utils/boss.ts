@@ -282,6 +282,7 @@ export async function resolveTrial(
   const earned = await unlock(db, user, [
     ...earnedByTrial({
       outcome,
+      floor: user.currentFloor,
       position: trial.position,
       bossHp: rules.bossHp,
       bossAttemptNumber: user.bossAttemptNumber,

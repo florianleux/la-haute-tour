@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
-import { achievements, bossKeys, disputes, items, missedPool, settings, users } from '../../server/db/schema'
+import { achievements, bossKeys, disputes, items, missedPool, users } from '../../server/db/schema'
 import { disputableErrors } from '../../server/utils/disputes'
 import { playerRoster, resetPlayer } from '../../server/utils/players'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -164,15 +164,6 @@ describe('repartir de zéro', () => {
 
     expect(await db.select().from(achievements).where(eq(achievements.userId, userId))).toEqual([])
     expect((await loadPlayer(db, userId)).achievementsHeld).toEqual([])
-  })
-
-  it('libère la place de « Premier en haut » qu il tenait', async () => {
-    await db.insert(settings).values({ id: 1, firstAscensionUserId: userId })
-
-    await resetPlayer(db, await loadPlayer(db, userId), NOW)
-
-    const [row] = await db.select().from(settings)
-    expect(row?.firstAscensionUserId).toBeNull()
   })
 
   it('efface ses clés du boss', async () => {

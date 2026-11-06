@@ -439,6 +439,7 @@ describe('combat de boss', () => {
       expect(state).toMatchObject({ phase: 'cooldown', lives: 0, recovery: null, nextRecovery: null })
       expect(state.cooldownUntil).not.toBeNull()
       expect(state.boss).toMatchObject({ outcome: 'defeat', hp: rules.bossHp, trial: null })
+      expect(state.unlocked).toContain('JULIEN_DEFEAT')
       expect((await reload()).bossHp).toBeNull()
       // Vaincu, le joueur ne repart pas avec la relique.
       expect(state.boss?.relic).toBeNull()
@@ -574,7 +575,7 @@ describe('combat de boss', () => {
       expect(won).toMatchObject({ phase: 'bossFight' })
       expect(won.boss).toMatchObject({ hp: 0, outcome: 'victory', trial: null, relic: 'JULIEN_CARD' })
       // Aucune épreuve ratée, au premier combat. Voir specs/succes.md#porte-et-boss.
-      expect(won.unlocked).toEqual(expect.arrayContaining(['BOSS_BEATEN', 'BOSS_PERFECT', 'BOSS_FIRST_TRY']))
+      expect(won.unlocked).toEqual(expect.arrayContaining(['BOSS_BEATEN', 'JULIEN_BEATEN', 'BOSS_PERFECT', 'BOSS_FIRST_TRY']))
       // Sa relique rejoint le sac au verdict qui l'abat. Voir specs/boss.md#récompense.
       expect(await bag()).toEqual(['JULIEN_CARD'])
 

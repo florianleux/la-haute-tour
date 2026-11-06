@@ -1,4 +1,4 @@
-import { eq, isNull, sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import {
   DAY_TIERS,
   STREAK_TIERS,
@@ -13,7 +13,7 @@ import {
 } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { GAME_TIME_ZONE } from '../../shared/utils/time'
-import { achievements, settings, users } from '../db/schema'
+import { achievements, users } from '../db/schema'
 import type { SQL } from 'drizzle-orm'
 import type { AchievementId } from '../../shared/utils/achievements'
 import type { Database } from '../db/client'
@@ -119,6 +119,8 @@ export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
 /** Une épreuve de boss jugée, et ce qu'elle laisse du combat. */
 export interface TrialInput {
   outcome: BossOutcome | null
+  /** L'étage du boss : le premier est Julien Le Perse. */
+  floor: number
   /** Sa place dans le combat, à partir de 0 : autant d'épreuves jugées avant elle. */
   position: number
   /** Les PV pleins du boss : autant d'épreuves justes pour le vaincre. */
@@ -136,12 +138,19 @@ export function earnedByTrial(input: TrialInput): AchievementId[] {
     return ['BOSS_PASSED']
   }
 
+  const julien = input.floor === 1
+
+  if (input.outcome === 'defeat') {
+    return julien ? ['JULIEN_DEFEAT'] : []
+  }
+
   if (input.outcome !== 'victory') {
     return []
   }
 
   return [
     'BOSS_BEATEN',
+    ...julien ? ['JULIEN_BEATEN' as const] : [],
     ...input.position + 1 === input.bossHp ? ['BOSS_PERFECT' as const] : [],
     ...input.bossAttemptNumber === 1 ? ['BOSS_FIRST_TRY' as const] : [],
   ]
@@ -323,39 +332,6 @@ export async function unlock(
   ])
 
   return granted.map(row => row.achievement)
-}
-
-/**
- * Le joueur réclame d être le premier en haut de l étage 1. L écriture ne passe
- * que tant que la place est libre, donc deux joueurs qui franchissent ensemble ne
- * peuvent pas l obtenir tous les deux — et personne ne la reprend ensuite, sauf
- * si son détenteur est remis à zéro (resetPlayer la libère).
- *
- * Ni les joueurs test ni l admin ne la réclament : les premiers vivent dans un
- * monde scellé, le second arbitre les parties sans y peser. Sans cela le succès
- * serait pris au premier test qui suit l ouverture.
- * Voir specs/succes.md#premier-sur-le-serveur.
- */
-export async function claimFirstAscent(db: Database, user: User): Promise<AchievementId[]> {
-  if (user.isTest || user.isAdmin) {
-    return []
-  }
-
-  // La ligne de réglages peut ne pas exister — elle ne naît qu à la première
-  // maintenance. Un upsert plutôt qu un update, sinon le succès ne serait
-  // attribuable que sur un jeu déjà fermé une fois. La place ne se prend que
-  // tant qu elle est libre, et c est le lot rendu qui dit si on l a eue.
-  const [claimed] = await db
-    .insert(settings)
-    .values({ id: 1, firstAscensionUserId: user.id })
-    .onConflictDoUpdate({
-      target: settings.id,
-      set: { firstAscensionUserId: user.id },
-      setWhere: isNull(settings.firstAscensionUserId),
-    })
-    .returning({ userId: settings.firstAscensionUserId })
-
-  return claimed?.userId === user.id ? ['FIRST_ASCENT'] : []
 }
 
 /** Ce que la page Succès montre : ce qui est acquis, et quand. */

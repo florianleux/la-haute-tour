@@ -260,7 +260,7 @@ n'y va pas : elle reste préchargée avec le jeu. Voir la section « Images » d
   mais devient le prélude du boss plutôt que le palier lui-même.
 - **Étage 6** : même système. Battre le boss (ou passer automatiquement) mène
   à `gameOver` au lieu de `crossFloor`.
-- **Les succès de franchissement (`FIRST_ASCENT`, `REACHED_FLOOR_2`..`6`,
+- **Les succès de franchissement (`REACHED_FLOOR_2`..`6`,
   `GAME_COMPLETED`, voir [`succes.md`](./succes.md)) restent gagnés à
   `floorEnd`, pas à `crossFloor`/`gameOver`.** « Atteindre un étage » ou
   « terminer le jeu », au sens des succès, veut dire en avoir vu toutes les
@@ -318,7 +318,7 @@ Tous faits :
   plus du ciblage des Sorts.
 - **`bonus.md`** (coffre de loot) : le tirage forcé de la clé à partir de 50 %
   de l'étage comme exception au tableau sort 95 % / Mimic 5 %.
-- **`succes.md`** : `FIRST_ASCENT`/`REACHED_FLOOR_n`/`GAME_COMPLETED` restent
+- **`succes.md`** : `REACHED_FLOOR_n`/`GAME_COMPLETED` restent
   déclenchés à `floorEnd` malgré le nouveau `crossFloor`/`gameOver` plus
   tardifs — voir ADR 0007.
 

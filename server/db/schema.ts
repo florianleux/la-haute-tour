@@ -700,14 +700,6 @@ export const settings = sqliteTable('settings', {
    * temps elle a fermé.
    */
   maintenanceSince: integer('maintenance_since', { mode: 'timestamp' }),
-  /**
-   * Le premier joueur à avoir franchi l'étage 1, pour tout le jeu. Réclamé une
-   * seule fois, par une écriture qui ne passe que tant que la colonne est nulle :
-   * personne ne le reprend ensuite, et aucun classement n'a eu à exister pour le
-   * désigner. Ni les joueurs test ni l'admin ne peuvent le réclamer.
-   * Voir specs/succes.md#premier-sur-le-serveur.
-   */
-  firstAscensionUserId: integer('first_ascension_user_id').references(() => users.id, { onDelete: 'set null' }),
 }, table => [check('settings_single_row', sql`${table.id} = 1`)])
 
 /**

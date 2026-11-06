@@ -1,0 +1,1 @@
+ALTER TABLE `settings` DROP COLUMN `first_ascension_user_id`;

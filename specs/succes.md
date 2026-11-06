@@ -23,7 +23,7 @@ ne partagent que le mot français — en code, l'une est `achievement`, l'autre
 
 ## Catalogue
 
-**Soixante-seize succès**, répartis en seize familles.
+**Soixante-dix-sept succès**, répartis en quinze familles.
 
 ### Premières fois — 5
 
@@ -123,24 +123,6 @@ Question n°**42** (« La Réponse »), n°**67**, n°**666**, n°**1312**.
 Comme le palier 1000 de la série, le 1312 est hors de portée du deck actuel.
 Même raison, même absence de correctif.
 
-### Premier sur le serveur — 1
-
-Premier joueur à franchir l'étage 1. Un seul succès pour tout le jeu, réclamé une
-fois. Il ne se réattribue que si son détenteur est remis à zéro (voir
-[Remise à zéro](#remise-à-zéro)). Gagné à `floorEnd` (voir « Progression » plus haut) :
-pas besoin d'avoir battu le boss de l'étage 1.
-
-**Les joueurs test en sont exclus**, comme de tout ce qui touche aux vrais
-joueurs — leur monde est scellé, voir [`admin.md`](./admin.md#joueurs-test).
-**L'admin aussi**, et pour la raison qui vaut déjà aux équipes : il arbitre les
-parties, il n'a pas à y peser (voir [`equipes.md`](./equipes.md)). Sans cette
-exclusion le succès serait brûlé au premier test qui suit l'ouverture, et plus
-personne ne pourrait l'obtenir.
-
-Vérifié côté serveur au moment du franchissement, sans qu'aucun classement
-n'existe ni ne soit montré — cohérent avec
-[`ecrans.md`](./ecrans.md#ce-quaucun-écran-joueur-ne-montre).
-
 ### Réponse vide — 1
 
 Ne rien répondre. Se déclenche sur toute réponse vide, quelle qu'en soit la cause —
@@ -168,7 +150,7 @@ Voir [`champignon.md`](./champignon.md#succès).
 | Trip Lucide | Donner une bonne réponse en étant intoxiqué, à une question ou à une épreuve de boss |
 | Descente d'acide | Revenir au camp après une ascension intoxiquée |
 
-### Porte et boss — 6
+### Porte et boss — 8
 
 | Succès | Déclencheur |
 |---|---|
@@ -178,6 +160,8 @@ Voir [`champignon.md`](./champignon.md#succès).
 | Perfect ! | Vaincre un boss sans rater une épreuve du combat |
 | First try ! | Vaincre un boss à son premier combat |
 | Solution pacifique | Être laissé passer par un boss, au 6e combat perdu |
+| OUI OUI OUI | Vaincre Julien Le Perse (vraie victoire, pas le passage automatique) |
+| NON NON NON | Perdre un combat contre Julien Le Perse |
 
 « Perfect ! » se lit sur la dernière épreuve : la victoire tombe à la
 `bossHp`-ième épreuve jugée seulement si aucune n'a été ratée.
@@ -233,7 +217,6 @@ porte déjà ses questions vues. Voir
 | La série en cours | `streak`, remis à zéro à toute vie perdue et à toute tentative neuve |
 | Les questions vues depuis la dernière remise à zéro | `seenTotal` |
 | Les jours joués | `lastPlayedDay`, `daysPlayed`, `playStreak` |
-| Le premier arrivé en haut | Un champ unique des réglages, réclamé une seule fois |
 | Ce qui est déjà acquis | Le **palmarès** (`achievementsHeld`), porté par le joueur. La table des succès reste la source — elle seule les date ; le palmarès la double pour qu'aucune requête de jeu n'ait à la relire |
 
 ## Affichage
@@ -281,15 +264,10 @@ série, questions vues, jours joués — repartent de zéro, ses succès aussi. 
 joueur comme joueur test : une partie neuve se regagne entière, et une « première
 fois » se rejoue. Voir [`admin.md`](./admin.md#gestion-des-joueurs).
 
-« Premier sur le serveur » tombe aussi, et sa place se libère : le prochain
-joueur à quitter l'étage 1, le joueur remis à zéro compris, le gagne.
-
 ## Ce que les Succès n'apportent pas
 
 - **Aucun effet de jeu** : ni vie, ni sort, ni règle modulée.
-- **Aucun classement**, ni comparaison, ni palmarès d'autrui. « Premier sur le
-  serveur » compare les joueurs à l'intérieur du serveur sans jamais rien afficher
-  de cette comparaison.
+- **Aucun classement**, ni comparaison, ni palmarès d'autrui.
 - **Aucune notification à quiconque d'autre** que celui qui débloque.
 
 ## Portée future

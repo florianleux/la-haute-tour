@@ -246,6 +246,7 @@ describe('ce qu un rattrapage achevé prouve', () => {
 describe('ce qu une épreuve de boss prouve', () => {
   const trial = (overrides: Partial<Parameters<typeof earnedByTrial>[0]> = {}): Parameters<typeof earnedByTrial>[0] => ({
     outcome: 'victory',
+    floor: 2,
     position: 6,
     bossHp: 7,
     bossAttemptNumber: 1,
@@ -255,6 +256,12 @@ describe('ce qu une épreuve de boss prouve', () => {
   it('lit le sans-faute dans la place de l épreuve qui achève le boss', () => {
     expect(earnedByTrial(trial())).toEqual(['BOSS_BEATEN', 'BOSS_PERFECT', 'BOSS_FIRST_TRY'])
     expect(earnedByTrial(trial({ position: 7, bossAttemptNumber: 2 }))).toEqual(['BOSS_BEATEN'])
+  })
+
+  it('nomme Julien Le Perse, le boss de l étage 1, à la victoire comme à la défaite', () => {
+    expect(earnedByTrial(trial({ floor: 1 }))).toContain('JULIEN_BEATEN')
+    expect(earnedByTrial(trial({ floor: 1, outcome: 'defeat' }))).toEqual(['JULIEN_DEFEAT'])
+    expect(earnedByTrial(trial({ floor: 1, outcome: 'passed' }))).toEqual(['BOSS_PASSED'])
   })
 
   it('distingue le passage de la victoire', () => {

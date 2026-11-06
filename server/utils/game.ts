@@ -24,7 +24,6 @@ import {
   sealedRecovery,
 } from './mechanics'
 import {
-  claimFirstAscent,
   earnedByAnswer,
   earnedByCrossing,
   earnedByRecovery,
@@ -905,10 +904,6 @@ async function resolve(
     return { snapshot: await loadSnapshot(db, user.id), unlocked: [] }
   }
 
-  // Seul le premier étage peut faire un premier arrivé : réclamer la place
-  // coûterait une écriture par palier pour rien.
-  const firstAscent = crossing && user.currentFloor === 1 ? await claimFirstAscent(db, user) : []
-
   // La chute ramène au camp : l'intoxication s'y arrête. La fin du deck n'y ramène
   // plus : elle s'arrête là.
   const deckDone = floorDone && snapshot.nextFloorTotal === 0 && user.currentFloor < FLOOR_COUNT
@@ -917,7 +912,7 @@ async function resolve(
   return {
     // Une chute relit tout : le pool ne se comptait pas tant qu'il restait des vies.
     snapshot: cooldownUntil || (deckDone && user.intoxicated) ? await loadSnapshot(db, user.id) : { ...snapshot, user: fresh, reservation: resolved },
-    unlocked: [...sobered, ...await unlock(db, snapshot.user, [...earned, ...firstAscent], now)],
+    unlocked: [...sobered, ...await unlock(db, snapshot.user, earned, now)],
   }
 }
 
