@@ -3,6 +3,7 @@ import { useDatabase } from '../db/client'
 import { upcomingQuestions } from './deck'
 import { bossDefeat, FRESH_BOSS, startOfGame } from './mechanics'
 import { requirePlayer, resetPlayer } from './players'
+import { playedToday } from './playedDays'
 import { numericRouteId } from './routes'
 import { rulesForFloor } from './rules'
 import {
@@ -118,9 +119,11 @@ export interface AdvanceOptions {
 
 /**
  * Avancer dans l'étage sans le jouer : les `count` questions suivantes du deck
- * sont marquées vues. Le parcours est celui de l'ascension, à la lettre — un
- * joueur test avance donc dans le même ordre qu'un vrai joueur, et s'arrête à ce
- * que l'étage contient encore. Voir server/utils/deck.ts.
+ * sont marquées vues, et la journée devient un jour joué — sans quoi le joueur
+ * test, qui n'a résolu aucune question, ne serait jamais tiré par un sort. Le
+ * parcours est celui de l'ascension, à la lettre — un joueur test avance donc
+ * dans le même ordre qu'un vrai joueur, et s'arrête à ce que l'étage contient
+ * encore. Voir server/utils/deck.ts.
  */
 export async function advanceTestPlayer(
   db: Database,
@@ -157,6 +160,9 @@ export async function advanceTestPlayer(
       // l'allonge, avancer en fausses la casse. Sans quoi un joueur test poussé
       // jusqu'au palier y arriverait avec une série que sa partie ne décrit pas.
       streak: correct ? sql`${users.streak} + ${upcoming.length}` : sql`0`,
+      // Le jour joué, comme une question résolue l'estampille. Voir
+      // server/utils/playedDays.ts.
+      ...playedToday(testPlayer, now),
     })
     .where(eq(users.id, testPlayer.id))
 

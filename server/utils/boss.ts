@@ -3,6 +3,7 @@ import { isAnswerAccepted } from '../../shared/utils/answers'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { BOSS_RELICS } from '../../shared/utils/items'
 import { earnedByTrial, unlock } from './achievements'
+import { playedToday } from './playedDays'
 import { closeAttempt, soberUp } from './journey'
 import { grantItemWhere, notCarrying } from './items'
 import { BOSS_FIGHT_COUNT, bossBeaten, bossFightOpening, bossFightState, bossOutcome, isExpired, judgeTrial } from './mechanics'
@@ -259,11 +260,14 @@ export async function resolveTrial(
   const judgement = judgeTrial(user, correct, rules, now)
   const outcome = bossOutcome(bossFightState({ ...user, ...judgement }, true))
   const relic = relicOf(user.currentFloor, outcome)
+  // Une épreuve résolue fait un jour joué, comme une question : une journée
+  // passée face au boss est une journée jouée. Voir specs/succes.md#assiduité.
+  const played = playedToday(user, now)
 
   const [judged] = await db.batch([
     db
       .update(users)
-      .set(judgement)
+      .set({ ...judgement, ...played })
       .where(and(eq(users.id, user.id), whileOpen)),
     // Le verdict qui achève le combat laisse la relique, sous la même garde :
     // deux réponses simultanées n'en laissent qu'une, et un boss rebattu (le

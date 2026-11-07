@@ -29,9 +29,9 @@ import {
   earnedByRecovery,
   earnedByFloorDone,
   earnedByResuming,
-  playedToday,
   unlock,
 } from './achievements'
+import { playedToday } from './playedDays'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import { gameHour } from '../../shared/utils/time'
 import { grantKey, KEYS_TO_UNLOCK, keyHoldersQuery, keyToPlace, placeKeyIfRoom } from './bossKeys'

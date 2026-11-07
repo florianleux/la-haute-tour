@@ -104,7 +104,9 @@ que le jeu sait produire de lui-même.
 - **Donner un sort**, choisi dans le catalogue.
 - **Avancer de N questions**, justes ou fausses — les fausses remplissent le
   Pool Échecs, comme en jeu. C'est ce qui permet d'atteindre une question loot
-  ou un palier sans jouer une heure.
+  ou un palier sans jouer une heure. La journée devient un **jour joué**, comme
+  si ces questions avaient été résolues : le joueur test devient ainsi tirable
+  par un sort (voir [`bonus.md`](./bonus.md#tirage-de-la-cible)).
 - **Enlever N questions vues**, pour revenir en arrière dans l'étage.
 - **Mettre en attente**, et **passer l'attente**.
 - **Rendre une vie**, comme pour un vrai joueur.

@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { dayKey } from '../../server/utils/achievements'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
 import { activeEffects, bossKeys, pocketSpells, recoveryQuestions, reservations } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, targetable } from '../helpers/db'
 import { apiRequest, installNitroGlobals, jsonRequest, mountHandler, sessionCookieFor } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { SpellId } from '../../shared/utils/spells'
@@ -111,14 +110,14 @@ describe('sorts en poche', () => {
 
     it('ouvre un côté dès qu il y a quelqu un à toucher, et lui seul', async () => {
       const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
-      await createPlayer(db, { discordId: 'mate', username: 'samsagace', team: 'TLM', floorSeen: 1, pastFirstAttempt: true, lastPlayedDay: dayKey(new Date()) })
+      await createPlayer(db, { discordId: 'mate', username: 'samsagace', team: 'TLM', ...targetable(new Date()) })
 
       expect(await page(caster)).toMatchObject({ canTargetAlly: true, canTargetFoe: false })
     })
 
     it('ferme le côté dont tous les joueurs sont saturés', async () => {
       const caster = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'caster', team: 'TLM' })
-      const foe = await createPlayer(db, { discordId: 'foe', username: 'saroumane', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true, lastPlayedDay: dayKey(new Date()) })
+      const foe = await createPlayer(db, { discordId: 'foe', username: 'saroumane', team: 'MIDI', ...targetable(new Date()) })
       await db.insert(activeEffects).values(Array.from({ length: rulesForFloor(1).maxCurses }, () => ({
         userId: foe,
         casterId: caster,
@@ -130,7 +129,7 @@ describe('sorts en poche', () => {
 
       expect((await page(caster)).canTargetFoe).toBe(false)
 
-      await createPlayer(db, { discordId: 'foe-2', username: 'gollum', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true, lastPlayedDay: dayKey(new Date()) })
+      await createPlayer(db, { discordId: 'foe-2', username: 'gollum', team: 'MIDI', ...targetable(new Date()) })
 
       expect((await page(caster)).canTargetFoe).toBe(true)
     })
@@ -147,7 +146,7 @@ describe('sorts en poche', () => {
 
     it('n ouvre aucun côté au joueur sans équipe', async () => {
       const alone = await createPlayer(db, { ...IN_COOLDOWN, discordId: 'alone' })
-      await createPlayer(db, { discordId: 'mate', team: 'TLM', floorSeen: 1, pastFirstAttempt: true, lastPlayedDay: dayKey(new Date()) })
+      await createPlayer(db, { discordId: 'mate', team: 'TLM', ...targetable(new Date()) })
 
       expect(await page(alone)).toMatchObject({ canTargetAlly: false, canTargetFoe: false })
     })
@@ -418,8 +417,7 @@ describe('sorts en poche', () => {
         discordId: 'foe',
         username: 'saroumane',
         team: 'MIDI',
-        floorSeen: 1,
-        pastFirstAttempt: true, lastPlayedDay: dayKey(new Date()),
+        ...targetable(new Date()),
       })
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')
@@ -441,9 +439,8 @@ describe('sorts en poche', () => {
         discordId: 'ally',
         username: 'samsagace',
         team: 'TLM',
-        floorSeen: 1,
         ...IN_COOLDOWN,
-        pastFirstAttempt: true, lastPlayedDay: dayKey(new Date()),
+        ...targetable(new Date()),
       })
       const cookie = await sessionCookieFor(userId)
       await loot(userId, 'VITALITY')

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { setDatabase } from '../../server/db/client'
 import { bossKeys, recoveryQuestions, reservations } from '../../server/db/schema'
-import { dayKey } from '../../server/utils/achievements'
+import { dayKey } from '../../server/utils/playedDays'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import {
   apiRequest,

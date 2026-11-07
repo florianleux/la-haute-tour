@@ -5,7 +5,7 @@
  *
  * Deux copies tomberaient tôt ou tard sur deux jours différents — et c'est
  * exactement ce que le rendu serveur puis l'hydratation du navigateur feraient
- * apparaître. Voir utils/date.ts et server/utils/achievements.ts.
+ * apparaître. Voir utils/date.ts et server/utils/playedDays.ts.
  */
 export const GAME_TIME_ZONE = 'Europe/Paris'
 

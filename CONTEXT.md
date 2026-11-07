@@ -35,6 +35,7 @@ Un concept absent du glossaire s'y ajoute **avant** d'être codé.
 | Ce que fait un sort | [`server/utils/spellbook.ts`](server/utils/spellbook.ts) — le grimoire : modulation + action instantanée, un sort = une entrée |
 | Qui peut contester, et ce qu'accepter change | [`server/utils/disputes.ts`](server/utils/disputes.ts) |
 | Qui est allié, qui est ennemi | [`shared/utils/teams.ts`](shared/utils/teams.ts) — `bondBetween()` : une relation, jamais stockée |
+| Le jour du jeu, et le jour joué | [`server/utils/playedDays.ts`](server/utils/playedDays.ts) — le jour à Paris, les jours comptés en dates, l'estampille d'une question ou d'une épreuve résolue |
 | Les joueurs test, et ce qu'on leur fait | [`server/utils/testPlayers.ts`](server/utils/testPlayers.ts) — création, gestes de réglage, monde scellé |
 | Qui vise un geste d'administration | [`server/utils/players.ts`](server/utils/players.ts) — `playerFromRoute()`, et `testPlayerFromRoute()` qui ajoute la garde |
 | Ce qu'une écriture du client réaffiche | [`composables/useWriteThenRead.ts`](composables/useWriteThenRead.ts) relit, [`composables/useWriteThenReplace.ts`](composables/useWriteThenReplace.ts) remplace par la réponse |

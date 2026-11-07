@@ -224,8 +224,9 @@ export const users = sqliteTable('users', {
    */
   seenTotal: integer('seen_total').notNull().default(0),
   /**
-   * Le dernier jour où le joueur a résolu une question, en `YYYY-MM-DD` et au
-   * fuseau Europe/Paris — celui que les écrans utilisent déjà, voir utils/date.ts.
+   * Le dernier **jour joué** : une question ou une épreuve de boss résolue, en
+   * `YYYY-MM-DD` et au fuseau Europe/Paris — celui que les écrans utilisent
+   * déjà, voir utils/date.ts et server/utils/playedDays.ts.
    *
    * Une date en texte plutôt qu'un horodatage : ce qu'on compare est un jour, et
    * le stocker sous la forme où on le compare évite de rejouer le découpage à

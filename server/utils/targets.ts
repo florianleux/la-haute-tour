@@ -1,6 +1,6 @@
 import { and, asc, eq, exists, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
 import { activeEffects, attempts, deckFloors, reservations, users } from '../db/schema'
-import { dayKey } from './achievements'
+import { dayKey, daysBefore } from './playedDays'
 import { nextFloorTotal } from './deck'
 import { countsTowardMaxBoons, drawByRank, isBorneBy, phaseOf } from './mechanics'
 import { rulesForFloor } from './rules'
@@ -241,17 +241,13 @@ function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion, pastFirstA
 
   // ponytail: la fin du deck reste ciblable — un état de beta, sans prochaine
   // tentative non plus. À écarter aussi si un deck réduit sert au-delà d'une beta.
-  return phase !== 'gameOver' && pastFirstAttempt && playedRecently(user, now)
+  return phase !== 'gameOver' && pastFirstAttempt && playedSinceDayBeforeYesterday(user, now)
 }
 
 /**
- * A-t-il résolu une question aujourd'hui, hier ou avant-hier, au jour du jeu ?
- * Avant-hier se calcule sur la date et non en retranchant 48 heures : un
- * changement d'heure fait des journées de 23 et de 25 heures. `YYYY-MM-DD` se compare comme une
- * chaîne. Voir specs/bonus.md#tirage-de-la-cible.
+ * A-t-il un jour joué aujourd'hui, hier ou avant-hier ? Voir
+ * specs/bonus.md#tirage-de-la-cible.
  */
-function playedRecently(user: User, now: Date): boolean {
-  const dayBeforeYesterday = new Date(Date.parse(dayKey(now)) - 2 * 86_400_000).toISOString().slice(0, 10)
-
-  return user.lastPlayedDay !== null && user.lastPlayedDay >= dayBeforeYesterday
+function playedSinceDayBeforeYesterday(user: User, now: Date): boolean {
+  return user.lastPlayedDay !== null && user.lastPlayedDay >= daysBefore(dayKey(now), 2)
 }

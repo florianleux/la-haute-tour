@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { dayKey } from '../../server/utils/achievements'
 import { activeEffects } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
 import { drawTarget } from '../../server/utils/targets'
-import { closeFirstAttempt, createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { closeFirstAttempt, createPlayer, createQuestion, createTestDatabase, loadPlayer, targetable } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import { rolls } from '../helpers/random'
 import type { Database } from '../../server/db/client'
@@ -61,9 +60,7 @@ describe('tirage de la cible', () => {
       username: name,
       team: 'TLM',
       currentFloor: 1,
-      floorSeen: 1,
-      pastFirstAttempt: true,
-      lastPlayedDay: dayKey(NOW),
+      ...targetable(NOW),
       ...seed,
     })
   }

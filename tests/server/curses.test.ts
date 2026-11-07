@@ -1,12 +1,11 @@
 import { and, eq } from 'drizzle-orm'
-import { dayKey } from '../../server/utils/achievements'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects, pocketSpells, missedPool, users } from '../../server/db/schema'
 import { castSpell, effectsQuery, toEffectViews } from '../../server/utils/effects'
 import { readGameState } from '../../server/utils/game'
 import { openAttempt } from '../../server/utils/journey'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen, targetable } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
@@ -46,9 +45,7 @@ describe('magie noire, sur un ennemi', () => {
       discordId: 'enemy',
       username: 'saroumane',
       team: 'MIDI',
-      floorSeen: 1,
-      pastFirstAttempt: true,
-      lastPlayedDay: dayKey(NOW),
+      ...targetable(NOW),
       ...state,
     })
 
@@ -182,7 +179,7 @@ describe('magie noire, sur un ennemi', () => {
   // lancers touchent. Voir specs/bonus.md#où-et-quand.
   it('lance autant de sorts qu il en a dans la même attente', async () => {
     await enemy()
-    await createPlayer(db, { discordId: 'enemy-2', username: 'sauron', team: 'MIDI', floorSeen: 1, pastFirstAttempt: true, lastPlayedDay: dayKey(NOW) })
+    await createPlayer(db, { discordId: 'enemy-2', username: 'sauron', team: 'MIDI', ...targetable(NOW) })
 
     await strike('VITALITY')
     await strike('VITALITY')
