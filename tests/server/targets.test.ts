@@ -126,7 +126,7 @@ describe('tirage de la cible', () => {
   })
 
   // Un compte délaissé ne prend pas les sorts des autres : seul compte qui a
-  // résolu une question aujourd'hui, hier ou avant-hier, au jour du jeu.
+  // un jour joué aujourd'hui, hier ou avant-hier.
   // Voir specs/bonus.md#tirage-de-la-cible.
   it('écarte un joueur qui n a joué ni aujourd hui, ni hier, ni avant-hier', async () => {
     await player('absent', { lastPlayedDay: '2026-09-03' })

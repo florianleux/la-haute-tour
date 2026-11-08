@@ -116,6 +116,18 @@ describe('combat de boss', () => {
     expect(await reload()).toMatchObject({ lastPlayedDay: '2026-09-03', daysPlayed: 4, playStreak: 3 })
   })
 
+  // Le jour joué de l'épreuve atteint l'Assiduité sur-le-champ, toast compris :
+  // sans quoi le succès attendrait une question que le joueur ne joue peut-être
+  // plus jamais.
+  it('grave l Assiduité que l épreuve atteint', async () => {
+    await set({ lastPlayedDay: '2026-09-02', daysPlayed: 1, playStreak: 1 })
+    await enter()
+
+    const state = await answer('Atlantide')
+
+    expect(state.unlocked).toContain('TWO_DAYS_IN_A_ROW')
+  })
+
   it('quitte d abord le verdict de la dernière question : le joueur arrive devant la porte', async () => {
     const last = await createQuestion(db, { floor: 1 })
     // La première de l'étage est déjà vue : le curseur la dépasse.

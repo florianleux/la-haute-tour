@@ -136,6 +136,14 @@ describe('heure de retour', () => {
   it('donne la date au-delà de demain', () => {
     expect(formatReturnAt('2026-09-05T08:00:00.000Z', now)).toBe('le 5 septembre à partir de 10h00')
   })
+
+  // Le 25 octobre dure 25 heures : 24 heures après 0h30, on y est encore.
+  // Demain se lit sur la date, pas sur l'horloge.
+  it('dit demain le jour du passage à l heure d hiver', () => {
+    const atHalfPastMidnight = new Date('2026-10-24T22:30:00.000Z').getTime()
+
+    expect(formatReturnAt('2026-10-26T07:00:00.000Z', atHalfPastMidnight)).toBe('demain à partir de 8h00')
+  })
 })
 
 describe('jour passé', () => {

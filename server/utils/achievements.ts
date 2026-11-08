@@ -58,6 +58,19 @@ const LAST_SECOND_MS = 1_000
 const PUNCTUAL_MS = 5 * 60_000
 const NIGHT_OWL_HOURS = { from: 3, to: 5 }
 
+/**
+ * L'Assiduité qu'une série de jours joués atteint. Lue à chaque réponse, de
+ * question comme d'épreuve de boss : les deux font un jour joué.
+ * Les paliers comptent des jours qui se suivent, comme TWO_DAYS_IN_A_ROW.
+ * Voir specs/succes.md#assiduité.
+ */
+export function earnedByPlayStreak(playStreak: number): AchievementId[] {
+  return [
+    ...DAY_TIERS.filter(tier => playStreak >= tier).map(daysAchievement),
+    ...playStreak >= 2 ? ['TWO_DAYS_IN_A_ROW' as const] : [],
+  ]
+}
+
 export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
   const earned: AchievementId[] = [input.correct ? 'FIRST_CORRECT' : 'FIRST_WRONG']
 
@@ -81,16 +94,7 @@ export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
     }
   }
 
-  // Les paliers comptent des jours qui se suivent, comme TWO_DAYS_IN_A_ROW. Voir specs/succes.md#assiduité.
-  for (const tier of DAY_TIERS) {
-    if (input.playStreak >= tier) {
-      earned.push(daysAchievement(tier))
-    }
-  }
-
-  if (input.playStreak >= 2) {
-    earned.push('TWO_DAYS_IN_A_ROW')
-  }
+  earned.push(...earnedByPlayStreak(input.playStreak))
 
   if (input.correct && input.intoxicated) {
     earned.push('MUSHROOM_CORRECT')

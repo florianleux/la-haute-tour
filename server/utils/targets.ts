@@ -1,11 +1,11 @@
 import { and, asc, eq, exists, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm'
 import { activeEffects, attempts, deckFloors, reservations, users } from '../db/schema'
-import { dayKey, daysBefore } from './playedDays'
 import { nextFloorTotal } from './deck'
 import { countsTowardMaxBoons, drawByRank, isBorneBy, phaseOf } from './mechanics'
 import { rulesForFloor } from './rules'
 import { faceFor, SPELL_FACES } from '../../shared/utils/spells'
 import { bondBetween } from '../../shared/utils/teams'
+import { dayKey, daysBetween } from '../../shared/utils/time'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { SpellFace } from '../../shared/utils/spells'
@@ -222,8 +222,8 @@ type Candidate = { user: User, floorTotal: number | null, nextFloorTotal: number
  * ils n'auront jamais de prochaine tentative, l'effet serait mort-né —, ceux
  * qui n'ont pas fini leur première : un nouveau venu apprend le jeu avant d'en
  * subir les sorts, et ceux qui n'ont joué ni aujourd'hui, ni hier, ni
- * avant-hier : un compte délaissé ne prend pas les sorts des autres. Lui se lance un sort à lui-même,
- * ce filtre ne tire que les autres.
+ * avant-hier : un compte délaissé ne prend pas les sorts des autres. Lui se
+ * lance un sort à lui-même, ce filtre ne tire que les autres.
  *
  * Le filtre passe **avant** le classement : un joueur retiré du pool ne pèse
  * plus dans la distribution. Voir specs/bonus.md#tirage-de-la-cible.
@@ -244,10 +244,13 @@ function isEligible({ user, floorTotal, nextFloorTotal, heldQuestion, pastFirstA
   return phase !== 'gameOver' && pastFirstAttempt && playedSinceDayBeforeYesterday(user, now)
 }
 
+/** Avant-hier, en jours du jeu avant aujourd'hui. */
+const DAY_BEFORE_YESTERDAY = 2
+
 /**
  * A-t-il un jour joué aujourd'hui, hier ou avant-hier ? Voir
  * specs/bonus.md#tirage-de-la-cible.
  */
 function playedSinceDayBeforeYesterday(user: User, now: Date): boolean {
-  return user.lastPlayedDay !== null && user.lastPlayedDay >= daysBefore(dayKey(now), 2)
+  return user.lastPlayedDay !== null && daysBetween(user.lastPlayedDay, dayKey(now)) <= DAY_BEFORE_YESTERDAY
 }
