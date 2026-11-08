@@ -104,7 +104,7 @@ const emit = defineEmits<{
 }>()
 
 const spell = ref<SpellId>(SPELL_IDS[0])
-const steps = ref(10)
+const steps = ref(9)
 
 const spellOptions = SPELL_IDS.map(id => ({ value: id, label: spellLabel(id) }))
 
@@ -115,9 +115,9 @@ const teamOptions = [
   { value: NO_TEAM, label: teamLabel(null) },
   ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
 ]
-// 19 et 39 posent le joueur juste avant le 1er et le 2e coffre : à recaler si
+// 9 et 19 posent le joueur juste avant le 1er et le 2e coffre : à recaler si
 // `questionsPerChest` change (server/utils/rules.ts).
-const stepOptions = [1, 5, 10, 19, 39].map(count => ({ value: String(count), label: `${count}` }))
+const stepOptions = [1, 5, 9, 19].map(count => ({ value: String(count), label: `${count}` }))
 
 const stepsValue = computed({
   get: () => String(steps.value),

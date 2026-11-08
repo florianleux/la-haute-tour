@@ -306,7 +306,7 @@ pour l'instant.
 
 ## Question loot
 
-- La question servie est **loot** quand elle sera la 25e, 50e, 75e… question résolue
+- La question servie est **loot** quand elle sera la 10e, 20e, 30e… question résolue
   de l'étage. Le seuil est une règle chiffrée, surchargeable par étage.
 - **Rien n'est stocké.** Le statut se dérive du nombre de questions vues à l'étage,
   qui est déjà la seule unité de progression du jeu. Il n'existe pas de second
@@ -327,22 +327,21 @@ au-dessus du seuil, aucune règle de repli n'est nécessaire.
 ### Combien de coffres
 
 **Le nombre de coffres d'un étage ne dépend pas du joueur, il dépend du deck** :
-c'est la taille de l'étage divisée par le seuil. Six coffres sur un étage de 166
-questions, trente-neuf sur les 1000 visés (la 1000e est la dernière, jamais loot) — pour tout le monde, du meilleur au pire. Ce
+c'est la taille de l'étage divisée par le seuil. Seize coffres sur un étage de 166
+questions, quatre-vingt-dix-neuf sur les 1000 visés (la 1000e est la dernière, jamais loot) — pour tout le monde, du meilleur au pire. Ce
 que le niveau change, c'est le *rythme* : en combien de tentatives on les ramasse,
 et combien d'attentes on traverse entre deux.
 
 Et ce rythme est bien plus rapide qu'on ne le croit de loin. Mesuré sur les
 premières parties réelles : **97 % de bonnes réponses**, soit trois vies perdues en
 une centaine de questions. Une tentative dure donc à peu près 110 questions et
-rapporte **quatre coffres**, là où un raisonnement de coin de table sur un taux
+rapporte **onze coffres**, là où un raisonnement de coin de table sur un taux
 d'échec de 30 % (une dizaine de questions par tentative) en annonçait un pour deux
 attentes et demie.
 
 Deux conséquences à garder en tête, et la seconde est la plus importante :
 
-- Il n'y a plus de plafond de lancers par attente (ADR 0011) : à quatre coffres par
-  tentative, il aurait mordu rarement. Ce qui borne l'empilement, ce sont les
+- Il n'y a plus de plafond de lancers par attente (ADR 0011). Ce qui borne l'empilement, ce sont les
   plafonds d'effets portés par la cible — et ils mordent surtout sur les réserves
   qu'un joueur accumule entre deux morts.
 - **Les chiffres du jeu ont été posés en imaginant un joueur qui se trompe souvent.**
@@ -457,13 +456,13 @@ n'agit pas seul : c'est une **toile de fond qui module les Sorts**. Chacun porte
 aspect positif et un négatif, pour rester un choix à peser.
 
 **Ils ne sont pas dans le périmètre**, et deux des trois pistes ci-dessous, périmées
-au seuil d'un coffre toutes les 50 questions, sont à réévaluer depuis qu'il est à 25. Ils ont besoin que les Sorts existent
+au seuil d'un coffre toutes les 50 questions, sont à réévaluer depuis qu'il est à 10. Ils ont besoin que les Sorts existent
 et aient tourné — c'est leur définition même.
 
 | Piste | Positif | Négatif | État |
 |---|---|---|---|
-| **Double lancer** | les deux faces partent ensemble, vers deux cibles distinctes | un seul lancer toutes les 24 h | à réévaluer : périmé quand le loot était rare (un coffre toutes les 50 questions) ; à quatre coffres par tentative, un seul lancer par 24 h redevient un vrai malus |
-| **Coffres fréquents** | seuil du coffre divisé par deux (de 25 à 12) | Mimic à 30 % | à réévaluer : périmé au seuil de 50, où il devenait le seul moyen d'atteindre un rythme vivable ; le seuil de base est passé à 25 depuis |
+| **Double lancer** | les deux faces partent ensemble, vers deux cibles distinctes | un seul lancer toutes les 24 h | à réévaluer : périmé quand le loot était rare (un coffre toutes les 50 questions) ; à onze coffres par tentative, un seul lancer par 24 h redevient un vrai malus |
+| **Coffres fréquents** | seuil du coffre divisé par deux (de 10 à 5) | Mimic à 30 % | à réévaluer : périmé au seuil de 50, où il devenait le seul moyen d'atteindre un rythme vivable ; le seuil de base est passé à 10 depuis |
 | **Attente écourtée** | attente réduite de 30 % | le Pool Échecs n'est plus affiché en attente | tient — vrai arbitrage |
 
 ## Livraison

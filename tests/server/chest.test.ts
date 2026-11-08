@@ -150,7 +150,7 @@ describe('coffre de loot', () => {
   // Le coffre réussi passé la moitié de l'étage donne la clé du boss, tant que
   // le joueur ne l'a pas. Voir specs/boss.md#obtention-de-la-clé.
   describe('clé du boss', () => {
-    // 75 questions à l'étage : la question loot du rang 50 tombe passé la moitié.
+    // Étage de 3 × STEP questions : la question loot du rang 2 × STEP tombe passé la moitié.
     const PAST_HALF = 2 * STEP - 1
     const keys = (): Promise<{ floor: number }[]> =>
       db.select({ floor: bossKeys.floor }).from(bossKeys).where(eq(bossKeys.userId, player.id))

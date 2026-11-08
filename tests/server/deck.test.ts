@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { removeQuestion } from '../../server/utils/questions'
 import { floorSize } from '../../server/utils/deck'
+import { rulesForFloor } from '../../server/utils/rules'
 import { readGameState, serveNextQuestion, submitAnswer } from '../../server/utils/game'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
 import type { Database } from '../../server/db/client'
@@ -79,7 +80,8 @@ describe('tirage d une question', () => {
   })
 
   it('sert chaque question de l étage une fois, et une seule, avant le palier', async () => {
-    const wanted = 12
+    // Sous le premier coffre : un coffre ouvert mettrait la question en pause.
+    const wanted = rulesForFloor(1).questionsPerChest - 1
     for (let i = 0; i < wanted; i++) {
       await createQuestion(db, { statement: `Question ${i} ?` })
     }

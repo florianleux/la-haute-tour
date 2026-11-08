@@ -31,7 +31,7 @@ describe('jeu de règles', () => {
       cooldownMs: 6 * 60 * 60 * 1000,
       cooldownAfterFailedRecoveryMs: 4 * 60 * 60 * 1000,
       latencyGraceMs: 1_000,
-      questionsPerChest: 20,
+      questionsPerChest: 10,
       mimicChance: 0.05,
       respiteFactor: 2,
       chronomancyFactor: 2,

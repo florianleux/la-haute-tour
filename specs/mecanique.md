@@ -119,10 +119,10 @@ Valeurs par défaut, celles des 6 étages sauf surcharge :
 | Attente après la dernière vie perdue | 6 h |
 | Attente après un rattrapage manqué | 4 h |
 | Tolérance de perte de focus | 1 s |
-| Lancers de sorts par attente | 2 |
-| Questions résolues entre deux coffres | 20 |
+| Questions résolues entre deux coffres | 10 |
 | Chance de Mimic à l'ouverture d'un coffre | 5 % |
 | Effets négatifs simultanés par joueur | 2 |
+| Effets positifs simultanés par joueur | 2 (voir [ADR 0011](../docs/adr/0011-plus-de-budget-de-lancers-un-plafond-d-effets-positifs.md)) |
 | Vitalité — vies ajoutées ou retirées | 1 |
 | Chronomancie — facteur sur le timer | 2 |
 | Indulgence — facteur sur les questions tirées au rattrapage | 2 |
