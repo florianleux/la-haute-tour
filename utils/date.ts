@@ -1,4 +1,4 @@
-import { GAME_TIME_ZONE } from '~~/shared/utils/time'
+import { dayKey, daysBetween, GAME_TIME_ZONE } from '~~/shared/utils/time'
 
 /**
  * A date as the player reads it. Explicit time zone: without it the string
@@ -124,22 +124,19 @@ export function formatTime(iso: string): string {
   return timeFormat.format(new Date(iso))
 }
 
-/** Le jour calendaire à Paris, « 2026-09-01 » : de quoi comparer deux dates au jour près. */
-const calendarDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: GAME_TIME_ZONE })
-
 /**
  * Quand revenir, comme on le dit à voix haute : « à partir de 13h34 », « demain à partir de 3h56 »,
  * « le 12 octobre à partir de 3h56 ». Le jour se compare à Paris, pas sur la machine.
  */
 export function formatReturnAt(iso: string, now: number): string {
   const time = formatTime(iso).replace(/^0?(\d+):/, '$1h')
-  const day = calendarDayFormat.format(new Date(iso))
+  const ahead = daysBetween(dayKey(now), dayKey(new Date(iso)))
 
-  if (day === calendarDayFormat.format(now)) {
+  if (ahead === 0) {
     return `à partir de ${time}`
   }
 
-  if (day === calendarDayFormat.format(now + 86_400_000)) {
+  if (ahead === 1) {
     return `demain à partir de ${time}`
   }
 
@@ -168,9 +165,7 @@ export function formatDuration(ms: number): string {
  * à Paris, comme pour `formatReturnAt`.
  */
 export function formatPastDay(iso: string, now: number): string {
-  const days = Math.round(
-    (Date.parse(calendarDayFormat.format(now)) - Date.parse(calendarDayFormat.format(new Date(iso)))) / 86_400_000,
-  )
+  const days = daysBetween(dayKey(new Date(iso)), dayKey(now))
 
   if (days <= 0) {
     return 'Aujourd\'hui'

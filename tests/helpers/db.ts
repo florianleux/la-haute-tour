@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/libsql/migrator'
 import * as schema from '../../server/db/schema'
 import { shiftFloorSize } from '../../server/utils/deck'
 import { rulesForFloor } from '../../server/utils/rules'
+import { dayKey } from '../../shared/utils/time'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
 
@@ -79,6 +80,15 @@ function cooldownAround(state: PlayerState): Pick<PlayerState, 'cooldownStartedA
   const { cooldownMs } = rulesForFloor(1)
 
   return { cooldownStartedAt: new Date(until.getTime() - cooldownMs), cooldownBaseMs: cooldownMs }
+}
+
+/**
+ * Ce qui rend un joueur tirable par un allié ou un ennemi au moment `now` : à
+ * mi-étage, sa première tentative finie, et un jour joué ce jour-là. À étaler
+ * dans `createPlayer`. Voir server/utils/targets.ts, isEligible().
+ */
+export function targetable(now: Date): Pick<PlayerState, 'floorSeen' | 'pastFirstAttempt' | 'lastPlayedDay'> {
+  return { floorSeen: 1, pastFirstAttempt: true, lastPlayedDay: dayKey(now) }
 }
 
 /** La première tentative du joueur, close : sa deuxième s'est ouverte. Voir `pastFirstAttempt`. */

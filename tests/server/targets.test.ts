@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { activeEffects } from '../../server/db/schema'
 import { rulesForFloor } from '../../server/utils/rules'
 import { drawTarget } from '../../server/utils/targets'
-import { closeFirstAttempt, createPlayer, createQuestion, createTestDatabase, loadPlayer } from '../helpers/db'
+import { closeFirstAttempt, createPlayer, createQuestion, createTestDatabase, loadPlayer, targetable } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import { rolls } from '../helpers/random'
 import type { Database } from '../../server/db/client'
@@ -23,6 +23,7 @@ interface AllySeed {
   bossHp?: number | null
   createdAt?: Date
   pastFirstAttempt?: boolean
+  lastPlayedDay?: string | null
 }
 
 describe('tirage de la cible', () => {
@@ -50,7 +51,7 @@ describe('tirage de la cible', () => {
     })
   })
 
-  /** Un joueur du monde réel, à mi-étage et sa première tentative finie, sauf mention contraire. */
+  /** Un joueur du monde réel, à mi-étage, sa première tentative finie et qui a joué le jour même, sauf mention contraire. */
   async function player(name: string, seed: AllySeed = {}): Promise<number> {
     nextId += 1
 
@@ -59,8 +60,7 @@ describe('tirage de la cible', () => {
       username: name,
       team: 'TLM',
       currentFloor: 1,
-      floorSeen: 1,
-      pastFirstAttempt: true,
+      ...targetable(NOW),
       ...seed,
     })
   }
@@ -123,6 +123,40 @@ describe('tirage de la cible', () => {
     await closeFirstAttempt(db, id)
 
     expect(await draw(0.5)).toBe('revenu')
+  })
+
+  // Un compte délaissé ne prend pas les sorts des autres : seul compte qui a
+  // un jour joué aujourd'hui, hier ou avant-hier.
+  // Voir specs/bonus.md#tirage-de-la-cible.
+  it('écarte un joueur qui n a joué ni aujourd hui, ni hier, ni avant-hier', async () => {
+    await player('absent', { lastPlayedDay: '2026-09-03' })
+    await player('jamais', { lastPlayedDay: null })
+
+    expect(await draw(0.5)).toBeNull()
+  })
+
+  it('tire un joueur qui a joué avant-hier', async () => {
+    await player('avant-hier', { lastPlayedDay: '2026-09-04' })
+
+    expect(await draw(0.5)).toBe('avant-hier')
+  })
+
+  // Avant-hier se lit sur la date, pas 48 heures plus tôt : au lendemain du
+  // passage à l'heure d'été, la veille n'a duré que 23 heures.
+  it('lit avant-hier au jour du jeu, changement d heure compris', async () => {
+    await player('trop-vieux', { lastPlayedDay: '2026-03-27' })
+
+    // 30 mars, 00 h 30 à Paris (heure d'été) : avant-hier est le 28, mais
+    // 48 heures plus tôt, on était encore le 27 — que le tirage doit écarter.
+    const at = new Date('2026-03-29T22:30:00.000Z')
+    const drawAt = async (): Promise<string | null> =>
+      (await drawTarget(db, await loadPlayer(db, caster), 'ally', at, rolls(0.5)))?.username ?? null
+
+    expect(await drawAt()).toBeNull()
+
+    await player('avant-hier', { lastPlayedDay: '2026-03-28' })
+
+    expect(await drawAt()).toBe('avant-hier')
   })
 
   // On soutient le plus faible : le moins avancé porte le plus gros poids.

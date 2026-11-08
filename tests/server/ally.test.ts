@@ -12,7 +12,7 @@ import {
 } from '../../server/utils/effects'
 import { readGameState } from '../../server/utils/game'
 import { rulesForFloor } from '../../server/utils/rules'
-import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
+import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen, targetable } from '../helpers/db'
 import { installNitroGlobals } from '../helpers/nitro'
 import type { Database } from '../../server/db/client'
 import type { User } from '../../server/db/schema'
@@ -51,8 +51,7 @@ describe('lancer sur un allié', () => {
       discordId: `ally-${name}`,
       username: name,
       team: 'TLM',
-      floorSeen: 1,
-      pastFirstAttempt: true,
+      ...targetable(NOW),
       ...state,
     })
 

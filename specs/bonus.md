@@ -60,7 +60,9 @@ meilleur à coup sûr : il le rend simplement plus probable.
    n'ont pas encore fini leur **première tentative** — tant que leurs vies ne sont
    pas revenues une première fois, après le premier rattrapage réussi ou sans
    rattrapage quand le Pool Échecs est trop maigre pour en tirer un : un nouveau
-   venu apprend le jeu avant d'en subir les sorts —, et les **saturés** : pour la
+   venu apprend le jeu avant d'en subir les sorts —, ceux qui n'ont **joué ni
+   aujourd'hui, ni hier, ni avant-hier** (aucun **jour joué** ces trois jours du jeu : un
+   compte délaissé ne prend pas les sorts des autres), et les **saturés** : pour la
    magie noire, ceux qui portent déjà deux effets négatifs, pour la magie
    blanche, ceux qui en portent deux positifs. Les **joueurs test** forment un monde scellé : un vrai
    lanceur ne les voit jamais, et eux ne voient que leurs semblables. Voir

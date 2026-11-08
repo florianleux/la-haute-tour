@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { dayKey, earnedByAnswer, earnedByCrossing, earnedByFloorDone, earnedByRecovery, earnedByResuming, earnedByTrial, playedToday } from '../../server/utils/achievements'
-import { gameHour } from '../../shared/utils/time'
+import { earnedByAnswer, earnedByCrossing, earnedByFloorDone, earnedByPlayStreak, earnedByRecovery, earnedByResuming, earnedByTrial } from '../../server/utils/achievements'
+import { playedToday } from '../../server/utils/playedDays'
+import { dayKey, daysBetween, gameHour } from '../../shared/utils/time'
 import { DAY_TIERS, STREAK_TIERS, VIEW_MILESTONES } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
 import type { AnsweredInput } from '../../server/utils/achievements'
@@ -93,6 +94,14 @@ describe('ce qu une réponse prouve', () => {
   it('compte deux jours qui se suivent', () => {
     expect(earnedByAnswer(answered({ playStreak: 2 }))).toContain('TWO_DAYS_IN_A_ROW')
     expect(earnedByAnswer(answered({ playStreak: 1 }))).not.toContain('TWO_DAYS_IN_A_ROW')
+  })
+
+  // La même Assiduité, lue seule par l'épreuve de boss. Voir server/utils/boss.ts.
+  it('rend l Assiduité seule, sans rien d une réponse', () => {
+    const [first] = DAY_TIERS
+
+    expect(earnedByPlayStreak(1)).toEqual([])
+    expect(earnedByPlayStreak(first)).toEqual([`DAYS_${first}`, 'TWO_DAYS_IN_A_ROW'])
   })
 
   it('compte la réponse juste en moins de 3 secondes', () => {
@@ -198,6 +207,13 @@ describe('le jour joué', () => {
   it('date au fuseau du jeu, pas à UTC', () => {
     expect(dayKey(new Date('2026-09-11T22:30:00.000Z'))).toBe('2026-09-12')
     expect(dayKey(new Date('2026-01-11T23:30:00.000Z'))).toBe('2026-01-12')
+  })
+
+  it('compte les jours en dates, changement d heure compris', () => {
+    expect(daysBetween('2026-09-10', '2026-09-11')).toBe(1)
+    expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2)
+    expect(daysBetween('2026-10-24', '2026-10-26')).toBe(2)
+    expect(daysBetween('2026-09-11', '2026-09-11')).toBe(0)
   })
 
   const NOW = new Date('2026-09-11T12:00:00.000Z')

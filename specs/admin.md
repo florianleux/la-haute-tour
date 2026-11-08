@@ -41,7 +41,7 @@
 ## Gestion des joueurs
 
 - **Tableau des joueurs** : une ligne par Discord ID, whitelist et comptes fusionnés — l'invité pas encore venu (« Pas encore connecté »), le joueur, et le compte retiré de la whitelist dont la partie reste (« Hors whitelist »). Chaque ligne porte l'avatar Discord, le pseudo, le nom d'aventurier s'il s'est nommé, l'équipe, l'étage et sa progression dedans (`4/8`), la phase et le délai restant s'il attend, les vies, les contestations en attente, le dernier jour joué et la date d'invitation. Les gestes vivent dans un menu « ⋯ » en fin de ligne. Un clic sur l'en-tête Joueur, Équipe, Étage ou Dernier jeu trie le tableau, un second inverse le sens ; les lignes sans valeur restent en bas.
-- **Joueurs actifs** : au-dessus des fiches, le nombre de joueurs qui ont répondu aujourd'hui, et sur les 7 derniers jours. Se lit sur `lastPlayedDay`, au jour du jeu : un joueur qui ouvre le site sans répondre n'y compte pas.
+- **Joueurs actifs** : au-dessus des fiches, le nombre de joueurs qui ont un **jour joué** aujourd'hui, et sur les 7 derniers jours. Se lit sur `lastPlayedDay`, au jour du jeu : un joueur qui ouvre le site sans répondre n'y compte pas.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
 - **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
 - **Quatre gestes**, plus le changement d'équipe et le retrait de la whitelist, dans le menu de la ligne : *passer l'attente*, *rendre une vie*, *donner une clé*, et *repartir de zéro*. Les deux premiers appliquent exactement ce que le jeu ferait de lui-même — l'attente échue mène au rattrapage (ou à une reprise si le Pool Échecs est trop petit), la vie rendue relance la même tentative. Voir [`mecanique.md`](./mecanique.md) et [`validation.md`](./validation.md).
@@ -104,7 +104,10 @@ que le jeu sait produire de lui-même.
 - **Donner un sort**, choisi dans le catalogue.
 - **Avancer de N questions**, justes ou fausses — les fausses remplissent le
   Pool Échecs, comme en jeu. C'est ce qui permet d'atteindre une question loot
-  ou un palier sans jouer une heure.
+  ou un palier sans jouer une heure. La journée devient un **jour joué**, comme
+  si ces questions avaient été résolues : c'est l'un des critères pour qu'un
+  sort puisse le tirer, avec sa première tentative finie (voir
+  [`bonus.md`](./bonus.md#tirage-de-la-cible)).
 - **Enlever N questions vues**, pour revenir en arrière dans l'étage.
 - **Mettre en attente**, et **passer l'attente**.
 - **Rendre une vie**, comme pour un vrai joueur.

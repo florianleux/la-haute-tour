@@ -12,7 +12,6 @@ import {
   viewAchievement,
 } from '../../shared/utils/achievements'
 import { FLOOR_COUNT } from '../../shared/utils/floors'
-import { GAME_TIME_ZONE } from '../../shared/utils/time'
 import { achievements, users } from '../db/schema'
 import type { SQL } from 'drizzle-orm'
 import type { AchievementId } from '../../shared/utils/achievements'
@@ -59,6 +58,19 @@ const LAST_SECOND_MS = 1_000
 const PUNCTUAL_MS = 5 * 60_000
 const NIGHT_OWL_HOURS = { from: 3, to: 5 }
 
+/**
+ * L'Assiduité qu'une série de jours joués atteint. Lue à chaque réponse, de
+ * question comme d'épreuve de boss : les deux font un jour joué.
+ * Les paliers comptent des jours qui se suivent, comme TWO_DAYS_IN_A_ROW.
+ * Voir specs/succes.md#assiduité.
+ */
+export function earnedByPlayStreak(playStreak: number): AchievementId[] {
+  return [
+    ...DAY_TIERS.filter(tier => playStreak >= tier).map(daysAchievement),
+    ...playStreak >= 2 ? ['TWO_DAYS_IN_A_ROW' as const] : [],
+  ]
+}
+
 export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
   const earned: AchievementId[] = [input.correct ? 'FIRST_CORRECT' : 'FIRST_WRONG']
 
@@ -82,16 +94,7 @@ export function earnedByAnswer(input: AnsweredInput): AchievementId[] {
     }
   }
 
-  // Les paliers comptent des jours qui se suivent, comme TWO_DAYS_IN_A_ROW. Voir specs/succes.md#assiduité.
-  for (const tier of DAY_TIERS) {
-    if (input.playStreak >= tier) {
-      earned.push(daysAchievement(tier))
-    }
-  }
-
-  if (input.playStreak >= 2) {
-    earned.push('TWO_DAYS_IN_A_ROW')
-  }
+  earned.push(...earnedByPlayStreak(input.playStreak))
 
   if (input.correct && input.intoxicated) {
     earned.push('MUSHROOM_CORRECT')
@@ -220,50 +223,6 @@ export function earnedByCrossing(floor: number): AchievementId[] {
   const next = floor + 1
 
   return isReachedFloor(next) ? [reachedFloorAchievement(next)] : []
-}
-
-/**
- * Le jour du jeu, au fuseau que les deux côtés partagent. `en-CA` rend la forme
- * `YYYY-MM-DD`, celle sous laquelle les jours se comparent.
- */
-const dayKeyFormat = new Intl.DateTimeFormat('en-CA', { timeZone: GAME_TIME_ZONE })
-
-export function dayKey(now: Date): string {
-  return dayKeyFormat.format(now)
-}
-
-export interface PlayedDay {
-  lastPlayedDay: string
-  daysPlayed: number
-  playStreak: number
-}
-
-/**
- * Ce que devient le compte des jours joués quand une question se résout. Rend null
- * quand le joueur a déjà joué aujourd hui : il n y a alors rien à écrire, et c est
- * ce qui rend l estampille gratuite sur le chemin de la question.
- */
-export function playedToday(
-  user: Pick<User, 'lastPlayedDay' | 'daysPlayed' | 'playStreak'>,
-  now: Date,
-): PlayedDay | null {
-  const today = dayKey(now)
-
-  if (user.lastPlayedDay === today) {
-    return null
-  }
-
-  // Comparés en dates et non en millisecondes : un changement d heure fait des
-  // journées de 23 et de 25 heures, et « hier » doit rester hier. Deux dates
-  // seules se parsent en UTC, donc leur écart est exact.
-  const consecutive = user.lastPlayedDay !== null
-    && Math.round((Date.parse(today) - Date.parse(user.lastPlayedDay)) / 86_400_000) === 1
-
-  return {
-    lastPlayedDay: today,
-    daysPlayed: user.daysPlayed + 1,
-    playStreak: consecutive ? user.playStreak + 1 : 1,
-  }
 }
 
 /**

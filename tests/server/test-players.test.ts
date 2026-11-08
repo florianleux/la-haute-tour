@@ -64,6 +64,14 @@ describe('gestes sur un joueur test', () => {
   })
 
   describe('avancer dans l étage', () => {
+    // Sans jour joué, le joueur test ne serait jamais tiré par un sort.
+    // Voir specs/admin.md#réglages-dun-joueur-test.
+    it('fait de la journée un jour joué', async () => {
+      await advanceTestPlayer(db, await reload(), { count: 2, correct: true }, NOW)
+
+      expect(await reload()).toMatchObject({ lastPlayedDay: '2026-09-05', daysPlayed: 1, playStreak: 1 })
+    })
+
     it('marque N questions vues et avance le curseur', async () => {
       await advanceTestPlayer(db, await reload(), { count: 5, correct: true }, NOW)
 
