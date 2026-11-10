@@ -557,8 +557,8 @@ export const attempts = sqliteTable('attempts', {
 
 /**
  * Une réponse soumise parce que le joueur a quitté la page pendant qu'un timer
- * tournait. Réservé à l'administration : le profil joueur n'en porte aucune
- * trace, et une question résolue ainsi n'est pas contestable.
+ * tournait. Elle porte la ligne du verdict, et une question résolue ainsi
+ * n'est pas contestable. Aucun écran ne la compte.
  * Voir specs/anti-triche.md#perte-de-focus.
  */
 export const focusLosses = sqliteTable('focus_losses', {

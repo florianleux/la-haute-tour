@@ -2,9 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setDatabase } from '../../server/db/client'
 import { pendingDisputes } from '../../server/utils/disputes'
-import { focusLossTally } from '../../server/utils/focus'
 import { playerRoster } from '../../server/utils/players'
-import { disputes, focusLosses, users } from '../../server/db/schema'
+import { disputes, users } from '../../server/db/schema'
 import { createPlayer, createQuestion, createTestDatabase, markSeen } from '../helpers/db'
 import {
   apiRequest,
@@ -168,17 +167,6 @@ describe('incarnation d un joueur test', () => {
       const queue = await pendingDisputes(db)
 
       expect(queue.map(entry => entry.username)).toEqual(['frodon'])
-    })
-
-    it('tient les joueurs test hors des flags de triche', async () => {
-      const questionId = await createQuestion(db, { statement: 'Perdue ?', accepted: ['oui'] })
-      for (const userId of [playerId, testPlayerId]) {
-        await db.insert(focusLosses).values({ userId, questionId, mode: 'ascent', lostAt: new Date() })
-      }
-
-      const tally = await focusLossTally(db)
-
-      expect(tally.map(entry => entry.username)).toEqual(['frodon'])
     })
 
     it('tient les joueurs test hors des fiches joueurs', async () => {

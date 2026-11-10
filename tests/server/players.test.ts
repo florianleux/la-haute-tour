@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { eq } from 'drizzle-orm'
-import { achievements, bossKeys, disputes, items, missedPool, users } from '../../server/db/schema'
+import { achievements, bossKeys, disputes, items, missedPool, pocketSpells, users } from '../../server/db/schema'
 import { disputableErrors } from '../../server/utils/disputes'
 import { playerRoster, resetPlayer } from '../../server/utils/players'
 import { createPlayer, createQuestion, createTestDatabase, loadPlayer, markSeen } from '../helpers/db'
@@ -46,12 +46,31 @@ describe('fiches joueurs', () => {
       floorSeen: 2,
       floorTotal: 4,
       cooldownUntil: null,
-      pendingDisputes: 0,
       // Personne n\'est placé tant que l\'admin ne le fait pas.
       team: null,
       ownsKey: false,
       lastPlayedDay: null,
+      items: [],
+      spells: [],
     }])
+  })
+
+  it('rend le sac dans l ordre reçu et les sorts comptés par exemplaire', async () => {
+    const userId = await createPlayer(db)
+    await db.insert(items).values([
+      { userId, item: 'MUSHROOM', obtainedAt: new Date(NOW.getTime() + 1000) },
+      { userId, item: 'CHEESE', obtainedAt: NOW },
+    ])
+    await db.insert(pocketSpells).values([
+      { userId, spell: 'PURGE', obtainedAt: NOW },
+      { userId, spell: 'VITALITY', obtainedAt: NOW },
+      { userId, spell: 'VITALITY', obtainedAt: NOW },
+    ])
+
+    expect((await playerRoster(db, NOW))[0]).toMatchObject({
+      items: ['CHEESE', 'MUSHROOM'],
+      spells: [{ spell: 'PURGE', count: 1 }, { spell: 'VITALITY', count: 2 }],
+    })
   })
 
   it('rend l attente en cours et son échéance', async () => {
@@ -84,23 +103,6 @@ describe('fiches joueurs', () => {
     await markSeen(db, userId, questionIds, { floor: 1, seenAt: NOW })
 
     expect((await playerRoster(db, NOW))[0]).toMatchObject({ phase: 'bossDoor', floorSeen: 2 })
-  })
-
-  it('ne compte que les contestations encore à arbitrer', async () => {
-    const questionIds = await seedFloor(db, 1, 3)
-    const userId = await createPlayer(db)
-    await db.insert(missedPool).values(questionIds.slice(0, 2).map(questionId => ({
-      userId,
-      questionId,
-      floor: 1,
-      lastFailedAt: NOW,
-    })))
-    await db.insert(disputes).values([
-      { userId, questionId: questionIds[0], status: 'pending', createdAt: NOW },
-      { userId, questionId: questionIds[1], status: 'accepted', createdAt: NOW, settledAt: NOW },
-    ])
-
-    expect((await playerRoster(db, NOW))[0].pendingDisputes).toBe(1)
   })
 
   it('range les joueurs par pseudo', async () => {
@@ -136,8 +138,7 @@ describe('repartir de zéro', () => {
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
 
-    const card = (await playerRoster(db, NOW)).find(player => player.userId === userId)
-    expect(card?.pendingDisputes).toBe(0)
+    expect(await db.select().from(disputes).where(eq(disputes.userId, userId))).toEqual([])
   })
 
   it('remet les compteurs des succès à zéro, même chez un vrai joueur', async () => {

@@ -92,7 +92,7 @@ il se lit ici. Tout nouveau terme s'ajoute d'abord à ce tableau.
 | **Contestation** | `dispute` | Arbitrage par l'admin d'une réponse jugée fausse à tort. |
 | **Erreur contestable** | `disputableError` (`isDisputable`) | Une erreur que le joueur peut encore contester. Les conditions vivent dans [`validation.md`](./validation.md#quand). |
 | **Justice divine** | `divineJustice` | La vie due à une contestation acceptée pendant l'attente : mise de côté, elle s'ajoute aux vies pleines de la tentative suivante. Son cœur est doré (`divineHearts` compte ceux de la tentative en cours, perdus compris : ils se grisent sans disparaître). Voir [`validation.md`](./validation.md#effet-sur-le-joueur). |
-| **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Le verdict le dit au joueur (« Tu as quitté la page, ta réponse a été envoyée. ») ; le flag, lui, n'est visible que de l'administration. Non contestable. |
+| **Perte de focus** | `focusLoss` | Le joueur quitte la page pendant qu'un timer tourne : sa réponse est soumise en l'état et la soumission est marquée. Le verdict le dit au joueur (« Tu as quitté la page, ta réponse a été envoyée. »). Non contestable. |
 | **Envoi vide retenu** | `heldEmptySend` | Le premier envoi d'un champ de réponse vide ou blanc, qui ne part pas : la carte demande de recommencer de la même façon — Entrée ou clic sur Valider, la **façon d'envoyer** (`sendMethod` : `enter` ou `click`) —, et le second envoi, de l'une ou l'autre façon, part. Taper dans le champ l'oublie. Le chrono et la perte de focus envoient sans le connaître. Vaut aussi pour l'épreuve du boss. Voir [`ecrans.md`](./ecrans.md#ascent--question). |
 | **Whitelist** | `whitelist` | Discord IDs autorisés à s'inscrire, alimentée manuellement. |
 | **Énoncé** | `statement` | Le texte de la question posée au joueur. |
@@ -191,7 +191,7 @@ Le mot **session** n'appartient pas au vocabulaire du domaine : il désigne uniq
 - [`ecrans.md`](./ecrans.md) — Les écrans : inventaire, correspondance phase → écran, contenu de chacun.
 - [`mecanique.md`](./mecanique.md) — Mécanique de jeu : ascension, tentative, Pool Échecs, attente, rattrapage, et la machine à états des phases.
 - [`validation.md`](./validation.md) — Validation des réponses : tolérance aux fautes, réponses acceptées, contestation.
-- [`anti-triche.md`](./anti-triche.md) — Timer arbitré par le serveur, perte de focus, whitelist, flags admin.
+- [`anti-triche.md`](./anti-triche.md) — Timer arbitré par le serveur, perte de focus, whitelist.
 - [`admin.md`](./admin.md) — Administration : flag admin, dashboard, file de contestation, CRUD questions.
 - [`architecture.md`](./architecture.md) — Stack technique, données, authentification, forme de l'API, hébergement.
 - [`bonus.md`](./bonus.md) — Sorts, question loot, coffres et Mimic. Le seul système qui fasse communiquer deux parties entre elles.

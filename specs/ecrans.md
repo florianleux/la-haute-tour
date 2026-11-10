@@ -281,5 +281,5 @@ Réservés au flag admin, sous `/admin`. Voir [`admin.md`](./admin.md).
 - **Ni sorts ni Objets hors du camp** : le Grimoire et l'Inventaire n'existent qu'au camp.
 - **Aucune réponse hors camp** : le Volumen, seul écran qui relit les réponses des questions vues, ne s'ouvre qu'au camp — le rattrapage tire dans ce qu'il montre.
 - **Aucune cible avant le lancer** : le joueur choisit une catégorie, jamais une personne.
-- **Aucun compteur de triche** : les flags existent, ils sont réservés à l'administration.
+- **Aucun compteur de triche** : les pertes de focus sont enregistrées, mais aucun écran ne les compte.
 - **Aucune question à venir** : rien n'annonce jamais l'énoncé suivant avant qu'il soit servi.

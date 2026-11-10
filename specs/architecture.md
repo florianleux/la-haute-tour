@@ -41,7 +41,7 @@ Tout l'état vit en base, jamais côté client :
 - **Pool Échecs** — une entrée par question ratée, portant l'étage où elle l'a été, un **compteur de réussites consécutives** et la **date du dernier échec**. Ce n'est pas une simple appartenance : c'est ce compteur qui décide de la sortie, et cette date qui ordonne l'onglet À revoir du Volumen.
 - **Attente en cours** — l'échéance à partir de laquelle le joueur peut reprendre ou rattraper.
 - **Contestations** — la question, la réponse du joueur, le statut d'arbitrage.
-- **Flags de triche** — les soumissions déclenchées par une perte de focus.
+- **Pertes de focus** — les soumissions déclenchées par une perte de focus.
 - **Sorts en poche** — les sorts possédés et non encore lancés. Doublons illimités.
 - **Objets** — ce que le sac de l'Inventaire contient et qui n'est pas un sort (le Fromage), un par ligne, jusqu'à ce qu'il soit donné.
 - **Effets actifs** — un effet posé sur un joueur, portant son sort, sa face, son lanceur et la date du lancer. Ancré sur la prochaine tentative de la cible, il meurt avec elle — sauf un sort lié à l'attente, qui meurt avec l'attente visée.

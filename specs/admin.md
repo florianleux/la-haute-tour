@@ -32,15 +32,9 @@
 - **Dashboard à la connexion** : l'admin voit les contestations en attente sur `/admin`.
 - Pas de webhook ni d'email pour l'instant. Un webhook Discord reste envisageable, il n'est pas requis.
 
-## Flags de triche
-
-- L'admin voit les soumissions déclenchées par une perte de focus, joueur par joueur.
-- Ces flags ne sont exposés nulle part côté joueur.
-- Voir [`anti-triche.md`](./anti-triche.md).
-
 ## Gestion des joueurs
 
-- **Tableau des joueurs** : une ligne par Discord ID, whitelist et comptes fusionnés — l'invité pas encore venu (« Pas encore connecté »), le joueur, et le compte retiré de la whitelist dont la partie reste (« Hors whitelist »). Chaque ligne porte l'avatar Discord, le pseudo, le nom d'aventurier s'il s'est nommé, l'équipe, l'étage et sa progression dedans (`4/8`), la phase et le délai restant s'il attend, les vies, les contestations en attente, le dernier jour joué et la date d'invitation. Les gestes vivent dans un menu « ⋯ » en fin de ligne. Un clic sur l'en-tête Joueur, Équipe, Étage ou Dernier jeu trie le tableau, un second inverse le sens ; les lignes sans valeur restent en bas.
+- **Tableau des joueurs** : une ligne par Discord ID, whitelist et comptes fusionnés — l'invité pas encore venu (« Pas encore connecté »), le joueur, et le compte retiré de la whitelist dont la partie reste (« Hors whitelist »). Chaque ligne porte l'avatar Discord, le pseudo, le nom d'aventurier s'il s'est nommé, l'équipe, l'étage et sa progression dedans (`4/8`), la phase et le délai restant s'il attend, et le dernier jour joué. Le bouton « Inviter un joueur » ouvre une modale : Discord ID et équipe. Un clic sur la ligne d'un joueur la déplie : les icônes des Objets de son sac, et ses sorts en poche avec leur nombre d'exemplaires. Les gestes vivent dans un menu « ⋯ » en fin de ligne. Un clic sur l'en-tête Joueur, Équipe, Étage ou Dernier jeu trie le tableau, un second inverse le sens ; les lignes sans valeur restent en bas. Sur mobile, ces colonnes passent en seconde ligne sous le pseudo, et le tableau reste trié par étage.
 - **Joueurs actifs** : au-dessus des fiches, le nombre de joueurs qui ont un **jour joué** aujourd'hui, et sur les 7 derniers jours. Se lit sur `lastPlayedDay`, au jour du jeu : un joueur qui ouvre le site sans répondre n'y compte pas.
 - **Lecture sans effet** : ouvrir l'onglet ne fait avancer aucune partie — ni réservation résolue, ni attente clôturée.
 - **L'équipe** du joueur, et de quoi la changer : les deux équipes, ou aucune. L'assignation est manuelle, rien ne l'attribue tout seul. Voir [`equipes.md`](./equipes.md).
@@ -66,7 +60,7 @@ créés depuis l'interface, sans compte Discord derrière, qu'il peut incarner.
 - **Un monde scellé** : un vrai joueur ne peut jamais cibler ni être ciblé par
   un joueur test, et réciproquement — y compris quand les deux portent la même
   équipe. La relation entre eux n'existe pas. Voir [`equipes.md`](./equipes.md). Les joueurs test n'apparaissent ni dans les
-  fiches joueurs, ni dans la file de contestation, ni dans les flags de triche —
+  fiches joueurs, ni dans la file de contestation —
   ces écrans servent à arbitrer de vraies parties. Voir [`bonus.md`](./bonus.md).
 - **Ils jouent une vraie partie** : mêmes règles, mêmes phases, mêmes écrans.
   Rien n'est simulé, sans quoi ce qu'on y observe ne prouverait rien.

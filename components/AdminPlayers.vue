@@ -14,25 +14,30 @@
       </span>
     </p>
 
-    <form class="mt-4 flex items-end gap-3" @submit.prevent="submit">
-      <BaseInput
-        v-model="discordId"
-        label="Inviter un Discord ID"
-        placeholder="123456789012345678"
-        class="flex-1"
-      />
-      <!-- L'équipe se décide en invitant : c'est le seul moment où l'on sait
-           pourquoi on invite, et un joueur invité en a toujours une. Voir
-           specs/equipes.md. -->
-      <BaseSelect v-model="team" label="Équipe" :options="teamOptions" />
-      <BaseButton :disabled="!ready" :loading="adding" @click="submit">
-        Ajouter
-      </BaseButton>
-    </form>
+    <BaseButton class="mt-4" @click="inviting = true">
+      Inviter un joueur
+    </BaseButton>
 
-    <BaseNotice v-if="addFailed">
-      L'ajout a échoué. Réessaie.
-    </BaseNotice>
+    <BaseModal v-if="inviting" title="Inviter un joueur" @close="closeInvite">
+      <form class="flex flex-col gap-4" @submit.prevent="submit">
+        <BaseInput
+          v-model="discordId"
+          label="Discord ID"
+          placeholder="123456789012345678"
+        />
+        <!-- L'équipe se décide en invitant : c'est le seul moment où l'on sait
+             pourquoi on invite, et un joueur invité en a toujours une. Voir
+             specs/equipes.md. -->
+        <BaseSelect v-model="team" label="Équipe" :options="teamOptions" />
+        <BaseNotice v-if="addFailed">
+          L'ajout a échoué. Réessaie.
+        </BaseNotice>
+        <BaseButton :disabled="!ready" :loading="adding" @click="submit">
+          Ajouter
+        </BaseButton>
+      </form>
+    </BaseModal>
+
     <BaseNotice v-if="actionFailed">
       L'action a échoué. Réessaie.
     </BaseNotice>
@@ -53,27 +58,18 @@
           <BaseSortHeader :direction="directionOf('player')" @sort="sortBy('player')">
             Joueur
           </BaseSortHeader>
-          <BaseSortHeader :direction="directionOf('team')" @sort="sortBy('team')">
+          <BaseSortHeader class="hidden sm:table-cell" :direction="directionOf('team')" @sort="sortBy('team')">
             Équipe
           </BaseSortHeader>
-          <BaseSortHeader :direction="directionOf('floor')" @sort="sortBy('floor')">
+          <BaseSortHeader class="hidden sm:table-cell" :direction="directionOf('floor')" @sort="sortBy('floor')">
             Étage
           </BaseSortHeader>
-          <th class="py-2 pr-4 font-medium">
+          <th class="hidden py-2 pr-4 font-medium sm:table-cell">
             Phase
           </th>
-          <th class="py-2 pr-4 font-medium">
-            Vies
-          </th>
-          <th class="py-2 pr-4 font-medium" title="Contestations en attente">
-            Cont.
-          </th>
-          <BaseSortHeader :direction="directionOf('lastPlayed')" @sort="sortBy('lastPlayed')">
+          <BaseSortHeader class="hidden sm:table-cell" :direction="directionOf('lastPlayed')" @sort="sortBy('lastPlayed')">
             Dernier jeu
           </BaseSortHeader>
-          <th class="py-2 pr-4 font-medium">
-            Invité le
-          </th>
           <th class="py-2" />
         </tr>
       </thead>
@@ -212,6 +208,7 @@ const teamOptions = [
   { value: NOT_CHOSEN, label: 'Choisir…' },
   ...TEAM_IDS.map(id => ({ value: id, label: teamLabel(id) })),
 ]
+const inviting = ref(false)
 const ready = computed(() => discordId.value.trim() !== '' && team.value !== NOT_CHOSEN)
 const addFailed = ref(false)
 const actionFailed = ref(false)
@@ -225,9 +222,15 @@ async function submit(): Promise<void> {
 
   addFailed.value = !added
   if (added) {
-    discordId.value = ''
-    team.value = NOT_CHOSEN
+    closeInvite()
   }
+}
+
+function closeInvite(): void {
+  inviting.value = false
+  discordId.value = ''
+  team.value = NOT_CHOSEN
+  addFailed.value = false
 }
 
 /** La ligne dont on vient de choisir un geste : elle seule montre son loader. */

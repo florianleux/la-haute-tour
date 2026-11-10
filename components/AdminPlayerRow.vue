@@ -1,6 +1,18 @@
 <template>
-  <tr class="border-t border-slate-800 text-sm">
-    <td class="py-2 pr-4">
+  <!-- Un clic sur la ligne d'un joueur la déplie : son sac et sa poche. Le
+       bouton invisible sur la case Joueur porte le geste au clavier ; son clic
+       remonte à la ligne comme celui de la souris. -->
+  <tr
+    class="border-t border-slate-800 text-sm"
+    :class="{ 'cursor-pointer hover:bg-slate-800/40': player }"
+    @click="player && (expanded = !expanded)"
+  >
+    <td class="relative py-2 pr-4">
+      <BaseSurfaceButton
+        v-if="player"
+        :label="`Sac et sorts de ${player.username}`"
+        :aria-expanded="expanded"
+      />
       <div class="flex items-center gap-2">
         <BaseAvatar
           v-if="player"
@@ -15,48 +27,74 @@
           </p>
           <p class="font-mono text-xs text-slate-500">
             {{ row.discordId }}
+            <span v-if="!row.invitedAt" class="font-sans text-amber-400">· Hors whitelist</span>
+          </p>
+          <!-- Sur mobile, les colonnes cachées passent en seconde ligne. -->
+          <p class="mt-0.5 text-xs text-slate-400 sm:hidden">
+            {{ cells ? [cells.team, `Étage ${cells.floor}`, cells.phase, cells.lastPlayed].join(' · ') : `${team} · Pas encore connecté` }}
           </p>
         </div>
       </div>
     </td>
-    <td class="py-2 pr-4">
-      {{ teamLabel(player ? player.team : row.invitedTeam) }}
+    <td :class="WIDE_CELL">
+      {{ team }}
     </td>
-    <template v-if="player">
-      <td class="py-2 pr-4 whitespace-nowrap">
-        {{ player.floor }} <span class="text-slate-500">· {{ player.floorSeen }}/{{ player.floorTotal }}</span>
+    <template v-if="cells">
+      <td :class="WIDE_CELL" class="whitespace-nowrap">
+        {{ cells.floor }}
       </td>
-      <td class="py-2 pr-4 whitespace-nowrap">
-        {{ phaseLabel(player.phase) }}
-        <span v-if="inCooldown && remaining" class="text-slate-500">· {{ remaining }}</span>
+      <td :class="WIDE_CELL" class="whitespace-nowrap">
+        {{ cells.phase }}
       </td>
-      <td class="py-2 pr-4">
-        {{ player.lives }}
-      </td>
-      <!-- Zéro contestation n'est pas une nouvelle : la case reste vide. -->
-      <td class="py-2 pr-4 text-amber-400">
-        {{ player.pendingDisputes || '' }}
-      </td>
-      <td class="py-2 pr-4 whitespace-nowrap text-slate-400">
-        {{ player.lastPlayedDay ? formatDay(player.lastPlayedDay) : '—' }}
+      <td :class="WIDE_CELL" class="whitespace-nowrap text-slate-400">
+        {{ cells.lastPlayed }}
       </td>
     </template>
-    <td v-else colspan="5" class="py-2 pr-4 text-slate-500">
+    <td v-else colspan="3" :class="WIDE_CELL" class="text-slate-500">
       Pas encore connecté
     </td>
-    <td class="py-2 pr-4 whitespace-nowrap text-slate-500">
-      <template v-if="row.invitedAt">
-        {{ formatDay(row.invitedAt) }}
-      </template>
-      <span v-else class="text-amber-400">Hors whitelist</span>
-    </td>
-    <td class="py-2 text-right">
+    <td class="py-2 text-right" @click.stop>
       <BaseMenu
         :items="items"
         :label="`Actions sur ${player?.username ?? row.discordId}`"
         :loading="running !== null"
         @select="$emit('act', $event)"
       />
+    </td>
+  </tr>
+  <tr v-if="player && expanded" class="text-sm">
+    <td colspan="6" class="pb-4 pl-2 pt-2 sm:pl-10">
+      <div class="flex flex-wrap items-center gap-x-8 gap-y-3">
+        <div class="flex items-center gap-2">
+          <img
+            v-for="(item, index) in player.items"
+            :key="index"
+            :src="itemLabel(item).image"
+            :alt="itemLabel(item).name"
+            :title="itemLabel(item).name"
+            class="size-6 object-contain"
+          >
+          <span v-if="!player.items.length" class="text-slate-500">Sac vide</span>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div
+            v-for="{ spell, count } in player.spells"
+            :key="spell"
+            class="@container relative size-7"
+            :title="spellLabel(spell)"
+          >
+            <SpellMedallion
+              :spell="spell"
+              face="mixed"
+              :alt="spellLabel(spell)"
+              class="size-full"
+              fallback-class="border-2 border-slate-500 text-[50cqw] text-slate-300"
+            />
+            <SpellCountBadge :count="count" />
+          </div>
+          <span v-if="!player.spells.length" class="text-slate-500">Aucun sort</span>
+        </div>
+      </div>
     </td>
   </tr>
 </template>
@@ -100,7 +138,29 @@ defineEmits<{ act: [PlayerAction] }>()
 
 const player = computed(() => props.row.player)
 
+const expanded = ref(false)
+
 const { inCooldown, remaining } = usePlayerCooldown(player, toRef(props, 'now'))
+
+/** Une colonne que le mobile cache : son contenu passe sous le pseudo. */
+const WIDE_CELL = 'hidden py-2 pr-4 sm:table-cell'
+
+const team = computed(() => teamLabel(player.value ? player.value.team : props.row.invitedTeam))
+
+// Ce que disent les colonnes d'un joueur venu, écrit une fois pour le tableau
+// et pour la seconde ligne du mobile.
+const cells = computed(() => {
+  const card = player.value
+  if (!card) {
+    return null
+  }
+  return {
+    team: team.value,
+    floor: `${card.floor} · ${card.floorSeen}/${card.floorTotal}`,
+    phase: inCooldown.value && remaining.value ? `${phaseLabel(card.phase)} · ${remaining.value}` : phaseLabel(card.phase),
+    lastPlayed: card.lastPlayedDay ? formatDay(card.lastPlayedDay) : '—',
+  }
+})
 
 const items = computed<MenuItem<PlayerAction>[]>(() => {
   const card = props.row.player

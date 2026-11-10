@@ -1,4 +1,4 @@
-import { asc, eq, sql } from 'drizzle-orm'
+import { asc, count, eq, sql } from 'drizzle-orm'
 import { useDatabase } from '../db/client'
 import {
   achievements,
@@ -23,6 +23,8 @@ import type { H3Event } from 'h3'
 import type { Database } from '../db/client'
 import type { User } from '../db/schema'
 import type { Phase } from './mechanics'
+import type { ItemId } from '../../shared/utils/items'
+import type { SpellId } from '../../shared/utils/spells'
 import type { TeamId } from '../../shared/utils/teams'
 
 /**
@@ -50,14 +52,16 @@ export interface PlayerCard {
   floorTotal: number
   /** Fin de l'attente en ISO 8601, null hors attente. */
   cooldownUntil: string | null
-  /** Contestations de ce joueur encore à arbitrer. */
-  pendingDisputes: number
   /** Son équipe, null tant que l'admin ne l'a pas placé. Voir specs/equipes.md. */
   team: TeamId | null
   /** Il a la clé du boss de son étage courant, posée ou non : « Donner une clé » est alors sans objet. */
   ownsKey: boolean
   /** Dernier jour du jeu où il a répondu (`YYYY-MM-DD`), null s'il n'a jamais répondu. */
   lastPlayedDay: string | null
+  /** Les Objets du sac, dans l'ordre où il les a reçus. */
+  items: ItemId[]
+  /** Les sorts en poche, avec leur nombre d'exemplaires. */
+  spells: { spell: SpellId, count: number }[]
 }
 
 /**
@@ -117,9 +121,6 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
       verdicts: sql<number>`(select count(*) from ${reservations}
         where ${reservations.userId} = ${users.id}
           and ${reservations.resolvedAt} is not null)`,
-      pendingDisputes: sql<number>`(select count(*) from ${disputes}
-        where ${disputes.userId} = ${users.id}
-          and ${disputes.status} = 'pending')`,
       ownsKey: sql<number>`exists(select 1 from ${bossKeys}
         where ${bossKeys.userId} = ${users.id}
           and ${bossKeys.floor} = ${users.currentFloor})`,
@@ -131,6 +132,27 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     // Voir specs/admin.md#joueurs-test.
     .where(eq(users.isTest, isTest))
     .orderBy(asc(users.username))
+
+  // Le sac et la poche de tous les joueurs listés, en deux requêtes, rangés
+  // ensuite par joueur : une sous-requête par fiche coûterait une lecture de
+  // plus à chaque joueur ajouté.
+  const [bagRows, pocketRows] = await Promise.all([
+    db
+      .select({ userId: items.userId, item: items.item })
+      .from(items)
+      .innerJoin(users, eq(users.id, items.userId))
+      .where(eq(users.isTest, isTest))
+      .orderBy(asc(items.obtainedAt), asc(items.id)),
+    db
+      .select({ userId: pocketSpells.userId, spell: pocketSpells.spell, copies: count() })
+      .from(pocketSpells)
+      .innerJoin(users, eq(users.id, pocketSpells.userId))
+      .where(eq(users.isTest, isTest))
+      .groupBy(pocketSpells.userId, pocketSpells.spell)
+      .orderBy(asc(pocketSpells.spell)),
+  ])
+  const bags = groupByUser(bagRows, row => row.item)
+  const pockets = groupByUser(pocketRows, row => ({ spell: row.spell, count: row.copies }))
 
   return rows.map(row => ({
     userId: row.user.id,
@@ -151,11 +173,26 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     floorSeen: row.user.floorSeen,
     floorTotal: row.floorTotal ?? 0,
     cooldownUntil: row.user.cooldownUntil?.toISOString() ?? null,
-    pendingDisputes: row.pendingDisputes,
     team: row.user.team,
     ownsKey: row.ownsKey === 1,
     lastPlayedDay: row.user.lastPlayedDay,
+    items: bags.get(row.user.id) ?? [],
+    spells: pockets.get(row.user.id) ?? [],
   }))
+}
+
+/** Des lignes rangées par joueur. Pas de Map.groupBy : le runtime des fonctions Netlify n'est pas épinglé. */
+function groupByUser<Row extends { userId: number }, Value>(rows: Row[], pick: (row: Row) => Value): Map<number, Value[]> {
+  const groups = new Map<number, Value[]>()
+  for (const row of rows) {
+    const group = groups.get(row.userId)
+    if (group) {
+      group.push(pick(row))
+    } else {
+      groups.set(row.userId, [pick(row)])
+    }
+  }
+  return groups
 }
 
 /**

@@ -12,7 +12,7 @@ const bodySchema = z.object({
   answer: z.string().trim().max(ANSWER_MAX_LENGTH),
   /**
    * Qui envoie : le joueur, ou son départ de la page. Le client le dit ; le
-   * serveur en fait un flag d'administration, pas une sanction supplémentaire.
+   * serveur l'enregistre, sans sanction supplémentaire.
    * Voir specs/anti-triche.md#perte-de-focus.
    */
   source: z.enum(['player', 'focusLoss']).optional(),

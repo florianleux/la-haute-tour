@@ -2246,7 +2246,7 @@ export async function submitAnswer(
   const trial = servedTrial(snapshot.trials)
 
   // Une épreuve de boss : jugée côté serveur, comme une question. Une perte de
-  // focus y envoie la réponse en l'état, sans flag d'administration — la table
+  // focus y envoie la réponse en l'état, sans l'enregistrer — la table
   // des pertes de focus ne connaît que les questions du deck.
   if (trial) {
     const unlocked = await resolveTrial(db, snapshot.user, trial, answer, rulesForFloor(snapshot.user.currentFloor), now)

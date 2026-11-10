@@ -20,10 +20,11 @@ const card: PlayerCard = {
   floorSeen: 4,
   floorTotal: 8,
   cooldownUntil: '2026-09-04T18:00:00.000Z',
-  pendingDisputes: 2,
   team: null,
   ownsKey: false,
   lastPlayedDay: null,
+  items: [],
+  spells: [],
 }
 
 describe('joueurs côté admin', () => {
