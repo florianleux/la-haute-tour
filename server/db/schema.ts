@@ -226,6 +226,16 @@ export const users = sqliteTable('users', {
    */
   seenTotal: integer('seen_total').notNull().default(0),
   /**
+   * Questions loot passées depuis la dernière remise à zéro, et celles réussies
+   * (le coffre s'est ouvert). Une statistique pour l'admin, jamais relue par le
+   * jeu : le statut de question loot, lui, se dérive toujours de `floorSeen`.
+   * Ne se déduit pas après coup : le seuil a changé, et une contestation
+   * acceptée rend juste une question sans rendre son coffre.
+   * Voir specs/admin.md#gestion-des-joueurs.
+   */
+  chestsOffered: integer('chests_offered').notNull().default(0),
+  chestsOpened: integer('chests_opened').notNull().default(0),
+  /**
    * Le dernier **jour joué** : une question ou une épreuve de boss résolue, en
    * `YYYY-MM-DD` et au fuseau Europe/Paris — celui que les écrans utilisent
    * déjà, voir utils/date.ts et server/utils/playedDays.ts.

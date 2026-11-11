@@ -725,7 +725,8 @@ async function resolve(
   // Le coffre se grave ici, une fois pour toutes : une contestation acceptée
   // rendra peut-être la question juste plus tard, sans faire naître de coffre.
   // Voir specs/bonus.md#contestation.
-  const chest: ChestState | null = correct && servesLoot(snapshot, reservation, rules) ? 'closed' : null
+  const loot = servesLoot(snapshot, reservation, rules)
+  const chest: ChestState | null = correct && loot ? 'closed' : null
 
   // Une question ne se résout qu'une fois. Deux réponses parties ensemble — un
   // double clic, deux onglets — lisent toutes deux la réservation encore
@@ -835,6 +836,8 @@ async function resolve(
   const counted = {
     seenTotal: user.seenTotal + seenDelta,
     streak: correct ? user.streak + 1 : 0,
+    chestsOffered: user.chestsOffered + (loot ? 1 : 0),
+    chestsOpened: user.chestsOpened + (chest ? 1 : 0),
   }
 
   const patch = { ...moved, ...played, ...counted }

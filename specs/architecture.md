@@ -53,6 +53,8 @@ Tout l'état vit en base, jamais côté client :
 
 Il n'existe **aucun compteur de loot**. Le statut de question loot se dérive du nombre de questions vues à l'étage, déjà stocké : un second compteur dirait le même nombre sous un autre nom, avec une désynchronisation possible en prime. Voir [`bonus.md`](./bonus.md#question-loot).
 
+Les **compteurs de coffres** du joueur (questions loot passées, coffres ouverts) ne contredisent pas cette règle : le jeu ne les relit jamais, ils ne servent qu'à l'admin. Voir [`admin.md`](./admin.md#gestion-des-joueurs).
+
 ### Import des questions
 
 - **Script CLI** (Node.js) qui charge le deck directement en base. Un seul run, avant le lancement.

@@ -52,6 +52,8 @@ describe('fiches joueurs', () => {
       lastPlayedDay: null,
       items: [],
       spells: [],
+      chestsOffered: 0,
+      chestsOpened: 0,
     }])
   })
 
@@ -141,10 +143,10 @@ describe('repartir de zéro', () => {
     expect(await db.select().from(disputes).where(eq(disputes.userId, userId))).toEqual([])
   })
 
-  it('remet les compteurs des succès à zéro, même chez un vrai joueur', async () => {
+  it('remet les compteurs des succès et des coffres à zéro, même chez un vrai joueur', async () => {
     await db
       .update(users)
-      .set({ seenTotal: 42, lastPlayedDay: '2026-09-03', daysPlayed: 5, playStreak: 2 })
+      .set({ seenTotal: 42, lastPlayedDay: '2026-09-03', daysPlayed: 5, playStreak: 2, chestsOffered: 4, chestsOpened: 3 })
       .where(eq(users.id, userId))
 
     await resetPlayer(db, await loadPlayer(db, userId), NOW)
@@ -154,6 +156,8 @@ describe('repartir de zéro', () => {
       lastPlayedDay: null,
       daysPlayed: 0,
       playStreak: 0,
+      chestsOffered: 0,
+      chestsOpened: 0,
     })
   })
 

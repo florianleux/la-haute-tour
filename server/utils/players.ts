@@ -62,6 +62,9 @@ export interface PlayerCard {
   items: ItemId[]
   /** Les sorts en poche, avec leur nombre d'exemplaires. */
   spells: { spell: SpellId, count: number }[]
+  /** Questions loot passées, et coffres ouverts parmi elles, depuis la dernière remise à zéro. */
+  chestsOffered: number
+  chestsOpened: number
 }
 
 /**
@@ -178,6 +181,8 @@ async function roster(db: Database, now: Date, isTest: boolean): Promise<PlayerC
     lastPlayedDay: row.user.lastPlayedDay,
     items: bags.get(row.user.id) ?? [],
     spells: pockets.get(row.user.id) ?? [],
+    chestsOffered: row.user.chestsOffered,
+    chestsOpened: row.user.chestsOpened,
   }))
 }
 
@@ -238,6 +243,8 @@ export async function resetPlayer(db: Database, player: User, now: Date): Promis
         playStreak: 0,
         // Le premier coffre de la partie neuve est à nouveau à l'abri du Mimic.
         lastChest: null,
+        chestsOffered: 0,
+        chestsOpened: 0,
         // L'introduction se rejoue : elle redonne le Fromage et redemande le
         // nom et le genre. Voir specs/admin.md#gestion-des-joueurs.
         introDoneAt: null,

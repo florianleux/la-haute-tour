@@ -25,6 +25,8 @@ const card: PlayerCard = {
   lastPlayedDay: null,
   items: [],
   spells: [],
+  chestsOffered: 0,
+  chestsOpened: 0,
 }
 
 describe('joueurs côté admin', () => {

@@ -94,6 +94,7 @@
           </div>
           <span v-if="!player.spells.length" class="text-slate-500">Aucun sort</span>
         </div>
+        <span class="text-slate-400">Coffres : {{ player.chestsOpened }} / {{ player.chestsOffered }}</span>
       </div>
     </td>
   </tr>

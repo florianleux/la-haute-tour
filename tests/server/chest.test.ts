@@ -58,6 +58,7 @@ describe('coffre de loot', () => {
 
       expect(state.chest).toEqual({ opened: false, mimic: false, spell: null, key: false, item: null })
       expect(state.verdict).toMatchObject({ correct: true })
+      expect(await reload()).toMatchObject({ chestsOffered: 1, chestsOpened: 1 })
     })
 
     it('ne pose aucun coffre sur une question loot ratée', async () => {
@@ -67,6 +68,7 @@ describe('coffre de loot', () => {
 
       expect(state.chest).toBeNull()
       expect(state.verdict).toMatchObject({ correct: false, lifeLost: true })
+      expect(await reload()).toMatchObject({ chestsOffered: 1, chestsOpened: 0 })
     })
 
     it('ne pose aucun coffre sur une question ordinaire réussie', async () => {
@@ -75,6 +77,7 @@ describe('coffre de loot', () => {
       const state = await readGameState(db, await reload(), NOW)
 
       expect(state.chest).toBeNull()
+      expect(await reload()).toMatchObject({ chestsOffered: 0, chestsOpened: 0 })
     })
   })
 
